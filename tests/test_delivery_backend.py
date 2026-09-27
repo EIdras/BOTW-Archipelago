@@ -55,7 +55,7 @@ class DeliveryCoordinatorTests(unittest.TestCase):
         result = DeliveryCoordinator(backend).deliver(self.command)
         self.assertEqual(result.status, DeliveryStatus.APPLIED)
         self.assertEqual(result.cursor, self.command.next_cursor)
-        self.assertIn("relecture", result.detail)
+        self.assertIn("reading it back", result.detail)
         self.assertEqual(backend.calls, 1)
 
     def test_interruption_with_unchanged_cursor_is_quarantined(self):
@@ -73,11 +73,11 @@ class DeliveryCoordinatorTests(unittest.TestCase):
         backend = FakeBackend(
             self.ready,
             DeliveryResult(DeliveryStatus.UNCERTAIN,
-                           self.command.cursor, "owner disparu"),
+                           self.command.cursor, "owner gone"),
             checkpoint_after=self.ready)
         result = DeliveryCoordinator(backend).deliver(self.command)
         self.assertEqual(result.status, DeliveryStatus.UNCERTAIN)
-        self.assertIn("owner disparu", result.detail)
+        self.assertIn("owner gone", result.detail)
         self.assertEqual(backend.calls, 1)
 
     def test_wrong_session_and_gap_never_call_backend(self):
@@ -114,7 +114,7 @@ class DeliveryCoordinatorTests(unittest.TestCase):
         backend = FakeBackend(
             self.ready, DeliveryResult(
                 DeliveryStatus.INVENTORY_FULL, self.command.next_cursor))
-        with self.assertRaisesRegex(BackendContractError, "curseur avance"):
+        with self.assertRaisesRegex(BackendContractError, "cursor advanced"):
             DeliveryCoordinator(backend).deliver(self.command)
 
     def test_success_requires_exact_next_cursor(self):
@@ -122,7 +122,7 @@ class DeliveryCoordinatorTests(unittest.TestCase):
             self.ready, DeliveryResult(
                 DeliveryStatus.APPLIED, self.command.cursor))
         with self.assertRaisesRegex(
-                BackendContractError, f"attendu {self.command.next_cursor}"):
+                BackendContractError, f"expected {self.command.next_cursor}"):
             DeliveryCoordinator(backend).deliver(self.command)
 
     def test_impossible_reconciliation_cursor_is_rejected(self):
@@ -132,7 +132,7 @@ class DeliveryCoordinatorTests(unittest.TestCase):
                 "seed-a", 2, self.command.next_cursor + 1))
         with self.assertRaisesRegex(
                 BackendContractError,
-                f"attendu {self.command.cursor} ou {self.command.next_cursor}"):
+                f"expected {self.command.cursor} or {self.command.next_cursor}"):
             DeliveryCoordinator(backend).deliver(self.command)
 
     def test_substep_commit_uses_packed_cursor(self):

@@ -69,7 +69,7 @@ def server_url(address: str) -> str:
         address = "ws://" + address
     parsed = urlparse(address)
     if parsed.scheme not in ("ws", "wss") or not parsed.netloc:
-        raise ValueError(f"adresse Archipelago invalide: {address}")
+        raise ValueError(f"invalid Archipelago address: {address}")
     return address
 
 
@@ -167,9 +167,9 @@ class ArchipelagoClient:
         self.reader_task = asyncio.create_task(self._reader(), name="AP reader")
         await asyncio.wait_for(self.connected_event.wait(), timeout)
         if self.refused_reason:
-            raise RuntimeError("connexion refusee: " + ", ".join(self.refused_reason))
+            raise RuntimeError("connection refused: " + ", ".join(self.refused_reason))
         if not self.connected:
-            raise ConnectionError("connexion Archipelago fermee avant l'authentification")
+            raise ConnectionError("Archipelago connection closed before authentication")
         return self
 
     async def close(self):
@@ -189,7 +189,7 @@ class ArchipelagoClient:
 
     async def send(self, *commands: dict):
         if not self.websocket or self.websocket.closed:
-            raise ConnectionError("serveur Archipelago deconnecte")
+            raise ConnectionError("Archipelago server disconnected")
         await self.websocket.send_str(json.dumps(list(commands), separators=(",", ":")))
 
     async def _reader(self):
@@ -206,7 +206,7 @@ class ArchipelagoClient:
         except asyncio.CancelledError:
             raise
         except Exception as exc:
-            self.log(f"lecture Archipelago interrompue: {exc}")
+            self.log(f"Archipelago read interrupted: {exc}")
         finally:
             self.connected = False
             self.connected_event.set()
@@ -214,7 +214,7 @@ class ArchipelagoClient:
     async def _packet(self, packet: dict):
         command = packet.get("cmd")
         if command == "RoomInfo":
-            self.seed_name = packet.get("seed_name", "seed-inconnue")
+            self.seed_name = packet.get("seed_name", "unknown-seed")
             await self.send({
                 "cmd": "Connect",
                 "password": self.password,
@@ -228,7 +228,7 @@ class ArchipelagoClient:
                 "slot_data": True,
             })
         elif command == "ConnectionRefused":
-            self.refused_reason = list(packet.get("errors", ["raison inconnue"]))
+            self.refused_reason = list(packet.get("errors", ["unknown reason"]))
             self.connected_event.set()
         elif command == "Connected":
             self.team = int(packet["team"])
@@ -249,9 +249,9 @@ class ArchipelagoClient:
             self.slot_info = {int(k): v for k, v in packet.get("slot_info", {}).items()}
             self.connected = True
             self.death_link_enabled = bool(self.slot_data.get("death_link", False))
-            self.log(f"connecte a {self.seed_name}, slot {self.slot_name} ({self.slot})")
+            self.log(f"connected to {self.seed_name}, slot {self.slot_name} ({self.slot})")
             self.log("DeathLink: " + ("actif" if self.death_link_enabled else
-                                      "inactif dans cette seed"))
+                                      "off in this seed"))
             # A BOTW location can contain an item belonging to any game.
             games = {self.game}
             for info in self.slot_info.values():
@@ -336,14 +336,14 @@ class ArchipelagoClient:
                 self.last_death_link = timestamp
                 event = DeathLinkEvent(
                     timestamp,
-                    str(data.get("source") or "un autre joueur"),
+                    str(data.get("source") or "another player"),
                     str(data.get("cause") or "DeathLink"))
                 await self.deathlinks.put(event)
 
     async def scout_locations(self, names: list[str], timeout: float = 15.0):
         unresolved = [name for name in names if name not in self.location_id_by_name]
         if unresolved:
-            raise ValueError("locations a scout absentes: " + ", ".join(unresolved))
+            raise ValueError("locations to scout missing: " + ", ".join(unresolved))
         ids = [self.location_id_by_name[name] for name in names]
         self._scout_expected = set(ids)
         self.scout_event.clear()
@@ -392,7 +392,7 @@ class ArchipelagoClient:
             "cmd": "Bounce", "tags": ["DeathLink"],
             "data": {"time": timestamp, "source": self.slot_name, "cause": cause},
         })
-        self.log(f"DeathLink envoye: {cause}")
+        self.log(f"DeathLink sent: {cause}")
 
     async def sync(self):
         await self.send({"cmd": "Sync"})
@@ -407,8 +407,8 @@ class ArchipelagoClient:
         if player == self.slot:
             return self.game
         info = self.slot_info.get(player, {})
-        return (info.get("game", "jeu inconnu") if isinstance(info, dict)
-                else info[1] if len(info) > 1 else "jeu inconnu")
+        return (info.get("game", "unknown game") if isinstance(info, dict)
+                else info[1] if len(info) > 1 else "unknown game")
 
     def render_node(self, node: dict) -> str:
         text = str(node.get("text", ""))
@@ -432,7 +432,7 @@ class ArchipelagoClient:
         name = self.players.get(item.player, f"slot {item.player}")
         info = self.slot_info.get(item.player, {})
         if isinstance(info, dict):
-            game = info.get("game", "jeu inconnu")
+            game = info.get("game", "unknown game")
         else:
-            game = info[1] if len(info) > 1 else "jeu inconnu"
+            game = info[1] if len(info) > 1 else "unknown game"
         return name, game

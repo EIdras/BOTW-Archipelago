@@ -1,27 +1,27 @@
 """Derive an isolated native candidate bound to one generated AP seed/slot.
 
-The tested source build is immutable. Only APBindSession's literal token, its
-catalog metadata, and resource-size accounting may differ in the candidate.
-This tool does not install the candidate or run Cemu.
+The source build is immutable. Only APBindSession's literal token, its catalog
+metadata, and resource-size accounting may differ in the candidate. This tool
+does not install the candidate or run Cemu.
 
 The source must already carry the seed-independent chain stages:
 - rune selection sync (tools/build_rune_selection_sync.py): without it the
   first rune a seed delivers is absent from the HUD, the wheel and L until a
-  reload (8w/9a);
+  reload;
 - tower Sheikah Sensor neutralisation (tools/build_plateau_sensor_candidate.py):
-  without it any tower can grant the vanilla sensor (source-coverage audit);
+  without it any tower can grant the vanilla sensor;
 - world heart withholding (tools/build_world_heart_withhold.py): without it
   the Divine Beast heart containers, which are AP checks, also give their
-  vanilla heart (9e/9f; validated 9g/9h);
+  vanilla heart;
 - Master Sword pedestal (tools/build_master_sword_candidate.py): without it the
-  pedestal, an AP check, also gives the vanilla sword (validated 9i/9j/9k);
+  pedestal, an AP check, also gives the vanilla sword;
 - Ballad upgrade guard (tools/build_ballad_condition_candidate.py): without it
   the end of a Champions' Ballad upgrades a champion power the player has not
-  received from AP yet (guard validated 9l, in context 9q);
+  received from AP yet;
 - champion power restore (tools/build_hero_soul_restore_withhold.py): without
   it the engine puts the champion power back in the pouch at every load of a
   save where the Divine Beast is freed, which is the normal AP state, so the
-  ClearRemains recipe only holds until the next load (9q/9r/9s, fixed 9t).
+  ClearRemains recipe only holds until the next load.
 The default source is c6f33f2902bd3da5 + the five stages.
 """
 from __future__ import annotations
@@ -71,7 +71,7 @@ def verified_files(source: Path, manifest: dict) -> dict[str, bytes]:
 
 def read_identity(report_path: Path, slot: int) -> tuple[dict, dict]:
     report = json.loads(report_path.read_text(encoding="utf-8"))
-    # Two-slot laboratory seeds, and solo play seeds (tools/play_seed.py).
+    # Two-slot seeds, and solo play seeds (tools/play_seed.py).
     if report.get("status") != "passed" or report.get("scope") not in (
             "generated_two_slot_ap_server", "generated_solo_ap_server"):
         raise ValueError("generated AP server report has not passed")
@@ -147,7 +147,7 @@ def build(report_path: Path, slot: int, source: Path = SOURCE,
     identity, world = read_identity(report_path, slot)
     token = identity["token"]
     if token == old_token:
-        raise ValueError("generated token equals laboratory token; no retarget needed")
+        raise ValueError("generated token equals the placeholder token; no retarget needed")
 
     builder = ResourceBuilder(source / "content")
     builder.patch_archive(TITLE, {FLOW_MEMBER: lambda raw:

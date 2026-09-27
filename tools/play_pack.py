@@ -30,7 +30,7 @@ def select_pack(folder: Path, pack: Path) -> None:
 def selected_pack(folder: Path) -> Path:
     pointer = folder / "play-pack.json"
     if not pointer.is_file():
-        raise RuntimeError("aucun pack sélectionné pour cette seed ; préparer la seed avec tools/play_seed.py")
+        raise RuntimeError("no pack selected for this seed; prepare the seed with tools/play_seed.py")
     data = json.loads(pointer.read_text(encoding="utf-8"))
     pack = (ROOT / data["pack"]).resolve()
     if data.get("schema") != 1 or not pack.is_relative_to(ROOT.resolve()):

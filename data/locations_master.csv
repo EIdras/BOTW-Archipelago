@@ -119,25 +119,25 @@ Qaza Tokki Shrine,Hebra,Shrine,,Clear_Dungeon116,101921575,Dungeon116
 Jitan Sa'mi Shrine,Hateno,Shrine,,Clear_Dungeon117,1897137073,Dungeon117
 To Quomo Shrine,Hebra,Shrine,,Clear_Dungeon118,-508879328,Dungeon118
 Tahno O'ah Shrine,Hateno,Shrine,,Clear_Dungeon119,-1767100746,Dungeon119
-Hebra Tower,Hebra,Tower,,MapTower_01,2079619768,activation bool verified against current save
-Tabantha Tower,Tabantha,Tower,,MapTower_02,-486724862,activation bool verified against current save
-Gerudo Tower,Gerudo,Tower,,MapTower_03,-1778771052,activation bool verified against current save
-Wasteland Tower,Wasteland,Tower,,MapTower_04,194940471,activation bool verified against current save
-Woodland Tower,Woodland,Tower,,MapTower_05,2090450593,activation bool verified against current save
-Central Tower,Central,Tower,,MapTower_06,-443486437,activation bool verified against current save
-Great Plateau Tower,Great Plateau,Tower,,MapTower_07,-1835540595,activation bool verified against current save
-Dueling Peaks Tower,Dueling Peaks,Tower,,MapTower_08,36225564,static G-6 LinkTagAnd SaveFlag and Demo004_0_08 verified; IsSave one-trigger; source tracker save reload passed8n; local AP check delivery reload passed8o
-Lake Tower,Lake,Tower,,MapTower_09,1966076554,activation bool verified against current save
-Eldin Tower,Eldin,Tower,,MapTower_10,367557487,activation bool verified against current save
-Akkala Tower,Akkala,Tower,,MapTower_11,1659849721,activation bool verified against current save
-Lanayru Tower,Lanayru,Tower,,MapTower_12,-68806077,activation bool verified against current save
-Hateno Tower,Hateno,Tower,,MapTower_13,-1931400491,activation bool verified against current save
-Faron Tower,Faron,Tower,,MapTower_14,310755190,activation bool verified against current save
-Ridgeland Tower,Ridgeland,Tower,,MapTower_15,1703055328,activation bool verified against current save
-Great Fairy Cotera,Dueling Peaks,Great Fairy,,RevivalGreatFairy1,-101197467,Demo028_0 Event10 argument FailyReactive; NPC00 Cotera; saved one-trigger reset0; source/save/reload verified8l005241+8l2_011922; local AP check/delivery/reload verified8m100136
-Great Fairy Kaysa,Ridgeland,Great Fairy,,RevivalGreatFairy3,402241609,Demo028_0 Event10 argument FailyReactive; NPC02 Kaysa; saved one-trigger reset0; gameplay pending
-Great Fairy Mija,Akkala,Great Fairy,,RevivalGreatFairy2,1627293919,Demo028_0 Event10 argument FailyReactive; NPC01 Mija; saved one-trigger reset0; gameplay pending
-Great Fairy Tera,Wasteland,Great Fairy,,RevivalGreatFairy4,-1986187798,Demo028_0 Event10 argument FailyReactive; NPC03 Tera; saved one-trigger reset0; gameplay pending
+Hebra Tower,Hebra,Tower,,MapTower_01,2079619768,tower activation flag
+Tabantha Tower,Tabantha,Tower,,MapTower_02,-486724862,tower activation flag
+Gerudo Tower,Gerudo,Tower,,MapTower_03,-1778771052,tower activation flag
+Wasteland Tower,Wasteland,Tower,,MapTower_04,194940471,tower activation flag
+Woodland Tower,Woodland,Tower,,MapTower_05,2090450593,tower activation flag
+Central Tower,Central,Tower,,MapTower_06,-443486437,tower activation flag
+Great Plateau Tower,Great Plateau,Tower,,MapTower_07,-1835540595,tower activation flag
+Dueling Peaks Tower,Dueling Peaks,Tower,,MapTower_08,36225564,G-6 LinkTagAnd SaveFlag, set by Demo004_0_08; saved, set once
+Lake Tower,Lake,Tower,,MapTower_09,1966076554,tower activation flag
+Eldin Tower,Eldin,Tower,,MapTower_10,367557487,tower activation flag
+Akkala Tower,Akkala,Tower,,MapTower_11,1659849721,tower activation flag
+Lanayru Tower,Lanayru,Tower,,MapTower_12,-68806077,tower activation flag
+Hateno Tower,Hateno,Tower,,MapTower_13,-1931400491,tower activation flag
+Faron Tower,Faron,Tower,,MapTower_14,310755190,tower activation flag
+Ridgeland Tower,Ridgeland,Tower,,MapTower_15,1703055328,tower activation flag
+Great Fairy Cotera,Dueling Peaks,Great Fairy,,RevivalGreatFairy1,-101197467,Demo028_0 Event10 argument FailyReactive; NPC00 Cotera; saved, set once
+Great Fairy Kaysa,Ridgeland,Great Fairy,,RevivalGreatFairy3,402241609,Demo028_0 Event10 argument FailyReactive; NPC02 Kaysa; saved, set once
+Great Fairy Mija,Akkala,Great Fairy,,RevivalGreatFairy2,1627293919,Demo028_0 Event10 argument FailyReactive; NPC01 Mija; saved, set once
+Great Fairy Tera,Wasteland,Great Fairy,,RevivalGreatFairy4,-1986187798,Demo028_0 Event10 argument FailyReactive; NPC03 Tera; saved, set once
 Divine Beast Vah Ruta,Lanayru,Divine Beast,,Clear_RemainsWater,-1220354708,
 Divine Beast Vah Rudania,Eldin,Divine Beast,,Clear_RemainsFire,1074258414,
 Divine Beast Vah Medoh,Tabantha,Divine Beast,,Clear_RemainsWind,970112223,
@@ -148,10 +148,10 @@ Magnesis Terminal,Great Plateau,Rune Terminal,,CDungeon_DgnObj_DownloadTerminal_
 Remote Bombs Terminal,Great Plateau,Rune Terminal,,CDungeon_DgnObj_DownloadTerminal_A_01_714582554,1395045545,Dungeon041/Ja Baij; actor HashId extracted from map; 0->1 pending in-game verification
 Stasis Terminal,Great Plateau,Rune Terminal,,CDungeon_DgnObj_DownloadTerminal_A_01_3030563290,-1048841644,Dungeon009/Owa Daim; actor HashId extracted from map; 0->1 pending in-game verification
 Cryonis Terminal,Great Plateau,Rune Terminal,,CDungeon_DgnObj_DownloadTerminal_A_01_1421474480,-2067597552,Dungeon065/Keh Namut; actor HashId extracted from map; 0->1 pending in-game verification
-Vah Ruta Heart Container,Lanayru,Divine Beast Heart,,Get_HeartUtuwa_Water,-956566915,Obj_HeartUtuwa_A_01 DeadUp flag; RemainsWater actors 3046120871/4017597731; vanilla heart withheld by chain stage (9g/9h)
-Vah Rudania Heart Container,Eldin,Divine Beast Heart,,Get_HeartUtuwa_Fire,1219328426,Obj_HeartUtuwa_A_01 DeadUp flag; RemainsFire actor 2224435968; vanilla heart withheld by chain stage (9g/9h)
-Vah Medoh Heart Container,Tabantha,Divine Beast Heart,,Get_HeartUtuwa_Wind,829957275,Obj_HeartUtuwa_A_01 DeadUp flag; RemainsWind actor 2805247992; vanilla heart withheld by chain stage (9g/9h)
-Vah Naboris Heart Container,Wasteland,Divine Beast Heart,,Get_HeartUtuwa_Electric,-1516963174,Obj_HeartUtuwa_A_01 DeadUp flag; RemainsElectric actor 3159171529; vanilla heart withheld by chain stage (9g/9h)
+Vah Ruta Heart Container,Lanayru,Divine Beast Heart,,Get_HeartUtuwa_Water,-956566915,Obj_HeartUtuwa_A_01 DeadUp flag; RemainsWater actors 3046120871/4017597731; the vanilla heart is withheld by the pack
+Vah Rudania Heart Container,Eldin,Divine Beast Heart,,Get_HeartUtuwa_Fire,1219328426,Obj_HeartUtuwa_A_01 DeadUp flag; RemainsFire actor 2224435968; the vanilla heart is withheld by the pack
+Vah Medoh Heart Container,Tabantha,Divine Beast Heart,,Get_HeartUtuwa_Wind,829957275,Obj_HeartUtuwa_A_01 DeadUp flag; RemainsWind actor 2805247992; the vanilla heart is withheld by the pack
+Vah Naboris Heart Container,Wasteland,Divine Beast Heart,,Get_HeartUtuwa_Electric,-1516963174,Obj_HeartUtuwa_A_01 DeadUp flag; RemainsElectric actor 3159171529; the vanilla heart is withheld by the pack
 Dueling Peaks Stable - Beedle Item 1,Dueling Peaks,Shop,,APShop_154,-1235072983,Npc_TripMaster_00 slot 1; custom saved s32
 Dueling Peaks Stable - Beedle Item 2,Dueling Peaks,Shop,,APShop_155,-1050314561,Npc_TripMaster_00 slot 2; custom saved s32
 Foothill Stable - Beedle Item 1,Eldin,Shop,,APShop_156,1483483397,Npc_TripMaster_01 slot 1; custom saved s32

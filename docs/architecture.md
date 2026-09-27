@@ -72,4 +72,4 @@ writes its logs to `.build/play-seeds/<seed>/sessions/`.
 ## Technical notes
 
 The mechanisms found in the game (EventFlow requests, the tip frame, the HUD, shops and stalls, the rune download
-screen...) are described, in French, in [docs/reference](reference/README.md).
+screen...) are described in [docs/reference](reference/README.md).

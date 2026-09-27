@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 from tools import cemu_profile
 from tools.cemu_profile import play_account_dat
-from tools.play_session import enabled_packs, remove_aids, tree_hashes
+from tools.play_session import enabled_packs, tree_hashes
 
 SOURCE_ACCOUNT = ("AccountInstance_20120705\nPersistentId=80000001\n"
                "TransferableIdBase=200000402a7c36e\n"
@@ -41,19 +41,17 @@ class AccountTests(unittest.TestCase):
 
 class LauncherTests(unittest.TestCase):
     def test_the_launcher_exists(self):
-        text = (ROOT / "Jouer-Partie.cmd").read_bytes()
+        text = (ROOT / "Play.cmd").read_bytes()
         self.assertIn(rb"tools\play_session.py", text)
         self.assertIn(b"\r\n", text)
 
 
-class AidTests(unittest.TestCase):
-    """First play session: no aid was loaded (the Cemu log lists only the AP
-    patch groups), but the aid folders were still sitting in the profile."""
+class ProfileTests(unittest.TestCase):
+    """Other graphic packs may sit in the profile: only the seed's is enabled."""
 
     def make_profile(self, root: Path) -> Path:
         packs = root / "graphicPacks"
-        for name in ("AP_Test8d_InfiniteHearts", "AP_Test9w_BossLife",
-                     "AP_Ledger_796aa895aad1ffff"):
+        for name in ("OtherPack", "AP_Ledger_796aa895aad1ffff"):
             (packs / name).mkdir(parents=True)
             (packs / name / "rules.txt").write_text("[Definition]\n", encoding="utf-8")
         (root / "settings.xml").write_text(
@@ -61,16 +59,6 @@ class AidTests(unittest.TestCase):
             '<Entry filename="graphicPacks/AP_Ledger_796aa895aad1ffff/rules.txt"/>'
             "</GraphicPack></content>", encoding="utf-8")
         return root
-
-    def test_aids_are_deleted_and_the_seed_pack_kept(self):
-        import tempfile
-        with tempfile.TemporaryDirectory() as folder:
-            root = self.make_profile(Path(folder))
-            self.assertEqual(remove_aids(root),
-                             ["AP_Test8d_InfiniteHearts", "AP_Test9w_BossLife"])
-            self.assertEqual([p.name for p in (root / "graphicPacks").iterdir()],
-                             ["AP_Ledger_796aa895aad1ffff"])
-            self.assertEqual(remove_aids(root), [])   # idempotent
 
     def test_only_the_seed_pack_is_enabled(self):
         import tempfile
@@ -83,12 +71,11 @@ class AidTests(unittest.TestCase):
         import inspect
         from tools import play_session
         source = inspect.getsource(play_session.main)
-        self.assertIn("removed = remove_aids(portable)", source)
-        self.assertIn("le profil de partie charge autre chose", source)
+        self.assertIn("the play profile loads something else", source)
 
 class CrashReportTests(unittest.TestCase):
-    """The first session died without leaving a trace: the console crashed and
-    session.json stayed 'running'."""
+    """A console crash must leave a trace: otherwise session.json stays
+    'running'."""
 
     def test_the_session_captures_native_and_python_crashes(self):
         import inspect
@@ -112,7 +99,7 @@ class ConsoleRoutingTests(unittest.IsolatedAsyncioTestCase):
         def input_later():
             started.set()
             if not release.wait(3): raise TimeoutError('test input not released')
-            return '/send Simon Rupee Bundle'
+            return '/send Player Rupee Bundle'
         def thread(*, target, **kwargs):
             def captured():
                 try: target()
@@ -124,7 +111,7 @@ class ConsoleRoutingTests(unittest.IsolatedAsyncioTestCase):
         runtime.stop_event.is_set.return_value = False
         with patch('builtins.input', side_effect=input_later), \
                 patch('tools.play_session.threading.Thread', side_effect=thread):
-            task = asyncio.create_task(console(runtime, context, Mock(), "Simon"))
+            task = asyncio.create_task(console(runtime, context, Mock(), "Player"))
             try:
                 for _ in range(100):
                     if started.is_set(): break
@@ -151,7 +138,7 @@ class ConsoleRoutingTests(unittest.IsolatedAsyncioTestCase):
             return Mock(start=target)
         with patch('builtins.input', side_effect=[line, EOFError]), \
                 patch('tools.play_session.threading.Thread', side_effect=thread):
-            await console(runtime, context, Mock(), "Simon")
+            await console(runtime, context, Mock(), "Player")
         return runtime, context
 
     async def test_recovery_command_stays_local(self):
@@ -161,8 +148,8 @@ class ConsoleRoutingTests(unittest.IsolatedAsyncioTestCase):
         runtime.ap.say.assert_not_awaited()
 
     async def test_server_command_keeps_archipelago_slash_marker(self):
-        runtime, context = await self.dispatch('/send Simon Rupee Bundle')
-        context.commandprocessor.assert_called_once_with('/send Simon Rupee Bundle')
+        runtime, context = await self.dispatch('/send Player Rupee Bundle')
+        context.commandprocessor.assert_called_once_with('/send Player Rupee Bundle')
         runtime.ap.say.assert_not_awaited()
 
     async def test_ordinary_message_goes_to_chat(self):
@@ -179,7 +166,7 @@ class ShutdownTests(unittest.IsolatedAsyncioTestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.folder = Path(self.temp.name)
-        self.ap = ArchipelagoClient("localhost:38281", "Simon")
+        self.ap = ArchipelagoClient("localhost:38281", "Player")
         self.ap.item_name_by_id = {100: "Paraglider", 101: "Remote Bomb"}
         # AP indices, not item ids; insertion order need not be index order.
         self.ap.received_items = {1: NetworkItem(101, 202, 1, 1),
@@ -216,7 +203,7 @@ class ShutdownTests(unittest.IsolatedAsyncioTestCase):
                 patch("websockets.serve", return_value=self.server), \
                 patch("tools.play_session.console", new_callable=AsyncMock):
             return await play(self.folder, {"archive": "unused.zip",
-                                            "audit": {"slots": {"1": "Simon"}}},
+                                            "audit": {"slots": {"1": "Player"}}},
                               self.folder, self.folder, Mock(poll=Mock(return_value=0)), Mock(),
                               journal=False)
 
@@ -276,7 +263,7 @@ class ShutdownTests(unittest.IsolatedAsyncioTestCase):
     async def test_false_save_result_is_not_reported_as_success(self):
         self.context._save.side_effect = None
         self.context._save.return_value = False
-        with self.assertRaisesRegex(OSError, "sauvegarde finale"):
+        with self.assertRaisesRegex(OSError, "final save"):
             await self.run_play()
         self.context._save.assert_called_once_with()
 

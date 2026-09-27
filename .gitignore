@@ -21,7 +21,7 @@ botw_client.json
 .botw_client_state.json.tmp
 .botw_index_cache.json
 
-# Local laboratory, backups and tools
+# Local work folders
 lab/
 backups/
 external_tools/

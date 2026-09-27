@@ -1,82 +1,80 @@
-"""Afficher LE TEXTE QU'ON VEUT dans la notification du jeu.
+"""Show ANY TEXT in the game's item notification.
 
-    python tools/cemu/say.py "Simon a trouve la Paravoile" --duration 8
-    python tools/cemu/say.py "un texte long ..." --duration 8   # empile
-    python tools/cemu/say.py "..." --nowrap       # une seule ligne, sans decoupe
-    python tools/cemu/say.py --inspect            # etat de la session
-    python tools/cemu/say.py --cleanup            # reparer pointeur et pool
+    python tools/cemu/say.py "Alice found the Paraglider" --duration 8
+    python tools/cemu/say.py "a long text ..." --duration 8   # stacked
+    python tools/cemu/say.py "..." --nowrap       # one line, not split
+    python tools/cemu/say.py --inspect            # state of the session
+    python tools/cemu/say.py --cleanup            # repair pointer and pool
 
-CE QUI SE PASSE VRAIMENT
+WHAT REALLY HAPPENS
 
-Le patch ne peut passer qu'un NOM D'ACTEUR ; c'est le jeu qui le resout en texte
-via ses tables. Les sondes en jeu ont donne la chaine complete :
+The patch can only pass an ACTOR NAME; the game resolves it into text through
+its tables. Probes in the game gave the whole chain:
 
-    table statique 0x21c4f244  --ECRITE a l'affichage-->  pool 0x436690c0
-                                                                ^
-                                                          le widget, qui relit
-                                                          le pool a chaque image
+    static table 0x21c4f244  --WRITTEN on display-->  pool 0x436690c0
+                                                            ^
+                                                      the widget, which reads
+                                                      the pool again every frame
 
-Route retenue : ecrire dans la table statique, afficher, restaurer la table.
-C'est la seule qui ait jamais affiche notre texte.
+Route kept: write into the static table, display, restore the table. It is
+the only one that ever showed our text.
 
-Route ECARTEE (--pointer, gardee pour memoire) : rediriger le pointeur du pool
-vers apText. Verifiee en jeu, elle n'affiche que le nom d'origine -- le jeu
-ECRIT le message resolu a travers ce pointeur, donc notre texte est ecrase avant
-d'etre dessine.
+Route SET ASIDE (--pointer, kept for reference): redirecting the pool pointer
+to apText. Checked in the game, it only shows the original name -- the game
+WRITES the resolved message through that pointer, so our text is overwritten
+before it is drawn.
 
-LA LONGUEUR : 40 CARACTERES, ET C'EST LA LIMITE DU JEU
+LENGTH: 40 CHARACTERS, AND THAT IS THE GAME'S LIMIT
 
-40 caracteres passent, 44 font planter. Ce n'est PAS un artefact de la methode :
-les noms d'objets les plus longs du jeu font ~45 caracteres, et l'interface
-plante des qu'on depasse -- y compris dans l'inventaire, hors de toute
-notification.
+40 characters pass, 44 crash. It is NOT an artefact of the method: the longest
+item names of the game are ~45 characters, and the UI crashes beyond them --
+in the inventory too, outside any notification.
 
-Deux contournements ont ete essayes et ecartes, tous deux verifies en jeu :
+Two workarounds were tried and set aside, both checked in the game:
 
-  * agrandir a chaud l'emplacement du message (--reserve) : mesure non
-    reproductible, plantages ;
-  * allonger le nom dans le FICHIER (tools/build_message_mod.py, 120
-    caracteres) : construction correcte -- MSBT et SARC passent le test
-    d'identite octet pour octet -- mais le jeu plante partout ou le nom est
-    dessine.
+  * growing the message's slot at run time (--reserve): measurement not
+    reproducible, crashes;
+  * lengthening the name in the FILE (a message mod, 120 characters): a
+    correct build -- MSBT and SARC pass the byte-for-byte identity test --
+    but the game crashes wherever the name is drawn.
 
-Reponse retenue : DECOUPER en plusieurs notifications empilees. L'empilement
-fonctionne, chaque ligne tient dans la limite, et rien ne deborde. C'est
-automatique ; --nowrap s'en dispense.
+Answer kept: SPLIT into several stacked notifications. Stacking works, each
+line fits in the limit, and nothing overflows. It is automatic; --nowrap
+turns it off.
 
-COULEURS
+COLORS
 
-Le jeu colore son texte avec un code de controle releve dans son archive de
-messages (14 824 occurrences, groupe 0 / type 3 / 2 octets) :
+The game colors its text with a control code found in its message archive
+(14,824 occurrences, group 0 / type 3 / 2 bytes):
 
-    000E 0000 0003 0002 000N   passer en couleur N
-    000E 0000 0003 0002 FFFF   revenir au defaut
+    000E 0000 0003 0002 000N   switch to color N
+    000E 0000 0003 0002 FFFF   back to the default
 
-Le balisage {N} ... {/} est traduit en ces codes.
+The markup {N} ... {/} is translated into those codes.
 
-    say.py "Alice t'envoie une {2}Epee{/}" --duration 8
-    say.py "objet recu" --color 2
-    say.py --palette              # une teinte par ligne, pour les identifier
+    say.py "Alice sends you a {2}Sword{/}" --duration 8
+    say.py "item received" --color 2
+    say.py --palette              # one hue per line, to identify them
 
-Chaque segment colore coute 10 unites de code sur le budget de la ligne, tags
-compris. Le plafond porte sur la chaine APRES balisage.
+Each colored segment costs 10 code units of the line's budget, tags included.
+The ceiling applies to the string AFTER markup.
 
-Une ligne balisee n'est pas decoupee : une ouverture separee de sa fermeture
-teinterait toute la suite.
+A line with markup is not split: an opening separated from its closing would
+tint everything after it.
 
-L'adresse de l'entree est dans le TAS : elle change a chaque lancement de Cemu.
-Elle est localisee a la volee puis mise en cache (cle = PID + nom).
-`--relocate` force une nouvelle recherche.
+The entry's address is in the HEAP: it changes at every Cemu start. It is
+located on the fly, then cached (key = PID + name). `--relocate` forces a new
+search.
 
-PORTEUR
+CARRIER
 
-Par defaut Item_Roast_16, "Fruit de lotus tempo grille" -- le nom en TEXTE
-PUR le plus long du jeu (27 caracteres). Son emplacement fait donc 56 octets
-au lieu des 12 de "Pomme", ce qui divise par pres de trois le debordement sur
-les messages voisins. C'est aussi un plat rare, donc peu vu dans l'inventaire.
+By default Item_Roast_16, whose name is the longest PLAIN TEXT name of the
+game (27 characters in the French game). Its slot is 56 bytes instead of the
+12 of a short name, which divides the overflow onto neighbouring messages by
+nearly three. It is also a rare dish, seldom seen in the inventory.
 
-27 caracteres sont propres, sans aucun debordement. Jusqu'a 40 ca deborde mais
-s'affiche. Pour une autre langue, passe --name avec le texte exact affiche.
+27 characters are clean, with no overflow. Up to 40 overflow but display. For
+another language, pass --name with the exact text shown.
 """
 import json
 import pathlib
@@ -91,33 +89,33 @@ from mailbox import Cave, cemu_pid, find_cave, guest_base
 from findtext import read_utf16, scan
 
 CACHE = pathlib.Path(tempfile.gettempdir()) / "botw_ap_msgtext.json"
-WINDOW = 256            # octets sauvegardes autour de l'entree (route ecrasement)
-POOL_SAVE = 512         # copie saine du pool, pour --cleanup
-# Porteur : le nom en TEXTE PUR le plus long du jeu (27 caracteres). Son
-# emplacement dans l'arene fait donc 56 octets au lieu des 12 de "Pomme", ce qui
-# divise par pres de trois ce qu'un texte long deborde sur ses voisins. C'est
-# aussi un objet cuisine rare, donc peu vu dans l'inventaire.
+WINDOW = 256            # bytes saved around the entry (overwrite route)
+POOL_SAVE = 512         # clean copy of the pool, for --cleanup
+# Carrier: the longest PLAIN TEXT name of the game (27 characters). Its slot in
+# the arena is therefore 56 bytes instead of the 12 of a short name, which
+# divides by nearly three what a long text overflows onto its neighbours. It
+# is also a rare cooked item, seldom seen in the inventory.
 DEFAULT_ACTOR = "Item_Roast_16"
-DEFAULT_NAME = "Fruit de lotus tempo grillé"
-CLEAN_CHARS = len(DEFAULT_NAME)   # au-dela, on deborde (sans planter jusqu'a 40)
-MAX_CHARS = 127         # plafond dur, quelle que soit la reservation
-# Mesure, pas estimation : 27, 35 et 40 caracteres passent ; 44 fait planter.
-# Au-dela de CLEAN_CHARS on deborde sur les messages voisins sans planter :
-# --repair remet la copie saine une fois la notification expiree.
+DEFAULT_NAME = "Fruit de lotus tempo grillé"   # its name in the French game
+CLEAN_CHARS = len(DEFAULT_NAME)   # beyond, it overflows (no crash up to 40)
+MAX_CHARS = 127         # hard ceiling, whatever the reservation
+# Measured, not estimated: 27, 35 and 40 characters pass; 44 crashes.
+# Beyond CLEAN_CHARS it overflows onto neighbouring messages without crashing:
+# --repair puts the clean copy back once the notification has expired.
 SAFE_CHARS = 40
 
 
 def exact_matches(p, base, name, exclude=None):
-    """Adresses ou la chaine est EXACTEMENT `name`, terminateur compris.
+    """Addresses where the string is EXACTLY `name`, terminator included.
 
-    Le filtre d'exactitude est indispensable : "Pomme" est aussi un prefixe de
-    "Pommes", "Pomme grillee", "Pommes au four"... Sur une mesure reelle, 9 des
-    11 occurrences etaient des prefixes.
+    The exactness filter is essential: a short name is also a prefix of longer
+    names (plurals, cooked variants...). On a real measurement, 9 of the 11
+    occurrences were prefixes.
 
-    `exclude` retire NOTRE PROPRE code cave. Sans cela, des que le jeu a ecrit
-    dans apText, le scan y retrouve le nom et prend notre tampon pour le pool du
-    jeu : le pointeur est alors "redirige" vers lui-meme et plus rien n'est
-    restaurable.
+    `exclude` removes OUR OWN code cave. Without it, as soon as the game has
+    written into apText, the scan finds the name there and takes our buffer for
+    the game's pool: the pointer is then "redirected" to itself and nothing can
+    be restored any more.
     """
     out = []
     for guest, _ in scan(p, base, [(name.encode("utf-16-be"), "be")]):
@@ -130,11 +128,11 @@ def exact_matches(p, base, name, exclude=None):
 
 
 def markers(n, length):
-    """n marqueurs DISTINCTS de longueur donnee.
+    """n DISTINCT markers of a given length.
 
-    Distincts, et pas un marqueur commun : une copie vivante est reecrite depuis
-    la table. Avec le meme marqueur partout elle recevrait celui de la table et
-    paraitrait statique. C'est l'unicite qui rend le tri fiable.
+    Distinct, not one common marker: a live copy is rewritten from the table.
+    With the same marker everywhere it would receive the table's and look
+    static. Uniqueness is what makes the sort reliable.
     """
     out = []
     for i in range(n):
@@ -145,11 +143,11 @@ def markers(n, length):
 
 
 def classify(p, base, c, cands, name, actor, verbose=False):
-    """Trier statiques / copies vivantes en UNE seule notification.
+    """Sort statics / live copies with ONE notification.
 
-    La duree est sauvegardee et remise : notify() ecrit apDuration, et la sonde
-    du jeu ne le reecrit qu'au prochain vrai ramassage. Sans cette restauration,
-    la duree de tri (0,5 s) restait en place pour tous les affichages suivants.
+    The duration is saved and restored: notify() writes apDuration, and the
+    game's probe only rewrites it at the next real pickup. Without this
+    restore, the sorting duration (0.5 s) stayed for every later display.
     """
     marks = markers(len(cands), len(name))
     for g, m in zip(cands, marks):
@@ -164,8 +162,8 @@ def classify(p, base, c, cands, name, actor, verbose=False):
         now, _ = read_utf16(p, base, g)
         (static if now == m else live).append(g)
         if verbose:
-            print(f"  {g:#010x}  ecrit {m!r} -> relu {now!r}  "
-                  f"{'STATIQUE' if now == m else 'copie vivante'}")
+            print(f"  {g:#010x}  wrote {m!r} -> read back {now!r}  "
+                  f"{'STATIC' if now == m else 'live copy'}")
 
     for g in cands:
         p.write(base + g, name.encode("utf-16-be"))
@@ -184,15 +182,15 @@ def _cache_load():
 
 
 def prime(p, c, actor, verbose=True):
-    """Faire resoudre le message UNE FOIS avant de chercher.
+    """Have the message resolved ONCE before searching.
 
-    Le pool de destination est rempli PARESSEUSEMENT : tant que le message n'a
-    pas ete demande, son entree n'existe pas. Chercher avant l'amorcage ne
-    trouve donc que la table statique, sans copie vivante ni pointeur -- c'est
-    exactement ce qui donnait "pool non repere" juste apres un redemarrage.
+    The destination pool is filled LAZILY: until the message has been asked
+    for, its entry does not exist. Searching before priming therefore only
+    finds the static table, with no live copy nor pointer -- exactly what gave
+    "pool not located" right after a restart.
     """
     if verbose:
-        print("  amorcage : un affichage bref pour peupler le pool ...")
+        print("  priming: a short display to fill the pool ...")
     saved = c.get_duration()
     ok = c.notify(actor, duration=0.5)
     time.sleep(0.4)
@@ -202,11 +200,11 @@ def prime(p, c, actor, verbose=True):
 
 
 def check_pointer(p, base, ent, verbose=True):
-    """Le pointeur montre-t-il encore le pool du jeu ?
+    """Does the pointer still show the game's pool?
 
-    Le jeu ECRIT a travers ce pointeur, il ne fait pas que le lire : tant qu'il
-    vise apText, tout message resolu atterrit chez nous -- au point qu'un vrai
-    ramassage de pomme affiche notre texte. On repare des qu'on le constate.
+    The game WRITES through this pointer, it does not only read it: while it
+    targets apText, every resolved message lands in our buffer -- so much that
+    a real apple pickup shows our text. It is repaired as soon as it is seen.
     """
     if not ent.get("slot") or not ent.get("live"):
         return None
@@ -214,41 +212,41 @@ def check_pointer(p, base, ent, verbose=True):
     if cur == ent["live"]:
         return True
     if verbose:
-        print(f"  pointeur egare : {ent['slot']:#010x} -> {cur:#010x} "
-              f"au lieu de {ent['live']:#010x}")
-        print("  remise en place.")
+        print(f"  stray pointer: {ent['slot']:#010x} -> {cur:#010x} "
+              f"instead of {ent['live']:#010x}")
+        print("  put back.")
     p.write(base + ent["slot"], ent["live"].to_bytes(4, "big"))
     return False
 
 
 def reserve_session(p, base, c, name, actor, nchars, cave=None, verbose=True):
-    """Faire naitre GRAND l'emplacement du message dans le pool.
+    """Have the message's slot in the pool born LARGE.
 
-    Le pool est une arene compacte : l'emplacement d'un message est alloue la
-    PREMIERE fois qu'il est resolu, a la taille qu'il a alors. "Pomme" fait 5
-    caracteres, d'ou un emplacement minuscule -- et tout texte plus long
-    deborde sur les voisins (44 caracteres suffisent a faire planter le jeu).
+    The pool is a compact arena: a message's slot is allocated the FIRST time
+    it is resolved, at the size it has then. A 5-character name gives a tiny
+    slot -- and any longer text overflows onto its neighbours (44 characters
+    are enough to crash the game).
 
-    En resolvant d'abord avec un texte long, l'emplacement nait a cette taille
-    et les affichages suivants y tiennent SANS DEBORDER. Il n'y a donc plus de
-    voisin ecrase, et plus de reparation a faire.
+    Resolving first with a long text makes the slot born at that size, and the
+    following displays fit in it WITHOUT OVERFLOW. No neighbour is overwritten
+    any more, and there is nothing to repair.
 
-    A n'utiliser que sur une session FRAICHE : si le message a deja ete resolu,
-    son emplacement est deja alloue, petit, et rien ne le redimensionne.
+    Only on a FRESH session: once the message has been resolved, its slot is
+    already allocated, small, and nothing resizes it.
     """
     cands = exact_matches(p, base, name, exclude=cave)
     if len(cands) != 1:
         if verbose:
-            print(f"{len(cands)} occurrences de {name!r} au lieu d'une seule.")
-            print("Le message a deja ete resolu dans cette session : son")
-            print("emplacement est deja alloue. Redemarre Cemu et recommence")
-            print("SANS afficher de notification avant.")
+            print(f"{len(cands)} occurrences of {name!r} instead of one.")
+            print("The message was already resolved in this session: its")
+            print("slot is already allocated. Restart Cemu and try again")
+            print("WITHOUT showing a notification first.")
         return None
     static = cands[0]
 
     filler = "".join(chr(0x41 + i % 26) for i in range(nchars))
     if verbose:
-        print(f"reservation de {nchars} caracteres ...")
+        print(f"reserving {nchars} characters ...")
     saved = p.read(base + static, WINDOW)
     p.write(base + static, filler.encode("utf-16-be") + b"\x00\x00")
     ok = c.notify(actor, duration=0.5)
@@ -257,50 +255,50 @@ def reserve_session(p, base, c, name, actor, nchars, cave=None, verbose=True):
         p.write(base + static, saved)
     if not ok:
         if verbose:
-            print("  l'affichage n'a pas repondu : ramasse un objet en jeu")
+            print("  the display did not answer: pick up an item in the game")
         return None
 
-    # Chercher un PREFIXE, pas la chaine entiere : si le jeu tronque la copie,
-    # chercher les 120 caracteres ne trouve rien et on conclut a tort a un
-    # echec. Le prefixe localise l'emplacement, puis on lit ce qui y est
-    # REELLEMENT arrive -- c'est la capacite reelle, mesuree et non supposee.
+    # Look for a PREFIX, not the whole string: if the game truncates the copy,
+    # searching for the 120 characters finds nothing and wrongly concludes to
+    # a failure. The prefix locates the slot, then what REALLY arrived there is
+    # read -- the real capacity, measured and not assumed.
     probe = filler[:12]
     live = [g for g, _ in scan(p, base, [(probe.encode("utf-16-be"), "be")])
             if not (cave and cave[0] <= g < cave[1]) and g != static]
     if not live:
         if verbose:
-            print("  rien n'a ete copie : le jeu a refuse ce nom.")
-            print("  Essaie une reservation plus courte, ex. --reserve 60.")
+            print("  nothing was copied: the game refused this name.")
+            print("  Try a shorter reservation, e.g. --reserve 60.")
         return None
 
     got, _ = read_utf16(p, base, live[0], maxunits=256)
     landed = len(got)
     if verbose:
-        print(f"  emplacement = {live[0]:#010x}")
+        print(f"  slot = {live[0]:#010x}")
         if landed < nchars:
-            print(f"  demande {nchars} caracteres, {landed} reellement copies")
-            print(f"  -> le jeu tronque ; capacite reelle = {landed}")
+            print(f"  asked {nchars} characters, {landed} really copied")
+            print(f"  -> the game truncates; real capacity = {landed}")
         else:
-            print(f"  {landed} caracteres copies sans troncature")
+            print(f"  {landed} characters copied without truncation")
 
     ent = {"static": static, "live": live[0], "slot": None,
            "pristine": None, "reserved": landed}
-    prime(p, c, actor, verbose=False)          # remettre le vrai nom dedans
+    prime(p, c, actor, verbose=False)          # put the real name back in it
     raw = p.read(base + ent["live"], POOL_SAVE)
     if raw:
         ent["pristine"] = raw.hex()
     if verbose:
         print(f"  table = {static:#010x}")
-        print(f"  {ent['reserved']} caracteres disponibles sans debordement")
+        print(f"  {ent['reserved']} characters available without overflow")
     return ent
 
 
 def session(p, base, c, name, actor, force=False, verbose=True, cave=None):
-    """Tout ce qu'il faut savoir pour cette session : entrees, pointeur, copie saine.
+    """Everything to know for this session: entries, pointer, clean copy.
 
-    Mis en cache car la recherche coute ~6 s et se refait a chaque lancement de
-    Cemu (les adresses sont dans le tas). La validite du cache est verifiee sur
-    le CONTENU, pas seulement sur le PID.
+    Cached because the search costs ~6 s and is redone at every Cemu start
+    (the addresses are in the heap). The cache's validity is checked on the
+    CONTENT, not only on the PID.
     """
     key = f"{p.pid}:{name}"
     data = _cache_load()
@@ -312,22 +310,22 @@ def session(p, base, c, name, actor, force=False, verbose=True, cave=None):
             return ent
 
     if verbose:
-        print(f"reperage de {name!r} (~6 s) ...")
+        print(f"locating {name!r} (~6 s) ...")
 
-    # Chercher AVANT d'amorcer. Tant que le message n'a pas ete resolu, seule
-    # la table statique contient le nom : une unique occurrence est donc
-    # forcement celle-la, et le reperage se fait sans le moindre affichage.
-    # L'ancien ordre coutait trois flashes visibles a l'ecran -- "Pomme",
-    # "ARCH0", puis "Pomme" -- avant le vrai message.
+    # Search BEFORE priming. Until the message has been resolved, only the
+    # static table holds the name: a single occurrence is necessarily that
+    # one, and it is located without any display. The former order cost three
+    # visible flashes on screen -- the name, "ARCH0", then the name -- before
+    # the real message.
     cands = exact_matches(p, base, name, exclude=cave)
 
     if not cands:
-        # rien du tout : la table n'est pas encore chargee, il faut amorcer
+        # nothing at all: the table is not loaded yet, prime it
         if not prime(p, c, actor, verbose):
             if verbose:
-                print("  l'affichage d'amorcage n'a pas repondu.")
-                print("  La table de messages n'est pas encore chargee.")
-                print("  Charge une sauvegarde, puis relance.")
+                print("  the priming display did not answer.")
+                print("  The message table is not loaded yet.")
+                print("  Load a save, then run again.")
             return None
         cands = exact_matches(p, base, name, exclude=cave)
         if not cands:
@@ -336,24 +334,24 @@ def session(p, base, c, name, actor, force=False, verbose=True, cave=None):
     if len(cands) == 1:
         ent = {"static": cands[0], "live": None, "slot": None, "pristine": None}
     else:
-        # le pool est deja peuple : il faut trier, ce qui coute un flash bref
+        # the pool is already filled: sorting is needed, which costs a short flash
         static, live = classify(p, base, c, cands, name, actor)
         if not static:
             return None
         ent = {"static": static[0], "live": live[0] if live else None,
                "slot": None, "pristine": None}
         if ent["live"]:
-            # Le pool contient encore le marqueur de tri. Le faire reecrire par
-            # une resolution NORMALE avant de prendre la copie saine : sans
-            # cela --repair reinjectait "ARCH0" a l'ecran.
+            # The pool still holds the sorting marker. Have it rewritten by a
+            # NORMAL resolution before taking the clean copy: without that,
+            # --repair put "ARCH0" back on screen.
             prime(p, c, actor, verbose=False)
             raw = p.read(base + ent["live"], POOL_SAVE)
             if raw:
                 ent["pristine"] = raw.hex()
             slots = [g for g, _ in scan(
                 p, base, [(ent["live"].to_bytes(4, "big"), "p")], align=4)]
-            # un seul pointeur = redirection sans ambiguite ; plusieurs = on
-            # s'abstient plutot que de deviner lequel le widget utilise
+            # one pointer = an unambiguous redirection; several = abstain
+            # rather than guess which one the widget uses
             if len(slots) == 1:
                 ent["slot"] = slots[0]
 
@@ -363,49 +361,49 @@ def session(p, base, c, name, actor, force=False, verbose=True, cave=None):
         print(f"  table  = {ent['static']:#010x}")
         if ent["live"]:
             print(f"  pool   = {ent['live']:#010x}")
-        print(f"  route ECRASEMENT, {SAFE_CHARS} caracteres par ligne")
+        print(f"  OVERWRITE route, {SAFE_CHARS} characters per line")
     return ent
 
 
 def say_via_pointer(p, base, c, text, slot, actor, duration=None, keep=False):
-    """Rediriger le pointeur du widget vers apText.
+    """Redirect the widget's pointer to apText.
 
-    Rien n'est ecrit dans les tables du jeu : ni limite de longueur, ni degat.
-    Le pointeur est rendu dans un `finally` -- sauf --keep, qui sert a savoir si
-    le widget relit le pointeur a chaque image (auquel cas le rendre trop tot
-    ferait retomber le texte sur le nom d'origine).
+    Nothing is written into the game's tables: no length limit, no damage.
+    The pointer is given back in a `finally` -- except with --keep, which tells
+    whether the widget reads the pointer again every frame (in which case
+    giving it back too early would drop the text back to the original name).
     """
     orig = p.read(base + slot, 4)
     addr = c.write_text(text)
     if not p.write(base + slot, addr.to_bytes(4, "big")):
-        raise RuntimeError("ecriture du pointeur refusee")
+        raise RuntimeError("pointer write refused")
     try:
         return c.notify(actor, duration=duration)
     finally:
         if orig and not keep:
             p.write(base + slot, orig)
-            # relecture : le jeu peut reecrire ce pointeur de son cote. Sans
-            # verification, il resterait braque sur apText et tout message
-            # resolu -- y compris un vrai ramassage -- afficherait notre texte.
+            # read back: the game may rewrite this pointer on its side. Without
+            # this check, it would stay aimed at apText and every resolved
+            # message -- a real pickup included -- would show our text.
             back = p.read(base + slot, 4)
             if back != orig:
-                print(f"  ATTENTION : le pointeur n'a pas tenu "
+                print(f"  WARNING: the pointer did not hold "
                       f"({int.from_bytes(back or b'', 'big'):#010x} "
-                      f"au lieu de {int.from_bytes(orig, 'big'):#010x})")
-                print("  utilise --cleanup avant de continuer a jouer.")
+                      f"instead of {int.from_bytes(orig, 'big'):#010x})")
+                print("  use --cleanup before playing on.")
 
 
-# Code de controle de couleur du jeu : marqueur, groupe 0, type 3, 2 octets de
-# parametre. Releve dans l'archive de messages (14 824 occurrences), pas devine :
-#   000E 0000 0003 0002 000N   passer en couleur N
-#   000E 0000 0003 0002 FFFF   revenir au defaut
+# The game's color control code: marker, group 0, type 3, 2 bytes of
+# parameter. Found in the message archive (14,824 occurrences), not guessed:
+#   000E 0000 0003 0002 000N   switch to color N
+#   000E 0000 0003 0002 FFFF   back to the default
 COLOR = "\u000e\u0000\u0003\u0002"
-RESET = COLOR + "\uffff"
-TAG_COST = 5                    # unites de code par tag, a defalquer du budget
+RESET = COLOR + "￿"
+TAG_COST = 5                    # code units per tag, taken from the budget
 
 
 def colorize(s):
-    """Traduire le balisage {N} ... {/} en codes de controle du jeu."""
+    """Translate the {N} ... {/} markup into the game's control codes."""
     out, i = [], 0
     while i < len(s):
         if s[i] == "{":
@@ -430,16 +428,16 @@ def has_markup(s):
 
 
 def wrap(text, width=SAFE_CHARS):
-    """Decouper en lignes d'au plus `width` caracteres, aux espaces.
+    """Split into lines of at most `width` characters, at spaces.
 
-    C'est la reponse retenue aux textes longs. Elargir l'emplacement du porteur
-    s'est revele impraticable (mesure non reproductible, plantages), alors que
-    l'empilement de plusieurs notifications fonctionne deja et ne deborde sur
-    rien : chaque ligne tient dans la marge mesuree.
+    It is the answer kept for long texts. Widening the carrier's slot proved
+    impractical (measurement not reproducible, crashes), while stacking
+    several notifications already works and overflows onto nothing: each line
+    fits in the measured margin.
     """
     lines, cur = [], ""
     for word in text.split():
-        if len(word) > width:                 # mot plus long que la ligne
+        if len(word) > width:                 # a word longer than the line
             if cur:
                 lines.append(cur)
                 cur = ""
@@ -459,41 +457,40 @@ def wrap(text, width=SAFE_CHARS):
 
 
 def repair_pool(p, base, ent, verbose=True):
-    """Remettre la copie saine du pool prise au premier reperage."""
+    """Put back the pool's clean copy taken at the first location."""
     if not ent.get("pristine") or not ent.get("live"):
         return False
     ok = p.write(base + ent["live"], bytes.fromhex(ent["pristine"]))
     if verbose:
-        print(f"  pool repare : {'OK' if ok else 'REFUSE'}")
+        print(f"  pool repaired: {'OK' if ok else 'REFUSED'}")
     return bool(ok)
 
 
 def say_inplace(p, base, c, text, ent, name, actor, duration=None,
                 force=False, repair=None, room=None):
-    """Ecrire dans la table statique, afficher, restaurer -- puis reparer le pool.
+    """Write into the static table, display, restore -- then repair the pool.
 
-    C'est la seule route qui ait jamais affiche notre texte. Le jeu recopie la
-    table vers le pool au moment de l'affichage ; comme le pool est un arene
-    compacte, un texte plus long que le nom porteur deborde sur les messages
-    voisins. D'ou la reparation : `repair` est le delai en secondes avant de
-    remettre la copie saine.
+    It is the only route that ever showed our text. The game copies the table
+    into the pool at display time; as the pool is a compact arena, a text
+    longer than the carrier name overflows onto neighbouring messages. Hence
+    the repair: `repair` is the delay in seconds before putting the clean copy
+    back.
 
-    `repair=0` repare immediatement -- ce qui sert justement a savoir si le
-    widget relit le pool a chaque image (le texte retomberait alors sur le nom
-    d'origine sous les yeux) ou s'il en a pris une copie.
+    `repair=0` repairs at once -- which tells whether the widget reads the
+    pool again every frame (the text would then drop back to the original name
+    on screen) or took a copy of it.
     """
-    # un emplacement reserve autorise sa propre taille sans debordement ; sinon
-    # on reste sous la borne mesuree (40 passe, 44 plante)
+    # a reserved slot allows its own size without overflow; otherwise stay
+    # under the measured bound (40 pass, 44 crash)
     cap = MAX_CHARS if force else (room or ent.get("reserved") or SAFE_CHARS)
     if len(colorize(text)) > cap:
         raise ValueError(
-            f"{len(text)} caracteres, plafond {cap}. Sans porteur elargi, 40 "
-            f"passent et 44 font planter le jeu. Construis le mod de messages "
-            f"(tools/build_message_mod.py) pour lever la limite.")
-    # la fenetre sauvegardee doit couvrir ce qu'on ecrit : avec un porteur
-    # reserve a 120 caracteres, 256 octets ne suffiraient plus a tout restaurer
-    # le balisage devient des codes de controle : c'est la chaine FINALE qui
-    # compte pour le budget, chaque tag valant 5 unites de code
+            f"{len(text)} characters, ceiling {cap}. Without a widened carrier, 40 "
+            f"pass and 44 crash the game.")
+    # the saved window must cover what is written: with a carrier reserved at
+    # 120 characters, 256 bytes would no longer be enough to restore it all.
+    # The markup becomes control codes: the FINAL string counts for the
+    # budget, each tag costing 5 code units
     payload = colorize(text)
     saved = p.read(base + ent["static"], max(WINDOW, len(payload) * 2 + 32))
     p.write(base + ent["static"], payload.encode("utf-16-be") + b"\x00\x00")
@@ -510,51 +507,51 @@ def say_inplace(p, base, c, text, ent, name, actor, duration=None,
 
 
 def cleanup(p, base, ent):
-    """Remettre le pointeur en place, puis la copie saine du pool.
+    """Put the pointer back, then the pool's clean copy.
 
-    Le pointeur d'abord : c'est lui qui fait afficher notre texte a la place du
-    nom d'un objet reellement ramasse.
+    The pointer first: it is what makes our text show instead of the name of
+    an item really picked up.
     """
     if not ent:
-        print("rien en cache pour cette session.")
+        print("nothing cached for this session.")
         return False
     ok = True
     if ent.get("slot") and ent.get("live"):
         ok &= bool(p.write(base + ent["slot"],
                            ent["live"].to_bytes(4, "big")))
-        print(f"pointeur {ent['slot']:#010x} -> {ent['live']:#010x} : "
-              f"{'OK' if ok else 'REFUSE'}")
+        print(f"pointer {ent['slot']:#010x} -> {ent['live']:#010x}: "
+              f"{'OK' if ok else 'REFUSED'}")
     if ent.get("pristine") and ent.get("live"):
         raw = bytes.fromhex(ent["pristine"])
         w = p.write(base + ent["live"], raw)
         ok &= bool(w)
-        print(f"{len(raw)} octets du pool restaures : {'OK' if w else 'REFUSE'}")
+        print(f"{len(raw)} bytes of the pool restored: {'OK' if w else 'REFUSED'}")
     elif not ent.get("slot"):
-        print("aucune copie saine en cache.")
-        print("Redemarre Cemu : les degats ne sont qu'en RAM.")
+        print("no clean copy cached.")
+        print("Restart Cemu: the damage is only in RAM.")
         return False
     return ok
 
 
 def inspect(p, base, c, name, actor, ent):
-    print(f"table statique  = {ent['static']:#010x}")
+    print(f"static table    = {ent['static']:#010x}")
     print(f"pool (widget)   = "
-          f"{ent['live']:#010x}" if ent.get("live") else "pool non repere")
+          f"{ent['live']:#010x}" if ent.get("live") else "pool not located")
     if ent.get("slot"):
         cur = int.from_bytes(p.read(base + ent["slot"], 4) or b"\0" * 4, "big")
-        print(f"pointeur        = {ent['slot']:#010x} -> {cur:#010x}")
-        print(f"route           = POINTEUR, jusqu'a {MAX_CHARS} caracteres")
+        print(f"pointer         = {ent['slot']:#010x} -> {cur:#010x}")
+        print(f"route           = POINTER, up to {MAX_CHARS} characters")
     else:
-        print(f"route           = ECRASEMENT, plafond {len(name)} caracteres")
+        print(f"route           = OVERWRITE, ceiling {len(name)} characters")
     if ent.get("live"):
         raw = p.read(base + ent["live"], 64)
         if raw:
             txt = "".join(chr(int.from_bytes(raw[i:i + 2], "big"))
                           if 32 <= int.from_bytes(raw[i:i + 2], "big") < 0xD800
                           else "." for i in range(0, 48, 2))
-            print(f"contenu du pool : {txt!r}")
-            print("  (des caracteres incoherents ici = pool abime, "
-                  "utilise --cleanup)")
+            print(f"pool content: {txt!r}")
+            print("  (garbled characters here = damaged pool, "
+                  "use --cleanup)")
 
 
 def main():
@@ -563,10 +560,10 @@ def main():
         sys.exit(__doc__)
 
     def opt(n, default=None):
-        """Valeur d'une option, ou le defaut.
+        """Value of an option, or the default.
 
-        La borne est verifiee : une option placee en DERNIER (--palette seul)
-        faisait lever un IndexError au lieu de prendre son defaut.
+        The bound is checked: an option placed LAST (--palette alone) raised an
+        IndexError instead of taking its default.
         """
         if n not in argv:
             return default
@@ -575,9 +572,9 @@ def main():
             return default
         return argv[i]
 
-    # carrier.json est ecrit par tools/build_message_mod.py : il dit quel objet
-    # porte le remplissage et quel texte chercher. Sans lui, on retombe sur le
-    # jeu non modifie ("Pomme", 40 caracteres par ligne).
+    # carrier.json, when present, says which item carries the filler and
+    # which text to search for. Without it, the unmodified game is assumed
+    # (DEFAULT_NAME, 40 characters per line).
     carrier = pathlib.Path(__file__).resolve().parent / "carrier.json"
     cinfo = {}
     if carrier.exists():
@@ -599,73 +596,72 @@ def main():
 
     pid = cemu_pid()
     if not pid:
-        sys.exit("Cemu n'est pas lance")
+        sys.exit("Cemu is not running")
 
     with Process(pid, writable=True) as p:
         a = find_cave(p)
         if a is None:
-            sys.exit("cave introuvable - le graphic pack est-il actif ?")
+            sys.exit("cave not found - is the graphic pack enabled?")
         base, cave_g, _ = guest_base(p, a - 12)
         if base is None:
-            sys.exit("base invite/hote introuvable")
+            sys.exit("guest/host base not found")
         c = Cave(p, a, base)
-        # notre cave, a exclure du scan : le jeu y ecrit des qu'on a redirige
-        # le pointeur, et on retrouverait alors notre propre tampon
+        # our cave, excluded from the scan: the game writes into it as soon as
+        # the pointer is redirected, and our own buffer would then be found
         cave = (cave_g, cave_g + 2048)
 
         if "--check" in argv:
-            # Aucun affichage : sert justement quand afficher fait planter.
-            # Dit uniquement si le nom porteur est present en memoire, donc si
-            # Cemu a bien applique le remplacement de fichier.
+            # No display: useful precisely when displaying crashes. Only says
+            # whether the carrier name is in memory, hence whether Cemu applied
+            # the file replacement.
             hits = exact_matches(p, base, name, exclude=cave)
-            print(f"porteur attendu : {name[:24]!r}... ({len(name)} caracteres)")
+            print(f"expected carrier: {name[:24]!r}... ({len(name)} characters)")
             if hits:
-                print(f"TROUVE a {', '.join(f'{h:#010x}' for h in hits)}")
-                print("Cemu a bien applique le remplacement de fichier.")
+                print(f"FOUND at {', '.join(f'{h:#010x}' for h in hits)}")
+                print("Cemu applied the file replacement.")
             else:
-                print("ABSENT de la memoire.")
+                print("NOT in memory.")
                 short = exact_matches(p, base, DEFAULT_NAME, exclude=cave)
                 if short:
-                    print(f"En revanche {DEFAULT_NAME!r} est present : le mod")
-                    print("n'est PAS charge (pack decoche, ou Cemu ne fait pas")
-                    print("le remplacement de fichier).")
+                    print(f"But {DEFAULT_NAME!r} is there: the mod is")
+                    print("NOT loaded (pack unchecked, or Cemu does not replace")
+                    print("the file).")
                 else:
-                    print("Et le nom d'origine non plus : le jeu n'a peut-etre")
-                    print("pas fini de charger.")
+                    print("And the original name is not either: the game may")
+                    print("not have finished loading.")
             return
 
 
         ok, rn, tick = c.resolve_ready()
         if not ok:
             sys.exit(
-                f"le resolveur du patch charge ne tourne pas "
+                f"the loaded patch's resolver does not run "
                 f"(apResolveN={rn}, tick={tick}).\n"
-                "FERMER ET ROUVRIR CEMU : recharger une sauvegarde ne suffit "
-                "pas.")
+                "CLOSE AND REOPEN CEMU: reloading a save is not "
+                "enough.")
         if not c.ready():
             sys.exit(
-                "le pool de lignes de notification n'est pas resolu\n"
-                "(ecran 0x28 absent de la table d'ecrans).\n"
-                "Charge une sauvegarde, puis relance.")
+                "the notification row pool is not resolved\n"
+                "(screen 0x28 missing from the screen table).\n"
+                "Load a save, then run again.")
 
         if "--reserve" in argv:
-            # Piste abandonnee, conservee documentee dans
-            # notes de laboratoire (texte libre) : deux essais ont donne 78 puis
-            # 13 caracteres, et le troisieme a fait planter le jeu. Ecrire un
-            # nom tres long dans la table statique corrompt les messages
-            # suivants pendant que le jeu peut les lire.
+            # A route set aside: two attempts gave 78 then 13 characters, and
+            # the third crashed the game. Writing a very long name into the
+            # static table corrupts the following messages while the game may
+            # read them.
             sys.exit(
-                "--reserve est desactive : mesure non reproductible (78 puis\n"
-                "13 caracteres) et plantage du jeu au troisieme essai.\n"
-                "Utilise le decoupage en plusieurs lignes, qui est fiable :\n"
-                '  python tools/cemu/say.py "un texte long..." --duration 8')
+                "--reserve is disabled: measurement not reproducible (78 then\n"
+                "13 characters) and a game crash at the third attempt.\n"
+                "Use the split into several lines, which is reliable:\n"
+                '  python tools/cemu/say.py "a long text..." --duration 8')
 
         ent = session(p, base, c, name, actor,
                       force="--relocate" in argv, cave=cave)
         if ent is None:
-            print(f"entree {name!r} introuvable.")
-            print("  - le texte doit etre exactement celui affiche a l'ecran")
-            print("  - as-tu affiche une notification au moins une fois ?")
+            print(f"entry {name!r} not found.")
+            print("  - the text must be exactly the one shown on screen")
+            print("  - has a notification been shown at least once?")
             return
 
         if "--cleanup" in argv:
@@ -676,26 +672,25 @@ def main():
             return
         if not positional:
             print("")
-            print("Donne le texte a afficher en argument.")
+            print("Give the text to show as an argument.")
             return
 
         repair = float(opt("--repair")) if "--repair" in argv else None
 
         if "--palette" in argv:
-            # Une teinte par ligne empilee : le budget d'une ligne ne permet pas
-            # de montrer plusieurs couleurs a la fois (10 unites de code par
-            # segment colore).
+            # One hue per stacked line: a line's budget does not allow showing
+            # several colors at once (10 code units per colored segment).
             n = int(opt("--palette") or 8)
-            print(f"{n} teintes, une par ligne -- note celles qui te plaisent")
+            print(f"{n} hues, one per line -- note the ones you like")
             for k in range(n):
-                line = "{%d}couleur %d{/}" % (k, k)
+                line = "{%d}color %d{/}" % (k, k)
                 try:
                     say_inplace(p, base, c, line, ent, name, actor,
                                 duration or 12.0, force=True, room=room)
                 except (ValueError, RuntimeError) as e:
                     sys.exit(str(e))
                 time.sleep(0.35)
-            print("Regarde l'ecran.")
+            print("Look at the screen.")
             return
 
         text = " ".join(positional)
@@ -703,13 +698,13 @@ def main():
             text = "{%s}%s{/}" % (opt("--color"), text)
         width = room or SAFE_CHARS
         if has_markup(text):
-            # le balisage traverserait mal une coupure de ligne :
-            # une ouverture sans sa fermeture teinterait toute la suite
+            # markup would cross a line break badly: an opening without its
+            # closing would tint everything after it
             lines = [text]
         else:
             lines = wrap(text, width) if "--nowrap" not in argv else [text]
         if len(lines) > 1:
-            print(f"{len(text)} caracteres -> {len(lines)} lignes empilees")
+            print(f"{len(text)} characters -> {len(lines)} stacked lines")
             for i, line in enumerate(lines):
                 print(f"  {i + 1}. {line!r}")
                 try:
@@ -718,18 +713,18 @@ def main():
                                 repair=repair, room=room)
                 except (ValueError, RuntimeError) as e:
                     sys.exit(str(e))
-                time.sleep(0.35)   # laisser la ligne precedente descendre
+                time.sleep(0.35)   # let the previous line move down
             print("")
-            print("Regarde l'ecran.")
+            print("Look at the screen.")
             return
 
         text = lines[0]
-        print(f"affichage : {text!r} ({len(text)} caracteres)")
+        print(f"showing: {text!r} ({len(text)} characters)")
         try:
             if "--pointer" in argv:
-                # conservee pour memoire : le jeu ECRIT le message resolu a
-                # travers ce pointeur, donc notre texte est ecrase avant d'etre
-                # dessine. Verifie en jeu -- n'affiche que le nom d'origine.
+                # kept for reference: the game WRITES the resolved message
+                # through this pointer, so our text is overwritten before it is
+                # drawn. Checked in the game -- only shows the original name.
                 ok = say_via_pointer(p, base, c, text, ent["slot"], actor,
                                      duration, keep="--keep" in argv)
             else:
@@ -738,8 +733,8 @@ def main():
                                  repair=repair, room=room)
         except (ValueError, RuntimeError) as e:
             sys.exit(str(e))
-        print("notification declenchee -- regarde l'ecran" if ok
-              else "le code injecte n'a pas repondu (tick a 0 ?)")
+        print("notification triggered -- look at the screen" if ok
+              else "the injected code did not answer (tick at 0?)")
 
 
 if __name__ == "__main__":

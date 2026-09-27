@@ -30,7 +30,7 @@ class CatalogueSchemaTests(unittest.TestCase):
 
 class RuntimeSchemaTests(unittest.IsolatedAsyncioTestCase):
     def runtime(self, directory, game, slot_data=None, names=()):
-        runtime = BotwClientRuntime("localhost:38281", "Simon",
+        runtime = BotwClientRuntime("localhost:38281", "Player",
                                     state_path=Path(directory) / "state.json",
                                     log=lambda _: None)
 

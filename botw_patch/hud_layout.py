@@ -50,11 +50,11 @@ PANE_BLOCK = 0x54                           # section header + pane block
 
 def read_layout(raw: bytes) -> tuple[bytes, list[tuple[bytes, bytes]]]:
     if raw[:4] != b"FLYT" or raw[4:6] != b"\xfe\xff":
-        raise ValueError("pas un FLYT gros-boutiste")
+        raise ValueError("not a big-endian FLYT")
     header_size = struct.unpack_from(">H", raw, 6)[0]
     size, count = struct.unpack_from(">IH", raw, 0x0c)
     if size != len(raw):
-        raise ValueError("taille de FLYT incohérente")
+        raise ValueError("inconsistent FLYT size")
     out, offset = [], header_size
     for _ in range(count):
         magic = raw[offset:offset + 4]
@@ -62,7 +62,7 @@ def read_layout(raw: bytes) -> tuple[bytes, list[tuple[bytes, bytes]]]:
         out.append((magic, raw[offset + 8:offset + length]))
         offset += length
     if offset != len(raw):
-        raise ValueError("sections de FLYT incomplètes")
+        raise ValueError("incomplete FLYT sections")
     return raw[:header_size], out
 
 
@@ -77,7 +77,7 @@ def write_layout(header: bytes, sections: list[tuple[bytes, bytes]]) -> bytes:
 def _name(text: str, size: int) -> bytes:
     raw = text.encode("ascii")
     if len(raw) >= size:
-        raise ValueError(f"nom trop long : {text}")
+        raise ValueError(f"name too long: {text}")
     return raw + b"\0" * (size - len(raw))
 
 
@@ -114,7 +114,7 @@ def part_layout(template: bytes) -> bytes:
     kinds = [magic for magic, _ in sections]
     if kinds != [b"lyt1", b"txl1", b"mat1", b"pan1", b"pas1", b"pic1", b"pae1",
                  b"grp1", b"cnt1"]:
-        raise ValueError(f"modèle de layout inattendu : {kinds}")
+        raise ValueError(f"unexpected layout template: {kinds}")
     parts = dict(sections)
 
     lyt = parts[b"lyt1"]
@@ -132,10 +132,10 @@ def part_layout(template: bytes) -> bytes:
     mat = parts[b"mat1"]
     count, first = struct.unpack_from(">H", mat, 0)[0], struct.unpack_from(">I", mat, 4)[0]
     if count != 1 or first != 0x10:
-        raise ValueError("matériau du modèle inattendu")
+        raise ValueError("unexpected template material")
     material = bytearray(mat[first - 8:])
     if len(material) != 0x48 or struct.unpack_from(">I", material, 0x24)[0] != 0x15:
-        raise ValueError("matériau du modèle inattendu")
+        raise ValueError("unexpected template material")
     material[0x1c:0x24] = b"\0\0\0\0\xff\xff\xff\xff"    # no tint (the model is yellow)
     materials = []
     for index, name in enumerate((OFFLINE, ONLINE)):
@@ -151,7 +151,7 @@ def part_layout(template: bytes) -> bytes:
     root = _pane(parts[b"pan1"], size=(SIZE, SIZE))
     picture = parts[b"pic1"]
     if struct.unpack_from(">H", picture, 0x5c)[0] != 0:
-        raise ValueError("image du modèle inattendue")
+        raise ValueError("unexpected template picture")
     pictures = []
     for index, name in enumerate((OFFLINE, ONLINE)):
         entry = bytearray(_pane(picture, name, visible=(name == OFFLINE), size=(SIZE, SIZE)))
@@ -171,15 +171,15 @@ def add_part(screen: bytes) -> tuple[bytes, dict]:
     names = [pane_name(data) if magic in (b"pan1", b"prt1", b"pic1") else None
              for magic, data in sections]
     if PART_PANE in names:
-        raise ValueError(f"{PART_PANE} déjà présent")
+        raise ValueError(f"{PART_PANE} already present")
     model = next(data for (magic, data), name in zip(sections, names)
                  if magic == b"prt1" and name == "Pa_Weather_00")
     # A part with no property: pane block, count 0, magnification, layout name.
     if len(model) != PANE_BLOCK - 8 + 12 + 16 or struct.unpack_from(">I", model, 0x4c)[0]:
-        raise ValueError("part modèle inattendue")
+        raise ValueError("unexpected template part")
     last = names.index(PARENT_LAST)
     if sections[last + 1][0] != b"pae1":
-        raise ValueError(f"{PARENT_LAST} n'est plus le dernier enfant de son parent")
+        raise ValueError(f"{PARENT_LAST} is no longer the last child of its parent")
     part = (_pane(model[:0x4c], PART_PANE, visible=True, position=POSITION,
                   size=(SIZE, SIZE)) + model[0x4c:0x58] + _string(PART_LAYOUT))
     sections = sections[:last + 1] + [(b"prt1", part)] + sections[last + 1:]
@@ -202,11 +202,11 @@ def read_flim(raw: bytes) -> tuple[int, int, bytes]:
     """(width, height, RGBA8 rows) of an RGBA8 sRGB tile-mode-4 texture."""
     imag = len(raw) - 0x14
     if raw[-0x28:-0x24] != b"FLIM" or raw[imag:imag + 4] != b"imag":
-        raise ValueError("pas un FLIM")
+        raise ValueError("not a FLIM")
     width, height, _align = struct.unpack_from(">HHH", raw, imag + 8)
     fmt, flags = raw[imag + 14], raw[imag + 15]
     if fmt != FORMAT_RGBA8_SRGB or flags & 0x1f != TILE_MODE:
-        raise ValueError(f"format {fmt}/{flags:#x} non géré")
+        raise ValueError(f"format {fmt}/{flags:#x} not supported")
     swizzle = flags >> 5
     pitch, rows = _padded(width, MACRO_WIDTH), _padded(height, MACRO_HEIGHT)
     out = bytearray(width * height * 4)
@@ -219,7 +219,7 @@ def read_flim(raw: bytes) -> tuple[int, int, bytes]:
 
 def write_flim(width: int, height: int, rgba: bytes, swizzle: int = SWIZZLE) -> bytes:
     if len(rgba) != width * height * 4:
-        raise ValueError("pixels RGBA incomplets")
+        raise ValueError("incomplete RGBA pixels")
     pitch, rows = _padded(width, MACRO_WIDTH), _padded(height, MACRO_HEIGHT)
     image = bytearray(pitch * rows * 4)
     for y in range(height):
@@ -235,20 +235,19 @@ def write_flim(width: int, height: int, rgba: bytes, swizzle: int = SWIZZLE) -> 
 
 def logo_rgba(icon_raw: bytes) -> tuple[int, int, bytes]:
     """The 512 px logo of the project icon (its header says pitch 96, the
-    pixels are laid out with the width as pitch: measured when the logo was
-    found, 25/09)."""
-    from tools.bitemico import Icone
+    pixels are laid out with the width as pitch: measured)."""
+    from tools.bitemico import Icon
     import oead
-    icon = Icone(oead.yaz0.decompress(icon_raw) if icon_raw[:4] == b"Yaz0" else icon_raw)
+    icon = Icon(oead.yaz0.decompress(icon_raw) if icon_raw[:4] == b"Yaz0" else icon_raw)
     icon.pitch = icon.width
-    return icon.width, icon.height, icon.lire_rgba()
+    return icon.width, icon.height, icon.read_rgba()
 
 
 def shrink(width: int, height: int, rgba: bytes, size: int) -> bytes:
     """Box filter, alpha weighted (no dark fringe on transparent edges)."""
     step = width // size
     if step * size != width or width != height:
-        raise ValueError("réduction entière d'une image carrée seulement")
+        raise ValueError("integer downscale of a square image only")
     out = bytearray(size * size * 4)
     for y in range(size):
         for x in range(size):
@@ -291,7 +290,7 @@ def patch_archive(raw_sarc: bytes, icon_raw: bytes) -> tuple[bytes, dict]:
     writer = oead.SarcWriter.from_sarc(archive)
     added = [f"blyt/{PART_LAYOUT}.bflyt", *(f"timg/{t}" for t in TEXTURES.values())]
     if any(archive.get_file(name) is not None for name in added):
-        raise ValueError("indicateur déjà présent dans l'archive")
+        raise ValueError("indicator already in the archive")
     screen, detail = add_part(bytes(archive.get_file(SCREEN).data))
     writer.files[SCREEN] = screen
     writer.files[f"blyt/{PART_LAYOUT}.bflyt"] = part_layout(bytes(archive.get_file(TEMPLATE).data))

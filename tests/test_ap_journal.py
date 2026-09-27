@@ -11,7 +11,7 @@ from botw_client.protocol import NetworkItem
 from botw_client.tip_channel import COLOR, RESET, pages
 
 ME, ALICE, BOB = 1, 2, 3
-NAMES = {0: "Server", ME: "Simon", ALICE: "Alice", BOB: "Bob"}
+NAMES = {0: "Server", ME: "Player", ALICE: "Alice", BOB: "Bob"}
 ITEMS = {5: "Rupee Bundle", 6: "Paraglider", 7: "Hookshot"}
 PLACES = {77: "Temple", 12: "Oman Au Shrine", 30: "Forest"}
 
@@ -65,8 +65,8 @@ def line(e, **options):
 
 class PagesTests(unittest.TestCase):
     def test_lines_follow_the_games_tips(self):
-        text = ("Tu as trouve Grappin pour Alice (A Link to the Past). Bob t'envoie : "
-                "Coeur. Indice : l'Epee est chez Carol.")
+        text = ("You found Hookshot for Alice (A Link to the Past). Bob sends you: "
+                "Heart. Hint: the Sword is at Carol's.")
         out = pages(text)
         self.assertEqual(len(out), 2)
         for page in out:
@@ -76,12 +76,12 @@ class PagesTests(unittest.TestCase):
         self.assertEqual(" ".join(" ".join(visible(p).split("\n")) for p in out), text)
 
     def test_colours_survive_the_line_breaks(self):
-        (page,) = pages("{2}Alice{/} t'envoie : {1}Grappin de la tres longue foret perdue{/}")
+        (page,) = pages("{2}Alice{/} sends you: {1}Hookshot of the very long lost forest{/}")
         self.assertTrue(page.startswith(COLOR + "\u0002Alice" + RESET))
         self.assertIn(COLOR + "\u0001", page)
         self.assertTrue(page.endswith(RESET))
         self.assertEqual(visible(page).replace("\n", " "),
-                         "Alice t'envoie : Grappin de la tres longue foret perdue")
+                         "Alice sends you: Hookshot of the very long lost forest")
 
     def test_text_braces_are_not_codes_and_long_words_break(self):
         (page,) = pages("{x} " + "A" * 40)
@@ -93,7 +93,7 @@ class PagesTests(unittest.TestCase):
 class JournalTests(unittest.TestCase):
     def test_the_servers_sent_line_coloured(self):
         self.assertEqual(line(item_send(ME, ALICE)),
-                         "{2}Simon{/} sent {1}Hookshot{/} to {2}Alice{/} (Temple)")
+                         "{2}Player{/} sent {1}Hookshot{/} to {2}Alice{/} (Temple)")
 
     def test_received_items_wait_for_their_presentation(self):
         self.assertIsNone(line(item_send(ALICE, ME)))
@@ -138,7 +138,7 @@ def runtime(tips):
     from botw_client.runtime import BotwClientRuntime
 
     class Ap:
-        slot, slot_name, players = ME, "Simon", NAMES
+        slot, slot_name, players = ME, "Player", NAMES
         location_names_by_game = {"A Link to the Past": PLACES, "Breath of the Wild": PLACES}
         received_items = {0: NetworkItem(5, 77, ALICE, 1), 1: NetworkItem(6, 12, ME, 1),
                           2: NetworkItem(5, -1, 0, 0)}
@@ -179,15 +179,15 @@ class RuntimeTickTests(unittest.TestCase):
         old = item_send(ME, BOB)
         old["received_at"] = r._journal_started - 10
         r.state["message_queue"] = [old, item_send(ME, ALICE)]
-        r._journal_note("Connecté")
+        r._journal_note("Connected")
         asyncio.run(r._journal_tick())
-        self.assertEqual([visible(p) for p in tips.submitted], ["Connecté"])
+        self.assertEqual([visible(p) for p in tips.submitted], ["Connected"])
         asyncio.run(r._journal_tick())            # ours still on screen
         self.assertEqual(len(tips.submitted), 1)
         tips.state = "closed"
         asyncio.run(r._journal_tick())
         self.assertEqual(visible(tips.submitted[1]).replace("\n", " "),
-                         "Simon sent Hookshot to Alice (Temple)")
+                         "Player sent Hookshot to Alice (Temple)")
         self.assertEqual(r.state["message_queue"], [])
 
     def test_a_received_items_line_stays_queued_for_its_item(self):
@@ -202,13 +202,13 @@ class RuntimeTickTests(unittest.TestCase):
     def test_nothing_is_sent_until_link_is_in_the_world(self):
         tips = FakeTips(["accepted"])
         r = runtime(tips)
-        r._journal_note("Connecté")
+        r._journal_note("Connected")
         tips.world = False                        # title screen, loading
         asyncio.run(r._journal_tick())
         self.assertEqual(tips.submitted, [])
         tips.world, r._journal_retry_after = True, 0.0
         asyncio.run(r._journal_tick())
-        self.assertEqual([visible(p) for p in tips.submitted], ["Connecté"])
+        self.assertEqual([visible(p) for p in tips.submitted], ["Connected"])
 
     def test_busy_retries_later_and_a_dropped_tip_is_shown_again(self):
         tips = FakeTips(["busy", "accepted", "accepted"])
@@ -252,7 +252,7 @@ class ReceivedAnnouncementTests(unittest.TestCase):
         self.assertEqual(r.state["message_queue"], [])            # taken for its item
         asyncio.run(r._journal_tick())
         self.assertEqual(visible(r.tips.submitted[0]).replace("\n", " "),
-                         "Alice sent Rupee Bundle to Simon (Temple)")
+                         "Alice sent Rupee Bundle to Player (Temple)")
         self.assertEqual(r.state["journal_announced"], [0])
         self.assertEqual(r._received_announcement(0), "pending")  # reading time
         r._journal_times[0] -= 10
@@ -263,9 +263,9 @@ class ReceivedAnnouncementTests(unittest.TestCase):
         self.assertEqual(r._received_announcement(1), "pending")
         self.assertEqual(r._journal_notes, [])                    # still waiting
         self.assertEqual(self.announce_and_show(r, 1),
-                         "Simon found their Paraglider (Oman Au Shrine)")
+                         "Player found their Paraglider (Oman Au Shrine)")
         self.assertEqual(self.announce_and_show(r, 2),
-                         "Rupee Bundle sent to Simon by the server")
+                         "Rupee Bundle sent to Player by the server")
 
     def test_a_silent_delivery_keeps_its_ap_window(self):
         r = self.runtime("grant_actor")

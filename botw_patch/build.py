@@ -71,8 +71,8 @@ def build(content: Path, output_root: Path) -> Path:
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     (target / "rules.txt").write_text(
         '[Definition]\ntitleIds = 00050000101C9500\n'
-        'name = Archipelago Resources (validation)\n'
+        'name = Archipelago Resources\n'
         'path = "The Legend of Zelda: Breath of the Wild/Archipelago/Resources"\n'
-        'description = Experimental resource substitutions; requires matching client and seed.\n'
+        'description = Resource substitutions of an Archipelago seed; requires the matching client.\n'
         'version = 7\nfsPriority = 1000\n', encoding="utf-8")
     return target

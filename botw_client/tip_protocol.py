@@ -4,8 +4,8 @@ Pure data, imported by the native generator (tools/build_tip_channel.py) and
 the client adapter (botw_client/tip_channel.py), so both read one layout.
 
 The channel shows AP text in the game's own tip frame (top right,
-LayoutMsg/MessageTipsRunTime_00), measured in 10h (docs/reference/
-ap_messages.md). It borrows one of the game's 23 tips: the request goes
+LayoutMsg/MessageTipsRunTime_00; docs/reference/ap_messages.md). It borrows
+one of the game's 23 tips: the request goes
 through the game's public request 0x02fd4730, and our text replaces the
 tip's only for our request; the tip's "seen" flag is given back as it was.
 """

@@ -12,25 +12,23 @@ Entry NukiGameFinish, after the pull cutscene:
   Master Sword, Demo202_0/Demo605_0).
 Why: the pull cutscene itself puts the pedestal sword actor on Link (hand or
 back), outside the pouch; vanilla only registers it afterwards. Measured:
-* 9i (224721): with waits only, Link kept a usable, unregistered sword;
-* 9i (230213): GameROMPlayer Demo_UpdateEquip does not remove it;
-* 9j (20260919T155050, 155728), each action requested after the scene:
-  Demo_Unequip only sheathes it, Demo_SwitchPlayerEquipment (weapon) does
-  nothing, Demo_PlayerReleaseMasterSword detaches it: inert in the air, Link
-  can no longer draw it; the AP sword delivered next works normally.
-The released actor then hung inert in the air and Link kept an empty Master
-Sword scabbard until the next load (9k). 9n measured the removal instead of
-guessing it: EventSystemActor Demo_KillSelectActor aimed at the actor makes it
-disappear, adds nothing to the pouch and leaves the game stable. Three events
-are added after Event213 for that: APKillWait (30 frames, the scene's own
-Demo_SuccessGet is fire-and-forget), APKillSword and APKillSheath. The scabbard
-is its own actor, Weapon_Sheath_070, bound by the same pull demo.
-9n also refuted the sheath-flag hypothesis: bracketing the release with
-100enemy_Sheath_BindUpdateSkip, as both vanilla users do, changed nothing, so
-that framing is not kept.
+* with waits only, Link keeps a usable, unregistered sword;
+* GameROMPlayer Demo_UpdateEquip does not remove it;
+* each action requested after the scene: Demo_Unequip only sheathes it,
+  Demo_SwitchPlayerEquipment (weapon) does nothing,
+  Demo_PlayerReleaseMasterSword detaches it: inert in the air, Link can no
+  longer draw it; the AP sword delivered next works normally.
+The released actor then hangs inert in the air and Link keeps an empty Master
+Sword scabbard until the next load. EventSystemActor Demo_KillSelectActor aimed
+at the actor makes it disappear, adds nothing to the pouch and leaves the game
+stable (measured). Three events are added after Event213 for that: APKillWait
+(30 frames, the scene's own Demo_SuccessGet is fire-and-forget), APKillSword
+and APKillSheath. The scabbard is its own actor, Weapon_Sheath_070, bound by
+the same pull demo. Bracketing the release with 100enemy_Sheath_BindUpdateSkip,
+as both vanilla users do, changes nothing, so that framing is not kept.
 Event213 Demo_SuccessGet on the pedestal actor is kept, and still runs on the
 released actor: for a picked-up world actor it ends its presence in the world.
-9i measured that it adds nothing (no itemGet, IsGet_Weapon_Sword_070 still 0).
+It adds nothing (no itemGet, IsGet_Weapon_Sword_070 still 0).
 The check flag, the talk, the life reset and the autosave stay.
 
 The flow is embedded in two packs (Event/Get_MasterSword.sbeventpack and
@@ -67,7 +65,7 @@ EXPECTED_FLOW_SHA = "9301c1c52b8f0436e3576302a5675029d252ddd7da93a9f678ce671b4b5
 TABLE = "System/Resource/ResourceSizeTable.product.srsizetable"
 SWORD = "Weapon_Sword_070"
 REPLACED = {"Event181", "Event182"}
-# 9n: the released sword and the scabbard are two bound actors of the pull
+# The released sword and the scabbard are two bound actors of the pull
 # demo; Demo_KillSelectActor (vanilla parameter set of Demo605_0 Event135)
 # removes the sword, measured. The scabbard is Weapon_Sheath_070.
 SHEATH = "Weapon_Sheath_070"
@@ -99,7 +97,7 @@ def transform(raw: bytes) -> tuple[bytes, list[str]]:
     wait_instead(flow, events["Event181"], frames=5)
     action_instead(flow, events["Event182"], "GameROMPlayer",
                    "Demo_PlayerReleaseMasterSword", {"IsWaitFinish": True})
-    # 9n: remove the two actors the pull demo left bound to Link, after the
+    # Remove the two actors the pull demo left bound to Link, after the
     # kept Demo_SuccessGet has had time to run (it does not wait for itself).
     add_action_after(flow, "Event213", "APKillWait", "EventSystemActor",
                      "Demo_WaitFrame", {"Frame": KILL_DELAY, "IsWaitFinish": True})

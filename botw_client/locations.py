@@ -17,8 +17,8 @@ ROOT = Path(__file__).resolve().parent.parent
 MASTER_CSV = ROOT / "data" / "locations_master.csv"
 GAMEDATA_JSON = ROOT / "data" / "gamedata.json"
 # The CSV is append-only; a world schema knows its first N rows. 1: the seeds
-# generated before the Divine Beast heart containers (149 rows, lab seed
-# 20260916); 2: + "Vah X Heart Container" (153 rows); 3: + 32 Beedle shop
+# generated before the Divine Beast heart containers (149 rows); 2: + "Vah X
+# Heart Container" (153 rows); 3: + 32 Beedle shop
 # items (185 rows, botw_client/shop_catalog.py); 4: + 28 3D stall items (213
 # rows, botw_client/stall_catalog.py). botw_world declares its schema in
 # slot_data["world_schema"].
@@ -44,25 +44,25 @@ class LocationTarget:
 def load_targets(path: Path = MASTER_CSV,
                  world_schema: int = WORLD_SCHEMA) -> list[LocationTarget]:
     if world_schema not in SCHEMA_LOCATION_COUNTS:
-        raise ValueError(f"world_schema inconnu: {world_schema}")
+        raise ValueError(f"unknown world_schema: {world_schema}")
     with path.open(encoding="utf-8", newline="") as stream:
         rows = list(csv.DictReader(stream))
     if len(rows) != EXPECTED_LOCATION_COUNT:
         raise ValueError(
-            f"{EXPECTED_LOCATION_COUNT} locations attendues, {len(rows)} trouvees")
+            f"{EXPECTED_LOCATION_COUNT} locations expected, {len(rows)} found")
     rows = rows[:SCHEMA_LOCATION_COUNTS[world_schema]]
     targets = []
     for row in rows:
         if not row.get("gamedata_flag") or not row.get("flag_hash"):
-            raise ValueError(f"location sans GameData: {row.get('name')}")
+            raise ValueError(f"location without GameData: {row.get('name')}")
         shop = row["category"] in CUSTOM_CATEGORIES
         targets.append(LocationTarget(
             row["name"], row["gamedata_flag"], int(row["flag_hash"]) & 0xFFFFFFFF,
             SHOP_FLAG_KIND if shop else "bool", optional=shop))
     if len({target.name for target in targets}) != len(targets):
-        raise ValueError("noms de locations dupliques")
+        raise ValueError("duplicate location names")
     if len({target.hash_u32 for target in targets}) != len(targets):
-        raise ValueError("hash de locations dupliques")
+        raise ValueError("duplicate location hashes")
     gamedata = json.loads(GAMEDATA_JSON.read_text(encoding="utf-8"))
     hashes = {flag_name: int(hash_value) & 0xFFFFFFFF
               for hash_value, (_, flag_name) in gamedata.items()}
@@ -71,7 +71,7 @@ def load_targets(path: Path = MASTER_CSV,
            if (zlib.crc32(target.flag.encode()) if target.optional
                else hashes.get(target.flag)) != target.hash_u32]
     if bad:
-        raise ValueError("flags/hash GameData incoherents: " + ", ".join(bad[:6]))
+        raise ValueError("inconsistent GameData flags/hashes: " + ", ".join(bad[:6]))
     return targets
 
 
@@ -98,7 +98,7 @@ class LocationTracker:
         missing = [target.flag for target in self.targets if (
             (target.optional or target.hash_u32 not in index) and not in_live(target))]
         if missing:
-            raise RuntimeError(f"{len(missing)} flags AP absents de l'index: "
+            raise RuntimeError(f"{len(missing)} AP flags missing from the index: "
                                + ", ".join(missing[:6]))
         self.addresses = sorted(
             ((target.hash_u32, index[target.hash_u32]) for target in self.targets
@@ -116,7 +116,7 @@ class LocationTracker:
         self.high = self.addresses[-1][1] + 8 if self.addresses else 0
         self.span = self.high - self.low
         if self.span >= 64 << 20:
-            raise RuntimeError(f"plage AP non contigue ({self.span / 2**20:.1f} Mio)")
+            raise RuntimeError(f"AP range not contiguous ({self.span / 2**20:.1f} MiB)")
         self.previous: dict[int, int] | None = None
 
     def snapshot(self) -> dict[int, int]:
@@ -124,7 +124,7 @@ class LocationTracker:
         if self.addresses:
             raw = self.process.read(self.low, self.span)
             if not raw or len(raw) != self.span:
-                raise RuntimeError("lecture GameData AP incomplete")
+                raise RuntimeError("incomplete AP GameData read")
             values = {
                 hash_u32: int.from_bytes(
                     raw[address - self.low + 4:address - self.low + 8], "big")
@@ -135,7 +135,7 @@ class LocationTracker:
         for hash_u32, (address, kind) in self.live_addresses.items():
             raw = self.process.read(address, 4 if kind == "s32" else 1)
             if not raw:
-                raise RuntimeError("lecture GameData vivant AP incomplete")
+                raise RuntimeError("incomplete live AP GameData read")
             values[hash_u32] = (int(int.from_bytes(raw, "big") != 0) if kind == "s32"
                                 else raw[0] & 1)
         self.last_read_ms = (time.perf_counter() - started) * 1000

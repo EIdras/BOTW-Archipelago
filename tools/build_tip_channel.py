@@ -1,9 +1,9 @@
 """The AP tip channel: AP text in the game's tip frame (the AP journal).
 
-Part of every pack since 26/09 (validated in game on 25/09): the native build
-(tools/build_native_from_source.py) composes it into the injection source.
+Part of every pack: the native build (tools/build_native_from_source.py)
+composes it into the injection source.
 
-Measured in 10h (docs/reference/ap_messages.md): 0x02fd4848 alone only sets
+Measured (docs/reference/ap_messages.md): 0x02fd4848 alone only sets
 the text of a frame nobody opened; the game's public request 0x02fd4730
 (widget, index, force) queues a tip (refused if the index is queued or shown,
 or if the tip's GuideS_ flag is already true), and the per-frame update
@@ -42,11 +42,11 @@ MFCR_R12 = ".int 0x7d800026"
 MTCRF_R12 = ".int 0x7d8ff120"
 
 # The existing hooks, exactly as native/cemu/legacy/patch_apInject.asm has them.
-FRAME_HOOK = """apTipsProbe1:                    ; 0x02fd4a1c, mise a jour par image
-    stw   r0, 0x14(r1)          ; origine
+FRAME_HOOK = """apTipsProbe1:                    ; 0x02fd4a1c, per-frame update
+    stw   r0, 0x14(r1)          ; original
     lis   r11, apTick@ha
-    stw   r31, apTipsThis@l(r11)       ; champ dedie : c'est CE this qu'on
-                                       ; rejouera, celui de l'objet persistant
+    stw   r31, apTipsThis@l(r11)       ; a dedicated field: THIS is the `this`
+                                       ; replayed, the persistent object's
     lwz   r12, apTipsMask@l(r11)
     ori   r12, r12, 0x0002
     stw   r12, apTipsMask@l(r11)
@@ -55,7 +55,7 @@ FRAME_HOOK = """apTipsProbe1:                    ; 0x02fd4a1c, mise a jour par i
     stw   r12, apTips1@l(r11)
     blr
 """
-TEXT_HOOK = """    stw   r0, 0x8(r1)           ; origine
+TEXT_HOOK = """    stw   r0, 0x8(r1)           ; original
     lis   r11, apTick@ha
     lwz   r12, 0x0(r5)
     stw   r12, apTipsSpyPtr@l(r11)
@@ -176,14 +176,14 @@ def frame_observer() -> list[str]:
 def compose(native: str) -> str:
     """The channel over a generated injection source (LF line ends)."""
     if "apTipData:" in native:
-        raise ValueError("canal des conseils déjà composé")
+        raise ValueError("tip channel already composed")
     for hook in (FRAME_HOOK, TEXT_HOOK):
         if native.count(hook) != 1:
-            raise ValueError("hook existant des conseils introuvable ou ambigu")
+            raise ValueError("existing tip hook not found, or ambiguous")
     frame = FRAME_HOOK.replace("    blr\n", "\n".join(frame_observer()) + "\n    blr\n")
     text = TEXT_HOOK.replace("    blr\n", "\n".join(text_observer()) + "\n    blr\n")
     out = native.replace(FRAME_HOOK, frame).replace(TEXT_HOOK, text)
     for site, label in ((tp.FRAME_SITE, "apTipsProbe1"), (tp.TEXT_SITE, "apTipsSpy")):
         if out.count(f"{site:#010x} = bla {label}") != 1:
-            raise ValueError(f"hook {label} non posé à {site:#010x}")
+            raise ValueError(f"hook {label} not set at {site:#010x}")
     return out + "\n".join(data_source() + submit_source()) + "\n"

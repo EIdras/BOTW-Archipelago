@@ -58,7 +58,7 @@ selects it.
 ## Playing
 
 ```bat
-Jouer-Partie.cmd --seed <seed>
+Play.cmd --seed <seed>
 ```
 
 This starts the Archipelago server on `127.0.0.1:38281`, Cemu on its isolated profile with only the seed's pack, and
@@ -71,7 +71,7 @@ adds its own commands:
 | Command                | What it does                                                 |
 |------------------------|--------------------------------------------------------------|
 | `/ap-tip <text>`       | show a line in the in-game Archipelago journal (test)        |
-| `/ap-coupure [s]`      | simulate a server disconnection for `s` seconds              |
+| `/ap-disconnect [s]`   | simulate a server disconnection for `s` seconds              |
 | `/ap-evt [n\|reset]`    | list the game's last event requests (diagnostic)             |
 
 ## Troubleshooting

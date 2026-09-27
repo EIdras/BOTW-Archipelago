@@ -35,7 +35,7 @@ class PpcOwnerModel:
                 # Cemu refuses a label defined twice ("Label ... is already
                 # defined"); the model must too (the message pack hit it).
                 if line[:-1] in defined:
-                    raise ValueError(f"étiquette définie deux fois : {line[:-1]}")
+                    raise ValueError(f"label defined twice: {line[:-1]}")
                 defined.add(line[:-1])
                 self.labels[line[:-1]] = address
             else:

@@ -54,11 +54,11 @@ def generate(*, resource_gate=False, event_gate=False):
     current_owner = owner_source()
     if injection.count(current_owner) != 1:
         raise ValueError('owner source is not unique')
-    # Match the pack actually tested in game, not the separate 9c2 candidate.
+    # The owner of the played packs (retired guard, optional gates).
     injection = injection.replace(current_owner,
         owner_source(2, retired_guard=True, resource_gate=resource_gate, event_gate=event_gate))
     injection = restore(heart(rune(injection)))
-    # The AP journal in the game's tip frame (validated in game, 25/09).
+    # The AP journal in the game's tip frame.
     from tools.build_tip_channel import compose as tip_channel
     injection = tip_channel(injection)
     from tools.patch_lint import lint
@@ -77,7 +77,7 @@ def generate(*, resource_gate=False, event_gate=False):
 def build(rpx: Path, output: Path, *, resource_gate=False, event_gate=False) -> Path:
     raw = rpx.read_bytes()
     if digest(raw) != RPX_SHA256:
-        raise ValueError('RPX incompatible : fournir le dump Wii U EUR v208 vérifié')
+        raise ValueError('incompatible RPX: provide the verified Wii U EUR v208 dump')
     files = generate(resource_gate=resource_gate, event_gate=event_gate)
     source_hashes = {name: digest((ROOT / name).read_bytes()) for name in SOURCE_FILES}
     hashes = {name: digest(data) for name, data in sorted(files.items())}

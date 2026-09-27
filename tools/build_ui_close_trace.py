@@ -1,4 +1,4 @@
-"""Package the unchanged 6a resources plus one temporary close-call probe."""
+"""Package unchanged base resources plus one temporary close-call probe."""
 import hashlib
 import json
 import argparse

@@ -1,4 +1,4 @@
-"""What the in-game AP journal shows, and how it reads (Simon, 25/09).
+"""What the in-game AP journal shows, and how it reads.
 
 The journal shows the AP server's own messages (PrintJSON), as any AP client
 does, coloured in the tip frame's markup ({N}...{/}): players {2}, items {1}.

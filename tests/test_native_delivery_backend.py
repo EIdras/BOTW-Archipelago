@@ -116,7 +116,7 @@ class NativeDeliveryBackendTests(unittest.TestCase):
                          (DeliveryStatus.APPLIED, 8 << 8))
 
     def test_next_request_waits_for_the_committed_event_to_close(self):
-        # 25/09: #5/1 requested one frame after #5/0 committed was accepted
+        # A step requested one frame after the previous commit was accepted
         # and never ran. The next request waits SETTLE_FRAMES game frames.
         from botw_client.native_delivery import SETTLE_FRAMES
         frame = [1000]
@@ -136,7 +136,7 @@ class NativeDeliveryBackendTests(unittest.TestCase):
         frame[0] += SETTLE_FRAMES - 1
         result = backend.deliver(second)
         self.assertEqual(result.status, DeliveryStatus.DEFERRED)
-        self.assertIn("fermeture", result.detail)
+        self.assertIn("closing", result.detail)
         self.assertEqual(calls, ["APD_SET_00"])
         frame[0] += 1
         self.assertEqual(backend.deliver(second).status, DeliveryStatus.APPLIED)
@@ -169,7 +169,7 @@ class NativeDeliveryBackendTests(unittest.TestCase):
             capacity_actor=None, quiet_entry="APD_CORE_00Q", quiet_flow="OperationGuide",
             mutations=[{"kind": "rune_download"}, {"kind": "set_s32"}])
         self.path.write_text(json.dumps(data), encoding="utf-8")
-        calls, ready = [], [(False, "carte pas encore chargée")]
+        calls, ready = [], [(False, "map not loaded yet")]
         self.game.pause_menu_ready = lambda: ready[0]
 
         def request(_process, _cave, _number, checkpoint, **kwargs):
@@ -181,7 +181,7 @@ class NativeDeliveryBackendTests(unittest.TestCase):
         backend = self.backend(request)
         result = backend.deliver(DeliveryCommand("seed", 2, 7, "Core"))
         self.assertEqual(result.status, DeliveryStatus.DEFERRED)
-        self.assertIn("carte pas encore chargée", result.detail)
+        self.assertIn("map not loaded yet", result.detail)
         self.assertEqual(calls, [])
         # Given back after a reload: no download screen, no wait.
         self.assertEqual(backend.deliver(DeliveryCommand("seed", 2, 7, "Core", quiet=True)).status,
@@ -422,7 +422,7 @@ class NativeDeliveryRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.runtime.state["steps"], {})
 
     async def test_a_state_from_before_tracking_still_gives_back_silently(self):
-        # 25/09: a state saved before delivered_high existed, then the oldest
+        # A state saved before delivered_high existed, then the oldest
         # save loaded: its applied list is the last cursor it saw.
         self.runtime.state["applied"] = [0, 1]
         self.runtime.state.pop("delivered_high", None)
@@ -514,7 +514,7 @@ class NativeDeliveryRuntimeTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_foreign_checkpoint_stops_before_queue_or_delivery(self):
         self.backend.current = DeliveryCheckpoint("other", 1, 0)
-        with self.assertRaisesRegex(FatalClientError, "non liée"):
+        with self.assertRaisesRegex(FatalClientError, "not bound"):
             self.runtime._discover_received()
         self.assertFalse(self.backend.commands)
 
@@ -523,7 +523,7 @@ class NativeDeliveryRuntimeTests(unittest.IsolatedAsyncioTestCase):
             DeliveryResult(DeliveryStatus.APPLIED, 0))
         self.runtime.deliveries = DeliveryCoordinator(backend)
         self.runtime._native_session_bound = False
-        self.runtime.game.delivery_block_reason = 'liaison native refusee explicitement'
+        self.runtime.game.delivery_block_reason = 'native binding explicitly refused'
         self.assertTrue(await self.runtime._ensure_native_session())
         self.assertNotIn('refusee', self.runtime.game.delivery_block_reason)
         self.assertTrue(self.runtime._native_session_bound)
@@ -536,7 +536,7 @@ class NativeDeliveryRuntimeTests(unittest.IsolatedAsyncioTestCase):
             DeliveryStatus.SESSION_MISMATCH, 0, "foreign"))
         self.runtime.deliveries = DeliveryCoordinator(backend)
         self.runtime._native_session_bound = False
-        with self.assertRaisesRegex(FatalClientError, "liaison native refusée"):
+        with self.assertRaisesRegex(FatalClientError, "native binding refused"):
             await self.runtime._ensure_native_session()
 
 

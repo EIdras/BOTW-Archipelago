@@ -1206,7 +1206,7 @@
     "requires": "",
     "gamedata_flag": "MapTower_01",
     "flag_hash": "2079619768",
-    "notes": "activation bool verified against current save",
+    "notes": "tower activation flag",
     "id": 121
   },
   {
@@ -1216,7 +1216,7 @@
     "requires": "",
     "gamedata_flag": "MapTower_02",
     "flag_hash": "-486724862",
-    "notes": "activation bool verified against current save",
+    "notes": "tower activation flag",
     "id": 122
   },
   {
@@ -1226,7 +1226,7 @@
     "requires": "",
     "gamedata_flag": "MapTower_03",
     "flag_hash": "-1778771052",
-    "notes": "activation bool verified against current save",
+    "notes": "tower activation flag",
     "id": 123
   },
   {
@@ -1236,7 +1236,7 @@
     "requires": "",
     "gamedata_flag": "MapTower_04",
     "flag_hash": "194940471",
-    "notes": "activation bool verified against current save",
+    "notes": "tower activation flag",
     "id": 124
   },
   {
@@ -1246,7 +1246,7 @@
     "requires": "",
     "gamedata_flag": "MapTower_05",
     "flag_hash": "2090450593",
-    "notes": "activation bool verified against current save",
+    "notes": "tower activation flag",
     "id": 125
   },
   {
@@ -1256,7 +1256,7 @@
     "requires": "",
     "gamedata_flag": "MapTower_06",
     "flag_hash": "-443486437",
-    "notes": "activation bool verified against current save",
+    "notes": "tower activation flag",
     "id": 126
   },
   {
@@ -1266,7 +1266,7 @@
     "requires": "",
     "gamedata_flag": "MapTower_07",
     "flag_hash": "-1835540595",
-    "notes": "activation bool verified against current save",
+    "notes": "tower activation flag",
     "id": 127
   },
   {
@@ -1276,7 +1276,7 @@
     "requires": "",
     "gamedata_flag": "MapTower_08",
     "flag_hash": "36225564",
-    "notes": "static G-6 LinkTagAnd SaveFlag and Demo004_0_08 verified; IsSave one-trigger; source tracker save reload passed8n; local AP check delivery reload passed8o",
+    "notes": "G-6 LinkTagAnd SaveFlag, set by Demo004_0_08; saved, set once",
     "id": 128
   },
   {
@@ -1286,7 +1286,7 @@
     "requires": "",
     "gamedata_flag": "MapTower_09",
     "flag_hash": "1966076554",
-    "notes": "activation bool verified against current save",
+    "notes": "tower activation flag",
     "id": 129
   },
   {
@@ -1296,7 +1296,7 @@
     "requires": "",
     "gamedata_flag": "MapTower_10",
     "flag_hash": "367557487",
-    "notes": "activation bool verified against current save",
+    "notes": "tower activation flag",
     "id": 130
   },
   {
@@ -1306,7 +1306,7 @@
     "requires": "",
     "gamedata_flag": "MapTower_11",
     "flag_hash": "1659849721",
-    "notes": "activation bool verified against current save",
+    "notes": "tower activation flag",
     "id": 131
   },
   {
@@ -1316,7 +1316,7 @@
     "requires": "",
     "gamedata_flag": "MapTower_12",
     "flag_hash": "-68806077",
-    "notes": "activation bool verified against current save",
+    "notes": "tower activation flag",
     "id": 132
   },
   {
@@ -1326,7 +1326,7 @@
     "requires": "",
     "gamedata_flag": "MapTower_13",
     "flag_hash": "-1931400491",
-    "notes": "activation bool verified against current save",
+    "notes": "tower activation flag",
     "id": 133
   },
   {
@@ -1336,7 +1336,7 @@
     "requires": "",
     "gamedata_flag": "MapTower_14",
     "flag_hash": "310755190",
-    "notes": "activation bool verified against current save",
+    "notes": "tower activation flag",
     "id": 134
   },
   {
@@ -1346,7 +1346,7 @@
     "requires": "",
     "gamedata_flag": "MapTower_15",
     "flag_hash": "1703055328",
-    "notes": "activation bool verified against current save",
+    "notes": "tower activation flag",
     "id": 135
   },
   {
@@ -1356,7 +1356,7 @@
     "requires": "",
     "gamedata_flag": "RevivalGreatFairy1",
     "flag_hash": "-101197467",
-    "notes": "Demo028_0 FailyReactive; NPC00 Cotera; saved one-trigger reset0; source/save/reload verified8l005241+8l2_011922; local AP check/delivery/reload verified8m100136",
+    "notes": "Demo028_0 FailyReactive; NPC00 Cotera; saved, set once",
     "id": 136
   },
   {
@@ -1366,7 +1366,7 @@
     "requires": "",
     "gamedata_flag": "RevivalGreatFairy3",
     "flag_hash": "402241609",
-    "notes": "Demo028_0 FailyReactive; NPC02 Kaysa; saved one-trigger reset0; gameplay pending",
+    "notes": "Demo028_0 FailyReactive; NPC02 Kaysa; saved, set once",
     "id": 137
   },
   {
@@ -1376,7 +1376,7 @@
     "requires": "",
     "gamedata_flag": "RevivalGreatFairy2",
     "flag_hash": "1627293919",
-    "notes": "Demo028_0 FailyReactive; NPC01 Mija; saved one-trigger reset0; gameplay pending",
+    "notes": "Demo028_0 FailyReactive; NPC01 Mija; saved, set once",
     "id": 138
   },
   {
@@ -1386,7 +1386,7 @@
     "requires": "",
     "gamedata_flag": "RevivalGreatFairy4",
     "flag_hash": "-1986187798",
-    "notes": "Demo028_0 FailyReactive; NPC03 Tera; saved one-trigger reset0; gameplay pending",
+    "notes": "Demo028_0 FailyReactive; NPC03 Tera; saved, set once",
     "id": 139
   },
   {
@@ -1496,7 +1496,7 @@
     "requires": "",
     "gamedata_flag": "Get_HeartUtuwa_Water",
     "flag_hash": "-956566915",
-    "notes": "Obj_HeartUtuwa_A_01 DeadUp flag; RemainsWater actors 3046120871/4017597731; vanilla heart withheld by chain stage (9g/9h)",
+    "notes": "Obj_HeartUtuwa_A_01 DeadUp flag; RemainsWater actors 3046120871/4017597731; the vanilla heart is withheld by the pack",
     "id": 150
   },
   {
@@ -1506,7 +1506,7 @@
     "requires": "",
     "gamedata_flag": "Get_HeartUtuwa_Fire",
     "flag_hash": "1219328426",
-    "notes": "Obj_HeartUtuwa_A_01 DeadUp flag; RemainsFire actor 2224435968; vanilla heart withheld by chain stage (9g/9h)",
+    "notes": "Obj_HeartUtuwa_A_01 DeadUp flag; RemainsFire actor 2224435968; the vanilla heart is withheld by the pack",
     "id": 151
   },
   {
@@ -1516,7 +1516,7 @@
     "requires": "",
     "gamedata_flag": "Get_HeartUtuwa_Wind",
     "flag_hash": "829957275",
-    "notes": "Obj_HeartUtuwa_A_01 DeadUp flag; RemainsWind actor 2805247992; vanilla heart withheld by chain stage (9g/9h)",
+    "notes": "Obj_HeartUtuwa_A_01 DeadUp flag; RemainsWind actor 2805247992; the vanilla heart is withheld by the pack",
     "id": 152
   },
   {
@@ -1526,7 +1526,7 @@
     "requires": "",
     "gamedata_flag": "Get_HeartUtuwa_Electric",
     "flag_hash": "-1516963174",
-    "notes": "Obj_HeartUtuwa_A_01 DeadUp flag; RemainsElectric actor 3159171529; vanilla heart withheld by chain stage (9g/9h)",
+    "notes": "Obj_HeartUtuwa_A_01 DeadUp flag; RemainsElectric actor 3159171529; the vanilla heart is withheld by the pack",
     "id": 153
   },
   {

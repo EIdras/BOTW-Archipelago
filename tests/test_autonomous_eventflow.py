@@ -46,7 +46,7 @@ class AutonomousTests(unittest.TestCase):
     def test_text_is_armed_before_launch_and_disarmed_on_refusal(self, *_):
         process, cave = self.setup_request()
         def reject(*args):
-            cave.show_item_text.assert_called_once_with("Test Archipelago 2", "Message numero 2.\nAffichage par EventFlow.")
+            cave.show_item_text.assert_called_once_with("Test Archipelago 2", "Message number 2.\nShown by EventFlow.")
             process.read.side_effect = lambda address, size: ({1: 0, 2: 0, 3: 13, 4: 0}[address]).to_bytes(size, "big")
         cave.call_pf.side_effect = reject
         result = event.request(process, cave, 2, Mock(), custom_text=True)

@@ -28,12 +28,12 @@ from .resources import unpack
 FLOW_NAME = "Demo007_1"
 # The silent twins (items given back after a reload, without the game's
 # window) have their own host and EventInfo, so that giving back does not
-# pause the game nor hide the HUD (Simon, 25-26/09):
+# pause the game nor hide the HUD:
 #   * what paused the game and blinked the HUD was the EventInfo key
 #     is_pause_non_demo_member: absent, an event pauses whatever does not take
 #     part in it. The game's own background events set it to False (e.g.
 #     Npc_King_Vagrant001<Near>); so do ours (QUIET_EVENT_INFO). Measured with
-#     no-op probes and the request trace (console /ap-evt): with the key, no
+#     empty entries and the request trace (console /ap-evt): with the key, no
 #     blink; without it, a blink whatever the request's flags (0xf demo,
 #     0x64 default, 0x19a Near, 0x1fe Background);
 #   * their host is the resident OperationGuide, appended to as Demo007_1 is
@@ -50,20 +50,19 @@ CURSOR_FLAG = "APReceivedCursor"
 REJECT_COUNTER = "APDeliveryRejectCounter"
 # The rune terminal's presentation, as Demo003_0 plays it (Item01..04), one
 # after the other: IsDownloadDemo on, the download screen, 70 frames on a
-# second system actor, the Slate's "Le module est activé.", the menu closed,
+# second system actor, the Slate's voice line (SLATE_MESSAGE), the menu closed,
 # the rune's flag, then Link puts the Slate away (Demo041_0<SheikPadSetOff>,
 # its player part: SheikPadSetOff then DemoWait) and 20 frames. Measured on
-# the vanilla terminal (11a, 20260926T184407.328329Z): the menu consumes
-# IsDownloadDemo as it opens, runs its download states and hands back the
-# screen action on its own. Without SheikPadSetOff, Link stays in the pose
-# the menu left him in, without control (26/09).
+# the vanilla terminal: the menu consumes IsDownloadDemo as it opens, runs its
+# download states and hands back the screen action on its own. Without
+# SheikPadSetOff, Link stays in the pose the menu left him in, without control.
 #
 # The download screen needs the pause menu built at once, which the game does
 # only with the map at rest (botw_client/pause_menu.py). The map rests while
 # the HUD is hidden, some frames into an event; the terminal opens the screen
-# after 20 s of cinematic, ours waits DOWNLOAD_SETTLE frames (measured
-# 26/09: the map rests about 0.1 s after the HUD hides, 60 ms in the
-# validated run; 30 frames worked but showed as a pause, Simon).
+# after 20 s of cinematic, ours waits DOWNLOAD_SETTLE frames (measured: the
+# map rests about 0.1 s after the HUD hides; 30 frames worked but showed as
+# a pause).
 DOWNLOAD_FLAG = "IsDownloadDemo"
 DOWNLOAD_SETTLE = 10
 DOWNLOAD_WAIT = 70
@@ -104,7 +103,7 @@ class NativeDeliveryEntry:
     progressive_tier: int | None = None
     # The silent twin of a step that shows the game's get window: used to
     # give back items a reloaded save lost, under one AP summary instead of
-    # one window per item (Simon, 25/09).
+    # one window per item.
     quiet: bool = False
 
 
@@ -115,9 +114,9 @@ RUPEE_VALUES = {"PutRupee": 1, "PutRupee_Blue": 5, "PutRupee_Red": 20,
 
 def quiet_step(plan: DeliveryStep) -> DeliveryStep | None:
     """The same step without the game's get window, when there is one: pouch
-    items granted directly, champion powers without their window (the 9w
-    chain), rupees by the game's own Demo_IncreaseRupee (a bare GameData
-    counter write failed in 7h; this is the action quests use). Hearts and
+    items granted directly, champion powers without their window (pouch,
+    equipment, flag), rupees by the game's own Demo_IncreaseRupee (a bare
+    GameData counter write does not give them; quests use this action). Hearts and
     stamina have no silent delivery. A rune's twin sets its flag only."""
     if any(m.kind is MutationKind.RUNE_DOWNLOAD for m in plan.mutations):
         return replace(plan, mutations=tuple(
@@ -152,7 +151,7 @@ def host_of(entry: NativeDeliveryEntry) -> str:
     """Demo007_1 for a step that opens the game's window, QUIET_FLOW for all
     others: the silent twins, and the steps with no window of their own
     (Sheikah Sensor, horse gear), which would pause the game and blink the
-    HUD in Demo007_1 for nothing to show (seen with runes, Simon, 26/09)."""
+    HUD in Demo007_1 for nothing to show (seen with runes)."""
     return QUIET_FLOW if entry.quiet or not shows_window(entry.plan) else FLOW_NAME
 
 
@@ -172,8 +171,8 @@ def compile_native_entries(mapping=None) -> tuple[list[NativeDeliveryEntry], dic
     """Compile the action families supported by verified vanilla commands.
 
     Pouch actors, boolean flags and the vanilla GetDemo specialized path are
-    supported. Bare counters remain rejected: test 7h proved that changing a
-    related GameData value can commit without delivering the gameplay item.
+    supported. Bare counters remain rejected: changing a related GameData value
+    can commit without delivering the gameplay item (measured).
     """
     mapping = load_item_map() if mapping is None else mapping
     entries: list[NativeDeliveryEntry] = []
@@ -409,7 +408,7 @@ def _require_donors(guard_raw: bytes, capacity_raw: bytes,
 
 
 def require_champion_grant_donor(raw: bytes) -> None:
-    """Require the vanilla GetItemByName grant chain validated by 8g.
+    """Require the vanilla GetItemByName grant chain.
 
     Our champion entries replay it: pouch, equipment, the get window
     (ShowGetDemoDialogByName), then the get flag.
@@ -571,7 +570,7 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
         nxt = commit
         for index, mutation in reversed(list(enumerate(spec.plan.mutations))):
             if mutation.kind is MutationKind.CHAMPION_ACTOR and spec.quiet:
-                # The 9w chain: pouch, equipment, flag, without the window.
+                # Pouch, equipment, flag, without the window.
                 get_flag = action(stem + f"_Mut{index}_GetFlag", 'Demo_SetGetFlagByActorName', {
                     'ActorName':mutation.target, 'IsWaitFinish':True}, nxt)
                 equip = action(stem + f"_Mut{index}_Equip", 'Demo_CheckAndCreateEquip', {
@@ -583,7 +582,7 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
                     'ActorName':mutation.target, 'IsWaitFinish':True}, nxt)
                 # The game's own get window, where vanilla GetItemByName shows
                 # it (Event197): kept since the AP journal names the sender
-                # instead of an AP window (25/09).
+                # instead of an AP window.
                 show = subflow(stem + f"_Mut{index}_Show", "GetDemo",
                                "ShowGetDemoDialogByName", {
                     "CheckTargetActorName": mutation.target,
@@ -617,7 +616,7 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
                     "FlagName": DOWNLOAD_FLAG, "IsWaitFinish": True}, settle)
             elif mutation.kind is MutationKind.INCREASE_RUPEE:
                 # Not waited for: the counter's animation then runs after the
-                # event instead of freezing the player (Simon, 25/09).
+                # event instead of freezing the player.
                 nxt = action(stem + f"_Mut{index}", "Demo_IncreaseRupee", {
                     "Value": int(mutation.value), "IsWaitFinish": False}, nxt)
             elif mutation.kind is MutationKind.GRANT_ACTOR:

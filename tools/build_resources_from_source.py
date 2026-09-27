@@ -70,7 +70,7 @@ SOURCE_FILES = (
 
 def pack_path(name: str) -> str:
     """Where a built resource goes in a pack: DLC files (aoc/0010/...) at the
-    root, as Cemu reads a graphic pack's aoc folder (10g); the rest in content/."""
+    root, as Cemu reads a graphic pack's aoc folder; the rest in content/."""
     return name if name.startswith("aoc/") else "content/" + name
 
 

@@ -16,7 +16,7 @@ def descriptor(flow, entry, kind, flags):
 
 class TraceFieldTests(unittest.TestCase):
     def test_request_fields_at_the_wii_u_metadata_offsets(self):
-        # 26/09: these offsets read the game's own Npc_King_Vagrant001<Near>
+        # These offsets read the game's own Npc_King_Vagrant001<Near>
         # as type Near, flags 0x19a, as zeldaret/botw initFlags_ computes.
         self.assertEqual(descriptor_fields(descriptor("Npc_King_Vagrant001", "Near", "Near", 0x19a)),
                          {"flow": "Npc_King_Vagrant001", "entry": "Near", "type": "Near",

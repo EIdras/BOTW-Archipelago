@@ -2,9 +2,8 @@
 
     python tools/play_session.py [--seed <seed folder name>] [--speed <x>]
 
-  * the pack bound to a solo play seed (tools/play_seed.py), alone in the
-    isolated Cemu profile (tools/cemu_profile.py): no gameplay aid; the
-    diagnostic traces remain;
+  * the pack bound to a solo play seed (tools/play_seed.py), the only graphic
+    pack enabled in the isolated Cemu profile (tools/cemu_profile.py);
   * a Cemu account of its own, so that a new game never overwrites the saves
     copied from the Cemu installation, which are checked unchanged at the end;
   * the official AP server, in process, on 127.0.0.1:38281, saving its state
@@ -16,7 +15,7 @@ Lines typed in the console go to the AP server as chat or commands (/hint,
 
 Each launch writes .build/play-seeds/<seed>/sessions/<stamp>/ : the client
 log, Cemu's log, and session.json (checks sent, items received, cursor, save
-hashes). These are raw reports; analyses go in a separate analysis.json.
+hashes).
 """
 from __future__ import annotations
 
@@ -28,7 +27,6 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import shutil
 import subprocess
 import sys
 import threading
@@ -64,13 +62,13 @@ def find_seed(name: str | None, pack_path: Path | None = None) -> tuple[Path, di
     if name:
         seeds = [path for path in seeds if path.name == name]
     if len(seeds) != 1:
-        raise RuntimeError("préciser la seed de partie (--seed) : "
-                           + ", ".join(path.name for path in seeds) or "aucune")
+        raise RuntimeError("name the play seed (--seed): "
+                           + ", ".join(path.name for path in seeds) or "none")
     folder = seeds[0]
     report = json.loads((folder / "analysis.json").read_text(encoding="utf-8"))
     archive = Path(report["archive"])
     if sha(archive) != report["archive_sha256"]:
-        raise RuntimeError("archive de la seed modifiée")
+        raise RuntimeError("the seed archive changed")
     if pack_path is not None:
         from tools.build_pack_from_source import load_seed, verify_pack
         binding = load_seed(folder / "analysis.json", 1)
@@ -79,26 +77,6 @@ def find_seed(name: str | None, pack_path: Path | None = None) -> tuple[Path, di
         return folder, report, pack_path
     from tools.play_pack import selected_pack
     return folder, report, selected_pack(folder)
-
-
-AID_PREFIXES = ("AP_Test8d_", "AP_Test9w_")
-
-
-def remove_aids(portable: Path) -> list[str]:
-    """No laboratory aid can reach a play session: the folders are deleted.
-
-    The profile only lists the seed pack, but a deleted folder cannot be
-    enabled by accident either. Laboratory modes recreate their aids.
-    """
-    removed = []
-    packs = portable / "graphicPacks"
-    for folder in sorted(packs.iterdir()) if packs.is_dir() else []:
-        if folder.is_dir() and folder.name.startswith(AID_PREFIXES):
-            if not folder.resolve().is_relative_to(packs.resolve()):
-                raise RuntimeError(f"aide hors du profil : {folder}")
-            shutil.rmtree(folder)
-            removed.append(folder.name)
-    return removed
 
 
 def enabled_packs(portable: Path) -> list[str]:
@@ -164,10 +142,10 @@ async def console(runtime, context, log, slot_name: str) -> None:
                 raise
 
     threading.Thread(target=reader, name="console", daemon=True).start()
-    log(f"Console : /send {slot_name} <objet>, /hint {slot_name} <objet>, /players, /status ; "
-        "/ap-tip <texte> (journal en jeu) ; /ap-coupure [s] (test de coupure AP) ; "
-        "/ap-evt [n|reset] (requêtes d'événement vues par le jeu) ; "
-        "tout autre texte part dans le chat AP.")
+    log(f"Console: /send {slot_name} <item>, /hint {slot_name} <item>, /players, /status; "
+        "/ap-tip <text> (in-game journal); /ap-disconnect [s] (simulated AP outage); "
+        "/ap-evt [n|reset] (event requests seen by the game); "
+        "any other text goes to the AP chat.")
     try:
         while not runtime.stop_event.is_set():
             line = (await lines.get()).strip()
@@ -181,9 +159,9 @@ async def console(runtime, context, log, slot_name: str) -> None:
                 elif runtime.ap.connected:
                     await runtime.ap.say(line)
                 else:
-                    log("message non envoyé : Archipelago est hors ligne")
+                    log("message not sent: Archipelago is offline")
             except Exception as exc:  # noqa: BLE001 - a typo must not stop the session
-                log(f"commande refusée : {exc!r}")
+                log(f"command refused: {exc!r}")
     finally:
         reader_stopped.set()
 
@@ -205,10 +183,10 @@ async def play(folder: Path, report: dict, pack: Path, session: Path,
     try:
         async with websockets.serve(functools.partial(server, ctx=context),
                                     "127.0.0.1", PORT):
-            log(f"serveur AP local prêt sur 127.0.0.1:{PORT}")
+            log(f"local AP server ready on 127.0.0.1:{PORT}")
 
             def on_loop_error(_loop, context_data):
-                log("erreur asyncio : " + context_data.get("message", ""))
+                log("asyncio error: " + context_data.get("message", ""))
                 error = context_data.get("exception")
                 if error is not None:
                     traceback.print_exception(type(error), error, error.__traceback__)
@@ -226,7 +204,7 @@ async def play(folder: Path, report: dict, pack: Path, session: Path,
             async def watch_cemu():
                 while process.poll() is None:
                     await asyncio.sleep(1.0)
-                log("Cemu fermé : arrêt du client.")
+                log("Cemu closed: client stopping.")
                 runtime.stop()
 
             watcher = asyncio.create_task(watch_cemu())
@@ -250,19 +228,19 @@ async def play(folder: Path, report: dict, pack: Path, session: Path,
         # Reporting and server shutdown must never prevent the final AP save.
         # MultiServer catches write errors internally and returns False.
         if not context._save():
-            raise OSError("échec de la sauvegarde finale du serveur Archipelago")
+            raise OSError("the Archipelago server's final save failed")
     return summary
 
 
 def main() -> None:
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--seed", help="dossier de .build/play-seeds")
-    parser.add_argument("--pack", type=Path, help="pack reconstruit depuis les sources à tester explicitement")
+    parser.add_argument("--seed", help="folder of .build/play-seeds")
+    parser.add_argument("--pack", type=Path, help="a pack built from the sources, to use explicitly")
     parser.add_argument("--prepare-only", action="store_true")
     from tools.play_speed import speed_argument, variant
     parser.add_argument("--speed", type=speed_argument, default=1.0,
-                        help="multiplicateur course/sprint/escalade (0.1 à 10, défaut 1)")
+                        help="run/sprint/climb speed multiplier (0.1 to 10, default 1)")
     arguments = parser.parse_args()
 
     folder, report, pack = find_seed(arguments.seed, arguments.pack)
@@ -274,17 +252,16 @@ def main() -> None:
     source_saves_before = tree_hashes(source_saves)
     account = profile.ensure_play_account()
     portable = profile.prepare_play(pack)
-    removed = remove_aids(portable)
     packs = enabled_packs(portable)
     if packs != [f"graphicPacks/{profile.PACK_PREFIX}{pack.name}/rules.txt"]:
-        raise RuntimeError(f"le profil de partie charge autre chose : {packs}")
-    print(f"Profil de partie prêt : seed {folder.name}, pack {pack.name}, compte "
-          f"{account['account']}. Vitesse Link : x{arguments.speed:g} ; {len(removed)} aide(s) de labo retirée(s), "
-          f"un seul pack actif.", flush=True)
+        raise RuntimeError(f"the play profile loads something else: {packs}")
+    print(f"Play profile ready: seed {folder.name}, pack {pack.name}, account "
+          f"{account['account']}. Link's speed: x{arguments.speed:g}; one graphic pack enabled.",
+          flush=True)
     if journal:
-        print("Journal AP dans le cadre des conseils ; test : /ap-tip <texte>.", flush=True)
+        print("AP journal in the tip frame; try it: /ap-tip <text>.", flush=True)
     else:
-        print("Pas de journal AP dans le cadre des conseils avec ce pack.", flush=True)
+        print("No AP journal in the tip frame with this pack.", flush=True)
     if arguments.prepare_only:
         return
 
@@ -295,11 +272,11 @@ def main() -> None:
     result = {"schema": 1, "started_utc": stamp, "seed": folder.name, "pack": pack.name,
               "locomotion_speed_multiplier": arguments.speed,
               "native_tip_channel": journal,
-              "account": account, "graphic_packs": packs, "aids_removed": removed,
+              "account": account, "graphic_packs": packs,
               "play_saves_before": tree_hashes(play_saves), "status": "running"}
-    # A hard crash of this console (the first session ended with one and left no
-    # trace) must land in the report: faulthandler catches native faults, the
-    # hooks catch Python errors, and stderr is copied into the session folder.
+    # A hard crash of this console must land in the report: faulthandler
+    # catches native faults, the hooks catch Python errors, and stderr is
+    # copied into the session folder.
     sys.stderr = Stream(sys.stderr, session / "stderr.log")
     faulthandler.enable(sys.stderr)
     threading.excepthook = lambda args: traceback.print_exception(
@@ -309,9 +286,9 @@ def main() -> None:
                                           encoding="utf-8")
     game = Path(json.loads((ROOT / "botw_client.json").read_text(encoding="utf-8"))["game"])
     log = Tee(session / "client.log")
-    print("Partie AP : Cemu démarre sur le compte de partie. Joue normalement, "
-          "sauvegarde quand tu veux ; ferme Cemu pour terminer la session. "
-          "Ne ferme pas cette fenêtre avant Cemu.", flush=True)
+    print("Archipelago session: Cemu starts on the play account. Play normally and "
+          "save whenever you like; close Cemu to end the session. "
+          "Do not close this window before Cemu.", flush=True)
     process = subprocess.Popen([str(profile.PROFILE / "Cemu.exe"), "-m", str(portable / "mlc01"),
                                 "-g", str(game)], cwd=profile.PROFILE)
     os.environ["BOTW_CEMU_PID"] = str(process.pid)
@@ -327,12 +304,12 @@ def main() -> None:
     except Exception as exc:  # noqa: BLE001 - reported, then re-raised
         result["status"] = "failed"
         result["error"] = f"{type(exc).__name__}: {exc}"
-        log(f"Client arrete sur erreur : {result['error']}. Les commandes ne sont plus actives.")
+        log(f"Client stopped on an error: {result['error']}. Commands are no longer active.")
         traceback.print_exc()
         raise
     finally:
         if process.poll() is None:
-            print("Ferme Cemu pour terminer la session.", flush=True)
+            print("Close Cemu to end the session.", flush=True)
             process.wait()
         result["play_saves_after"] = tree_hashes(play_saves)
         result["source_saves_unchanged"] = tree_hashes(source_saves) == source_saves_before
@@ -342,9 +319,9 @@ def main() -> None:
         result["finished_utc"] = datetime.now(timezone.utc).isoformat()
         (session / "session.json").write_text(
             json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        print(f"Session enregistrée : {session}", flush=True)
+        print(f"Session saved: {session}", flush=True)
         if not result["source_saves_unchanged"]:
-            print("ATTENTION : les sauvegardes copiées de l'installation Cemu ont changé.", flush=True)
+            print("WARNING: the saves copied from the Cemu installation have changed.", flush=True)
 
 
 if __name__ == "__main__":

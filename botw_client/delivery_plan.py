@@ -48,9 +48,9 @@ class ItemDeliveryPlan:
 
 
 # Pouch items are delivered as the game hands them over: its own get window
-# (GetDemo<GetItemByName>, the chain 8g validated for hearts), one per piece;
-# the AP journal names the sender just before (Simon, 25/09). Horse tack is
-# not a pouch item: granted silently, its AP window stays.
+# (GetDemo<GetItemByName>), one per piece; the AP journal names the sender
+# just before. Horse tack is not a pouch item: granted silently, its AP
+# window stays.
 SILENT_ACTOR_PREFIXES = ("GameRomHorse",)
 
 
@@ -64,7 +64,7 @@ def compile_delivery_plan(item_name: str, received_before: int = 0,
     mapping = load_item_map() if mapping is None else mapping
     entry = mapping.get(item_name)
     if entry is None:
-        raise KeyError(f"item AP sans carte: {item_name}")
+        raise KeyError(f"AP item missing from the item map: {item_name}")
     delivery = entry["delivery"]
     kind = delivery["kind"]
 
@@ -125,7 +125,7 @@ def compile_delivery_plan(item_name: str, received_before: int = 0,
             MutationKind.MANUAL, item_name, delivery["text"])
         return ItemDeliveryPlan(
             item_name, (DeliveryStep((mutation,)),), automatic=False)
-    raise ValueError(f"action de livraison inconnue: {item_name}/{kind}")
+    raise ValueError(f"unknown delivery kind: {item_name}/{kind}")
 
 
 def compile_all_delivery_plans(mapping=None) -> dict[str, ItemDeliveryPlan]:

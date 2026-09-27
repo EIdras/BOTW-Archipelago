@@ -13,13 +13,13 @@ class LayoutTests(unittest.TestCase):
     def test_counts_order_and_overflow(self):
         self.assertEqual(replay_summary_lines(["Zora Set", "Korok Seed", "Korok Seed"]),
                          ["Zora Set, Korok Seed x2"])
-        many = [f"Objet numero {n}" for n in range(20)]
+        many = [f"Item number {n}" for n in range(20)]
         lines = replay_summary_lines(many)
         self.assertEqual(len(lines), 4)
         self.assertTrue(all(len(line) <= 40 for line in lines))
-        self.assertRegex(lines[-1], r"et \d+ autres$")
-        shown = sum(line.count("Objet") for line in lines)
-        self.assertEqual(int(lines[-1].rsplit("et ", 1)[1].split()[0]), 20 - shown)
+        self.assertRegex(lines[-1], r"and \d+ more$")
+        shown = sum(line.count("Item") for line in lines)
+        self.assertEqual(int(lines[-1].rsplit("and ", 1)[1].split()[0]), 20 - shown)
 
 
 class Backend:
@@ -89,7 +89,7 @@ class ReplayTests(unittest.TestCase):
         self.assertEqual([c.quiet for c in backend.commands], [True, True])
         # Hearts have no silent delivery: their own window, not in the summary.
         self.assertEqual(r.state["summary_queue"], [{
-            "key": "summary/1", "title": "Objets rendus", "lines": ["Zora Set"]}])
+            "key": "summary/1", "title": "Items restored", "lines": ["Zora Set"]}])
         asyncio.run(r._apply_one_received_native())      # index 2: new, not given back
         self.assertFalse(backend.commands[-1].quiet)
 
@@ -112,7 +112,7 @@ class ReplayTests(unittest.TestCase):
         s = NativePresentationSession.__new__(NativePresentationSession)
         s.store = type("S", (), {"queue": Queue()})()
         s.blocked_head, s.backend = (lambda: None), None
-        state = {"summary_queue": [{"key": "summary/1", "title": "Objets rendus",
+        state = {"summary_queue": [{"key": "summary/1", "title": "Items restored",
                                     "lines": ["Zora Set"]}],
                  "display_queue": [], "location_display_queue": [], "shown": [],
                  "presentation_completed": [], "location_shown": [],

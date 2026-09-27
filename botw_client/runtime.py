@@ -81,13 +81,13 @@ def offline_duration(since: float | None, now: float | None = None) -> str:
         return ""
     seconds = int((time.monotonic() if now is None else now) - since)
     if seconds < 60:
-        return f"après {max(seconds, 1)} s de coupure"
-    return f"après {seconds // 60} min {seconds % 60:02d} de coupure"
+        return f"after {max(seconds, 1)} s offline"
+    return f"after {seconds // 60} min {seconds % 60:02d} s offline"
 
 
 def replay_summary_lines(names: list[str], width: int = 40, lines: int = 4) -> list[str]:
     """Names with their counts, in order, wrapped into the AP window; what
-    does not fit is counted on the last line ("et N autres")."""
+    does not fit is counted on the last line ("and N more")."""
     counts: dict[str, int] = {}
     for name in names:
         counts[name] = counts.get(name, 0) + 1
@@ -104,7 +104,7 @@ def replay_summary_lines(names: list[str], width: int = 40, lines: int = 4) -> l
     shown = sum(len(row) for row in kept)
     while True:
         rest = len(labels) - shown
-        suffix = f"et {rest} autre{'s' if rest > 1 else ''}"
+        suffix = f"and {rest} more"
         last = ", ".join(kept[-1])
         if kept[-1] and len(f"{last} {suffix}") <= width:
             kept[-1] = [f"{last} {suffix}"]
@@ -125,11 +125,11 @@ class StateStore:
         except FileNotFoundError:
             self.data = {"schema": STATE_SCHEMA, "sessions": {}}
         except (OSError, ValueError) as exc:
-            raise FatalClientError(f"etat client illisible ({path}): {exc}") from exc
+            raise FatalClientError(f"client state unreadable ({path}): {exc}") from exc
         schema = self.data.get("schema")
         if schema not in (1, 2, STATE_SCHEMA) or not isinstance(
                 self.data.get("sessions"), dict):
-            raise FatalClientError(f"format d'etat client inconnu: {path}")
+            raise FatalClientError(f"unknown client state format: {path}")
         if schema in (1, 2):
             self.data["schema"] = STATE_SCHEMA
         self.current = None
@@ -186,7 +186,7 @@ class BotwClientRuntime:
         if game_name is not None:
             self.ap.game = game_name
         self.game = game_factory()
-        # Experimental presentation-only path. No grants/ledger/DeathLink or
+        # Native presentation path. No grants/ledger/DeathLink or
         # legacy display writes are enabled by choosing this path.
         self.native_presentations = native_presentations
         self.native_delivery = native_delivery
@@ -244,7 +244,7 @@ class BotwClientRuntime:
             if ((type(current) is RuntimeError and str(current) == 'Cemu process exited')
                     or (type(current) is TypeError and str(current) ==
                         "cannot convert 'NoneType' object to bytes")):
-                self.log('Cemu fermé : fin des accès mémoire et arrêt du client.')
+                self.log('Cemu closed: memory access ended, client stopping.')
                 self.stop()
                 return True
             current = current.__cause__
@@ -276,22 +276,22 @@ class BotwClientRuntime:
     async def _load_scouts(self, names: list[str]):
         expected_ids = {self.ap.location_id_by_name[name] for name in names}
         if self._restore_cached_scouts(expected_ids):
-            self.log(f"cache de seed: {len(expected_ids)} affectations")
+            self.log(f"seed cache: {len(expected_ids)} placements")
             return
         try:
             scouts = await self.ap.scout_locations(names)
         except Exception as exc:
             raise ConnectionError(
-                "impossible d'obtenir le cache de seed; session AP refusee") from exc
+                "cannot get the seed cache; AP session refused") from exc
         if set(scouts) != expected_ids:
             raise FatalClientError(
-                f"scouts incomplets: {len(scouts)}/{len(expected_ids)}")
+                f"incomplete scouts: {len(scouts)}/{len(expected_ids)}")
         self.state["scouts"] = {
             str(location_id): [info.item, info.location, info.player, info.flags]
             for location_id, info in scouts.items()
         }
         self.state_store.save()
-        self.log(f"cache de seed enregistre: {len(scouts)} affectations")
+        self.log(f"seed cache saved: {len(scouts)} placements")
 
     async def _connect_ap(self):
         self._ap_session_ready = False
@@ -299,15 +299,15 @@ class BotwClientRuntime:
         try:
             await asyncio.wait_for(self.ap.data_package_event.wait(), 15.0)
         except asyncio.TimeoutError as exc:
-            raise ConnectionError("data package BOTW non recu en 15 s") from exc
+            raise ConnectionError("BOTW data package not received within 15 s") from exc
         world_schema = self._world_schema()
         target_names = [target.name for target in load_targets(world_schema=world_schema)]
         slot_schema = int(self.ap.slot_data.get("client_schema", 0))
         expected_schema = 3 if self.ap.game == "Breath of the Wild" else CLIENT_SCHEMA
         if slot_schema != expected_schema:
             raise FatalClientError(
-                f"slot_data client_schema={slot_schema}; {expected_schema} attendu. "
-                "Installer le nouvel APWorld et regenerer la seed.")
+                f"slot_data client_schema={slot_schema}; expected {expected_schema}. "
+                "Install the new APWorld and generate the seed again.")
         expected = set(target_names)
         if self.ap.game == "Breath of the Wild":
             expected.discard(GOAL_LOCATION)
@@ -317,13 +317,13 @@ class BotwClientRuntime:
             extra = sorted(available - expected)
             raise FatalClientError(
                 "data package incompatible: "
-                f"{len(expected)} locations attendues; "
-                f"absentes={missing[:4]}, en trop={extra[:4]}")
-        identity = (self.ap.seed_name or "seed-inconnue", self.ap.team,
+                f"{len(expected)} locations expected; "
+                f"missing={missing[:4]}, extra={extra[:4]}")
+        identity = (self.ap.seed_name or "unknown-seed", self.ap.team,
                     self.ap.slot, self.ap.data_package_checksum)
         if self._session_identity is not None and identity != self._session_identity:
             raise FatalClientError(
-                "la room ou le slot a change pendant la partie; relancer le client")
+                "the room or the slot changed during the game; restart the client")
         self._session_identity = identity
         # Options may leave locations out of the seed (shops): only those of
         # the seed are scouted and sent.
@@ -379,7 +379,7 @@ class BotwClientRuntime:
                     self.hud = HudIndicator(self.game.process, self.game.cave)
                 if self.tip_factory is not None:
                     self.tips = self.tip_factory(self.game)
-                    self.log("journal AP : cadre des conseils actif")
+                    self.log("AP journal: tip frame active")
                     # A tip on screen when the game loop restarted is shown
                     # again, not lost with the previous channel object.
                     if self._journal_current is not None:
@@ -389,11 +389,11 @@ class BotwClientRuntime:
                     # comes first, while Cemu is still loading).
                     if not self._journal_connected_once:
                         self._journal_connected_once = True
-                        self._journal_note(f"{{1}}Connecté{{/}} à Archipelago : slot "
+                        self._journal_note(f"{{1}}Connected{{/}} to Archipelago: slot "
                                            f"{{2}}{self.ap.slot_name or self.ap.slot}{{/}}")
             except Exception as exc:
                 self._close_presentations()
-                raise FatalClientError(f'mode natif indisponible: {exc}') from exc
+                raise FatalClientError(f'native mode unavailable: {exc}') from exc
             if self.native_delivery and self._native_session_bound:
                 await self._reconcile_rune_selection()
             self.game.locations.previous = None
@@ -425,10 +425,10 @@ class BotwClientRuntime:
         try:
             outcome = await asyncio.to_thread(sync)
         except Exception as exc:  # noqa: BLE001 - a repair must not block the session
-            self.log(f"connexion : sélection de rune non vérifiée ({exc})")
+            self.log(f"connection: rune selection not checked ({exc})")
             return
         if outcome.status not in ("no_rune", "in_sync"):
-            self.log(f"connexion : {outcome.summary()}")
+            self.log(f"connection: {outcome.summary()}")
 
     async def _ensure_native_session(self) -> bool:
         if not self.native_delivery or self.deliveries is None:
@@ -439,23 +439,23 @@ class BotwClientRuntime:
             return False
         binder = getattr(self.deliveries.backend, "bind_session", None)
         if binder is None:
-            raise FatalClientError("backend natif sans liaison de session")
+            raise FatalClientError("native backend without session binding")
         result = await asyncio.to_thread(binder)
         if result.status in (DeliveryStatus.APPLIED,
                              DeliveryStatus.ALREADY_APPLIED):
             self._native_session_bound = True
             self._native_delivery_retry_after = 0.0
-            self.game.delivery_block_reason = 'session liee ; attente des conditions de presentation'
-            self.log("sauvegarde BOTW liée à la session AP")
+            self.game.delivery_block_reason = 'session bound; waiting for the presentation conditions'
+            self.log("BOTW save bound to the AP session")
             return True
         if result.status is DeliveryStatus.DEFERRED:
             self.game.delivery_block_reason = (
-                'liaison differee ; nouvelle tentative automatique'
+                'binding deferred; automatic retry'
                 + (f' ({result.detail})' if result.detail else ''))
             self._native_delivery_retry_after = time.monotonic() + 0.5
             return False
         raise FatalClientError(
-            f"liaison native refusée ({result.status.value}) : {result.detail}")
+            f"native binding refused ({result.status.value}): {result.detail}")
 
     async def _lease_loop(self):
         """Renew the selective shrine-reward lease; disarm on every exit."""
@@ -511,13 +511,13 @@ class BotwClientRuntime:
             return
         if self.native_delivery:
             if self.deliveries is None:
-                raise FatalClientError("backend de livraison native absent")
+                raise FatalClientError("native delivery backend missing")
             checkpoint = self.deliveries.backend.checkpoint()
             expected = (self._session_identity[0], self._session_identity[2])
             if (checkpoint.seed, checkpoint.slot) != expected:
                 raise FatalClientError(
-                    "sauvegarde BOTW non liée à cette session AP : "
-                    f"{checkpoint.seed}/{checkpoint.slot}, attendu "
+                    "BOTW save not bound to this AP session: "
+                    f"{checkpoint.seed}/{checkpoint.slot}, expected "
                     f"{expected[0]}/{expected[1]}")
             cursor_index, cursor_step = checkpoint.cursor >> 8, checkpoint.cursor & 0xFF
             if cursor_index > len(self.ap.received_items):
@@ -579,7 +579,7 @@ class BotwClientRuntime:
             return
         cursor_index, cursor_step = self._delivery_position()
         if self._last_game_cursor is not None and cursor_index < self._last_game_cursor:
-            self.log(f"rollback BOTW detecte: reprise des objets AP a #{cursor_index}")
+            self.log(f"BOTW rollback detected: AP items resume at #{cursor_index}")
         self._last_game_cursor = cursor_index
         if cursor_index > len(self.ap.received_items):
             # ReceivedItems may still be arriving after Sync.
@@ -609,7 +609,7 @@ class BotwClientRuntime:
         now = time.monotonic()
         if now < self.safe_after:
             self.game.delivery_block_reason = (
-                f"temporisation evenement {self.safe_after - now:.1f}s")
+                f"event settling {self.safe_after - now:.1f}s")
             return False
         return self.game.safe_for_delivery()
 
@@ -627,22 +627,22 @@ class BotwClientRuntime:
                 reason = native_wait
             if (self._presentation_status in ('queued', 'waiting_ready')
                     and isinstance(submission, dict) and submission.get('status') == 'deferred'):
-                reason = ('ressource native indisponible ; annonce non soumise, '
-                          'reprise automatique en attente')
+                reason = ('native resource unavailable; announcement not submitted, '
+                          'automatic retry pending')
             elif (self._presentation_status in ('queued', 'waiting_ready')
                     and isinstance(submission, dict) and submission.get('status') == 'refused'):
-                reason = ('refus natif sans action ; reprise automatique apres '
-                          'retour aux conditions de presentation')
+                reason = ('native refusal without action; automatic retry once the '
+                          'presentation conditions are back')
             if self._presentation_status in ('refused', 'uncertain'):
-                reason = ('file de presentation bloquee (' + self._presentation_status
-                          + ') ; suivre la commande /ap-replay indiquee')
+                reason = ('presentation queue blocked (' + self._presentation_status
+                          + '); follow the /ap-replay command given')
                 session = getattr(self, 'presentations', None)
                 head = session.blocked_head() if session is not None else None
                 if head and 'replay_after_incarnation' in head:
-                    reason = ('reprise deja autorisee ; attente du redemarrage '
-                              'et des conditions natives de presentation ; '
-                              'ne pas repeter /ap-replay')
-            self.log(f"livraisons en attente ({queues}): "
+                    reason = ('replay already authorized; waiting for the restart '
+                              'and the native presentation conditions; '
+                              'do not repeat /ap-replay')
+            self.log(f"deliveries waiting ({queues}): "
                      f"{reason}")
             self._next_delivery_wait_log = now + 5.0
 
@@ -657,9 +657,9 @@ class BotwClientRuntime:
             return
         name = self.ap.item_name(item)
         if not name:
-            raise FatalClientError(f"item AP {item.item} sans nom dans le data package")
+            raise FatalClientError(f"AP item {item.item} without a name in the data package")
         if name not in self.game.item_map:
-            raise FatalClientError(f"item AP sans action BOTW: {name}")
+            raise FatalClientError(f"AP item without a BOTW action: {name}")
         before = self._received_before(index, name)
         cursor_index, step = self._delivery_position()
         if cursor_index != index:
@@ -667,7 +667,7 @@ class BotwClientRuntime:
         action_count = self.game.item_action_count(name)
         if step > action_count:
             raise FatalClientError(
-                f"curseur AP #{index} etape {step}/{action_count} invalide")
+                f"AP cursor #{index}: invalid step {step}/{action_count}")
         if step < action_count:
             await asyncio.to_thread(self.game.apply_item_step, name, step, before)
             step += 1
@@ -682,7 +682,7 @@ class BotwClientRuntime:
             self.state["apply_queue"].remove(index)
             self.state["steps"].clear()
             self.state_store.save()
-            self.log(f"objet applique #{index}: {name}")
+            self.log(f"item applied #{index}: {name}")
 
     async def _apply_one_received_native(self):
         if (not self.native_delivery or self.deliveries is None
@@ -702,15 +702,15 @@ class BotwClientRuntime:
             return
         name = self.ap.item_name(item)
         if not name:
-            raise FatalClientError(f"item AP {item.item} sans nom dans le data package")
+            raise FatalClientError(f"AP item {item.item} without a name in the data package")
         before = self._received_before(index, name)
         try:
             steps = self.deliveries.backend.catalog.steps(name, before)
         except (KeyError, ValueError) as exc:
-            raise FatalClientError(f"item AP sans livraison native: {exc}") from exc
+            raise FatalClientError(f"AP item without a native delivery: {exc}") from exc
         if step >= len(steps):
             raise FatalClientError(
-                f"curseur AP #{index} étape {step}/{len(steps)} invalide")
+                f"AP cursor #{index}: invalid step {step}/{len(steps)}")
         quiet = index < int(self.state.get("delivered_high", 0))
         command = DeliveryCommand(
             self._session_identity[0], self._session_identity[2], index, name,
@@ -724,21 +724,21 @@ class BotwClientRuntime:
                 self.state_store.save()
             self._native_delivery_retry_after = 0.0
             self._discover_received()
-            self.log(f"étape native commitée #{index}/{step}: {name}"
+            self.log(f"native step committed #{index}/{step}: {name}"
                      + (f" ({result.detail})" if result.detail else ""))
             return
         if result.status is DeliveryStatus.DEFERRED:
             self.game.delivery_block_reason = (
-                'livraison differee ; nouvelle tentative automatique'
+                'delivery deferred; automatic retry'
                 + (f' ({result.detail})' if result.detail else ''))
             self._native_delivery_retry_after = time.monotonic() + 0.5
             return
         if result.status is DeliveryStatus.INVENTORY_FULL:
-            self.game.delivery_block_reason = result.detail or "inventaire plein"
+            self.game.delivery_block_reason = result.detail or "inventory full"
             self._native_delivery_retry_after = time.monotonic() + 5.0
             return
         raise FatalClientError(
-            f"livraison native #{index}/{step} bloquée ({result.status.value}) : "
+            f"native delivery #{index}/{step} blocked ({result.status.value}): "
             f"{result.detail}")
 
     async def _show_one_location_reward(self) -> bool:
@@ -752,7 +752,7 @@ class BotwClientRuntime:
             return False
         name = self.ap.item_name(info)
         if not name:
-            name = f"Objet #{info.item}"
+            name = f"Item #{info.item}"
         recipient, recipient_game = self.ap.sender(info)
         location = self.ap.location_name(location_id) or str(location_id)
         displayed = await asyncio.to_thread(
@@ -763,7 +763,7 @@ class BotwClientRuntime:
                 self.state["location_shown"].append(location_id)
                 self.state["location_shown"].sort()
             self.state_store.save()
-            self.log(f"recompense affichee: {location} -> {name} ({recipient})")
+            self.log(f"reward shown: {location} -> {name} ({recipient})")
             return True
         return False
 
@@ -794,7 +794,7 @@ class BotwClientRuntime:
                 self.state["shown"].append(index)
                 self.state["shown"].sort()
             self.state_store.save()
-            self.log(f"objet affiche #{index}: {self.ap.item_name(item)}")
+            self.log(f"item shown #{index}: {self.ap.item_name(item)}")
             return True
         return False
 
@@ -828,7 +828,7 @@ class BotwClientRuntime:
         unresolved = await self.ap.send_checks(list(self.state["pending_checks"]))
         if unresolved:
             raise FatalClientError(
-                "locations absentes du data package: " + ", ".join(unresolved))
+                "locations missing from the data package: " + ", ".join(unresolved))
         self.last_check_send = now
 
     def _world_schema(self) -> int:
@@ -839,7 +839,7 @@ class BotwClientRuntime:
             if schema not in SCHEMA_LOCATION_COUNTS:
                 raise FatalClientError(
                     f"slot_data world_schema={schema}; {sorted(SCHEMA_LOCATION_COUNTS)} "
-                    "acceptes. Installer le nouveau client ou regenerer la seed.")
+                    "accepted. Install the new client or generate the seed again.")
             return schema
         # Manual declares no schema: its data package tells which rows it has
         # (the newest schema all of whose names it knows).
@@ -861,7 +861,7 @@ class BotwClientRuntime:
             await self.ap.send_hints(new)
             hinted.extend(new)
             self.state_store.save()
-            self.log(f"boutique vue : indices pour {len(new)} objet(s)")
+            self.log(f"shop seen: hints for {len(new)} item(s)")
 
     async def _poll_locations(self):
         names = await asyncio.to_thread(self.game.poll_locations)
@@ -869,7 +869,7 @@ class BotwClientRuntime:
             # A check absent from this seed (older world schema) is not sent.
             ignored = [name for name in names if name not in self._session_locations]
             if ignored:
-                self.log("hors de cette seed, ignore: " + ", ".join(ignored))
+                self.log("not in this seed, ignored: " + ", ".join(ignored))
                 names = [name for name in names if name in self._session_locations]
         if names:
             for name in names:
@@ -884,18 +884,18 @@ class BotwClientRuntime:
                     for item in self.ap.received_items.values())
                 if vanilla_rune and not owns_rune and not self.native_mode:
                     await asyncio.to_thread(self.game.suppress_terminal_rune, name)
-                    self.log(f"rune vanilla neutralisee: {vanilla_rune}")
+                    self.log(f"vanilla rune suppressed: {vanilla_rune}")
                 if name == "Great Plateau Tower" and not self.native_mode:
                     owns_sensor = any(
                         self.ap.item_name(item) == "Sheikah Sensor"
                         for item in self.ap.received_items.values())
                     if not owns_sensor:
                         await asyncio.to_thread(self.game.suppress_tower_sensor)
-                        self.log("detecteur de sanctuaire vanilla neutralise")
+                        self.log("vanilla shrine sensor suppressed")
                 if name not in self.state["pending_checks"]:
                     self.state["pending_checks"].append(name)
                     self._queue_location_display(name)
-                    self.log(f"check detecte: {name}")
+                    self.log(f"check detected: {name}")
             self.safe_after = max(
                 self.safe_after,
                 time.monotonic() + max(event_settle_seconds(name)
@@ -917,7 +917,7 @@ class BotwClientRuntime:
                 await self.ap.send_goal()
                 self.state["goal_sent"] = True
                 self.state_store.save()
-                self.log("objectif Archipelago envoye")
+                self.log("Archipelago goal sent")
 
     @staticmethod
     def _message_pages(text: str) -> list[str]:
@@ -976,7 +976,7 @@ class BotwClientRuntime:
                 "time": event.timestamp, "source": event.source,
                 "cause": event.cause})
             self.state["last_death_link"] = event.timestamp
-            self.log(f"DeathLink mis en attente: {event.source} — {event.cause}")
+            self.log(f"DeathLink queued: {event.source} — {event.cause}")
             changed = True
         if changed:
             self.state_store.save()
@@ -987,7 +987,7 @@ class BotwClientRuntime:
         if (self.ap.death_link_enabled and self._alive_seen and dead
                 and self._last_dead is False):
             if self.ap.connected:
-                await self.ap.send_death(f"{self.ap.slot_name} est mort dans Hyrule")
+                await self.ap.send_death(f"{self.ap.slot_name} died in Hyrule")
             else:
                 self.state["pending_outgoing_death"] = True
                 self.state_store.save()
@@ -995,7 +995,7 @@ class BotwClientRuntime:
 
         if (self.ap.connected and self.ap.death_link_enabled
                 and self.state["pending_outgoing_death"]):
-            await self.ap.send_death(f"{self.ap.slot_name} est mort dans Hyrule")
+            await self.ap.send_death(f"{self.ap.slot_name} died in Hyrule")
             self.state["pending_outgoing_death"] = False
             self.state_store.save()
 
@@ -1013,11 +1013,11 @@ class BotwClientRuntime:
                         "text": text, "kind": "DeathLink", "nodes": []})
                     self.state["message_queue"] = self.state["message_queue"][-100:]
                 self.state_store.save()
-                self.log(f"DeathLink applique de {event['source']}: {event['cause']}")
+                self.log(f"DeathLink applied from {event['source']}: {event['cause']}")
             else:
                 self._deathlink_retry_after = time.monotonic() + 10.0
-                self.log("DeathLink non applique: fonction de mort BOTW pas encore "
-                         "instrumentee; mort gardee en attente")
+                self.log("DeathLink not applied: BOTW's death function is not "
+                         "instrumented yet; death kept pending")
 
     async def _reconnect_after(self, delay: float):
         await self._wait_or_stop(delay)
@@ -1033,9 +1033,9 @@ class BotwClientRuntime:
             if self._offline_since is None:
                 # Once per outage, not once per retry.
                 self._offline_since = time.monotonic()
-                self._journal_note("{0}Connexion Archipelago perdue{/} : "
-                                   "le jeu continue, les checks partiront "
-                                   "à la reconnexion.")
+                self._journal_note("{0}Archipelago connection lost{/}: "
+                                   "the game goes on, checks will be sent "
+                                   "on reconnection.")
             self._reconnect_task = asyncio.create_task(
                 self._reconnect_after(self._reconnect_delay),
                 name="AP reconnect")
@@ -1046,15 +1046,15 @@ class BotwClientRuntime:
         try:
             await task
             if self.ap.connected:
-                self.log("Archipelago reconnecte; checks hors ligne repris")
-                self._journal_note(f"{{1}}Reconnecté{{/}} à Archipelago "
+                self.log("Archipelago reconnected; offline checks resumed")
+                self._journal_note(f"{{1}}Reconnected{{/}} to Archipelago "
                                    f"{offline_duration(self._offline_since)}")
                 self._offline_since = None
                 self._reconnect_delay = 1.0
         except FatalClientError:
             raise
         except Exception as exc:
-            self.log(f"Archipelago hors ligne: {exc}; nouvel essai dans "
+            self.log(f"Archipelago offline: {exc}; retrying in "
                      f"{self._reconnect_delay:.0f}s")
             await self.ap.close()
             self._reconnect_delay = min(self._reconnect_delay * 2, 30.0)
@@ -1071,10 +1071,10 @@ class BotwClientRuntime:
         except Exception as exc:  # noqa: BLE001 - a HUD logo never stops the client
             if str(exc) != self._hud_error:
                 self._hud_error = str(exc)
-                self.log(f"indicateur HUD indisponible : {exc}")
+                self.log(f"HUD indicator unavailable: {exc}")
             return
         if done and before is None:
-            self.log("indicateur HUD : " + ("connecté" if online else "hors ligne"))
+            self.log("HUD indicator: " + ("connected" if online else "offline"))
 
     async def _status_item_tick(self):
         """Once per game connection, after the deliveries: the pack's
@@ -1090,7 +1090,7 @@ class BotwClientRuntime:
             return
         self._status_item_done = True
         if result:
-            self.log("objet Archipelago (seed, slot, objectif) vérifié dans l'inventaire")
+            self.log("Archipelago key item (seed, slot, goal) checked in the inventory")
 
     # --- AP journal (tip frame) ------------------------------------------------
 
@@ -1149,7 +1149,7 @@ class BotwClientRuntime:
             return
         # Not _safe_now(): safe_for_delivery() is stateful (it compares the
         # game tick with its previous call); a second caller in the same loop
-        # made every delivery read "game paused" (25/09). in_world() is the
+        # made every delivery read "game paused". in_world() is the
         # stateless presentation guard.
         if not await asyncio.to_thread(tips.in_world):
             self._journal_retry_after = time.monotonic() + 0.5
@@ -1165,14 +1165,14 @@ class BotwClientRuntime:
                     self.state_store.save()
                 self._journal_times[tag] = time.monotonic()
         elif result == "invalid":
-            self.log("journal AP : page refusée par le canal natif, ignorée")
+            self.log("AP journal: page refused by the native channel, skipped")
             self._journal_pages.pop(0)
         else:
             self._journal_retry_after = time.monotonic() + 1.0
 
     def _received_announcement(self, index: int) -> str:
         """Presentation session hook: an item received from another player is
-        first announced in the journal ("Alice a trouvé ton Grappin"), then
+        first announced in the journal ("Alice sent Hookshot to Bob"), then
         shown by its vanilla window if its delivery has one (GetDemo: hearts,
         stamina, rupees), else by the usual AP window."""
         item = self.ap.received_items.get(index)
@@ -1245,14 +1245,14 @@ class BotwClientRuntime:
         parts = line.split()
         if parts and parts[0] == '/ap-tip':
             if self.tip_factory is None:
-                self.log('Journal AP (cadre des conseils) inactif avec ce pack.')
+                self.log('AP journal (tip frame) not available with this pack.')
             else:
-                self._journal_note(line[len('/ap-tip'):].strip() or 'Test du journal AP')
+                self._journal_note(line[len('/ap-tip'):].strip() or 'Archipelago journal test')
             return True
         if parts and parts[0] == '/ap-evt':
             self._event_trace_command(parts[1:])
             return True
-        if parts and parts[0] == '/ap-coupure':
+        if parts and parts[0] == '/ap-disconnect':
             # Test of the connection status: a real close, the usual
             # reconnection, its first attempt `seconds` later.
             try:
@@ -1260,25 +1260,25 @@ class BotwClientRuntime:
             except ValueError:
                 seconds = -1.0
             if not 1.0 <= seconds <= 300.0:
-                self.log('Usage : /ap-coupure [secondes, 1 à 300]')
+                self.log('Usage: /ap-disconnect [seconds, 1 to 300]')
             elif not self.ap.connected:
-                self.log('Archipelago déjà déconnecté.')
+                self.log('Archipelago already disconnected.')
             else:
                 self._reconnect_delay = seconds
                 asyncio.get_running_loop().create_task(self.ap.close())
-                self.log(f'Coupure Archipelago simulée ; reconnexion dans {seconds:.0f} s.')
+                self.log(f'Archipelago disconnection simulated; reconnecting in {seconds:.0f} s.')
             return True
         if not parts or parts[0] != '/ap-replay':
             return False
         if len(parts) != 2:
-            self.log('Usage : /ap-replay <identifiant affiche dans le blocage>')
+            self.log('Usage: /ap-replay <identifier shown with the blocked presentation>')
         elif not self.native_presentations or self.presentations is None:
-            self.log('Reprise indisponible : attendre la connexion au jeu et le blocage.')
+            self.log('Replay unavailable: wait for the game connection and the blocked presentation.')
         elif self._presentation_recovery_request is not None:
-            self.log('Une demande de reprise attend deja son traitement.')
+            self.log('A replay request is already waiting to be handled.')
         else:
             self._presentation_recovery_request = (self.presentations, parts[1])
-            self.log('Demande de reprise recue ; attendre sa confirmation avant de fermer Cemu.')
+            self.log('Replay request received; wait for its confirmation before closing Cemu.')
         return True
 
     def _event_trace_command(self, args):
@@ -1289,7 +1289,7 @@ class BotwClientRuntime:
         from tools.cemu import event_request_trace as trace
         cave = getattr(self.game, 'cave', None)
         if cave is None:
-            self.log('Trace indisponible : attendre la connexion au jeu.')
+            self.log('Trace unavailable: wait for the game connection.')
             return
         try:
             log = Path(os.environ.get('BOTW_CEMU_LOG', '')).read_text(
@@ -1297,27 +1297,27 @@ class BotwClientRuntime:
             address = trace.locate(log)
             if args and args[0] == 'reset':
                 trace.reset(self.game.process, cave.base, address)
-                self.log('trace des requêtes vidée')
+                self.log('request trace cleared')
                 return
             count = int(args[0]) if args else 8
             data = trace.read_trace(self.game.process, cave.base, address)
         except Exception as exc:  # noqa: BLE001 - console diagnostic
-            self.log(f'trace des requêtes illisible : {exc}')
+            self.log(f'request trace unreadable: {exc}')
             return
         entered = [e for e in data['events'] if e['site'] == 'request_enter']
         outcome = {}
         for e in data['events']:
             if e['site'] != 'request_enter':
                 outcome[e['sequence']] = e['site']
-        self.log(f"{len(entered)} requête(s) tracée(s), {data['dropped']} perdue(s)")
+        self.log(f"{len(entered)} request(s) traced, {data['dropped']} dropped")
         for e in entered[-count:]:
             if not e.get('descriptor_hex'):
-                self.log(f"#{e['sequence']} sans descripteur")
+                self.log(f"#{e['sequence']} without a descriptor")
                 continue
             fields = trace.descriptor_fields(bytes.fromhex(e['descriptor_hex']))
             after = outcome.get(e['sequence'] + 1, '?')
             self.log(f"#{e['sequence']} {fields['flow']}<{fields['entry']}> "
-                     f"type={fields['type'] or '(vide)'} drapeaux={fields['flags']:#x} "
+                     f"type={fields['type'] or '(empty)'} flags={fields['flags']:#x} "
                      f"-> {after.replace('request_', '')}")
 
     def _flush_replay_summary(self):
@@ -1333,11 +1333,11 @@ class BotwClientRuntime:
         number = int(self.state.get("summary_count", 0)) + 1
         self.state["summary_count"] = number
         self.state.setdefault("summary_queue", []).append({
-            "key": f"summary/{number}", "title": "Objets rendus",
+            "key": f"summary/{number}", "title": "Items restored",
             "lines": replay_summary_lines(batch)})
         self.state["replay_batch"] = []
         self.state_store.save()
-        self.log(f"objets rendus après chargement : {len(batch)}")
+        self.log(f"items restored after a load: {len(batch)}")
 
     async def _native_presentation_tick(self):
         if self.presentations is None:
@@ -1356,10 +1356,10 @@ class BotwClientRuntime:
                     try:
                         session.request_replay(recovery[1])
                     except ValueError as exc:
-                        self.log(f'Reprise refusee : {exc}')
+                        self.log(f'Replay refused: {exc}')
                     else:
-                        self.log('Reprise enregistree : fermer Cemu puis relancer la partie. '
-                                 'Seule l\'annonce sera rejouee ; aucun objet n\'est donne par cette commande.')
+                        self.log('Replay recorded: close Cemu, then start the game again. '
+                                 'Only the announcement is replayed; this command gives no item.')
                 return session.advance(self.state, source, self.game,
                     allow_submit=ready and time.monotonic() >= self.safe_after,
                     sources_ready=ready,
@@ -1375,27 +1375,27 @@ class BotwClientRuntime:
             await task
             raise
         except Exception as exc:
-            raise FatalClientError(f'file de presentation arretee: {exc}') from exc
+            raise FatalClientError(f'presentation queue stopped: {exc}') from exc
         if changed:
             try:
                 self.state_store.save()
             except Exception as exc:
-                raise FatalClientError(f'projection presentation non enregistree: {exc}') from exc
+                raise FatalClientError(f'presentation projection not saved: {exc}') from exc
         head = session.blocked_head() if status in ('uncertain', 'refused') else None
         notice = ((status, head['id'], head.get('attempts'),
                    head.get('replay_after_incarnation')) if head else None)
         if notice is not None and notice != getattr(self, '_presentation_notice', None):
             if head and 'replay_after_incarnation' in head:
-                self.log(f'Presentation {status} ({head["id"]}) : reprise autorisee, '
-                         'en attente d\'un nouveau Cemu et du jeu pret.')
+                self.log(f'Presentation {status} ({head["id"]}): replay authorized, '
+                         'waiting for a new Cemu and the game to be ready.')
             elif head:
-                self.log(f'Presentation {status} ({head["id"]}, tentative {head.get("attempts", "?")}) : file bloquee. '
-                         f'Pour autoriser le rejeu de l\'annonce apres redemarrage : /ap-replay {head["id"]}')
+                self.log(f'Presentation {status} ({head["id"]}, attempt {head.get("attempts", "?")}): queue blocked. '
+                         f'To allow the announcement to be replayed after a restart: /ap-replay {head["id"]}')
         self._presentation_status = status
         self._presentation_notice = notice
         evidence_error = getattr(session.backend, 'evidence_error', None)
         if isinstance(evidence_error, str) and evidence_error != getattr(self, '_evidence_error', None):
-            self.log(f'Diagnostic de presentation non conserve : {evidence_error}')
+            self.log(f'Presentation diagnostic not kept: {evidence_error}')
             self._evidence_error = evidence_error
 
     async def _active_loop(self):
@@ -1412,7 +1412,7 @@ class BotwClientRuntime:
                     raise self.lease_error
                 await self._reconnect_tick()
                 if not self.game.healthy():
-                    raise GameNotReady("resolveur de pointeurs devenu indisponible")
+                    raise GameNotReady("pointer resolver became unavailable")
                 started = time.monotonic()
                 session_bound = (not self.native_delivery
                                  or await self._ensure_native_session())
@@ -1475,7 +1475,7 @@ class BotwClientRuntime:
                     except FatalClientError:
                         raise
                     except Exception as exc:
-                        self.log(f"Archipelago indisponible: {exc}; nouvel essai dans {ap_delay:.0f}s")
+                        self.log(f"Archipelago unavailable: {exc}; retrying in {ap_delay:.0f}s")
                         await self.ap.close()
                         await self._wait_or_stop(ap_delay)
                         ap_delay = min(ap_delay * 2, 30.0)
@@ -1491,7 +1491,7 @@ class BotwClientRuntime:
                     except Exception as exc:
                         if self._process_exit_error(exc):
                             break
-                        self.log(f"BOTW indisponible: {exc}; nouvel essai dans {game_delay:.0f}s")
+                        self.log(f"BOTW unavailable: {exc}; retrying in {game_delay:.0f}s")
                         self._close_presentations()
                         self.game.close()
                         await self._wait_or_stop(game_delay)
@@ -1506,7 +1506,7 @@ class BotwClientRuntime:
                 except Exception as exc:
                     if self._process_exit_error(exc):
                         break
-                    self.log(f"boucle BOTW interrompue: {exc}")
+                    self.log(f"BOTW loop interrupted: {exc}")
                     self._close_presentations()
                     self.game.close()
                 if not self.ap.connected:

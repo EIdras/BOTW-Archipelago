@@ -8,7 +8,7 @@ below is where the map says).
 A 3D stall has no stock sheet: each item on sale is an object of the DLC map
 unit (aoc/0010/Map/MainField/<cell>/<cell>_Static.smubin) linked to its
 merchant by `ForSale`; the merchant's flow runs DisplayShop:Multiple for the
-object looked at (docs/reference/shops_plan.md, 10g). Up to SLOTS_PER_MERCHANT
+object looked at (docs/reference/shops.md). Up to SLOTS_PER_MERCHANT
 objects of a merchant become AP locations: the object turns into the
 location's AP actor, created only while IsGet_AP_Shop_<id> is true (so a
 bought one never comes back, blood moon included), and the merchant's flow
@@ -22,7 +22,7 @@ repeated first (then by actor name, then HashId), never the last copy of an
 item: the stall keeps everything it sold. Places: nearest LocationTag, named
 from LocationMarker.msbt. Regions: nearest tower, the rule used for the
 shrines. Yaw: the merchant's, so the medallion faces
-the customer as the merchant does (10g: the arrow's own tilt looked wrong).
+the customer as the merchant does (an object's own tilt looks wrong).
 """
 from __future__ import annotations
 

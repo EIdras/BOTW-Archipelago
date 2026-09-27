@@ -247,7 +247,7 @@ def _request(process, cave, owner, title, description, ready, checkpoint, timeou
     title_data, title_len, _ = Cave._sub_payload(title, 256, 0)
     desc_data, desc_len, _ = Cave._sub_payload(description, 512, 0)
     if type(resolution_quota) is not int or resolution_quota not in (2, 4):
-        raise ValueError("Only normal quota2 or laboratory cleanup probe4 is supported")
+        raise ValueError("Only normal quota2 or cleanup probe4 is supported")
     state = read(process, cave.base, owner["address"])
     available=(finished(state,read_join(process,cave.base,owner['join_address'])) if state.get('version')==2 else released(state))
     if (state["busy"] or state["fault"] or state["generation"] == 0xFFFFFFFF

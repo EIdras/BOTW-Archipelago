@@ -2,11 +2,11 @@
 
 The item actor, its model, icon, price, texts and flags are the shops' (the
 same AP_Shop_<id> scheme, botw_patch/shops.py builds them for every placement).
-What is proper to a stall (botw_client/stall_catalog.py, validated as 10g):
+What is proper to a stall (botw_client/stall_catalog.py):
   * in the DLC map unit, the stall object turns into the AP actor: same
     HashId, position and links (ForSale to its merchant, DeadUp to the
-    stall's sold-out tag), rotation reduced to the merchant's yaw (10g: the
-    arrow's own tilt looked wrong on the medallion);
+    stall's sold-out tag), rotation reduced to the merchant's yaw (an object's
+    own tilt looks wrong on the medallion);
   * a new LinkTagAnd reading the saved bool IsGet_AP_Shop_<id> creates the
     object: true until bought, so a bought one is never created again, blood
     moon included. It is the vanilla pattern of 956 tags of these maps (no
@@ -100,7 +100,7 @@ def patch_map(raw: bytes, locations: list[StallLocation]) -> tuple[bytes, dict]:
     objects = list(doc["Objs"])
     hashes = [int(o["HashId"]) for o in objects]
     if hashes != sorted(hashes):
-        raise ValueError("objets de la carte non triés par HashId")
+        raise ValueError("map objects not sorted by HashId")
     by_hash = {int(o["HashId"]): o for o in objects}
     create = next((link for o in objects for link in _link_nodes(o)
                    if str(link["DefinitionName"]) == "Create" and "!Parameters" in link), None)
@@ -109,15 +109,15 @@ def patch_map(raw: bytes, locations: list[StallLocation]) -> tuple[bytes, dict]:
                   and "!Parameters" in o
                   and set(o["!Parameters"].keys()) == set(TAG_PARAMETERS)), None)
     if create is None or model is None:
-        raise ValueError("aucun lien Create ou tag à drapeau modèle dans cette carte")
+        raise ValueError("no Create link or flag tag to copy in this map")
     detail = {}
     for location in locations:
         merchant = location.merchant
         obj = by_hash.get(location.object_hash)
         if obj is None or str(obj["UnitConfigName"]) != location.vanilla_actor:
-            raise ValueError(f"objet d'étal introuvable ou inattendu : {location.name}")
+            raise ValueError(f"stall object not found or unexpected: {location.name}")
         if ("ForSale", merchant.hash_id) not in _links(obj):
-            raise ValueError(f"objet pas en vente chez {merchant.actor} : {location.name}")
+            raise ValueError(f"object not for sale by {merchant.actor}: {location.name}")
         # Its links (ForSale, sold-out tags) stay as they are.
         obj["UnitConfigName"] = location.actor
         obj["Rotate"] = oead.F32(merchant.yaw)
@@ -125,7 +125,7 @@ def patch_map(raw: bytes, locations: list[StallLocation]) -> tuple[bytes, dict]:
         tag = clone(model)
         new_hash = tag_hash(location)
         if new_hash in by_hash:
-            raise ValueError(f"HashId de tag déjà pris : {new_hash}")
+            raise ValueError(f"tag HashId already taken: {new_hash}")
         tag["HashId"] = oead.U32(new_hash)
         tag["SRTHash"] = oead.S32(_srt_hash(location))
         tag["Translate"] = clone(obj["Translate"])
@@ -163,7 +163,7 @@ def generate(builder, files: dict[str, bytes], content, aoc, locations: list[Sta
     for unit, located in sorted(units.items()):
         raw = (aoc / unit).read_bytes()
         if digest(raw) != MAP_HASHES[unit]:
-            raise ValueError(f"carte DLC inattendue : {unit}")
+            raise ValueError(f"unexpected DLC map: {unit}")
         new, detail = patch_map(raw, located)
         builder.account(TABLE_PREFIX + unit, new, raw)
         files[AOC_PREFIX + unit] = new
@@ -186,6 +186,6 @@ def stage_inputs(content) -> dict[str, bytes]:
     for name, expected in INPUT_HASHES.items():
         raw = (content / name).read_bytes()
         if digest(raw) != expected:
-            raise ValueError(f"ressource de la mise à jour inattendue : {name}")
+            raise ValueError(f"unexpected update resource: {name}")
         out[name] = raw
     return out

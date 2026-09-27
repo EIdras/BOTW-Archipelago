@@ -1,19 +1,18 @@
 """Archipelago shops, built per seed: Beedle sells the AP items of his locations.
 
-Everything is resources (validated in the laboratory, docs/reference/
-shops_plan.md, 10a to 10e):
+Everything is resources (docs/reference/shops.md):
   * one item actor per shop location, AP_Shop_<id> (ActorInfo declaration,
-    actor pack cloned from amber, the Archipelago icon, the Archipelago model
-    made by Simon), priced by the seed, named and described after its
+    actor pack cloned from amber, the Archipelago icon, the Archipelago 3D
+    model), priced by the seed, named and described after its
     placement in every EU language;
   * each Beedle's stock table lists his AP items first (the first entry is
     selected when the list opens, which tells the client which shop is seen);
   * his flow, once the buy list returns, records each AP item bought in its
     saved s32 flag APShop_<id> and removes it from the pouch; the client tracks
     those flags like every location flag;
-  * Beedle restocks at every opening (10f): each AP entry carries
-    ItemLookGetFlg, which lists it only while IsGet_AP_Shop_<id> is true
-    (10f bis); that saved bool starts true and the purchase clears it;
+  * Beedle restocks at every opening: each AP entry carries ItemLookGetFlg,
+    which lists it only while IsGet_AP_Shop_<id> is true; that saved bool
+    starts true and the purchase clears it;
   * the flags are declared in GameData and in the save format.
 
 Placements come from the slot manifest (botw_world generate_output):
@@ -43,7 +42,7 @@ TITLE = "Pack/TitleBG.pack"
 BOOTUP = "Pack/Bootup.pack"
 TABLE = "System/Resource/ResourceSizeTable.product.srsizetable"
 MODEL_ACTOR = "Item_Ore_F"                  # amber: actor pack, model and material
-MODEL_FOLDER = "AP_Item_00"                 # Model/AP_Item_00.*, internal names too (10e)
+MODEL_FOLDER = "AP_Item_00"                 # Model/AP_Item_00.*, internal names too
 MODEL_SOURCE = ROOT / "assets/models/ap_item/wiiu"
 MODEL_SOURCE_NAME = "AP_Item"
 # Amber's own model files (Item_Ore_F, base game): what the model check and
@@ -150,15 +149,15 @@ def plan_from_manifest(manifest: dict) -> list[ShopPlacement]:
         location = SHOP_BY_ID.get(row["location_id"]) or STALL_BY_ID[row["location_id"]]
         placed = placements.get(location.id)
         if placed is None:
-            raise ValueError(f"emplacement de boutique sans objet : {location.name}")
+            raise ValueError(f"shop location without an item: {location.name}")
         price = row["price"]
         if type(price) is not int or not 1 <= price <= 999:
-            raise ValueError(f"prix invalide pour {location.name} : {price}")
+            raise ValueError(f"invalid price for {location.name}: {price}")
         out.append(ShopPlacement(location, price, placed["item_name"],
                                  placed["recipient_name"], placed["recipient_game"],
                                  int(placed["flags"]), placed["recipient"] == manifest["slot"]))
     if len({p.location.id for p in out}) != len(out):
-        raise ValueError("emplacement de boutique en double")
+        raise ValueError("duplicate shop location")
     return sorted(out, key=lambda p: p.location.id)
 
 
@@ -166,35 +165,30 @@ def _short(text: str, limit: int) -> str:
     return text if len(text) <= limit else text[:limit - 3].rstrip() + "..."
 
 
-def texts(placement: ShopPlacement, language: str) -> tuple[str, str]:
-    """(name, description) shown by the shop, in French for EUfr, else English.
+def texts(placement: ShopPlacement) -> tuple[str, str]:
+    """(name, description) shown by the shop, in English in every language.
 
     Traps are described as ordinary items, as AP shops usually do.
     """
-    french = language == "EUfr"
     name = _short(placement.item, NAME_LIMIT)
     importance = ("" if placement.flags & TRAP else
-                  ((" Indispensable à ta progression." if placement.own
-                    else " Indispensable à sa progression.") if french else " Needed to progress.")
-                  if placement.flags & PROGRESSION else
-                  (" Utile." if french else " Useful.") if placement.flags & USEFUL else "")
+                  " Needed to progress." if placement.flags & PROGRESSION else
+                  " Useful." if placement.flags & USEFUL else "")
     for item_limit, game_limit in ((80, 60), (40, 30), (24, 18)):
         item, game = _short(placement.item, item_limit), _short(placement.game, game_limit)
         if placement.own:
-            body = (f"Objet Archipelago pour toi : {item}." if french
-                    else f"Archipelago item for you: {item}.")
+            body = f"Archipelago item for you: {item}."
         else:
             player = _short(placement.player, 16)
-            body = (f"Objet Archipelago pour {player} ({game}) : {item}." if french
-                    else f"Archipelago item for {player} ({game}): {item}.")
+            body = f"Archipelago item for {player} ({game}): {item}."
         lines = textwrap.wrap(body + importance, DESCRIPTION_WIDTH)
         if len(lines) <= DESCRIPTION_LINES:
             return name, "\n".join(lines)
-    raise ValueError(f"description impossible à loger : {placement.location.name}")
+    raise ValueError(f"description does not fit: {placement.location.name}")
 
 
-def items(placements: list[ShopPlacement], language: str) -> list[ApShopItem]:
-    return [ApShopItem(p.location.actor, p.price, *texts(p, language),
+def items(placements: list[ShopPlacement]) -> list[ApShopItem]:
+    return [ApShopItem(p.location.actor, p.price, *texts(p),
                        model_actor=MODEL_ACTOR, model_folder=MODEL_FOLDER,
                        model_unit=MODEL_FOLDER) for p in placements]
 
@@ -225,23 +219,23 @@ def generate(files: dict[str, bytes], content: Path,
         return files, []
     for name in (TABLE, BOOTUP):
         if name not in files:
-            raise ValueError(f"{name} attendu dans la surcouche")
+            raise ValueError(f"{name} expected in the overlay")
     inputs = {}
     for name, expected in INPUT_HASHES.items():
         if name in files:
-            raise ValueError(f"la surcouche remplace déjà {name}")
+            raise ValueError(f"the overlay already replaces {name}")
         raw = (content / name).read_bytes()
         if digest(raw) != expected:
-            raise ValueError(f"ressource de la mise à jour inattendue : {name}")
+            raise ValueError(f"unexpected update resource: {name}")
         inputs[name] = raw
     title_raw = files.get(TITLE) or (content / TITLE).read_bytes()
     source_title = (content / TITLE).read_bytes()
     if digest(source_title) != TITLE_SHA256:
-        raise ValueError(f"ressource de la mise à jour inattendue : {TITLE}")
+        raise ValueError(f"unexpected update resource: {TITLE}")
     title = oead.Sarc(unpack(source_title))
     model = model if model is not None else model_files()
     changes: list[dict] = []
-    fr = items(placements, "EUfr")
+    shop_items = items(placements)
     # Beedle's lists and the 3D stalls (botw_patch/stalls.py): the item actors,
     # texts and flags below are common, the rest proper to each.
     beedle = [p for p in placements if isinstance(p.location, ShopLocation)]
@@ -251,10 +245,10 @@ def generate(files: dict[str, bytes], content: Path,
     if stall:
         from botw_patch import stalls as stall_stage
         if aoc is None:
-            raise ValueError("étals : le dossier aoc/0010 du DLC est requis")
+            raise ValueError("stalls: the DLC's aoc/0010 folder is required")
         for name in stall_stage.INPUT_HASHES:
             if name in files:
-                raise ValueError(f"la surcouche remplace déjà {name}")
+                raise ValueError(f"the overlay already replaces {name}")
         inputs.update(stall_stage.stage_inputs(content))
 
     with tempfile.TemporaryDirectory() as temp:
@@ -266,14 +260,14 @@ def generate(files: dict[str, bytes], content: Path,
         builder = ResourceBuilder(stage)
 
         # Declarations (ActorInfo has no size table entry in vanilla).
-        builder.outputs[ACTOR_INFO], detail = add_declarations(inputs[ACTOR_INFO], fr)
+        builder.outputs[ACTOR_INFO], detail = add_declarations(inputs[ACTOR_INFO], shop_items)
         changes.append({"resource": ACTOR_INFO, "declarations": detail})
 
         # Actor packs, icons, model lists.
         amber = bytes(title.get_file(f"Actor/Pack/{MODEL_ACTOR}.sbactorpack").data)
         icon = ICON.read_bytes()
         table = builder.table
-        for item in fr:
+        for item in shop_items:
             pack = f"Actor/Pack/{item.actor}.sbactorpack"
             builder.outputs[pack], _detail = clone_actor_pack(
                 amber, MODEL_ACTOR, item.actor, MODEL_FOLDER, MODEL_FOLDER, item.price)
@@ -285,7 +279,7 @@ def generate(files: dict[str, bytes], content: Path,
             builder.outputs[f"UI/StockItem/{item.actor}.sbitemico"] = icon
             table.set_size(f"UI/StockItem/{item.actor}.bitemico",
                            len(unpack(icon)) + ICON_TABLE_MARGIN)
-        changes.append({"resource": "actors", "actors": [i.actor for i in fr],
+        changes.append({"resource": "actors", "actors": [i.actor for i in shop_items],
                         "model": MODEL_FOLDER, "icon_sha256": digest(icon)})
 
         # The Archipelago model, checked against amber's, internal names renamed.
@@ -317,9 +311,9 @@ def generate(files: dict[str, bytes], content: Path,
             builder.outputs[pack] = packed
             changes.append({"resource": pack, "stock": detail})
 
-        # Names and descriptions, every EU language.
+        # Names and descriptions, the same English text in every EU language.
         for language in LANGUAGES:
-            language_items = items(placements, language)
+            language_items = shop_items
 
             def messages(raw, language_items=language_items):
                 archive = oead.Sarc(unpack(raw))
@@ -366,7 +360,7 @@ def generate(files: dict[str, bytes], content: Path,
                 *(f"Actor/Pack/{p.location.actor}.sbactorpack" for p in placements),
                 *(f"UI/StockItem/{p.location.actor}.sbitemico" for p in placements)}
     if set(outputs) != expected:
-        raise ValueError(f"sorties inattendues : {sorted(set(outputs) ^ expected)}")
+        raise ValueError(f"unexpected outputs: {sorted(set(outputs) ^ expected)}")
     files = {**files, **outputs, **aoc_files}
     return files, changes
 

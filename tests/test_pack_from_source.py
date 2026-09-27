@@ -19,7 +19,7 @@ REPORT = ROOT / ".build/play-seeds/08278964164390492688/analysis.json"
 
 def write_seed(folder, *, corrupt_manifest=False, duplicate=False):
     slot = {"schema": 1, "game": "Breath of the Wild", "seed": "test-seed", "slot": 1,
-            "slot_name": "Simon", "slot_data": {"world_schema": 2, "client_schema": 3}}
+            "slot_name": "Player", "slot_data": {"world_schema": 2, "client_schema": 3}}
     slot["content_sha256"] = digest(json.dumps(slot, ensure_ascii=False, sort_keys=True,
                                               separators=(",", ":")).encode())
     if corrupt_manifest:
@@ -33,7 +33,7 @@ def write_seed(folder, *, corrupt_manifest=False, duplicate=False):
     identity["token"] = session_token(("test-seed", 0, 1, "checksum"))
     report = {"status": "passed", "scope": "generated_solo_ap_server",
               "archive": str(archive), "archive_sha256": digest(archive.read_bytes()),
-              "audit": {"seed": "test-seed", "slots": {"1": "Simon"}},
+              "audit": {"seed": "test-seed", "slots": {"1": "Player"}},
               "delivery": {"sessions": {"1": identity}}}
     path = folder / "analysis.json"
     path.write_bytes(encode(report))
@@ -96,13 +96,10 @@ def tree(path):
     return {p.relative_to(path).as_posix():p.read_bytes() for p in path.rglob('*') if p.is_file()}
 assert a.name == b.name and tree(a) == tree(b)
 hashes = {n:digest(raw) for n,raw in tree(a).items() if n != 'manifest.json'}
-# All 23 installed files (metadata excluded). Played pack 5e94d0a1880f1b2b gave
-# 9c3045ae...; since 25/09 pouch items and champion powers use the game's own
-# get window, with silent twins for reloads: new
-# reference, to be validated in game. Every seed pack also carries the
-# Archipelago key item (actor, icon, ActorInfo, texts in 7 languages): 33 files.
+# Every installed file (metadata excluded): the native code, the resources,
+# and the Archipelago key item (actor, icon, ActorInfo, texts in 7 languages).
 assert len(hashes) == 33
-assert digest(encode(hashes)) == '7aa0b657895757f11bac2a0cc0533fd48e9485934a67d136458ff7532a7d4920', 'new pin: ' + digest(encode(hashes))
+assert digest(encode(hashes)) == '82a889bb0add9914d15b1f160551841a20371cdd4d935296c693c9d652ec32cb', 'new pin: ' + digest(encode(hashes))
 binding = load_seed(work/'analysis.json', 1, work/'seed.zip')
 verify_pack(a, binding)
 try:

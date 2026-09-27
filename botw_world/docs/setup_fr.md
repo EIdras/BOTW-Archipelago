@@ -58,13 +58,13 @@ le sélectionne.
 ## Jouer
 
 ```bat
-Jouer-Partie.cmd --seed <seed>
+Play.cmd --seed <seed>
 ```
 
 Cela démarre le serveur Archipelago sur `127.0.0.1:38281`, Cemu sur son profil isolé avec le seul pack de la seed, et
 le client. Pour une nouvelle seed, commencer une **nouvelle partie** : une sauvegarde reste liée à la seed avec laquelle
 elle a été commencée. Jouer normalement ; fermer Cemu termine la session. Le serveur garde son état à côté de la seed :
-la progression se conserve d'une session à l'autre.
+la progression se conserve d'une session à l'autre. Le client et les textes ajoutés au jeu sont en anglais.
 
 Les lignes tapées dans la console partent au serveur comme commandes (`/hint`, `/players`, `/status`...) ou comme
 chat. Le client ajoute ses propres commandes :
@@ -72,7 +72,7 @@ chat. Le client ajoute ses propres commandes :
 | Commande                | Effet                                                         |
 |-------------------------|---------------------------------------------------------------|
 | `/ap-tip <texte>`       | afficher une ligne dans le journal Archipelago du jeu (test)  |
-| `/ap-coupure [s]`       | simuler une coupure du serveur pendant `s` secondes           |
+| `/ap-disconnect [s]`    | simuler une coupure du serveur pendant `s` secondes           |
 | `/ap-evt [n\|reset]`     | lister les dernières requêtes d'événement du jeu (diagnostic) |
 
 ## En cas de problème

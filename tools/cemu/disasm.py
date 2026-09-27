@@ -35,12 +35,12 @@ X_31 = {
     922: "extsh", 26: "cntlzw", 8: "subfc", 138: "adde", 202: "addze",
 }
 
-# Un branchement conditionnel teste UN bit de CR, designe par BI & 3 :
+# A conditional branch tests ONE bit of CR, named by BI & 3:
 #   0 = lt   1 = gt   2 = eq   3 = so
-# et BO dit s'il faut brancher quand ce bit est vrai (12) ou faux (4).
-# Ne regarder que BO -- ce que faisait la version precedente -- fait lire "bne"
-# la ou le code dit "ble", et cette confusion a produit trois analyses fausses
-# d'affilee sur la machine a etats du message central.
+# and BO says whether to branch when that bit is true (12) or false (4).
+# Looking at BO alone reads "bne" where the code says "ble" -- a
+# confusion that once produced three wrong analyses in a row of the center
+# message's state machine.
 CR_BIT = {0: ("lt", "ge"), 1: ("gt", "le"), 2: ("eq", "ne"), 3: ("so", "ns")}
 
 
@@ -108,9 +108,9 @@ def disasm(w, pc):
             base = "blr" if d == 20 else "bclr"
             return base + ("l" if lk else "")
         if xo == 528:
-            # le bit LK distingue un saut d'un APPEL : bctr saute et ne revient
-            # pas, bctrl appelle et la suite s'execute. Les confondre rend la
-            # fin d'une fonction incomprehensible.
+            # the LK bit tells a jump from a CALL: bctr jumps and does not come
+            # back, bctrl calls and what follows runs. Mixing them up makes the
+            # end of a function unreadable.
             base = "bctr" if d == 20 else "bcctr"
             return base + ("l" if lk else "")
         return f".long {w:#010x}  ; op19 xo={xo}"
@@ -149,7 +149,7 @@ def main():
     with Process(pid) as p:
         base, _, _ = guest_base(p, find_cave(p) - 12)
         if base is None:
-            sys.exit("base introuvable - lance d'abord mailbox.py")
+            sys.exit("base not found - run mailbox.py first")
         pc = start - back * 4
         raw = p.read(base + pc, count * 4)
         for i in range(count):

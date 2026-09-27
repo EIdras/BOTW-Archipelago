@@ -20,9 +20,12 @@ from tools.build_resources_from_source import digest, encode
 RULES = (
     '[Definition]\ntitleIds = 00050000101C9500\nname = Archipelago Native Integration\n'
     'path = "The Legend of Zelda: Breath of the Wild/Archipelago/Native Integration"\n'
-    'description = Native delivery and source reward replacement validation\n'
+    'description = The game pack of one Archipelago seed\n'
     'version = 7\nfsPriority = 2000\n'
 ).encode("utf-8")
+# Packs built before the description changed stay valid.
+EARLIER_RULES = RULES.replace(b"The game pack of one Archipelago seed",
+                              b"Native delivery and source reward replacement validation")
 RUNTIME = {"patch_apInject.asm", "patch_event_request.asm"}
 DIAGNOSTICS = {"patch_ui_close_trace.asm", "patch_ui_lifecycle.asm", "patch_request_reject_trace.asm"}
 
@@ -109,7 +112,7 @@ def verify_pack(pack: Path, binding: dict | None = None) -> dict:
     catalog = json.loads((pack / "delivery_catalog.json").read_text(encoding="utf-8"))
     if catalog["binding"]["seed_token"] != manifest["seed_binding"]["token"]:
         raise ValueError("pack catalog binding mismatch")
-    if (pack / "rules.txt").read_bytes() != RULES:
+    if (pack / "rules.txt").read_bytes() not in (RULES, EARLIER_RULES):
         raise ValueError("pack rules mismatch")
     return manifest
 
@@ -121,7 +124,7 @@ def build(content: Path, rpx: Path, report: Path, slot: int, output: Path, *,
     from botw_patch.shops import plan_from_manifest
     shops = plan_from_manifest(slot_data)
     if digest(rpx.read_bytes()) != native.RPX_SHA256:
-        raise ValueError("RPX incompatible : fournir le dump Wii U EUR v208 vérifié")
+        raise ValueError("incompatible RPX: provide the verified Wii U EUR v208 dump")
     with tempfile.TemporaryDirectory() as temp:
         work = Path(temp)
         native_dir = native.build(rpx, work / "native", resource_gate=resource_gate, event_gate=event_gate)
@@ -162,9 +165,9 @@ def build(content: Path, rpx: Path, report: Path, slot: int, output: Path, *,
             for steps in item["variants"].values()),
         "native_session_binding": True, "native_session_binding_token": binding["token"],
         "replaces_base_injection": True,
-        # The AP journal in the game's tip frame, in every pack since 26/09.
+        # The AP journal in the game's tip frame, in every pack.
         "ap_journal": "tip_channel" if nm["options"].get("tip_channel") else None,
-        "limits": ["embedded_legacy_instrumentation_retained", "not_validated_in_game"],
+        "limits": ["embedded_legacy_instrumentation_retained"],
     }
     if shops:       # only then, so that seeds without shops keep their pack identity
         manifest["shops"] = rm["shops"]

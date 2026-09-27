@@ -1,4 +1,4 @@
-"""Read-only UI oracle, from the laboratory notes on the get window and getdemo.py.
+"""Read-only UI oracle, from the measurements of the get window (getdemo.py).
 
 This never opens/closes a screen or queues a native call. An unchanged name
 does not prove that no call occurred; polling may miss brief transitions.

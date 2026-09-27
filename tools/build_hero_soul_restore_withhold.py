@@ -3,15 +3,15 @@
 A stage of the native build chain, like tools/build_world_heart_withhold.py.
 
 The ClearRemains recipe withholds the champion power when the Divine Beast is
-freed (validated 9m), but the engine puts it back at the next load:
+freed, but the engine puts it back at the next load:
 
-* 9q: a forged save with Clear_RemainsWater comes up with the power in the
+* a forged save with Clear_RemainsWater comes up with the power in the
   abilities menu and IsGet_Obj_HeroSoul_Zora at 1, although the save file holds
-  0. The pouch really holds it (the Ballad guard's HasPorchItem said so);
-* 9r: controlled experiment, one variable, Clear_RemainsWater: freed -> power,
-  not freed -> nothing. The laboratory pack's spy on the granted-object
-  function 0x02b769c4 stayed at zero, and the itemGet counter too;
-* 9s: a probe on 0x02EB3DF0, the single pouch item creation point of
+  0. The pouch really holds it (the Ballad guard's HasPorchItem says so);
+* with one variable, Clear_RemainsWater: freed -> power, not freed -> nothing.
+  A spy on the granted-object function 0x02b769c4 stayed at zero, and the
+  itemGet counter too;
+* a trace on 0x02EB3DF0, the single pouch item creation point of
   PauseMenuDataMgr (21 callers: itemGet, the event-flow grants, and the
   routines rebuilding the pouch from the save), named the caller. The freed
   load makes exactly one creation the unfreed load does not, from 0x02eb4d90.
@@ -55,12 +55,12 @@ sys.path[:] = [str(ROOT)] + [p for p in sys.path
 from botw_patch.resources import digest  # noqa: E402
 from tools.build_seed_bound_candidate import verified_files  # noqa: E402
 
-# a003b02e801b0659: the Ballad guard asking the pouch, played in 9q.
+# a003b02e801b0659: the Ballad guard asking the pouch.
 SOURCE = ROOT / ".build/ballad-condition-candidates/a003b02e801b0659"
 OUTPUT = ROOT / ".build/hero-soul-restore-candidates"
 INJECTION = "patch_apInject.asm"
 
-CREATE = 0x02EB3DF0          # PauseMenuDataMgr pouch item creation (9s)
+CREATE = 0x02EB3DF0          # PauseMenuDataMgr pouch item creation
 # beast -> (getter call, its cached handle, the flag name, the guard branch,
 #           its vanilla word, the creation call it protects)
 BLOCKS = {
@@ -73,7 +73,7 @@ BLOCKS = {
     "Gerudo": (0x02EB4DA8, 0x104644F0, "Clear_RemainsElectric",
                0x02EB4DB0, 0x41820080, 0x02EB4E10),
 }
-# 9s measured this one; the other three are the same shape, one per beast.
+# This one was traced; the other three are the same shape, one per beast.
 MEASURED = "Zora"
 CALL_WORD = 0x48000000       # bl/b opcode bits, checked below
 
@@ -91,12 +91,12 @@ def guard_lines() -> list[str]:
     return lines
 
 
-BLOCK = ("\n; --- pouvoirs de Prodige : pas de restitution au chargement ----------------\n"
-         "; PauseMenuDataMgr recree le pouvoir dans la poche a chaque chargement quand\n"
-         "; la creature divine est liberee (mesure 9q/9r/9s). Les quatre gardes\n"
-         f"; deviennent inconditionnelles : le bloc est saute, la creation 0x{CREATE:08x}\n"
-         "; n'a plus lieu. itemGet, les dons par flux (livraison AP) et le reste de la\n"
-         "; reconstruction de la poche sont inchanges.\n"
+BLOCK = ("\n; --- champion powers: not restored at load ----------------------------------\n"
+         "; PauseMenuDataMgr recreates the power in the pouch at every load when the\n"
+         "; Divine Beast is freed (measured). The four guards become unconditional:\n"
+         f"; the block is skipped, the creation 0x{CREATE:08x} no longer happens.\n"
+         "; itemGet, the gifts by flow (AP delivery) and the rest of the pouch\n"
+         "; rebuild are unchanged.\n"
          + "\n".join(guard_lines()) + "\n")
 
 
@@ -111,7 +111,7 @@ def rpx_words() -> dict[int, int]:
 
 
 def check_rpx(words: dict[int, int] | None = None) -> None:
-    """Every anchor is what 9s read: a call, a beq, and the creation call."""
+    """Every anchor as measured: a call, a beq, and the creation call."""
     words = rpx_words() if words is None else words
     for race, (getter, handle, _flag, guard, word, create) in BLOCKS.items():
         if words[guard] != word:

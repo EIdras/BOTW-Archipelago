@@ -1,4 +1,4 @@
-"""Experimental Cemu backend for generated, transaction-safe deliveries."""
+"""Cemu backend for generated, transaction-safe deliveries."""
 from __future__ import annotations
 
 from contextlib import nullcontext
@@ -27,7 +27,7 @@ REJECT_HASH = zlib.crc32(b"APDeliveryRejectCounter") & 0xFFFFFFFF
 GUARD_HASH = zlib.crc32(b"SaveProhibition") & 0xFFFFFFFF
 # Frames left to the event that just committed to close. Its commit comes
 # before GuardOFF and the event's own teardown; a request placed meanwhile was
-# accepted and never ran (25/09, #5/1 given back one frame after #5/0).
+# accepted and never ran (a step requested one frame after the previous commit).
 SETTLE_FRAMES = 30
 
 
@@ -39,11 +39,11 @@ class NativeDeliveryCatalog:
         try:
             self.data = json.loads(self.path.read_text(encoding="utf-8"))
         except (OSError, ValueError) as exc:
-            raise ValueError(f"catalogue natif illisible ({self.path}): {exc}") from exc
+            raise ValueError(f"native catalog unreadable ({self.path}): {exc}") from exc
         if (self.data.get("schema") != 1 or self.data.get("cursor") !=
                 "(received_index << 8) | step" or not self.data.get("flow")
                 or not isinstance(self.data.get("items"), dict)):
-            raise ValueError("format de catalogue natif inconnu")
+            raise ValueError("unknown native catalog format")
         binding = self.data.get("binding")
         if binding is not None and (
                 not isinstance(binding, dict)
@@ -52,7 +52,7 @@ class NativeDeliveryCatalog:
                 or not 0 < binding["seed_token"] <= 0x7FFFFFFF
                 or binding.get("requires_cursor") != 0
                 or binding.get("requires_token") != 0):
-            raise ValueError("métadonnées de liaison native incohérentes")
+            raise ValueError("inconsistent native binding metadata")
 
     def binding(self) -> dict | None:
         value = self.data.get("binding")
@@ -67,7 +67,7 @@ class NativeDeliveryCatalog:
         item = self.data["items"].get(item_name)
         if item is None:
             reason = self.data.get("unsupported", {}).get(item_name,
-                                                           "item absent du catalogue")
+                                                           "item missing from the catalog")
             raise KeyError(f"{item_name}: {reason}")
         variants = item.get("variants", {})
         if "default" in variants:
@@ -75,27 +75,27 @@ class NativeDeliveryCatalog:
         else:
             tiers = sorted(int(key) for key in variants)
             if not tiers:
-                raise ValueError(f"{item_name}: aucune variante native")
+                raise ValueError(f"{item_name}: no native variant")
             selected = variants[str(min(received_before, tiers[-1]))]
         if not isinstance(selected, list) or not selected:
-            raise ValueError(f"{item_name}: plan natif vide")
+            raise ValueError(f"{item_name}: empty native plan")
         count = len(selected)
         for number, step in enumerate(selected):
             if (step.get("step") != number or step.get("step_count") != count
                     or not step.get("entry") or not step.get("mutations")):
-                raise ValueError(f"{item_name}: métadonnées d'étape incohérentes")
+                raise ValueError(f"{item_name}: inconsistent step metadata")
         return selected
 
     def resolve(self, command: DeliveryCommand) -> tuple[str, dict]:
         steps = self.steps(command.item_name, command.received_before)
         if command.step_count != len(steps) or command.step >= len(steps):
             raise BackendContractError(
-                f"{command.item_name}: commande {command.step}/{command.step_count}, "
-                f"catalogue {len(steps)} étapes")
+                f"{command.item_name}: command {command.step}/{command.step_count}, "
+                f"catalog {len(steps)} steps")
         step = steps[command.step]
         if int(step.get("cursor_delta", -1)) != command.next_cursor - command.cursor:
             raise BackendContractError(
-                f"{command.item_name}: delta de curseur du catalogue invalide")
+                f"{command.item_name}: invalid catalog cursor delta")
         return str(self.data["flow"]), step
 
 
@@ -111,7 +111,7 @@ class CemuNativeDeliveryBackend:
                  commit_timeout: float = 30.0, poll_seconds: float = 0.05,
                  safe=None):
         if not seed or not isinstance(slot, int) or not 0 < token <= 0x7FFFFFFF:
-            raise ValueError("identité AP native invalide")
+            raise ValueError("invalid native AP identity")
         self.game = game
         self.seed = seed
         self.slot = slot
@@ -141,10 +141,10 @@ class CemuNativeDeliveryBackend:
     def _read_s32(self, hash_u32: int) -> int:
         live = getattr(self.game, "live", None)
         if live is None:
-            raise RuntimeError("GameData vivant indisponible")
+            raise RuntimeError("live GameData unavailable")
         value = live.get(hash_u32, "s32")
         if value is None:
-            raise RuntimeError(f"flag s32 natif introuvable ({hash_u32:08x})")
+            raise RuntimeError(f"native s32 flag not found ({hash_u32:08x})")
         return int(value)
 
     def _state(self) -> tuple[int, int, int]:
@@ -154,10 +154,10 @@ class CemuNativeDeliveryBackend:
     def _guard(self) -> bool:
         live = getattr(self.game, "live", None)
         if live is None:
-            raise RuntimeError("GameData vivant indisponible")
+            raise RuntimeError("live GameData unavailable")
         value = live.get(GUARD_HASH, "bool")
         if value is None:
-            raise RuntimeError("garde de sauvegarde native introuvable")
+            raise RuntimeError("native save guard not found")
         return bool(value)
 
     def checkpoint(self) -> DeliveryCheckpoint:
@@ -196,21 +196,21 @@ class CemuNativeDeliveryBackend:
         if binding is not None and binding["seed_token"] != self.token:
             return DeliveryResult(
                 DeliveryStatus.SESSION_MISMATCH, cursor,
-                f"catalogue prévu pour {binding['seed_token']}, token {self.token}")
+                f"catalog built for {binding['seed_token']}, token {self.token}")
         if token == self.token:
             return DeliveryResult(DeliveryStatus.ALREADY_APPLIED, cursor)
         if token != 0 or cursor != 0:
             return DeliveryResult(
                 DeliveryStatus.SESSION_MISMATCH, cursor,
-                f"ledger BOTW {token}/{cursor}; liaison exige 0/0")
+                f"BOTW ledger {token}/{cursor}; binding requires 0/0")
         if binding is None:
             return DeliveryResult(
                 DeliveryStatus.SESSION_MISMATCH, cursor,
-                "catalogue sans entrée de liaison native")
+                "catalog without a native binding entry")
         if not self._ready():
             return DeliveryResult(
                 DeliveryStatus.DEFERRED, cursor,
-                getattr(self.game, "delivery_block_reason", "jeu occupé"))
+                getattr(self.game, "delivery_block_reason", "game busy"))
 
         request, lock_factory = self._dependencies()
         evidence = {}
@@ -227,21 +227,21 @@ class CemuNativeDeliveryBackend:
                     if evidence.get("status") in (None, "preflight", "not_ready"):
                         return DeliveryResult(
                             DeliveryStatus.DEFERRED, cursor,
-                            "invocateur de liaison non prêt")
+                            "binding invoker not ready")
                     raise
                 native_return = result.get("native_return")
                 if native_return == 0:
                     token_now, cursor_now, _ = self._state()
                     if token_now != 0 or cursor_now != 0:
                         raise BackendContractError(
-                            "ledger modifié après refus explicite de liaison")
+                            "ledger changed after an explicit binding refusal")
                     return DeliveryResult(
                         DeliveryStatus.DEFERRED, cursor_now,
-                        "liaison native refusée explicitement")
+                        "native binding explicitly refused")
                 if native_return != 1:
                     return DeliveryResult(
                         DeliveryStatus.UNCERTAIN, cursor,
-                        "accusé de liaison natif inconnu")
+                        "unknown native binding acknowledgement")
 
                 deadline = time.monotonic() + self.commit_timeout
                 while time.monotonic() < deadline:
@@ -252,7 +252,7 @@ class CemuNativeDeliveryBackend:
                     if cursor_now != 0 or token_now not in (0, self.token):
                         return DeliveryResult(
                             DeliveryStatus.UNCERTAIN, cursor_now,
-                            f"ledger divergent pendant liaison: {token_now}/{cursor_now}")
+                            f"ledger diverged during binding: {token_now}/{cursor_now}")
                     time.sleep(self.poll_seconds)
         except BackendContractError:
             raise
@@ -268,13 +268,13 @@ class CemuNativeDeliveryBackend:
             if token_now == self.token and cursor_now == 0 and not guard_now:
                 return DeliveryResult(
                     DeliveryStatus.APPLIED, cursor_now,
-                    f"liaison committée malgré erreur d'observation: {exc}")
+                    f"binding committed despite an observation error: {exc}")
             return DeliveryResult(
                 DeliveryStatus.UNCERTAIN, cursor_now,
-                f"résultat de liaison indéterminé: {exc}")
+                f"binding outcome unknown: {exc}")
         return DeliveryResult(
             DeliveryStatus.UNCERTAIN, cursor,
-            "entrée de liaison acceptée sans commit observé")
+            "binding entry accepted without an observed commit")
 
     def _sync_selection(self, equip: int | None) -> str:
         """After a commit that selected a rune, make the live game show it.
@@ -286,11 +286,11 @@ class CemuNativeDeliveryBackend:
             return ""
         sync = getattr(self.game, "sync_rune_selection", None)
         if sync is None:
-            return "sélection de rune non synchronisée : jeu sans cette capacité"
+            return "rune selection not synchronized: the game lacks this capability"
         try:
             return sync(equip).summary()
         except Exception as exc:  # noqa: BLE001 - the commit is already durable
-            return f"sélection de rune non synchronisée : {type(exc).__name__}: {exc}"
+            return f"rune selection not synchronized: {type(exc).__name__}: {exc}"
 
     def request_status_item(self) -> bool | None:
         """Ask the idempotent key item entry once: True once the game took the
@@ -326,23 +326,23 @@ class CemuNativeDeliveryBackend:
         if binding is not None and binding["seed_token"] != self.token:
             return DeliveryResult(
                 DeliveryStatus.SESSION_MISMATCH, cursor,
-                f"catalogue prévu pour {binding['seed_token']}, token {self.token}")
+                f"catalog built for {binding['seed_token']}, token {self.token}")
         flow, step = self.catalog.resolve(command)
         # Read before submitting: a malformed setter must fail before any call.
         equip = equip_requirement(step)
         if token != self.token:
             return DeliveryResult(DeliveryStatus.SESSION_MISMATCH, cursor,
-                                  f"token BOTW {token}, attendu {self.token}")
+                                  f"BOTW token {token}, expected {self.token}")
         if cursor != command.cursor:
             raise BackendContractError(
-                f"curseur modifié avant soumission: {cursor}, attendu {command.cursor}")
+                f"cursor changed before submission: {cursor}, expected {command.cursor}")
         if not self._ready():
             return DeliveryResult(DeliveryStatus.DEFERRED, cursor,
-                                  getattr(self.game, "delivery_block_reason", "jeu occupé"))
+                                  getattr(self.game, "delivery_block_reason", "game busy"))
         since = self._frames_since_commit()
         if since is not None and since < SETTLE_FRAMES:
             return DeliveryResult(DeliveryStatus.DEFERRED, cursor,
-                                  f"événement précédent en fermeture ({since}/{SETTLE_FRAMES} images)")
+                                  f"previous event closing ({since}/{SETTLE_FRAMES} frames)")
         if not (command.quiet and step.get("quiet_entry")) and any(
                 m.get("kind") == "rune_download" for m in step.get("mutations", ())):
             # The download screen needs the pause menu built at once, or the
@@ -351,10 +351,10 @@ class CemuNativeDeliveryBackend:
             try:
                 ready, reason = self.game.pause_menu_ready()
             except Exception as exc:  # noqa: BLE001 - unreadable: not now
-                ready, reason = False, f"menu pause illisible ({exc})"
+                ready, reason = False, f"pause menu unreadable ({exc})"
             if not ready:
                 return DeliveryResult(DeliveryStatus.DEFERRED, cursor,
-                                      f"menu pause pas prêt : {reason}")
+                                      f"pause menu not ready: {reason}")
 
         request, lock_factory = self._dependencies()
         evidence = {}
@@ -379,19 +379,19 @@ class CemuNativeDeliveryBackend:
                     # request outcome can only be reconciled from the ledger.
                     if evidence.get("status") in (None, "preflight", "not_ready"):
                         return DeliveryResult(DeliveryStatus.DEFERRED, command.cursor,
-                                              "invocateur natif non prêt")
+                                              "native invoker not ready")
                     raise
                 native_return = result.get("native_return")
                 if native_return == 0:
                     token_now, cursor_now, _ = self._state()
                     if token_now != self.token or cursor_now != command.cursor:
                         raise BackendContractError(
-                            "état modifié après un refus natif explicite")
+                            "state changed after an explicit native refusal")
                     return DeliveryResult(DeliveryStatus.DEFERRED, cursor_now,
-                                          "demande native refusée explicitement")
+                                          "native request explicitly refused")
                 if native_return != 1:
                     return DeliveryResult(DeliveryStatus.UNCERTAIN, command.cursor,
-                                          "accusé natif inconnu")
+                                          "unknown native acknowledgement")
 
                 deadline = time.monotonic() + self.commit_timeout
                 while time.monotonic() < deadline:
@@ -399,29 +399,29 @@ class CemuNativeDeliveryBackend:
                     if token_now != self.token:
                         return DeliveryResult(
                             DeliveryStatus.UNCERTAIN, cursor_now,
-                            "token de sauvegarde modifié pendant la livraison")
+                            "save token changed during the delivery")
                     if cursor_now == command.next_cursor:
                         self._committed_at = self._frame()
                         return DeliveryResult(DeliveryStatus.APPLIED, cursor_now,
                                               self._sync_selection(equip))
                     if cursor_now != command.cursor:
                         raise BackendContractError(
-                            f"commit natif impossible: {cursor_now}, attendu "
-                            f"{command.cursor} ou {command.next_cursor}")
+                            f"impossible native commit: {cursor_now}, expected "
+                            f"{command.cursor} or {command.next_cursor}")
                     if rejected_now != rejected:
                         if rejected_now == rejected + 1:
                             self._committed_at = self._frame()
                             return DeliveryResult(
                                 DeliveryStatus.INVENTORY_FULL, cursor_now,
-                                f"inventaire plein pour {step.get('capacity_actor')}")
+                                f"inventory full for {step.get('capacity_actor')}")
                         raise BackendContractError(
-                            f"compteur de rejet avancé de {rejected} à {rejected_now}")
+                            f"reject counter advanced from {rejected} to {rejected_now}")
                     time.sleep(self.poll_seconds)
         except BackendContractError:
             raise
         except Exception:
             raise
         return DeliveryResult(DeliveryStatus.UNCERTAIN, command.cursor,
-                              "entrée acceptée sans commit observé"
-                              + (f" (demande {since} images après le commit précédent)"
+                              "entry accepted without an observed commit"
+                              + (f" (requested {since} frames after the previous commit)"
                                  if since is not None else ""))

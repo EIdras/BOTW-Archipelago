@@ -40,7 +40,7 @@ generation, the game pack and playing. In short:
 ```bat
 venv\Scripts\python tools\generate_native.py
 venv\Scripts\python tools\play_seed.py .build\native-seeds\AP_<seed>.zip --content <update content> --rpx <U-King.rpx>
-Jouer-Partie.cmd --seed <seed>
+Play.cmd --seed <seed>
 ```
 
 The Archipelago world alone is packaged with `tools\package_native.py` as `dist\botw.apworld`. What the world does,
@@ -51,14 +51,13 @@ its locations, items, goal and logic: [game page](botw_world/docs/en_Breath%20of
 - Only the European Wii U version, update v208, in Cemu on Windows.
 - The game pack is built from the multiworld's generated archive, so seeds are generated and hosted locally, by the
   player; multiplayer seeds and rooms hosted on archipelago.gg are not supported yet.
-- The client's messages are in French.
 - DeathLink and traps are not available.
 
 ## Documentation
 
 - [Architecture](docs/architecture.md): the world, the game pack, the client and how they work together.
 - [Development](docs/development.md): layout, tests, reproducible builds, changing the world.
-- [Technical notes](docs/reference/README.md) (in French): what was measured in the game, and why.
+- [Technical notes](docs/reference/README.md): what was measured in the game, and why.
 
 ## Credits
 

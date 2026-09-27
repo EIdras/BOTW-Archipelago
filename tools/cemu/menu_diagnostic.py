@@ -32,9 +32,9 @@ def wait_for_inventory(process, base, path, timeout=90, menu_kind=None):
             catalog = screens(process, base)
             state = menu_state(catalog, menu_kind) if menu_kind else inventory_state(catalog)
             if previous is None and menu_kind and not state["expected_menu_open"]:
-                raise RuntimeError("Menu attendu non observe : aucun appel envoye")
+                raise RuntimeError("Expected menu not observed: no call sent")
             if previous is None and state["idle"]:
-                raise RuntimeError("Inventaire deja ferme : le report de demande ne peut pas etre teste")
+                raise RuntimeError("Inventory already closed: the deferred request cannot be tested")
             if state != previous:
                 evidence["transitions"].append({"seconds": time.monotonic() - start, **state})
                 path.write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
@@ -44,7 +44,7 @@ def wait_for_inventory(process, base, path, timeout=90, menu_kind=None):
                 evidence.update(status="released", seconds=time.monotonic() - start)
                 return evidence
             time.sleep(0.1)
-        raise RuntimeError("Inventaire non libere en90 secondes : aucune demande native envoyee")
+        raise RuntimeError("Inventory not released within 90 seconds: no native request sent")
     except BaseException as exc:
         evidence.update(status="failed", error=str(exc))
         raise
@@ -80,15 +80,15 @@ def exercise(process, base, prompt, path, other_menus=False):
     result = {"status": "running", "method": "read_only_manual_menu_stages", "stages": []}
     try:
         steps = [
-            ("gameplay", "Fermer tous les menus et rester avec Link jouable. Entree ici : "),
-            ("inventory", "Ouvrir l'inventaire, le LAISSER OUVERT, puis revenir ici et Entree : "),
-            ("gameplay_after", "Fermer l'inventaire, attendre Link jouable, puis revenir ici et Entree : ")]
+            ("gameplay", "Close every menu and keep Link playable. Enter here: "),
+            ("inventory", "Open the inventory, LEAVE IT OPEN, then come back here and press Enter: "),
+            ("gameplay_after", "Close the inventory, wait until Link is playable, then come back here and press Enter: ")]
         if other_menus:
             steps = [steps[0],
-                ("map", "Ouvrir la CARTE, sans lancer de teleportation. La laisser ouverte puis revenir ici et Entree : "),
-                ("after_map", "Fermer la carte, attendre Link jouable, puis revenir ici et Entree : "),
-                ("system", "Ouvrir le menu SYSTEME/OPTIONS (sans sauvegarder ni charger). Le laisser ouvert puis revenir ici et Entree : "),
-                ("after_system", "Fermer tous les menus, attendre Link jouable, puis revenir ici et Entree : ")]
+                ("map", "Open the MAP, without starting a fast travel. Leave it open, then come back here and press Enter: "),
+                ("after_map", "Close the map, wait until Link is playable, then come back here and press Enter: "),
+                ("system", "Open the SYSTEM/OPTIONS menu (without saving or loading). Leave it open, then come back here and press Enter: "),
+                ("after_system", "Close every menu, wait until Link is playable, then come back here and press Enter: ")]
         for stage, instruction in steps:
             prompt(instruction)
             result["stages"].append(dict(stage=stage, **screens(process, base)))

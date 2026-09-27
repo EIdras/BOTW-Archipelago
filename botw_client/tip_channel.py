@@ -72,7 +72,7 @@ def pages(markup: str, width: int = tp.LINE_WIDTH, lines: int = tp.LINES) -> lis
             page.extend(row)
         text = _encode(page)
         if len(text.encode("utf-16-be")) // 2 > tp.TEXT_UNITS:
-            raise ValueError("page trop longue pour le tampon natif")
+            raise ValueError("page too long for the native buffer")
         out.append(text)
     return out
 
@@ -90,7 +90,7 @@ class TipChannel:
         self.data = self.locate()
         self.flag_object = game.live.index["bool"].get(tp.TIP_KEY_HASH)
         if not self.flag_object:
-            raise RuntimeError(f"drapeau {tp.TIP_KEY} introuvable dans les GameData vivantes")
+            raise RuntimeError(f"flag {tp.TIP_KEY} not found in the live GameData")
         self.active = None                  # generation of our tip on screen, if any
         self._flags = None
 
@@ -98,7 +98,7 @@ class TipChannel:
         """Link playable in the world: HUD up, no loading screen, dialogue or
         menu (the guard of the item presentations and the dialogue bridge).
         A tip requested at the title screen or while loading is "shown" where
-        nobody sees it (25/09: the connection notice was lost that way)."""
+        nobody sees it (the connection notice was lost that way)."""
         from tools.cemu.presentation_ready import flag_reader, ready
         if self._flags is None:
             self._flags = flag_reader(self.process, self.cave)
@@ -112,18 +112,18 @@ class TipChannel:
     def _word(self, guest: int) -> int:
         raw = self.process.read(self._host(guest), 4)
         if raw is None or len(raw) != 4:
-            raise RuntimeError("lecture du canal des conseils impossible")
+            raise RuntimeError("cannot read the tip channel")
         return int.from_bytes(raw, "big")
 
     def _write(self, guest: int, data: bytes) -> None:
         if not self.process.write(self._host(guest), data):
-            raise RuntimeError("écriture du canal des conseils impossible")
+            raise RuntimeError("cannot write the tip channel")
 
     def locate(self) -> int:
         """apTipData, found by its signature in the injection group's cave."""
         raw = self.process.read(self._host(CODE_BASE), SCAN)
         if not raw:
-            raise RuntimeError("code cave illisible")
+            raise RuntimeError("code cave unreadable")
         head = struct.pack(">II", tp.MAGIC, tp.VERSION)
         found = []
         at = raw.find(head)
@@ -137,7 +137,7 @@ class TipChannel:
                 found.append(data)
             at = raw.find(head, at + 4)
         if len(found) != 1:
-            raise RuntimeError("canal des conseils absent du pack chargé (ou ambigu)")
+            raise RuntimeError("tip channel missing from the loaded pack (or ambiguous)")
         return found[0]
 
     def field(self, name: str) -> int:
@@ -154,7 +154,7 @@ class TipChannel:
         encoded = page.encode("utf-16-be")
         units = len(encoded) // 2
         if not 0 < units <= tp.TEXT_UNITS:
-            raise ValueError("page vide ou trop longue")
+            raise ValueError("page empty or too long")
         c = self.cave
         with self.lock_factory(self.process.pid):
             if not self.idle() or not c.pf_ready():
@@ -176,18 +176,18 @@ class TipChannel:
                     result = self._word_host(c.call_ret)
                     if result == tp.ACCEPTED:
                         if self.field("generation") != generation + 1:
-                            raise RuntimeError("génération du conseil incohérente")
+                            raise RuntimeError("inconsistent tip generation")
                         self.active = generation + 1
                         return "accepted"
                     return {tp.BUSY: "busy", tp.REFUSED_BY_GAME: "refused"}.get(
                         result, "invalid")
                 time.sleep(0.02)
-        raise RuntimeError("soumission du conseil sans réponse")
+        raise RuntimeError("tip submission without an answer")
 
     def _word_host(self, host: int) -> int:
         raw = self.process.read(host, 4)
         if raw is None or len(raw) != 4:
-            raise RuntimeError("lecture de l'invocateur impossible")
+            raise RuntimeError("cannot read the invoker")
         return int.from_bytes(raw, "big")
 
     def poll(self) -> str | None:

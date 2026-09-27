@@ -4,8 +4,7 @@ This is a stage of the native build chain, applied to any verified parent
 whose injection carries the anchors below. Seed builds start from the
 seed-independent base ``BASE_SOURCE`` + this stage (see
 ``tools/build_seed_bound_candidate.py``, which refuses a source without it).
-The lab candidate validated in 9b/9d (d5315269711d8330) is this stage applied
-to the Plateau seed candidate ``SOURCE``. Only ``patch_apInject.asm`` changes:
+Only ``patch_apInject.asm`` changes:
 
 * five words appended at the END of the cave data block (after apScrTable),
   so no existing mailbox field moves; ``apSelMagic`` lets Python detect a
@@ -16,8 +15,7 @@ to the Plateau seed candidate ``SOURCE``. Only ``patch_apInject.asm`` changes:
 
 The EventFlow, the delivery catalog and the seed binding are unchanged: the
 persistent transaction stays flag + PlayerEquipItemType + cursor. See
-``botw_client/rune_selection.py`` for the companion side and
-``tools/audit_rune_selection_sync_candidate.py`` for the offline audit.
+``botw_client/rune_selection.py`` for the companion side.
 """
 from __future__ import annotations
 
@@ -36,7 +34,7 @@ from botw_patch.resources import digest  # noqa: E402
 from tools.build_seed_bound_candidate import verified_files  # noqa: E402
 
 SOURCE = ROOT / ".build/plateau-sensor-candidates/386f3df72c18dcb3"
-# Seed-independent base of the seed builds (request-reject trace, lab token).
+# Seed-independent base of the seed builds (request-reject trace, placeholder token).
 BASE_SOURCE = ROOT / ".build/request-reject-trace/c6f33f2902bd3da5"
 OUTPUT = ROOT / ".build/rune-selection-sync-candidates"
 INJECTION = "patch_apInject.asm"
@@ -48,10 +46,10 @@ DATA_ANCHOR = """apScrTable:
 """
 DATA_FIELDS = f"""apScrTable:
 .int 0
-; --- selection de rune demandee au jeu (apCheckSel) ----------------------
-; Ajoutes en FIN de bloc : aucun champ existant ne bouge. apSelMagic vaut
-; 0x{MAGIC:08X} ; sur un patch perime ces mots tombent sur du code, et Python
-; refuse alors la requete au lieu d'ecrire au hasard.
+; --- rune selection requested from the game (apCheckSel) ------------------
+; Appended at the END of the block: no existing field moves. apSelMagic is
+; 0x{MAGIC:08X}; on a stale patch these words fall on code, and Python then
+; refuses the request instead of writing blindly.
 apSelMagic:
 .int 0x{MAGIC:08X}
 apSelReq:
@@ -60,7 +58,7 @@ apSelType:
 .int 0
 apSelDone:
 .int 0
-; 1 = 0x02A2D6D4 appelee ; 0 = rien appele (type invalide ou objet absent)
+; 1 = 0x02A2D6D4 called; 0 = nothing called (invalid type or no object)
 apSelResult:
 .int 0
 .align 4
@@ -80,12 +78,12 @@ _SAVE = "\n".join(f"    stw   {r}, apS{r[1:]}@l(r11)" for r in _SAVED)
 _RESTORE = "\n".join(f"    lwz   {r}, apS{r[1:]}@l(r11)" for r in reversed(_SAVED))
 SERVICE = f"""
 apCheckSel:
-    ; --- demander au jeu de selectionner une rune ---------------------------
-    ; Meme chemin que l'activation dans l'inventaire (mesure 9a) : on ne fait
-    ; qu'ECRIRE la demande par la fonction du jeu 0x{REQUEST_FUNCTION:08X}(objet,
-    ; type). Sa mise a jour par image l'applique ensuite et ecrit elle-meme
-    ; PlayerEquipItemType. L'objet est le singleton *(0x{SELECTION_GLOBAL:08X}),
-    ; teste avant usage : il n'existe pas avant la creation du joueur.
+    ; --- ask the game to select a rune -------------------------------------
+    ; The same path as the activation in the inventory (measured): the request
+    ; is only WRITTEN, through the game's function 0x{REQUEST_FUNCTION:08X}(object,
+    ; type). Its per-frame update then applies it and writes
+    ; PlayerEquipItemType itself. The object is the singleton *(0x{SELECTION_GLOBAL:08X}),
+    ; tested before use: it does not exist before the player is created.
     lwz   r12, apSelReq@l(r11)
     cmpwi r12, 0
     beq   apCheckNotify
@@ -96,7 +94,7 @@ apCheckSel:
 
     lwz   r12, apSelType@l(r11)
     cmpwi r12, 0
-    blt   apSelFinish               ; seuls les types de rune livres
+    blt   apSelFinish               ; only the delivered rune types
     cmpwi r12, {_TYPE_LIMIT}
     bge   apSelFinish
 

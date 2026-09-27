@@ -31,7 +31,7 @@ class DeliveryCommand:
         if (self.index < 0 or self.received_before < 0
                 or not 0 <= self.step < self.step_count <= 0x100):
             raise ValueError(
-                f"position de livraison invalide: {self.index}/{self.step}/"
+                f"invalid delivery position: {self.index}/{self.step}/"
                 f"{self.step_count}")
 
     @property
@@ -107,23 +107,23 @@ class DeliveryCoordinator:
         try:
             checkpoint = self.backend.checkpoint()
         except Exception as exc:
-            suffix = f"; checkpoint illisible: {exc}"
+            suffix = f"; checkpoint unreadable: {exc}"
             return self._result(DeliveryStatus.UNCERTAIN, command.cursor,
                                 detail + suffix)
         if not self._same_session(checkpoint, command):
             return self._result(
                 DeliveryStatus.UNCERTAIN, checkpoint.cursor,
-                detail + "; session changee pendant la livraison")
+                detail + "; session changed during the delivery")
         if checkpoint.cursor == command.next_cursor:
             return self._result(DeliveryStatus.APPLIED, checkpoint.cursor,
-                                detail + "; commit confirme par relecture")
+                                detail + "; commit confirmed by reading it back")
         if checkpoint.cursor == command.cursor:
             return self._result(
                 DeliveryStatus.UNCERTAIN, checkpoint.cursor,
-                detail + "; curseur inchange, mutation possible")
+                detail + "; cursor unchanged, mutation possible")
         raise BackendContractError(
-            f"reconciliation #{command.index}/{command.step}: curseur "
-            f"{checkpoint.cursor}, attendu {command.cursor} ou "
+            f"reconciliation #{command.index}/{command.step}: cursor "
+            f"{checkpoint.cursor}, expected {command.cursor} or "
             f"{command.next_cursor}")
 
     def deliver(self, command: DeliveryCommand) -> DeliveryResult:
@@ -131,37 +131,37 @@ class DeliveryCoordinator:
         if not self._same_session(checkpoint, command):
             return self._result(
                 DeliveryStatus.SESSION_MISMATCH, checkpoint.cursor,
-                f"sauvegarde {checkpoint.seed}/{checkpoint.slot}, "
-                f"commande {command.seed}/{command.slot}")
+                f"save {checkpoint.seed}/{checkpoint.slot}, "
+                f"command {command.seed}/{command.slot}")
         if checkpoint.cursor > command.cursor:
             return self._result(DeliveryStatus.ALREADY_APPLIED,
                                 checkpoint.cursor)
         if checkpoint.cursor < command.cursor:
             return self._result(
                 DeliveryStatus.OUT_OF_ORDER, checkpoint.cursor,
-                f"curseur {checkpoint.cursor} attendu avant {command.cursor}")
+                f"cursor {checkpoint.cursor} expected before {command.cursor}")
 
         try:
             result = self.backend.deliver(command)
         except Exception as exc:
-            return self._reconcile_unknown(command, f"backend interrompu: {exc}")
+            return self._reconcile_unknown(command, f"backend interrupted: {exc}")
 
         if result.status in (DeliveryStatus.APPLIED,
                              DeliveryStatus.ALREADY_APPLIED):
             if result.cursor != command.next_cursor:
                 raise BackendContractError(
-                    f"{result.status.value} #{command.index}: curseur "
-                    f"{result.cursor}, attendu {command.next_cursor}")
+                    f"{result.status.value} #{command.index}: cursor "
+                    f"{result.cursor}, expected {command.next_cursor}")
             return result
         if result.status in (DeliveryStatus.DEFERRED,
                              DeliveryStatus.INVENTORY_FULL):
             if result.cursor != command.cursor:
                 raise BackendContractError(
-                    f"{result.status.value} #{command.index}: curseur avance "
-                    f"a {result.cursor}")
+                    f"{result.status.value} #{command.index}: cursor advanced "
+                    f"to {result.cursor}")
             return result
         if result.status is DeliveryStatus.UNCERTAIN:
             return self._reconcile_unknown(command,
-                                           result.detail or "issue native inconnue")
+                                           result.detail or "unknown native outcome")
         raise BackendContractError(
-            f"statut backend interdit: {result.status.value}")
+            f"forbidden backend status: {result.status.value}")

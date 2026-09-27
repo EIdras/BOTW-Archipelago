@@ -67,7 +67,7 @@ class BotwGame:
         self._last_safe_tick = None
         self.save_ledger_available = False
         self.save_ledger_flags_present = False
-        self.delivery_block_reason = "jeu non connecte"
+        self.delivery_block_reason = "game not connected"
         self.native_presentation_mode = False
 
     def close(self):
@@ -92,49 +92,49 @@ class BotwGame:
         self.process, self.cave = process, cave
         if not cave.pf_ready():
             self.close()
-            raise GameNotReady("apPfReq absent du patch charge : FERMER ET ROUVRIR CEMU")
+            raise GameNotReady("apPfReq missing from the loaded patch: CLOSE AND REOPEN CEMU")
         ok, passages, tick = cave.resolve_ready()
         if not ok:
             self.close()
             raise GameNotReady(
-                f"resolveur de pointeurs invalide: {passages} passages, tick={tick}; "
-                "FERMER ET ROUVRIR CEMU")
-        progress(f"resolveur de pointeurs : {passages} passages")
+                f"invalid pointer resolver: {passages} passes, tick={tick}; "
+                "CLOSE AND REOPEN CEMU")
+        progress(f"pointer resolver: {passages} passes")
         channels = cave.channels()
         if not self.native_presentation_mode:
             for name, (pointer, ready) in channels.items():
-                progress(f"  {name:22} {pointer:#010x}  {'pret' if ready else 'PAS PRET'}")
+                progress(f"  {name:22} {pointer:#010x}  {'ready' if ready else 'NOT READY'}")
         unavailable = ([] if self.native_presentation_mode else
                        [name for name, (_, ready) in channels.items() if not ready])
         if unavailable or not cave.ui_ready():
             self.close()
             raise GameNotReady(
-                "canaux non prets (charger une sauvegarde): "
+                "channels not ready (load a save): "
                 + ", ".join(unavailable or ["IHM"]))
 
         if self.native_presentation_mode:
             # The live bool table already contains location flags. Avoid the
             # expensive full-process scan of the legacy serialized tables.
-            progress("lecture des flags vivants...")
+            progress("reading the live flags...")
             index = {}
         else:
-            progress("construction de l'index GameData (cache du PID si disponible)...")
+            progress("building the GameData index (cached for this PID when available)...")
             index = self._load_or_build_index(progress)
         self.live = LiveGdt(process, cave.base)
         count = (self.live.build(kinds=("bool", "s32")) if self.native_presentation_mode
                  else self.live.build())
-        progress(f"GameData vivant : {count} flags scalaires indexes")
+        progress(f"live GameData: {count} scalar flags indexed")
         if not self.native_presentation_mode:
             self._validate_delivery_flags()
         if not self.native_presentation_mode:
-            progress("ledger sauvegarde BOTW : " +
+            progress("BOTW save ledger: " +
                      ("disponible" if self.save_ledger_available
-                      else "indisponible (repli etat externe)"))
+                      else "unavailable (external state fallback)"))
         self.locations = LocationTracker(
             process, index, load_targets(), live=self.live)
         if self.locations.live_addresses:
-            progress(f"locations : {len(self.locations.addresses)} dans la plage rapide, "
-                     f"{len(self.locations.live_addresses)} via GameData vivant")
+            progress(f"locations: {len(self.locations.addresses)} in the fast range, "
+                     f"{len(self.locations.live_addresses)} through the live GameData")
         return self
 
     def _validate_delivery_flags(self):
@@ -159,14 +159,14 @@ class BotwGame:
         self.save_ledger_flags_present = all(
             hash_u32 in self.live.index[kind]
             for hash_u32, kind in CUSTOM_FLAGS.values())
-        # 2026-09-08: the isolated persistence test read back live writes, but
+        # An isolated persistence test read back live writes, but
         # reloading restored zero instead of the saved cursor/token. Presence
         # alone cannot certify a save backend; direct LiveGdt writes are not a
         # validated persistent write path. Keep the legacy external fallback.
         self.save_ledger_available = False
         if missing:
             raise GameNotReady(
-                f"{len(missing)} actions GameData indisponibles; client non arme: "
+                f"{len(missing)} GameData actions unavailable; client not armed: "
                 + ", ".join(missing[:5]))
 
     def _load_or_build_index(self, progress):
@@ -182,19 +182,19 @@ class BotwGame:
                 if cache.get("pid") == pid and index:
                     h, address = next(iter(index.items()))
                     if be(self.process.read(address, 4)) == h:
-                        progress(f"index en cache : {len(index)} flags")
+                        progress(f"cached index: {len(index)} flags")
                         return index
             except (OSError, KeyError, ValueError, TypeError):
                 pass
         started = time.monotonic()
         index = build_index(self.process, known_hashes())
-        progress(f"index construit en {time.monotonic() - started:.0f}s : {len(index)} flags")
+        progress(f"index built in {time.monotonic() - started:.0f}s: {len(index)} flags")
         try:
             cache_path.write_text(json.dumps({
                 "pid": pid, "index": {str(k): v for k, v in index.items()}
             }), encoding="utf-8")
         except OSError as exc:
-            progress(f"cache non ecrit : {exc}")
+            progress(f"cache not written: {exc}")
         return index
 
     def healthy(self) -> bool:
@@ -208,7 +208,7 @@ class BotwGame:
             return
         value = BLOCK_LEASE_FRAMES if enabled else 0
         if not self.process.write(self.cave.block_grants, value.to_bytes(4, "big")):
-            raise RuntimeError("ecriture apBlockGrants refusee")
+            raise RuntimeError("apBlockGrants write refused")
 
     def poll_locations(self) -> list[str]:
         if not self.locations:
@@ -251,33 +251,33 @@ class BotwGame:
             }
         if name in self.flag_by_name:
             return self.flag_by_name[name]
-        raise KeyError(f"flag GameData inconnu: {name}")
+        raise KeyError(f"unknown GameData flag: {name}")
 
     def _read_flag(self, name: str, expected_kind: str | None = None):
         hash_u32, kind = self._hash(name)
         if expected_kind and kind != expected_kind:
-            raise RuntimeError(f"{name}: type {kind}, {expected_kind} attendu")
+            raise RuntimeError(f"{name}: type {kind}, expected {expected_kind}")
         if kind not in ("bool", "s32", "f32"):
-            raise RuntimeError(f"{name}: type {kind} non pris en charge")
+            raise RuntimeError(f"{name}: type {kind} not supported")
         value = self.live.get(hash_u32, kind)
         if value is None:
-            raise RuntimeError(f"{name}: objet GameData vivant introuvable")
+            raise RuntimeError(f"{name}: live GameData object not found")
         return value
 
     def _write_flag(self, name: str, value, expected_kind: str | None = None):
         hash_u32, kind = self._hash(name)
         if expected_kind and kind != expected_kind:
-            raise RuntimeError(f"{name}: type {kind}, {expected_kind} attendu")
+            raise RuntimeError(f"{name}: type {kind}, expected {expected_kind}")
         if kind not in ("bool", "s32", "f32"):
-            raise RuntimeError(f"{name}: type {kind} non pris en charge")
+            raise RuntimeError(f"{name}: type {kind} not supported")
         if not self.live.set(hash_u32, value, kind):
-            raise RuntimeError(f"{name}: objet GameData vivant introuvable")
+            raise RuntimeError(f"{name}: live GameData object not found")
         actual = self._read_flag(name, kind)
         if kind == "f32":
             if abs(actual - float(value)) > 0.01:
-                raise RuntimeError(f"{name}: relecture {actual}, attendu {value}")
+                raise RuntimeError(f"{name}: read back {actual}, expected {value}")
         elif actual != value:
-            raise RuntimeError(f"{name}: relecture {actual}, attendu {value}")
+            raise RuntimeError(f"{name}: read back {actual}, expected {value}")
 
     def _increment_flag(self, name: str, kind: str, delta, maximum):
         current = self._read_flag(name, kind)
@@ -292,12 +292,12 @@ class BotwGame:
         else:
             valid = actual == target
         if not valid:
-            raise RuntimeError(f"{name}: ecriture ecrasee ({actual}, attendu {target})")
+            raise RuntimeError(f"{name}: write overwritten ({actual}, expected {target})")
 
     def _give_and_wait(self, actor: str, quantity: int = 1, timeout: float = 5.0):
         before = self.cave.read()["give_done"]
         if not self.cave.give(actor, quantity):
-            raise RuntimeError(f"demande itemGet refusee: {actor}")
+            raise RuntimeError(f"itemGet request refused: {actor}")
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             state = self.cave.read()
@@ -305,12 +305,12 @@ class BotwGame:
                 return
             time.sleep(0.02)
         self.process.write(self.cave.give_req, bytes(4))
-        raise RuntimeError(f"itemGet sans reponse pour {actor}; requete annulee")
+        raise RuntimeError(f"itemGet without an answer for {actor}; request cancelled")
 
     def item_action_count(self, name: str) -> int:
         entry = self.item_map.get(name)
         if not entry:
-            raise RuntimeError(f"item AP sans carte: {name}")
+            raise RuntimeError(f"AP item missing from the item map: {name}")
         delivery = entry["delivery"]
         kind = delivery["kind"]
         if kind in ("actors", "flags"):
@@ -321,12 +321,12 @@ class BotwGame:
                         received_before: int = 0) -> str | None:
         entry = self.item_map.get(name)
         if not entry:
-            raise RuntimeError(f"item AP sans carte: {name}")
+            raise RuntimeError(f"AP item missing from the item map: {name}")
         delivery = entry["delivery"]
         kind = delivery["kind"]
         count = self.item_action_count(name)
         if not 0 <= step < count:
-            raise IndexError(f"{name}: etape {step}/{count} invalide")
+            raise IndexError(f"{name}: invalid step {step}/{count}")
         if kind == "actors":
             self._give_and_wait(delivery["actors"][step])
         elif kind == "progressive_actors":
@@ -347,17 +347,17 @@ class BotwGame:
             hash_u32, actual_kind = self._hash(delivery["flag"])
             if actual_kind != delivery["type"]:
                 raise RuntimeError(
-                    f"{delivery['flag']}: type {actual_kind}, {delivery['type']} attendu")
+                    f"{delivery['flag']}: type {actual_kind}, expected {delivery['type']}")
             current = self.live.get(hash_u32, actual_kind)
             if current is None:
                 raise RuntimeError(
-                    f"{delivery['flag']}: objet GameData vivant introuvable")
+                    f"{delivery['flag']}: live GameData object not found")
             self._write_flag(delivery["flag"], max(current, delivery["value"]),
                              delivery["type"])
         elif kind == "manual_prompt":
             return delivery["text"]
         else:
-            raise RuntimeError(f"action non implementee: {kind}")
+            raise RuntimeError(f"action not implemented: {kind}")
         return None
 
     def apply_item(self, name: str, received_before: int = 0) -> str | None:
@@ -377,30 +377,30 @@ class BotwGame:
         return pause_menu_ready(lambda guest, size: self.process.read(self.cave.base + guest, size))
 
     def get_window_free(self) -> bool:
-        _, screen, activity = getdemo.etat(self.process, self.cave, verbeux=False)
+        _, screen, activity = getdemo.state(self.process, self.cave, verbose=False)
         return not screen or activity == 0xFF
 
     def safe_for_delivery(self) -> bool:
         """Conservative gate shared by item, DeathLink and display queues."""
         if not self.cave or not self.cave.ui_ready() or not self.get_window_free():
             self._safe_signature = self._safe_since = None
-            self.delivery_block_reason = "IHM ou fenetre d'obtention occupee"
+            self.delivery_block_reason = "UI or get window busy"
             return False
         try:
             health = int(self._read_flag("CurrentHart", "s32"))
             save_prohibited = bool(self._read_flag("SaveProhibition", "bool"))
         except RuntimeError:
             self._safe_signature = self._safe_since = None
-            self.delivery_block_reason = "flags de securite illisibles"
+            self.delivery_block_reason = "safety flags unreadable"
             return False
         tick = be(self.process.read(self.cave.tick, 4))
         if health <= 0 or save_prohibited or tick == self._last_safe_tick:
             self._safe_signature = self._safe_since = None
             self._last_safe_tick = tick
             self.delivery_block_reason = (
-                "Link mort" if health <= 0 else
-                "sauvegarde/chargement interdit" if save_prohibited else
-                "jeu en pause ou hors premier plan")
+                "Link dead" if health <= 0 else
+                "saving/loading forbidden" if save_prohibited else
+                "game paused or in the background")
             return False
         self._last_safe_tick = tick
         signature = (
@@ -411,12 +411,12 @@ class BotwGame:
         if not all(signature) or signature != self._safe_signature:
             self._safe_signature = signature
             self._safe_since = now
-            self.delivery_block_reason = "pointeurs IHM en stabilisation"
+            self.delivery_block_reason = "UI pointers settling"
             return False
         elapsed = now - self._safe_since if self._safe_since is not None else 0.0
         if elapsed < SAFE_STABLE_SECONDS:
             self.delivery_block_reason = (
-                f"etat stable depuis {elapsed:.1f}/{SAFE_STABLE_SECONDS:.0f}s")
+                f"stable for {elapsed:.1f}/{SAFE_STABLE_SECONDS:.0f}s")
             return False
         self.delivery_block_reason = "pret"
         return True
@@ -427,7 +427,7 @@ class BotwGame:
         current = int(self._read_flag("APSeedToken", "s32"))
         if current not in (0, token):
             raise RuntimeError(
-                f"cette sauvegarde appartient au token AP {current}; {token} attendu")
+                f"this save belongs to AP token {current}; expected {token}")
         if current == 0:
             self._write_flag("APSeedToken", token, "s32")
 
@@ -439,15 +439,15 @@ class BotwGame:
         only reports whether the running game shows it.
         """
         if not self.process or not self.cave or not self.live:
-            return SyncOutcome("unavailable", detail="jeu non connecté")
+            return SyncOutcome("unavailable", detail="game not connected")
         if not self.cave.sel_ready():
             return SyncOutcome(
-                "unavailable", detail="patch sans sélection de rune (Cemu à relancer ?)")
+                "unavailable", detail="patch without rune selection (restart Cemu?)")
 
         def read_equip():
             value = self.live.get(EQUIP_HASH, "s32")
             if value is None:
-                raise RuntimeError("PlayerEquipItemType introuvable")
+                raise RuntimeError("PlayerEquipItemType not found")
             return int(value)
 
         sync = RuneSelectionSync(
@@ -461,15 +461,15 @@ class BotwGame:
 
     def delivery_position(self) -> tuple[int, int]:
         if not self.save_ledger_available:
-            raise RuntimeError("ledger BOTW indisponible")
+            raise RuntimeError("BOTW ledger unavailable")
         cursor = int(self._read_flag("APReceivedCursor", "s32"))
         return cursor >> 8, cursor & 0xFF
 
     def set_delivery_position(self, index: int, step: int = 0):
         if not self.save_ledger_available:
-            raise RuntimeError("ledger BOTW indisponible")
+            raise RuntimeError("BOTW ledger unavailable")
         if index < 0 or not 0 <= step <= 0xFF:
-            raise ValueError(f"curseur AP invalide: {index}/{step}")
+            raise ValueError(f"invalid AP cursor: {index}/{step}")
         self._write_flag("APReceivedCursor", (index << 8) | step, "s32")
 
     def display_ready(self) -> bool:
@@ -549,14 +549,14 @@ class BotwGame:
 
     def show_received(self, name: str, sender: str, game: str,
                       extra: str | None = None) -> bool:
-        lines = [f"Recu de {sender}"[:40], f"({game})"[:40]]
+        lines = [f"From {sender}"[:40], f"({game})"[:40]]
         if extra:
             lines.extend(extra[i:i + 40] for i in range(0, len(extra), 40))
         return self._show_item(name, name[:25], lines)
 
     def show_location_reward(self, name: str, recipient: str,
                              game: str, location: str) -> bool:
-        lines = [f"Pour {recipient}"[:40], f"({game})"[:40], location[:40]]
+        lines = [f"For {recipient}"[:40], f"({game})"[:40], location[:40]]
         return self._show_item(name, name[:25], lines)
 
     def show_ap_message(self, text: str) -> bool:
@@ -591,13 +591,13 @@ class BotwGame:
             self.process.write(address, saved)
 
     def is_dead(self) -> bool:
-        """CurrentHart is the candidate death edge; acceptance remains in-game."""
+        """CurrentHart is the likely death edge, not confirmed in the game."""
         return self._read_flag("CurrentHart", "s32") <= 0
 
     def kill_player(self):
         """Keep an incoming DeathLink pending until BOTW's death API is known.
 
-        The in-game test proved that writing CurrentHart=0 changes the tracked
+        Measured: writing CurrentHart=0 changes the tracked
         flag without executing the native death/reload sequence. Repeating that
         write would corrupt state while falsely acknowledging the DeathLink.
         Instrument the natural-death writer, then replace this stub by a call

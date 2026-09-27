@@ -72,15 +72,15 @@ def lint(text: str) -> list[str]:
             if match:
                 name = match.group(1)
                 if name in defined:
-                    problems.append(f"[{group}] ligne {number} : étiquette {name} déjà "
-                                    f"définie ligne {defined[name]}")
+                    problems.append(f"[{group}] line {number}: label {name} already "
+                                    f"defined at line {defined[name]}")
                 defined.setdefault(name, number)
         for number, line in lines:
             if LABEL.match(line):
                 continue
             for name in used_names(line):
                 if name not in defined:
-                    problems.append(f"[{group}] ligne {number} : étiquette {name} non définie")
+                    problems.append(f"[{group}] line {number}: label {name} not defined")
     return problems
 
 
@@ -93,7 +93,7 @@ def main(argv: list[str]) -> int:
     for arg in argv:
         for path in files(Path(arg)):
             problems = lint(path.read_text(encoding="utf-8"))
-            print(f"{path.name}: {'OK' if not problems else f'{len(problems)} problème(s)'}")
+            print(f"{path.name}: {'OK' if not problems else f'{len(problems)} problem(s)'}")
             for problem in problems[:20]:
                 print("  " + problem)
             status |= bool(problems)

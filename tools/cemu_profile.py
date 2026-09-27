@@ -82,19 +82,19 @@ def create(executable: Path, user_data: Path, target: Path = PROFILE) -> Path:
 def check_isolated() -> None:
     """The profile exists and no link leads out of it; Cemu is not running."""
     if not (PROFILE / "isolation.json").is_file():
-        raise RuntimeError("Profil Cemu absent : exécuter tools/cemu_profile.py")
+        raise RuntimeError("No Cemu profile: run tools/cemu_profile.py")
     for path in (PROFILE, PORTABLE, PORTABLE / "settings.xml", PORTABLE / "mlc01",
                  PORTABLE / "mlc01/usr/save"):
         if (not path.resolve().is_relative_to(PROFILE.resolve()) or path.is_symlink()
                 or path.is_junction()):
-            raise RuntimeError(f"Chemin du profil non isolé : {path}")
+            raise RuntimeError(f"Profile path not isolated: {path}")
     running = subprocess.run(["powershell", "-NoProfile", "-Command",
                               "Get-Process Cemu -ErrorAction SilentlyContinue "
                               "| Select-Object -ExpandProperty Id"],
                              capture_output=True, text=True, check=False)
     if running.stdout.strip():
-        raise RuntimeError("Fermer Cemu avant de préparer une partie "
-                           "(aucun processus n'est arrêté automatiquement).")
+        raise RuntimeError("Close Cemu before preparing a session "
+                           "(no process is stopped automatically).")
 
 
 def play_account_dat(source_account: str) -> str:
@@ -102,7 +102,7 @@ def play_account_dat(source_account: str) -> str:
     lines = source_account.splitlines()
     fields = dict(line.split("=", 1) for line in lines[1:] if "=" in line)
     if fields.get("PersistentId") != f"{SOURCE_ACCOUNT:08x}":
-        raise ValueError("compte copié inattendu")
+        raise ValueError("unexpected copied account")
     suffix = f"{PLAY_ACCOUNT & 0xFFFFFF:06x}"
     out = []
     for line in lines:
@@ -122,7 +122,7 @@ def ensure_play_account() -> dict:
     folder = ACCOUNTS / f"{PLAY_ACCOUNT:08x}"
     target = folder / "account.dat"
     if not target.resolve().is_relative_to(PROFILE.resolve()):
-        raise RuntimeError("compte de partie hors du profil")
+        raise RuntimeError("play account outside the profile")
     created = False
     if not target.is_file():
         raw = (ACCOUNTS / f"{SOURCE_ACCOUNT:08x}" / "account.dat").read_bytes()
@@ -143,7 +143,7 @@ def prepare_play(pack: Path) -> Path:
     check_isolated()
     manifest = verify_pack(pack)
     if "patch_apInject.asm" not in manifest["native_files"]:
-        raise RuntimeError("le pack ne contient pas l'injection de base")
+        raise RuntimeError("the pack lacks the base injection")
     settings = ET.parse(PORTABLE / "settings.xml")
     root = settings.getroot()
     root.find("mlc_path").text = (PORTABLE / "mlc01").as_posix()

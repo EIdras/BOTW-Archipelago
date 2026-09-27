@@ -1,4 +1,4 @@
-"""Bounded read-only decoder for the lab request-stage trace."""
+"""Bounded read-only decoder of the request-stage trace."""
 import re
 import struct
 

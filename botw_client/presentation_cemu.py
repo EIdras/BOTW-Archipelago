@@ -1,4 +1,4 @@
-"""Experimental owner-v2 queue adapter; not connected to the legacy client.
+"""Native presentation adapter (owner v2) of the presentation queue.
 
 Caller owns the writable process/cave and serializes calls. Never reattach an
 adapter to another process or reuse it after an uncertain outcome.
@@ -76,7 +76,7 @@ class CemuPresentationBackend:
         self.evidence = evidence
         self.evidence_error = None
         self.retry_after = 0.0
-        self.wait_reason = 'verification de disponibilite native'
+        self.wait_reason = 'checking native readiness'
 
     def _capture_evidence(self, phase):
         if self.evidence is not None:
@@ -112,25 +112,25 @@ class CemuPresentationBackend:
         state, join = self._state()
         if self.clock() < self.retry_after:
             self.samples, self.last_sample = 0, None
-            self.wait_reason = 'temporisation avant nouvelle tentative native'
+            self.wait_reason = 'waiting before the next native attempt'
             return False
         available = (not state['busy'] and self.active is None and
                      (state['phase'] in ('idle', 'refused') or self.native.finished(state, join)))
         if not available or not self.guard():
             self.samples, self.last_sample = 0, None
-            self.wait_reason = ('presentation native encore occupee' if not available
-                                else 'conditions IHM/protections de presentation non reunies')
+            self.wait_reason = ('native presentation still busy' if not available
+                                else 'UI conditions and presentation guards not met')
             return False
         now = self.clock()
         if self.last_sample is None or now - self.last_sample >= 0.1:
             if not self.stability_guard():
                 self.samples, self.last_sample = 0, None
-                self.wait_reason = 'jeu pas encore stable pour la presentation'
+                self.wait_reason = 'game not yet stable for the presentation'
                 return False
             self.samples += 1
             self.last_sample = now
-        self.wait_reason = ('presentation prete' if self.samples >= 3
-                            else 'stabilisation des conditions natives de presentation')
+        self.wait_reason = ('presentation ready' if self.samples >= 3
+                            else 'native presentation conditions settling')
         return self.samples >= 3
 
     def submit(self, request_id, title, description):

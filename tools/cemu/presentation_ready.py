@@ -1,4 +1,4 @@
-"""Read-only gameplay/UI/protection guard shared by lab and queue adapter."""
+"""Read-only gameplay/UI/protection guard of the presentation queue."""
 import zlib
 
 PROTECTIONS = ("CarryProhibition", "TrashProhibition", "PlayFlashbackDemoProhibition")
@@ -42,7 +42,7 @@ def presentation_gameplay_state(catalog):
                and not rows[74]["pointer"] and rows[74]["activity"] == 255
                and bool(hud["pointer"]) and hud["activity"] == 255
                # Both exact inactive HUD states were measured in playable
-               # shrine reports: 8b/8c (0), and Bombs8e170227 (0x00fc0000).
+               # shrines: 0, and 0x00fc0000.
                # Keep active/unknown states excluded; the caller additionally
                # requires live gameplay pointers, advancing tick and save guard.
                and hud["state_94"] in (0, 0x00fc0000))

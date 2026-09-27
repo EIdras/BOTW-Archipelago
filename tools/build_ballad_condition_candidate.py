@@ -1,11 +1,11 @@
 """Condition the DLC champion upgrade of the Champions' Ballad end (Demo622_0..3).
 
-A stage of the native build chain (Simon, 18/09: "Ballade DLC : conditionner").
-At the end of each Ballad dungeon, the entry Demo622_N_GetUI deletes the base
-power from the pouch (Demo_DeletePorchItemInEquip Obj_HeroSoul_X, DeleteNum -1)
-and grants the upgraded one (GetDemo:GetItemByName Obj_DLC_HeroSoul_X), without
-checking that the base power is owned. In AP the base powers are items of the
-pool; granting the upgrade before the base item would hand out the power early.
+A stage of the native build chain. At the end of each Ballad dungeon, the entry
+Demo622_N_GetUI deletes the base power from the pouch (Demo_DeletePorchItemInEquip
+Obj_HeroSoul_X, DeleteNum -1) and grants the upgraded one (GetDemo:GetItemByName
+Obj_DLC_HeroSoul_X), without checking that the base power is owned. In AP the base
+powers are items of the pool; granting the upgrade before the base item would hand
+out the power early.
 
 The stage inserts, in front of the delete, the vanilla query
 EventSystemActor HasPorchItem {PorchItemName: Obj_HeroSoul_X, Count: 1}: owned
@@ -13,17 +13,14 @@ EventSystemActor HasPorchItem {PorchItemName: Obj_HeroSoul_X, Count: 1}: owned
 as it did after the grant. The pouch is the right ledger: it is what the AP
 delivery of the power fills, and what the vanilla delete just below empties.
 
-Measured, in this order:
-* 9l (20260919T163003, 163822): the first form of the probe crashed Cemu, which
-  looked like HasPorchItem's fault. 9l (165315) then showed the real cause: the
-  vanilla DLC grant run outside its Ballad. The query was never guilty;
-* 9l (165315) validated the guard on both branches with CheckFlag
-  {IsGet_Obj_HeroSoul_X}, which looked equivalent and was kept;
-* 9p (20260920T151602) refuted that flag in context: loading a save where the
-  beast is freed (Clear_RemainsWater) and the power withheld, as every AP game
-  has it, comes up with IsGet_Obj_HeroSoul_Zora already at 1, although the save
-  file holds 0 and no itemGet ran. Simon had no power in the menu: the flag is
-  set without the pouch item. The guard let the upgrade through.
+Measured:
+* running the vanilla DLC grant outside its Ballad crashes Cemu; the query
+  itself is harmless;
+* the flag IsGet_Obj_HeroSoul_X cannot stand for the pouch: loading a save
+  where the beast is freed (Clear_RemainsWater) and the power withheld, as every
+  AP game has it, comes up with IsGet_Obj_HeroSoul_Zora already at 1, although
+  the save file holds 0, no itemGet ran and the power is not in the menu. A
+  guard on that flag lets the upgrade through.
 Nothing else of the flows changes. The second visit (BalladOfHeroX_Finish)
 never reaches GetUI and is untouched.
 """
@@ -45,7 +42,7 @@ from botw_patch.resources import ResourceBuilder, digest, unpack  # noqa: E402
 from tools.build_seed_bound_candidate import verified_files  # noqa: E402
 
 # 28bda513736cc12e = 396e8197caa8ff65 + the removal of the two actors the
-# pull demo leaves bound to Link (validated 9o, 20260920T011817.421113Z).
+# pull demo leaves bound to Link.
 SOURCE = ROOT / ".build/master-sword-candidates/28bda513736cc12e"
 OUTPUT = ROOT / ".build/ballad-condition-candidates"
 UPDATE = Path.home() / "AppData/Roaming/Cemu/mlc01/usr/title/0005000e/101c9500/content"

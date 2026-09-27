@@ -6,32 +6,30 @@ import oead
 
 from botw_patch.events import graph_snapshot, read_flow
 from botw_patch.resources import unpack
-from botw_patch.status_item import (ACTOR, ENTRY, LANGUAGES, add_event_info,
+from botw_patch.status_item import (ACTOR, ENTRY, add_event_info,
                                     add_status_entry, texts)
 
-CONTENT = Path(r"C:\Users\Simon\AppData\Roaming\Cemu\mlc01\usr\title\0005000e\101c9500\content")
-MANIFEST = {"seed": "56866616677933465054", "slot": 1, "slot_name": "Simon",
+CONTENT = Path.home() / "AppData/Roaming/Cemu/mlc01/usr/title/0005000e/101c9500/content"
+MANIFEST = {"seed": "56866616677933465054", "slot": 1, "slot_name": "Player",
             "slot_data": {"goal_type": 0, "shrines_required": 40,
                           "divine_beasts_required": 4}}
 
 
 class TextTests(unittest.TestCase):
     def test_description_names_seed_slot_and_goal(self):
-        name, description = texts(MANIFEST, "EUfr")
+        name, description = texts(MANIFEST)
         self.assertEqual(name, "Archipelago")
         self.assertEqual(description.split("\n"), [
-            "Seed 56866616677933465054", "Joueur : Simon (slot 1)",
-            "Objectif : vaincre Ganon"])
+            "Seed 56866616677933465054", "Player: Player (slot 1)",
+            "Goal: defeat Ganon"])
         shrines = {**MANIFEST, "slot_data": {**MANIFEST["slot_data"], "goal_type": 2}}
-        self.assertEqual(texts(shrines, "EUen")[1].split("\n")[2],
+        self.assertEqual(texts(shrines)[1].split("\n")[2],
                          "Goal: complete 40 shrines")
-        for language in LANGUAGES:
-            texts(MANIFEST, language)
 
     def test_a_description_too_long_is_refused(self):
         long = {**MANIFEST, "slot_name": "X" * 40}
         with self.assertRaises(ValueError):
-            texts(long, "EUfr")
+            texts(long)
 
 
 @unittest.skipUnless((CONTENT / "Pack/TitleBG.pack").is_file(), "requires the Wii U update")

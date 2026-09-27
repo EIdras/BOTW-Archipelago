@@ -8,7 +8,7 @@ import oead
 from botw_patch import hud_layout as hud
 from botw_patch.resources import unpack
 
-CONTENT = Path(r"C:\Users\Simon\AppData\Roaming\Cemu\mlc01\usr\title\0005000e\101c9500\content")
+CONTENT = Path.home() / "AppData/Roaming/Cemu/mlc01/usr/title/0005000e/101c9500/content"
 ICON = Path(__file__).resolve().parents[1] / "assets/wiiu/Item_AP.sbitemico"
 
 

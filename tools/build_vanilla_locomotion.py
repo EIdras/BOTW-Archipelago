@@ -1,16 +1,13 @@
 """Give a play pack the game's own running and climbing speed back.
 
-Simon asked, during the laboratory tests, to move faster: `tools/build_plateau_speed.py`
-multiplied by 3 the `FrameCtrl` rates of the run, dash and wall-climb
-animations of `Actor/Pack/GameROMPlayer.sbactorpack`. That candidate became an
-ancestor of the whole build chain, so **every** pack since carries the aid,
-including the one of the first play session (Simon, 23/09: "j'ai toujours les
-cheats").
+A development aid, `tools/build_plateau_speed.py`, multiplied by 3 the
+`FrameCtrl` rates of the run, dash and wall-climb animations of
+`Actor/Pack/GameROMPlayer.sbactorpack`. That candidate became an ancestor of the
+whole build chain, so every pack built from it carries the aid.
 
 This stage restores the vanilla member, byte for byte, from the mounted update
 (its sha256 is the `before` recorded by the speed builder). It is the base of
-packs bound to a *play* seed; the laboratory chain keeps the aid, which shortens
-the tests.
+packs bound to a *play* seed.
 
 Nothing else changes: one member of Pack/TitleBG.pack, plus the resource size
 table the builder keeps in step.
@@ -45,7 +42,7 @@ def vanilla_member(update: Path = UPDATE) -> bytes:
     archive = oead.Sarc(unpack((update / TITLE).read_bytes()))
     raw = bytes(archive.get_file(MEMBER).data)
     if digest(raw) != VANILLA_SHA:
-        raise ValueError("le paquet d'acteur du joueur monté n'est pas celui attendu")
+        raise ValueError("the mounted player actor pack is not the expected one")
     return raw
 
 
@@ -54,7 +51,7 @@ def build(source: Path = SOURCE, output: Path = OUTPUT, update: Path = UPDATE) -
     manifest = json.loads((source / "manifest.json").read_text(encoding="utf-8"))
     aid = manifest.get("validation_aids", {})
     if aid.get("locomotion_animation_rate_multiplier") != 3:
-        raise ValueError("la source ne porte pas l'aide de déplacement")
+        raise ValueError("the source does not carry the locomotion aid")
     files = verified_files(source, manifest)
     vanilla = vanilla_member(update)
     builder = ResourceBuilder(source / "content")
@@ -62,35 +59,35 @@ def build(source: Path = SOURCE, output: Path = OUTPUT, update: Path = UPDATE) -
         vanilla, [f"restore vanilla {MEMBER} ({digest(raw)[:16]} -> {VANILLA_SHA[:16]})"])})
     outputs = builder.finish()
     if set(outputs) != {TITLE, TABLE}:
-        raise ValueError(f"sorties inattendues : {sorted(outputs)}")
+        raise ValueError(f"unexpected outputs: {sorted(outputs)}")
     old = oead.Sarc(unpack(files["content/" + TITLE]))
     new = oead.Sarc(unpack(outputs[TITLE]))
     names = {item.name for item in old.get_files()}
     changed = {name for name in names
                if bytes(old.get_file(name).data) != bytes(new.get_file(name).data)}
     if names != {item.name for item in new.get_files()} or changed != {MEMBER}:
-        raise ValueError(f"changement inattendu dans TitleBG : {changed}")
+        raise ValueError(f"unexpected change in TitleBG: {changed}")
     if digest(bytes(old.get_file(MEMBER).data)) != AIDED_SHA:
-        raise ValueError("le membre de la source n'est pas celui de l'aide")
+        raise ValueError("the source member is not the aided one")
     if digest(bytes(new.get_file(MEMBER).data)) != VANILLA_SHA:
-        raise ValueError("le membre restauré n'est pas le vanilla")
-    # The delivery flow, and everything else validated in game, is untouched.
+        raise ValueError("the restored member is not the vanilla one")
+    # The delivery flow, and everything else, is untouched.
     if bytes(old.get_file(FLOW_MEMBER).data) != bytes(new.get_file(FLOW_MEMBER).data):
-        raise ValueError("le flux de livraison a changé")
+        raise ValueError("the delivery flow changed")
     files.update({"content/" + name: raw for name, raw in outputs.items()})
     hashes = {name: digest(raw) for name, raw in sorted(files.items())}
     build_id = hashlib.sha256(json.dumps(hashes, sort_keys=True,
                               separators=(",", ":")).encode()).hexdigest()[:16]
     target = (output / build_id).resolve()
     if not target.is_relative_to(output.resolve()):
-        raise ValueError("candidat hors du dossier de sortie")
+        raise ValueError("candidate outside the output folder")
     for name, raw in files.items():
         path = (target / name).resolve()
         if not path.is_relative_to(target):
-            raise ValueError("membre hors du candidat")
+            raise ValueError("member outside the candidate")
         path.parent.mkdir(parents=True, exist_ok=True)
         if path.exists() and path.read_bytes() != raw:
-            raise ValueError(f"candidat immuable modifié : {name}")
+            raise ValueError(f"immutable candidate changed: {name}")
         path.write_bytes(raw)
     result = dict(manifest)
     result.update({
@@ -102,7 +99,7 @@ def build(source: Path = SOURCE, output: Path = OUTPUT, update: Path = UPDATE) -
         "vanilla_locomotion": {
             "parent_build": source.name,
             "parent_path": source.relative_to(ROOT).as_posix(),
-            "reason": "packs de partie : le jeu retrouve sa vitesse d'origine",
+            "reason": "play packs: the game gets its own speed back",
             "source_changes": builder.changes,
         },
         "files": {name[8:]: value for name, value in hashes.items()
@@ -112,7 +109,7 @@ def build(source: Path = SOURCE, output: Path = OUTPUT, update: Path = UPDATE) -
     encoded = (json.dumps(result, ensure_ascii=False, indent=2) + "\n").encode()
     path = target / "manifest.json"
     if path.exists() and path.read_bytes() != encoded:
-        raise ValueError("manifeste immuable modifié")
+        raise ValueError("immutable manifest changed")
     path.write_bytes(encoded)
     return target
 

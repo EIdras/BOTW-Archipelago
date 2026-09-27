@@ -135,8 +135,8 @@ class Machine:
             elif op == "blr":
                 pc = self.lr
             else:
-                raise AssertionError(f"instruction non modélisée : {line}")
-        raise AssertionError("le programme ne termine pas")
+                raise AssertionError(f"instruction not modeled: {line}")
+        raise AssertionError("the program does not end")
 
 
 class Game:
@@ -202,7 +202,7 @@ class Game:
 
 def machine() -> Machine:
     from tools.build_native_from_source import generate
-    # The native build carries the channel since 26/09 (the AP journal).
+    # The native build carries the channel (the AP journal).
     native = generate(resource_gate=True, event_gate=True)["runtime/patch_apInject.asm"]
     return Machine(native.decode("utf-8"))
 

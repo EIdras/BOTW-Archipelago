@@ -143,7 +143,7 @@ class ReconcileTests(unittest.TestCase):
         outcome = game.sync(apply_timeout=0.5).reconcile(2)
         self.assertEqual(outcome.status, "pending")
         self.assertFalse(outcome.ok)
-        self.assertIn("attente", outcome.summary())
+        self.assertIn("waiting", outcome.summary())
 
 
 class DeliveryIntegrationTests(unittest.TestCase):
@@ -224,7 +224,7 @@ class DeliveryIntegrationTests(unittest.TestCase):
                                   if k != "sync_rune_selection"})
         result, _ = self.deliver("Magnesis", game)
         self.assertEqual(result.status, DeliveryStatus.APPLIED)
-        self.assertIn("non synchronisée", result.detail)
+        self.assertIn("not synchronized", result.detail)
 
 
 class InjectionTransformTests(unittest.TestCase):

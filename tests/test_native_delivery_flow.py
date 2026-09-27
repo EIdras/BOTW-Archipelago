@@ -119,15 +119,15 @@ class NativeDeliveryGraphTests(unittest.TestCase):
                     and entry.progressive_tier == tier)
 
     def test_silent_twins_live_in_a_resident_non_demo_flowchart(self):
-        # The twins' host is the resident OperationGuide (validated in game,
-        # 26/09, see delivery_flow.QUIET_FLOW); its own graph stays as it is.
+        # The twins' host is the resident OperationGuide (see
+        # delivery_flow.QUIET_FLOW); its own graph stays as it is.
         demo = graph_snapshot(read_flow(self.patched))
         vanilla = graph_snapshot(read_flow(self.member("OperationGuide")))
         quiet = graph_snapshot(read_flow(self.quiet))
         self.assertFalse(QUIET_FLOW.startswith("Demo"))
         self.assertEqual(quiet["name"], QUIET_FLOW)
         twins = {s.entry_name for s in self.specs if host_of(s) == QUIET_FLOW}
-        # With the twins, the steps that open no window of their own (26/09).
+        # With the twins, the steps that open no window of their own.
         self.assertEqual({s.item_name for s in self.specs
                           if host_of(s) == QUIET_FLOW and not s.quiet}, {
             "Sheikah Sensor", "Ancient Bridle", "Ancient Saddle"})
@@ -186,7 +186,7 @@ class NativeDeliveryGraphTests(unittest.TestCase):
         for current, following in zip(path, path[1:]):
             self.assertEqual(events[current]["nxt"], following)
         self.assertIsNone(events[path[-1]]["nxt"])
-        # The piece is handed over by the game's own get window (25/09).
+        # The piece is handed over by the game's own get window.
         self.assertEqual(events[path[1]]["res_flowchart_name"], "GetDemo")
         self.assertEqual(events[path[1]]["params"]["CheckTargetActorName"],
                          "Armor_044_Upper")
@@ -218,7 +218,7 @@ class NativeDeliveryGraphTests(unittest.TestCase):
         graph = graph_snapshot(read_flow(self.patched))
         events = graph["events"]
         stem = spec.entry_name
-        # Demo003_0 Item03, one after the other as the vanilla terminal (11a):
+        # Demo003_0 Item03, one after the other as the vanilla terminal:
         # IsDownloadDemo, the download screen, wait 70, the Slate's words, the
         # menu closed, then the rune's flag and selection.
         # Then Link puts the Slate away (Demo041_0<SheikPadSetOff>), and a
@@ -336,7 +336,7 @@ class NativeDeliveryGraphTests(unittest.TestCase):
                 self.assertNotIn(f"Demo007_1<{spec.entry_name}>", after)
                 registered = dict(after[f"{QUIET_FLOW}<{spec.entry_name}>"])
                 self.assertEqual(registered, QUIET_EVENT_INFO)
-                # The key that keeps the game running and the HUD up (26/09).
+                # The key that keeps the game running and the HUD up.
                 self.assertIs(registered["is_pause_non_demo_member"], False)
                 self.assertNotIn("demo_event", registered)
                 continue

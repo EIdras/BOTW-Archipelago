@@ -1,7 +1,7 @@
-"""Lire U-King.rpx hors ligne : sections, octets, désassemblage.
+"""Read U-King.rpx offline: sections, bytes, disassembly.
 
-Utile quand Cemu ne tourne pas, et autoritaire : c'est le binaire lui-même,
-pas une image mémoire qui peut déjà avoir été patchée par un graphic pack.
+Useful when Cemu is not running, and authoritative: it is the binary itself,
+not a memory image that a graphic pack may already have patched.
 
     python tools/cemu/rpx.py sections
     python tools/cemu/rpx.py dis 0x02EB53E4 20
@@ -65,7 +65,7 @@ class Rpx:
 
 
 def cmd_sections(r):
-    print(f"{'idx':>3}  {'nom':<18} {'adresse':>10} {'taille':>10}")
+    print(f"{'idx':>3}  {'name':<18} {'address':>10} {'size':>10}")
     for h in r.sections:
         if not h["size"]:
             continue
@@ -76,7 +76,7 @@ def cmd_sections(r):
 def cmd_dis(r, addr, count):
     raw = r.read(addr, count * 4)
     if raw is None:
-        sys.exit(f"{addr:#x} n'est dans aucune section chargée")
+        sys.exit(f"{addr:#x} is in no loaded section")
     for i in range(count):
         w = int.from_bytes(raw[i * 4:i * 4 + 4], "big")
         a = addr + i * 4
@@ -86,7 +86,7 @@ def cmd_dis(r, addr, count):
 def cmd_str(r, addr):
     raw = r.read(addr, 200)
     if raw is None:
-        sys.exit(f"{addr:#x} n'est dans aucune section chargée")
+        sys.exit(f"{addr:#x} is in no loaded section")
     print(repr(raw.split(b"\x00")[0].decode("ascii", "replace")))
 
 

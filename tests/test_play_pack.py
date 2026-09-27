@@ -21,7 +21,7 @@ class PreparationTests(unittest.TestCase):
                     patch("tools.build_pack_from_source.build", return_value=root / "pack") as build, \
                     patch("tools.play_pack.select_pack") as select:
                 new_report, pack = play_seed.prepare(archive, content=root / "dump", rpx=root / "game.rpx")
-                identify.assert_awaited_once_with(new_report.parent / archive.name, "Simon")
+                identify.assert_awaited_once_with(new_report.parent / archive.name, "Player")
                 build.assert_called_once()
                 select.assert_called_once_with(new_report.parent, pack)
                 self.assertEqual(play_pack.load_seed(new_report, 1)["token"], identity["token"])
@@ -71,7 +71,7 @@ class PreparationTests(unittest.TestCase):
 class SelectionTests(unittest.TestCase):
     def test_no_implicit_fallback_without_selection(self):
         with tempfile.TemporaryDirectory() as temp:
-            with self.assertRaisesRegex(RuntimeError, "aucun pack sélectionné"):
+            with self.assertRaisesRegex(RuntimeError, "no pack selected"):
                 play_pack.selected_pack(Path(temp))
 
     @unittest.skipUnless((play_pack.ROOT / ".build/packs-from-source/7f24dccb5d326bda").is_dir(),

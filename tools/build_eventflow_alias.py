@@ -64,7 +64,7 @@ def build():
     (target / "rules.txt").write_bytes((source / "rules.txt").read_bytes())
     manifest.update(source_build=source.name, standalone_display=False, standalone_sound=False,
                     display_actor="Item_AP", presentation_variant="eventflow_alias",
-                    dialog_question="Fenetre visible avec la mire (rond rouge, coins colores) ? oui/non : ",
+                    dialog_question="Window visible with the test pattern (red circle, colored corners)? yes/no: ",
                     text_scope="No custom text substitution; note the actual title and description separately.",
                     files={n[8:]: h for n, h in hashes.items() if n.startswith("content/")},
                     native_files={n: h for n, h in hashes.items() if not n.startswith("content/")},

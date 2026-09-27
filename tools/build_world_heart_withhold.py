@@ -1,18 +1,18 @@
 """Derive an immutable candidate that withholds the heart of a picked-up container actor.
 
 A stage of the native build chain. With the Divine Beast heart containers
-turned into AP checks (Simon, 18/09), the vanilla +1 heart of the map actor
+turned into AP checks, the vanilla +1 heart of the map actor
 ``Obj_HeartUtuwa_A_01`` must not be granted, while everything else of the
 pickup stays: GetDemo, the actor's death and its ``DeadUp`` link, which sets
 ``Get_HeartUtuwa_X`` (the check) and the per-actor flag.
 
-Measured in game:
-* 9e: the heart is added during the GetDemo, without itemGet, by the obtain
-  core ``0x02B76C08`` -> container effect ``0x02B766D4`` -> setMaxLife; the
-  flags follow at the end of the event;
-* 9f: a probe at the effect call saw the world pickup (item
+Measured in the game:
+* the heart is added during the GetDemo, without itemGet, by the obtain core
+  ``0x02B76C08`` -> container effect ``0x02B766D4`` -> setMaxLife; the flags
+  follow at the end of the event;
+* a trace at the effect call saw the world pickup (item
   ``Obj_HeartUtuwa_A_01``) and **not** the AP ``Heart Container`` delivery,
-  which still added its heart through the GetItemByName path.
+  which adds its heart through the GetItemByName path.
 
 In ``0x02B76C08`` the actor's tags pick the branch: tag ``HeartContainer``
 (hash ``0xF9C66DEC``) jumps from ``SITE`` to the effect call; tag
@@ -24,7 +24,7 @@ every other item keep the vanilla path. The only actors with that tag are
 ``Obj_HeartUtuwa_A_01`` (ActorInfo), placed in the four Divine Beasts and
 in front of the Goddess Statues (``SyncLink``, ``Npc_FirstColony010_Appear
 Heart``); the statue exchange grants through GetItemByName like the AP
-delivery, so it is outside this branch. The in-game test checks both.
+delivery, so it is outside this branch.
 
 Only ``patch_apInject.asm`` changes: one address line appended at its end.
 EventFlow, delivery catalog and seed binding are unchanged.
@@ -43,7 +43,7 @@ sys.path[:] = [str(ROOT)] + [p for p in sys.path
 from botw_patch.resources import digest  # noqa: E402
 from tools.build_seed_bound_candidate import verified_files  # noqa: E402
 
-# Lab seed pack validated in 9b/9d, built by the chain (identical bytes).
+# The seed pack of the chain's reference seed.
 SOURCE = ROOT / ".build/seed-bound-candidates/d5315269711d8330"
 OUTPUT = ROOT / ".build/world-heart-withhold-candidates"
 INJECTION = "patch_apInject.asm"
@@ -68,10 +68,10 @@ VANILLA = {
 PATCHED_WORD = 0x40820000 | (RESUME - SITE)   # bne cr0, RESUME
 PATCH_LINE = f"0x{SITE:08x} = bne 0x{RESUME:08x}"
 BLOCK = f"""
-; --- receptacle de creature divine : pas de coeur vanilla ------------------
-; Actor avec le tag HeartContainer (Obj_HeartUtuwa_A_01) : saute l'effet
-; 0x{EFFECT_CALL:08x} (bl 0x02b766d4, +4 vie max). Ramassage, mort de l'actor,
-; lien DeadUp et flag du check inchanges. Endurance : chemin vanilla.
+; --- Divine Beast heart container: no vanilla heart ------------------------
+; An actor with the HeartContainer tag (Obj_HeartUtuwa_A_01) skips the effect
+; 0x{EFFECT_CALL:08x} (bl 0x02b766d4, +4 max life). Pickup, the actor's death,
+; the DeadUp link and the check's flag are unchanged. Stamina: vanilla path.
 {PATCH_LINE}
 """
 
@@ -137,8 +137,8 @@ def build(source: Path = SOURCE, output: Path = OUTPUT) -> Path:
         "status": "requires_in_game_validation",
         "world_heart_withhold": {
             "parent_build": source.name,
-            # The same build id can live in several .build folders (9b lab
-            # pack and chain output are byte-identical): name the one used.
+            # The same build id can live in several .build folders (identical
+            # bytes): name the one used.
             "parent_path": source.relative_to(ROOT).as_posix(),
             "injection_before_sha256": digest(parent_text.encode("utf-8")),
             "injection_after_sha256": digest(patched),

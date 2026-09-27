@@ -1,10 +1,10 @@
 """Archipelago shop items: actors created for AP, sold by vanilla merchants.
 
-Measured in the laboratory (docs/reference/shops_plan.md):
-  * 10b: a merchant's stock sheet (.bshop) can sell any existing item; the
-    price shown is the item's ActorInfo `itemBuyingPrice` plus the sheet's
+Measured in the game (docs/reference/shops.md):
+  * a merchant's stock sheet (.bshop) can sell any existing item; the price
+    shown is the item's ActorInfo `itemBuyingPrice` plus the sheet's
     `ItemAdjustPrice`;
-  * 10c: an actor created for AP is shown and sold like a vanilla item when it
+  * an actor created for AP is shown and sold like a vanilla item when it
     has an ActorInfo declaration, an actor pack, an icon and a name; it then
     goes into the pouch, which an AP item must not do.
 
@@ -63,7 +63,7 @@ def wrap_description(text: str, width: int = DESCRIPTION_WIDTH,
     """Explicit line breaks, as vanilla descriptions have (the game does not wrap)."""
     out = textwrap.wrap(text, width)
     if len(out) > lines:
-        raise ValueError(f"description trop longue ({len(out)} lignes, {lines} au plus)")
+        raise ValueError(f"description too long ({len(out)} lines, at most {lines})")
     return "\n".join(out)
 
 
@@ -80,11 +80,11 @@ def add_declarations(raw: bytes, items: list[ApShopItem]) -> tuple[bytes, dict]:
     names = [str(a["name"]) for a in actors]
     values = [int(h) for h in hashes]
     if values != sorted(values):
-        raise ValueError("Hashes non triés dans la source")
+        raise ValueError("Hashes not sorted in the source")
     detail = {}
     for item in items:
         if item.actor in names:
-            raise ValueError(f"acteur déjà déclaré : {item.actor}")
+            raise ValueError(f"actor already declared: {item.actor}")
         model = actors[names.index(item.model_actor)]
         clone = oead.byml.Hash()
         for key in model.keys():
@@ -106,7 +106,7 @@ def add_declarations(raw: bytes, items: list[ApShopItem]) -> tuple[bytes, dict]:
     # A new document: replacing doc's arrays would free the elements that
     # `actors` still refers to (an intermittent KeyError in the test suite).
     if set(doc.keys()) != {"Actors", "Hashes"}:
-        raise ValueError(f"ActorInfo inattendu : {sorted(doc.keys())}")
+        raise ValueError(f"unexpected ActorInfo: {sorted(doc.keys())}")
     new = oead.byml.Hash()
     new["Actors"], new["Hashes"] = oead.byml.Array(actors), oead.byml.Array(hashes)
     out = bytes(oead.byml.to_binary(new, big_endian=True))
@@ -116,7 +116,7 @@ def add_declarations(raw: bytes, items: list[ApShopItem]) -> tuple[bytes, dict]:
     if (len(check_names) != count + len(items) or check_values != sorted(check_values)
             or [crc(n) for n in check_names] != check_values
             or any(check_names.count(item.actor) != 1 for item in items)):
-        raise ValueError("déclarations mal insérées")
+        raise ValueError("declarations inserted wrongly")
     return bytes(oead.yaz0.compress(out)), detail
 
 
@@ -133,7 +133,7 @@ def clone_actor_pack(model_pack: bytes, model_actor: str, actor: str,
     member of the same path as the model item's would share its cache entry.
     With `price`, the same for its general parameters,
     Actor/GeneralParamList/<actor>.bgparamlist, with Item.BuyingPrice = price:
-    3D stalls read the price there, not in ActorInfo (10g sold at amber's 120).
+    3D stalls read the price there, not in ActorInfo (they would sell at amber's 120).
     """
     archive = oead.Sarc(unpack(model_pack))
     writer = oead.SarcWriter.from_sarc(archive)
@@ -148,11 +148,11 @@ def clone_actor_pack(model_pack: bytes, model_actor: str, actor: str,
         target = pio.objects["LinkTarget"].params
         for user in renamed_users:
             if str(target[user].v) != model_actor:
-                raise ValueError(f"{user} inattendu")
+                raise ValueError(f"unexpected {user}")
             before_type = target[user].type()
             target[user] = oead.aamp.Parameter(actor)
             if target[user].type() != before_type:
-                raise ValueError(f"type de {user} changé")
+                raise ValueError(f"type of {user} changed")
         link = bytes(pio.to_binary())
     if model_folder:
         old_list = f"Actor/ModelList/{model_actor}.bmodellist"
@@ -171,7 +171,7 @@ def clone_actor_pack(model_pack: bytes, model_actor: str, actor: str,
         params = oead.aamp.ParameterIO.from_binary(bytes(archive.get_file(old_params).data))
         item = params.objects["Item"].params
         if type(item["BuyingPrice"].v) is not int:
-            raise ValueError("BuyingPrice inattendu")
+            raise ValueError("unexpected BuyingPrice")
         item["BuyingPrice"] = oead.aamp.Parameter(int(price))
         del writer.files[old_params]
         writer.files[f"Actor/GeneralParamList/{actor}.bgparamlist"] = bytes(params.to_binary())
@@ -192,7 +192,7 @@ def bfres_summary(raw: bytes) -> dict:
     """Model and texture names of a Wii U BFRES (FRES v4), textures with size and format."""
     data = unpack(raw)
     if data[:4] != b"FRES":
-        raise ValueError("pas un fichier BFRES")
+        raise ValueError("not a BFRES file")
 
     def name(off):
         return data[off:data.index(b"\0", off)].decode("ascii")
@@ -213,7 +213,7 @@ def bfres_summary(raw: bytes) -> dict:
     textures = {}
     for tex_name, off in groups[1]:
         if data[off:off + 4] != b"FTEX":
-            raise ValueError(f"texture {tex_name} illisible")
+            raise ValueError(f"texture {tex_name} unreadable")
         (_dim, width, height, _depth, mips, fmt, _aa, _use, image_bytes, _image_ptr,
          mip_bytes) = struct.unpack_from(">11I", data, off + 4)
         textures[tex_name] = {"size": [width, height], "mips": mips, "format": fmt,
@@ -252,12 +252,12 @@ def model_bounds(raw: bytes) -> dict:
                 elif fmt == 0x80F:
                     xyz = struct.unpack_from(">3e", data, p)
                 else:
-                    raise ValueError(f"format de position inconnu : {hex(fmt)}")
+                    raise ValueError(f"unknown position format: {hex(fmt)}")
                 low = [min(a, b) for a, b in zip(low, xyz)]
                 high = [max(a, b) for a, b in zip(high, xyz)]
         at = data.find(b"FVTX", at + 4)
     if low[0] == float("inf"):
-        raise ValueError("aucune position de sommet trouvée")
+        raise ValueError("no vertex position found")
     return {"min": [round(x, 4) for x in low], "max": [round(x, 4) for x in high],
             "size": [round(b - a, 4) for a, b in zip(low, high)]}
 
@@ -304,20 +304,20 @@ def rename_model(parts: dict[str, bytes], old: str, new: str) -> tuple[dict[str,
     """Rename a model's internal names (the files' own names, the model, its
     textures and the material references to them) from `old` to `new`.
 
-    10e: a custom model left with amber's internal names showed amber's
-    textures in game, while Switch Toolbox showed its own. The names keep the
+    A custom model left with amber's internal names shows amber's textures
+    in the game, while Switch Toolbox shows its own. The names keep the
     same length, so no offset moves; every name of the model and texture groups
     must then still be found by the game's search.
     """
     if len(old) != len(new):
-        raise ValueError("un renommage interne doit garder la même longueur")
+        raise ValueError("an internal rename must keep the same length")
     out, counts = {}, {}
     for part, raw in parts.items():
         data = unpack(raw)
         counts[part or "model"] = data.count(old.encode("ascii"))
         renamed = bytearray(data.replace(old.encode("ascii"), new.encode("ascii")))
         if old.encode("ascii") in renamed:
-            raise ValueError(f"{old} reste dans {part or 'le modèle'}")
+            raise ValueError(f"{old} remains in {part or 'the model'}")
         for slot in (0, 1):
             # A group of several names branches on bits where the names differ;
             # a prefix of the same length leaves them in place. A group of one
@@ -332,21 +332,21 @@ def rename_model(parts: dict[str, bytes], old: str, new: str) -> tuple[dict[str,
             rows = index_group(renamed, slot)
             for _ref, _left, _right, name in rows[1:]:
                 if index_lookup(rows, name) != name:
-                    raise ValueError(f"{name} introuvable après renommage ({part or 'modèle'})")
+                    raise ValueError(f"{name} not found after renaming ({part or 'model'})")
         out[part] = bytes(oead.yaz0.compress(renamed)) if raw[:4] == b"Yaz0" else renamed
     summary = bfres_summary(out[""])
     if summary["models"] != [new]:
-        raise ValueError(f"modèle interne : {summary['models']}")
+        raise ValueError(f"internal model: {summary['models']}")
     for part in (".Tex1", ".Tex2"):
         names = bfres_summary(out[part])["textures"]
         if any(not name.startswith(new) for name in names):
-            raise ValueError(f"textures{part} mal renommées : {sorted(names)}")
+            raise ValueError(f"textures{part} renamed wrongly: {sorted(names)}")
     return out, {"from": old, "to": new, "occurrences": counts}
 
 
 # A game item: 10 cm to 1 m across (amber: 0.59), resting on its origin
-# (10e: an FBX exported in centimetres made the medallion 28 m wide, and a
-# mesh below its origin sank into the ground).
+# (an FBX exported in centimetres makes the medallion 28 m wide, and a
+# mesh below its origin sinks into the ground).
 ITEM_SIZE = (0.10, 1.0)
 GROUND_TOLERANCE = 0.01
 
@@ -360,11 +360,11 @@ def check_model(custom: dict[str, bytes], reference: dict[str, dict]) -> dict:
     for part in MODEL_PARTS:
         mine, ref = bfres_summary(custom[part]), reference[part]
         if mine["version"] != ref["version"] or mine["models"] != ref["models"]:
-            raise ValueError(f"modèle{part} : version ou nom de modèle différent de l'original")
+            raise ValueError(f"model{part}: format version or model name differs from the original")
         if set(mine["textures"]) != set(ref["textures"]):
-            raise ValueError(f"textures{part} : noms différents de l'original")
+            raise ValueError(f"textures{part}: names differ from the original")
         for tex, info in mine["textures"].items():
-            # 10e: a 512 px texture kept the 256 px mip chain sizes; the game drew
+            # A 512 px texture that keeps the 256 px mip chain sizes: the game draws
             # garbage. Keep the original layout. One known Switch Toolbox habit is
             # accepted and reported: Tex2 (which carries only the mipmaps; the
             # image itself is in Tex1) saved with an image size of 0. The Tex1
@@ -375,12 +375,12 @@ def check_model(custom: dict[str, bytes], reference: dict[str, dict]) -> dict:
                 report.setdefault("toolbox_tex2_image_size_zero", []).append(tex)
             if info != expected:
                 raise ValueError(
-                    f"texture {tex}{part} : disposition différente de l'original "
-                    f"(attendu {ref['textures'][tex]['size'][0]} px, "
+                    f"texture {tex}{part}: layout differs from the original "
+                    f"(expected {ref['textures'][tex]['size'][0]} px, "
                     f"{ref['textures'][tex]['mips']} mipmaps, "
                     f"{ref['textures'][tex]['image_bytes']} + {ref['textures'][tex]['mip_bytes']} "
-                    f"octets ; reçu {info['size'][0]} px, {info['mips']} mipmaps, "
-                    f"{info['image_bytes']} + {info['mip_bytes']} octets)")
+                    f"bytes; got {info['size'][0]} px, {info['mips']} mipmaps, "
+                    f"{info['image_bytes']} + {info['mip_bytes']} bytes)")
         report[part or "model"] = {"models": mine["models"],
                                    "textures": {t: i["size"] for t, i in mine["textures"].items()}}
     tex1, tex2 = bfres_summary(custom[".Tex1"]), bfres_summary(custom[".Tex2"])
@@ -390,15 +390,15 @@ def check_model(custom: dict[str, bytes], reference: dict[str, dict]) -> dict:
                 for name, t in textures.items()}
 
     if shape(tex1["textures"]) != shape(tex2["textures"]):
-        raise ValueError("Tex1 et Tex2 ne décrivent pas les mêmes textures")
+        raise ValueError("Tex1 and Tex2 do not describe the same textures")
     bounds = model_bounds(custom[""])
     widest = max(bounds["size"])
     if not ITEM_SIZE[0] <= widest <= ITEM_SIZE[1]:
-        raise ValueError(f"taille du modèle : {widest:.2f} unités, un objet du jeu en fait "
-                         f"{ITEM_SIZE[0]} à {ITEM_SIZE[1]} (export FBX en centimètres ?)")
+        raise ValueError(f"model size: {widest:.2f} units, a game item is "
+                         f"{ITEM_SIZE[0]} to {ITEM_SIZE[1]} (FBX exported in centimeters?)")
     if bounds["min"][1] < -GROUND_TOLERANCE:
-        raise ValueError(f"le modèle descend sous son origine (y min {bounds['min'][1]}) : "
-                         "il s'enfoncera dans le sol")
+        raise ValueError(f"the model goes below its origin (y min {bounds['min'][1]}): "
+                         "it will sink into the ground")
     report["bounds"] = bounds
     return report
 
@@ -449,7 +449,7 @@ def read_labels(raw: bytes) -> dict[str, str]:
             name = lbl[off + 1:off + 1 + n].decode("ascii")
             idx = struct.unpack_from(">I", lbl, off + 1 + n)[0]
             if label_bucket(name, buckets) != b:
-                raise ValueError(f"étiquette dans le mauvais seau : {name}")
+                raise ValueError(f"label in the wrong bucket: {name}")
             out[name] = txt[offs[idx]:offs[idx + 1]].decode("utf-16-be", "replace")
             off += 1 + n + 4
     return out
@@ -476,7 +476,7 @@ def add_labels(raw: bytes, entries: dict[str, str], model_label: str) -> tuple[b
     blobs = [txt[offs[i]:offs[i + 1]] for i in range(count)]
     index_of = {name: idx for row in table for name, idx in row}
     if any(label in index_of for label in entries):
-        raise ValueError("étiquette déjà présente")
+        raise ValueError("label already present")
     model = blobs[index_of[model_label]]
     # In languages with grammar (fr, de, es, it) a vanilla name starts with one
     # control code: 0x000E, group, type, size, then `size` bytes of payload;
@@ -505,7 +505,7 @@ def add_labels(raw: bytes, entries: dict[str, str], model_label: str) -> tuple[b
     new_txt = (struct.pack(">I", len(blobs)) + b"".join(struct.pack(">I", p) for p in pointers)
                + b"".join(blobs))
     if struct.unpack_from(">I", atr, 4)[0]:
-        raise ValueError("ATR1 avec données par entrée : non géré")
+        raise ValueError("ATR1 with per-entry data: not supported")
     new_atr = struct.pack(">II", len(blobs), 0) + atr[8:]
     out = bytearray(raw[:0x20])
     for magic, head_bytes, old in sections:
@@ -519,7 +519,7 @@ def add_labels(raw: bytes, entries: dict[str, str], model_label: str) -> tuple[b
 def add_item_texts(msbt: bytes, items: list[ApShopItem]) -> tuple[bytes, dict]:
     entries, models = {}, {item.model_actor for item in items}
     if len(models) != 1:
-        raise ValueError("un seul objet modèle par lot de textes")
+        raise ValueError("one model item per batch of texts")
     for item in items:
         entries[f"{item.actor}_Name"] = item.name
         entries[f"{item.actor}_Desc"] = item.description
@@ -529,7 +529,7 @@ def add_item_texts(msbt: bytes, items: list[ApShopItem]) -> tuple[bytes, dict]:
             or any(after[k] != v for k, v in before.items())
             or any(not after[f"{i.actor}_Name"].endswith(i.name + "\x00") for i in items)
             or any(after[f"{i.actor}_Desc"] != i.description + "\x00" for i in items)):
-        raise ValueError("textes mal ajoutés")
+        raise ValueError("texts added wrongly")
     return out, detail
 
 
@@ -548,14 +548,14 @@ def set_stock_entries(raw: bytes, table: str,
     for index, (expected, actor, stock, adjust) in entries.items():
         key = f"ItemName{index:03d}"
         if str(params[key].v) != expected:
-            raise ValueError(f"entrée {index} inattendue : {params[key].v}")
+            raise ValueError(f"unexpected entry {index}: {params[key].v}")
         params[key] = oead.aamp.Parameter(oead.FixedSafeString64(actor))
         params[f"ItemNum{index:03d}"] = oead.aamp.Parameter(stock)
         params[f"ItemAdjustPrice{index:03d}"] = oead.aamp.Parameter(adjust)
         detail[index] = {"before": expected, "after": actor, "stock": stock, "adjust": adjust}
     out = bytes(pio.to_binary())
     if len(out) > len(raw):
-        raise ValueError("la fiche grandit : taille non modélisée")
+        raise ValueError("the sheet grows: size not modeled")
     return out, detail
 
 
@@ -578,9 +578,9 @@ def arrange_stock(raw: bytes, table: str, expected: tuple[str, ...],
     count = int(params["ColumnNum"].v)
     names = tuple(str(params[f"ItemName{i:03d}"].v) for i in range(1, count + 1))
     if names != tuple(expected):
-        raise ValueError(f"table {table} inattendue : {names}")
+        raise ValueError(f"unexpected table {table}: {names}")
     if len(entries) != count:
-        raise ValueError(f"{len(entries)} entrées pour {count} colonnes")
+        raise ValueError(f"{len(entries)} entries for {count} columns")
     def copy(field, index):
         # New parameters: the map's own are overwritten while the table is rewritten.
         value = params[f"{field}{index:03d}"].v
@@ -607,12 +607,12 @@ def arrange_stock(raw: bytes, table: str, expected: tuple[str, ...],
             params[f"{field}{index:03d}"] = fields[field]
     out = bytes(pio.to_binary())
     if len(out) > len(raw):
-        raise ValueError("la fiche grandit : taille non modélisée")
+        raise ValueError("the sheet grows: size not modeled")
     after = tuple(str(oead.aamp.ParameterIO.from_binary(out).objects[table]
                       .params[f"ItemName{i:03d}"].v) for i in range(1, count + 1))
     wanted = tuple(e if isinstance(e, str) else e[0] for e in entries)
     if after != wanted:
-        raise ValueError(f"table réécrite inattendue : {after}")
+        raise ValueError(f"unexpected rewritten table: {after}")
     return out, {"before": list(names), "after": list(after)}
 
 
@@ -628,7 +628,7 @@ def add_purchase_cleanup(raw: bytes, buy_event: str, actors: list[str]) -> tuple
     before = graph_snapshot(flow)
     event = before["events"][buy_event]
     if event.get("type") != "SubFlowEvent" or not event.get("nxt"):
-        raise ValueError(f"{buy_event} n'est pas un sous-flux suivi")
+        raise ValueError(f"{buy_event} is not a followed sub-flow")
     successor, previous, names = event["nxt"], buy_event, []
     for index, actor in enumerate(actors):
         name = f"APShopDelete{index:02d}"
@@ -638,17 +638,17 @@ def add_purchase_cleanup(raw: bytes, buy_event: str, actors: list[str]) -> tuple
         names.append(name)
     after = graph_snapshot(flow)
     if set(after["events"]) - set(before["events"]) != set(names):
-        raise ValueError("événements inattendus")
+        raise ValueError("unexpected events")
     chain = [after["events"][buy_event]["nxt"]]
     while chain[-1] in names:
         chain.append(after["events"][chain[-1]]["nxt"])
     if chain != [*names, successor]:
-        raise ValueError(f"chaîne de suppression mal câblée : {chain}")
+        raise ValueError(f"delete chain wired wrongly: {chain}")
     for name, node in before["events"].items():
         if name != buy_event and after["events"][name] != node:
-            raise ValueError(f"événement modifié : {name}")
+            raise ValueError(f"event changed: {name}")
     if after["entry_points"] != before["entry_points"]:
-        raise ValueError("points d'entrée modifiés")
+        raise ValueError("entry points changed")
     return write_flow(flow), {"after": buy_event, "deletes": dict(zip(names, actors)),
                               "then": successor}
 
@@ -666,7 +666,7 @@ def add_purchase_record(raw: bytes, buy_event: str,
     (HasPorchItem, as the Ballad condition asks it), set the saved s32 `flag`
     to 1, clear the saved bool `shown flag` (the stock entry is listed only
     while it is true), then delete the
-    actor (Demo_DeletePorchItemInEquip, 10d); in both cases go on to the next
+    actor (Demo_DeletePorchItemInEquip); in both cases go on to the next
     check. The checks are
     chained between `buy_event` and its successor, in order; every other
     reference to that successor goes through them too (harmless: nothing is
@@ -677,7 +677,7 @@ def add_purchase_record(raw: bytes, buy_event: str,
     before = graph_snapshot(flow)
     event = before["events"][buy_event]
     if event.get("type") != "SubFlowEvent" or not event.get("nxt"):
-        raise ValueError(f"{buy_event} n'est pas un sous-flux suivi")
+        raise ValueError(f"{buy_event} is not a followed sub-flow")
     successor = event["nxt"]
     added, switches = [], []
     for index, (actor, flag, shown) in enumerate(records):
@@ -694,7 +694,7 @@ def add_purchase_record(raw: bytes, buy_event: str,
         switches.append(switch)
     after = graph_snapshot(flow)
     if set(after["events"]) - set(before["events"]) != set(added):
-        raise ValueError("événements inattendus")
+        raise ValueError("unexpected events")
     # Walk the "not bought" path: buy_event -> every switch in order -> successor.
     path, node = [], after["events"][buy_event]["nxt"]
     while node in switches:
@@ -709,15 +709,15 @@ def add_purchase_record(raw: bytes, buy_event: str,
                 or after["events"][bought[2]]["params"]["PorchItemName"] != actor
                 # after a delete, the next check (then the successor), like "not bought"
                 or after["events"][bought[2]]["nxt"] != cases[0]):
-            raise ValueError(f"achat mal câblé : {node}")
+            raise ValueError(f"purchase wired wrongly: {node}")
         node = cases[0]
     if path != switches or node != successor:
-        raise ValueError(f"chaîne d'achat mal câblée : {path} -> {node}")
+        raise ValueError(f"purchase chain wired wrongly: {path} -> {node}")
     for name, old in before["events"].items():
         new = after["events"][name]
         if name != buy_event and new != old and not _only_redirected(old, new, successor,
                                                                       switches[0]):
-            raise ValueError(f"événement modifié : {name}")
+            raise ValueError(f"event changed: {name}")
     return write_flow(flow), {"after": buy_event, "then": successor,
                               "records": {actor: [flag, shown] for actor, flag, shown in records}}
 

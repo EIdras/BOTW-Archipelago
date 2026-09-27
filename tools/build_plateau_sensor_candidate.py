@@ -3,9 +3,8 @@
 A stage of the native build chain: any verified parent without its own
 Demo004_0 archive. Once MapTower_DemoFirst is set, *any* tower activated while
 IsGet_Obj_SheikSensor is false grants the sensor, so the neutralisation
-belongs to every build, not only to the Plateau lab pack. Validated in game on
-386f3df72c18dcb3 (8t/8u: tower check, no vanilla sensor). Seed builds start
-from a base that carries this stage (tools/build_seed_bound_candidate.py).
+belongs to every build. Seed builds start from a base that carries this stage
+(tools/build_seed_bound_candidate.py).
 """
 from __future__ import annotations
 

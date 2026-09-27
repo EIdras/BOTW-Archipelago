@@ -7,16 +7,15 @@ loader (0x03058E84) builds the menu at once only when the map (screen 0x2A)
 is idle and loaded and the inventory (screen 0x22) is loaded; otherwise the
 menu is built a few frames later, after the request, which it clears: it
 opens as an ordinary menu and the download screen waits forever. Measured on
-26/09: vanilla terminal after the menu had been opened (11a,
-20260926T184407.328329Z, request kept) and our delivery right after loading
-a save (download-probe 20260926T210314, request cleared as the menu appeared).
+the vanilla terminal after the menu had been opened (request kept) and on a
+delivery right after loading a save (request cleared as the menu appeared).
 
-The map rests only while the HUD is hidden (download-probe 20260926T212850:
-its state is 2 in play, 0 some frames into an event or the menu). So the
-client waits for map and inventory *loaded* before requesting a rune
-download, and the delivery event waits for the map to rest before opening
-the screen (botw_patch/delivery_flow.DOWNLOAD_SETTLE). `at_rest` adds the
-rest condition, for the probe.
+The map rests only while the HUD is hidden (its state is 2 in play, 0 some
+frames into an event or the menu). So the client waits for map and inventory
+*loaded* before requesting a rune download, and the delivery event waits for
+the map to rest before opening the screen
+(botw_patch/delivery_flow.DOWNLOAD_SETTLE). `at_rest` adds the rest
+condition, for diagnostics.
 """
 from __future__ import annotations
 
@@ -43,10 +42,10 @@ def pause_menu_ready(read, *, at_rest: bool = False) -> tuple[bool, str]:
 
     manager = w32(UI_MANAGER)
     if not manager:
-        return False, "interface du jeu illisible"
+        return False, "game UI unreadable"
     count, table = w32(manager + 0x14), w32(manager + 0x18)
     if not table or count is None or count <= MAP_SCREEN:
-        return False, "table d'écrans illisible"
+        return False, "screen table unreadable"
 
     def loaded(screen, offset):
         loader = w32(screen + offset)
@@ -59,10 +58,10 @@ def pause_menu_ready(read, *, at_rest: bool = False) -> tuple[bool, str]:
     if game_map:
         idle = read(game_map + MAP_IDLE_BYTES, 2)
         if at_rest and (not idle or len(idle) != 2 or _s8(idle[1]) != 0 or _s8(idle[0]) > 0):
-            return False, "carte en cours d'utilisation"
+            return False, "map in use"
         if not loaded(game_map, MAP_LOADER):
-            return False, "carte pas encore chargée"
+            return False, "map not loaded yet"
     inventory = w32(table + 4 * INVENTORY_SCREEN)
     if inventory and not loaded(inventory, INVENTORY_LOADER):
-        return False, "inventaire pas encore chargé"
+        return False, "inventory not loaded yet"
     return True, ""

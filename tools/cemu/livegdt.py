@@ -1,40 +1,39 @@
-"""Lire et ecrire les flags GameData que le jeu consulte REELLEMENT, a chaud.
+"""Read and write the GameData flags the game REALLY consults, live.
 
-Il existe deux stockages pour un meme flag :
+A flag has two storages:
 
-  * un tableau d'entrees de 8 octets `{hash, valeur}`, celui que gdt_index.py
-    localise. La sauvegarde le serialise, mais le moteur ne le consulte pas en
-    cours de partie. Y ecrire ne produit un effet qu'apres un rechargement.
+  * an array of 8-byte entries `{hash, value}`, the one gdt_index.py locates.
+    The save serializes it, but the engine does not consult it during play.
+    Writing there only takes effect after a reload.
 
-  * les objets de flag vivants, atteints depuis le singleton GameDataMgr. C'est
-    ce que lisent les getters du jeu. Une ecriture brute ici est volatile :
-    elle contourne l'enregistrement des changements par les setters natifs.
-    Le test du 8 septembre 2026 confirme que les flags AP ainsi modifies
-    restent a zero sur disque apres sauvegarde. Ne pas utiliser cette methode
-    comme preuve de livraison persistante.
+  * the live flag objects, reached from the GameDataMgr singleton. They are
+    what the game's getters read. A raw write here is volatile: it bypasses
+    the change recording of the native setters. AP flags changed this way
+    were measured still at zero on disk after a save. Do not use this method
+    as proof of a persistent delivery.
 
-Chaine d'acces, etablie par desassemblage puis verifiee en memoire :
+Access chain, found by disassembly then checked in memory:
 
     *(0x1046D5B0)          -> GameDataMgr
-    mgr->0x710             -> pointeur
+    mgr->0x710             -> pointer
     *(mgr->0x710)          -> TriggerParam
-    TriggerParam->0x04     -> nombre de bools
-    TriggerParam->0x0C     -> tableau de POINTEURS (4 octets chacun)
-    tableau[index]         -> objet de flag, 16 octets
+    TriggerParam->0x04     -> number of bools
+    TriggerParam->0x0C     -> array of POINTERS (4 bytes each)
+    array[index]           -> flag object, 16 bytes
 
-Objet de flag :
+Flag object:
 
-    +0x00  pointeur partage (identique pour tous les flags)
-    +0x04  proprietes sur les 16 bits hauts, VALEUR sur les 16 bits bas
-           -> l'octet de poids faible du booleen est donc a +0x07
+    +0x00  shared pointer (identical for every flag)
+    +0x04  properties in the high 16 bits, VALUE in the low 16 bits
+           -> the boolean's low byte is therefore at +0x07
     +0x08  hash
     +0x0C  0
 
-Usage :
+Use:
 
-    python tools/cemu/livegdt.py IsGet_Obj_IceMaker          # lire
-    python tools/cemu/livegdt.py IsGet_Obj_IceMaker 1 --write # ecrire
-    python tools/cemu/livegdt.py CurrentHart --watch          # changements
+    python tools/cemu/livegdt.py IsGet_Obj_IceMaker          # read
+    python tools/cemu/livegdt.py IsGet_Obj_IceMaker 1 --write # write
+    python tools/cemu/livegdt.py CurrentHart --watch          # changes
 """
 import pathlib
 import struct
@@ -49,9 +48,9 @@ from gdt_index import load_flags
 
 GDT_MGR_PTR = 0x1046D5B0
 
-# Ces flags appartiennent au mod et ne figurent donc pas dans l'index extrait
-# du jeu vanilla. Ils deviennent visibles après installation du Bootup.pack AP
-# et un redémarrage complet de Cemu.
+# These flags belong to the mod, so they are not in the index extracted from
+# the vanilla game. They become visible once the AP Bootup.pack is installed
+# and Cemu fully restarted.
 CUSTOM_FLAGS = {
     "APReceivedCursor": (zlib.crc32(b"APReceivedCursor") & 0xFFFFFFFF, "s32"),
     "APSeedToken": (zlib.crc32(b"APSeedToken") & 0xFFFFFFFF, "s32"),
@@ -61,11 +60,10 @@ CUSTOM_FLAGS = {
 # scalar type.  The bool offsets below are the layout measured in game.  S32
 # and F32 are the immediately following arrays; their Flag<T> layout follows
 # the same prefix, with {initial, min, max, value, hash} starting at +0x08.
-# S32/F32 offsets were first identified from the type layout, then instrumented
-# on 2026-08-25: MaxHartValue=12, StaminaMax=1000.0, KorokNutsNum=1 and
-# CurrentRupee=0 were read, rewritten unchanged, and read back identically.
-# Their *memory layout* is verified; the visible effect of a changed value is a
-# separate acceptance test and remains labelled as such in item_map.json.
+# S32/F32 offsets were first identified from the type layout, then measured:
+# MaxHartValue=12, StaminaMax=1000.0, KorokNutsNum=1 and CurrentRupee=0 were
+# read, rewritten unchanged, and read back identically. Their memory layout is
+# verified; what a changed value does in the game is a separate question.
 TYPE_LAYOUT = {
     "bool": {"count": 0x04, "array": 0x0C, "size": 0x10,
              "value": 0x07, "hash": 0x08},
@@ -79,35 +77,35 @@ TYPE_LAYOUT = {
 def read_u32(p, address, label):
     raw = p.read(address, 4)
     if raw is None or len(raw) != 4:
-        raise RuntimeError(f"lecture mémoire impossible : {label}")
+        raise RuntimeError(f"memory read failed: {label}")
     return be(raw)
 
 
 class LiveGdt:
-    """Index (type, hash) -> adresse invitee de l'objet de flag vivant."""
+    """Index (type, hash) -> guest address of the live flag object."""
 
     def __init__(self, p, base):
         self.p = p
         self.base = base
         mgr = read_u32(p, base + GDT_MGR_PTR, "GameDataMgr")
         if not (0x10000000 <= mgr < 0x60000000):
-            raise RuntimeError(f"GameDataMgr invalide ({mgr:#010x}) - partie chargee ?")
+            raise RuntimeError(f"invalid GameDataMgr ({mgr:#010x}) - is a save loaded?")
         self.mgr = mgr
-        tp_ptr = read_u32(p, base + mgr + 0x710, "pointeur TriggerParam")
+        tp_ptr = read_u32(p, base + mgr + 0x710, "TriggerParam pointer")
         self.tp = read_u32(p, base + tp_ptr, "TriggerParam")
         self.index = {kind: {} for kind in TYPE_LAYOUT}
 
     def build(self, kinds=("bool", "s32", "f32")):
-        """Lire les tableaux de pointeurs des types scalaires demandes."""
+        """Read the pointer arrays of the requested scalar types."""
         total = 0
         for kind in kinds:
             layout = TYPE_LAYOUT[kind]
             count = read_u32(
                 self.p, self.base + self.tp + layout["count"],
-                f"compte {kind}")
+                f"{kind} count")
             array = read_u32(
                 self.p, self.base + self.tp + layout["array"],
-                f"tableau {kind}")
+                f"{kind} array")
             if not count or not (0x10000000 <= array < 0x60000000):
                 continue
             raw = self.p.read(self.base + array, count * 4)
@@ -130,10 +128,10 @@ class LiveGdt:
         return total
 
     def get(self, hash_u32, kind="bool"):
-        """Lire une valeur scalaire dans l'objet vivant.
+        """Read a scalar value in the live object.
 
-        Pour un bool, le bit 0 seul est la valeur. Pour s32/f32, la valeur est
-        le mot a +0x14 dans le Flag<T> Wii U.
+        For a bool, bit 0 alone is the value. For s32/f32, the value is the
+        word at +0x14 in the Wii U Flag<T>.
         """
         layout = TYPE_LAYOUT[kind]
         a = self.index[kind].get(hash_u32)
@@ -149,7 +147,7 @@ class LiveGdt:
         return struct.unpack(">f", raw)[0]
 
     def set(self, hash_u32, value, kind="bool"):
-        """Ecriture brute en memoire, sans garantie de persistance ni setter natif."""
+        """A raw memory write, with no persistence guarantee nor native setter."""
         layout = TYPE_LAYOUT[kind]
         a = self.index[kind].get(hash_u32)
         if a is None:
@@ -179,35 +177,35 @@ def main():
 
     pid = cemu_pid()
     if not pid:
-        sys.exit("Cemu n'est pas lance")
+        sys.exit("Cemu is not running")
     _, type_of, hash_of = load_flags()
     custom = CUSTOM_FLAGS.get(flag)
     h = custom[0] if custom else hash_of.get(flag)
     if h is None:
-        sys.exit(f"flag inconnu : {flag}")
+        sys.exit(f"unknown flag: {flag}")
 
     with Process(pid, writable=do_write) as p:
         cave = find_cave(p)
         if cave is None:
-            sys.exit("code cave introuvable - le graphic pack est-il actif ?")
+            sys.exit("code cave not found - is the graphic pack enabled?")
         base, _, _ = guest_base(p, cave - 12)
         g = LiveGdt(p, base)
         n = g.build()
-        print(f"TriggerParam {g.tp:#010x}, {n} indexes scalaires")
+        print(f"TriggerParam {g.tp:#010x}, {n} scalars indexed")
 
         kind = custom[1] if custom else type_of.get(h)
         if kind not in TYPE_LAYOUT:
-            sys.exit(f"type {kind} non gere (bool, s32 et f32 seulement)")
+            sys.exit(f"type {kind} not supported (bool, s32 and f32 only)")
         cur = g.get(h, kind)
         if cur is None:
-            sys.exit(f"{flag} absent du tableau vivant "
+            sys.exit(f"{flag} missing from the live array "
                      f"(type {kind})")
         obj = g.index[kind][h]
         value_address = obj + TYPE_LAYOUT[kind]["value"]
-        print(f"{flag} = {cur}   objet {obj:#010x}   valeur {value_address:#010x}")
+        print(f"{flag} = {cur}   object {obj:#010x}   value {value_address:#010x}")
 
         if "--watch" in sys.argv:
-            print("surveillance a 20 Hz ; Ctrl+C pour arreter")
+            print("watching at 20 Hz; Ctrl+C to stop")
             started = time.monotonic()
             previous = cur
             try:
@@ -220,12 +218,12 @@ def main():
                               flush=True)
                         previous = current
             except KeyboardInterrupt:
-                print("arrete")
+                print("stopped")
             return
 
         if value is None or not do_write:
             if value is not None:
-                print("\nessai a blanc - ajoute --write pour appliquer")
+                print("\ndry run - add --write to apply")
             return
         g.set(h, value, kind)
         print(f"-> {g.get(h, kind)}")

@@ -1,31 +1,31 @@
-"""Afficher NOTRE texte dans le message central du jeu.
+"""Show OUR text in the game's center message.
 
-    python tools/cemu/saycenter.py "Alice t'envoie une Epee"
+    python tools/cemu/saycenter.py "Alice sends you a Sword"
     python tools/cemu/saycenter.py "..." --index 5
-    python tools/cemu/saycenter.py --locate      # reperer sans afficher
+    python tools/cemu/saycenter.py --locate      # locate without showing
 
-LE MECANISME, ETABLI PAR MESURE
+THE MECHANISM, ESTABLISHED BY MEASUREMENT
 
-    0x02ed1f7c(this, index, SafeString*)   empile la demande  -> this+0x154 = 1
-    0x02ed1e1c(this, drapeau)              depile et affiche  -> this+0x154 = 0
+    0x02ed1f7c(this, index, SafeString*)   pushes the request -> this+0x154 = 1
+    0x02ed1e1c(this, flag)                 pops and shows     -> this+0x154 = 0
 
-Les deux sont demandes dans la MEME frame : `apCheckPlay` puis `apCheckMsg` sont
-deux blocs successifs du hook per-frame. Chacun pris isolement ne fait rien --
-l'empilement laisse le compteur a 1, et le depilage sort par `ble` sur une liste
-vide. Il a fallu les deux.
+Both are requested in the SAME frame: `apCheckPlay` then `apCheckMsg` are two
+consecutive blocks of the per-frame hook. Each alone does nothing -- the push
+leaves the counter at 1, and the pop leaves through `ble` on an empty list. Both
+were needed.
 
-Le texte, lui, suit la meme voie que la notification d'objet : le jeu resout le
-message depuis une table statique au moment de l'affichage, donc on y ecrit le
-notre, on declenche, et on restaure aussitot.
+The text follows the same path as the item notification: the game resolves the
+message from a static table at display time, so ours is written there, the
+message is triggered, and the table is restored at once.
 
-PREREQUIS : PLUS AUCUN, sinon que l'IHM du jeu existe
+PREREQUISITE: NONE ANY MORE, except that the game's UI exists
 
-Il fallait autrefois avoir declenche un vrai message central depuis le
-lancement, pour que la sonde voie passer le `this`. Il est desormais RESOLU a
-chaque image : c'est `*(ecran 0x25 + 0x1b84)`, releve sur 0x02fbcaf8 -- une
-methode de l'ecran 0x25 qui fait `lwz r3, 0x1b84(r3)` avant de sauter dans
-l'empilement 0x02ed1f7c. L'objet obtenu porte bien la liste en +0x14c et son
-compte en +0x154, les deux champs que la fonction d'affichage teste.
+A real center message used to be needed since the start, for the probe to see
+the `this` go by. It is now RESOLVED every frame: it is `*(screen 0x25 +
+0x1b84)`, read at 0x02fbcaf8 -- a method of screen 0x25 that does `lwz r3,
+0x1b84(r3)` before jumping into the push 0x02ed1f7c. The object obtained does
+hold the list at +0x14c and its count at +0x154, the two fields the display
+function tests.
 """
 import json
 import pathlib
@@ -40,18 +40,18 @@ from findtext import read_utf16, scan
 from say import colorize, has_markup
 
 CACHE = pathlib.Path(tempfile.gettempdir()) / "botw_ap_center.json"
-# Texte du message d'index 5, en francais. Sert d'ancre pour retrouver l'entree
-# dans la table statique ; --msg permet d'en viser un autre.
+# Text of the message of index 5, in the French game. It anchors the search for
+# the entry in the static table; --msg aims at another one.
 DEFAULT_INDEX = 5
-# Le POINT FINAL fait partie du message. Sans lui `locate()` ne trouvait rien :
-# il compare la chaine ENTIERE, pas un prefixe, et refusait donc toutes ses
-# propres trouvailles -- panne qui se lisait "entree introuvable".
+# The FULL STOP is part of the message. Without it `locate()` found nothing: it
+# compares the WHOLE string, not a prefix, and so refused all its own finds --
+# a failure that read "entry not found".
 DEFAULT_MSG = "Le compartiment des vêtements est plein."
 WINDOW = 256
 
 
 def trigger(p, c, idx, timeout=5.0):
-    """Empiler puis depiler, dans la meme frame."""
+    """Push then pop, in the same frame."""
     before = be(p.read(c.play_done, 4))
     p.write(c.play_a, (idx & 0xFFFFFFFF).to_bytes(4, "big"))
     p.write(c.play_raw, bytes(4))
@@ -66,19 +66,19 @@ def trigger(p, c, idx, timeout=5.0):
         time.sleep(0.05)
         raw = p.read(c.play_done, 4)
         if not raw:
-            raise RuntimeError("Cemu ne repond plus (le jeu a plante).")
+            raise RuntimeError("Cemu no longer answers (the game crashed).")
         if be(raw) != before:
             return be(p.read(c.ms_ret, 4))
     return None
 
 
 def locate(p, base, c, msg, idx, cave, verbose=True):
-    """Adresse de l'entree du message dans la table statique.
+    """Address of the message's entry in the static table.
 
-    Plusieurs copies existent : la table lue a l'affichage, et l'arene ou le
-    texte resolu est recopie. Un marqueur distinct par candidat, puis un vrai
-    affichage, les separe -- la table garde le sien, l'arene recoit celui de la
-    table. C'est la meme methode que pour la notification d'objet.
+    Several copies exist: the table read at display time, and the arena where
+    the resolved text is copied. A distinct marker per candidate, then a real
+    display, tells them apart -- the table keeps its own, the arena receives
+    the table's. The same method as for the item notification.
     """
     key = f"{p.pid}:{msg}"
     data = {}
@@ -93,7 +93,7 @@ def locate(p, base, c, msg, idx, cave, verbose=True):
             return data[key]
 
     if verbose:
-        print(f"reperage de {msg[:34]!r} ... (~6 s)")
+        print(f"locating {msg[:34]!r} ... (~6 s)")
     cands = []
     for g, _ in scan(p, base, [(msg.encode("utf-16-be"), "be")]):
         if cave and cave[0] <= g < cave[1]:
@@ -123,7 +123,7 @@ def locate(p, base, c, msg, idx, cave, verbose=True):
     data[key] = static
     CACHE.write_text(json.dumps(data), encoding="utf-8")
     if verbose:
-        print(f"  entree = {static:#010x}  ({len(msg)} caracteres de place)")
+        print(f"  entry = {static:#010x}  ({len(msg)} characters of room)")
     return static
 
 
@@ -144,12 +144,12 @@ def main():
 
     pid = cemu_pid()
     if not pid:
-        sys.exit("Cemu n'est pas lance")
+        sys.exit("Cemu is not running")
 
     with Process(pid, writable=True) as p:
         a = find_cave(p)
         if a is None:
-            print("cave introuvable.")
+            print("cave not found.")
             print("")
             diagnose()
             return
@@ -159,40 +159,40 @@ def main():
 
         ok, rn, tick = c.resolve_ready()
         if not ok:
-            sys.exit(f"le resolveur du patch charge ne tourne pas "
+            sys.exit(f"the loaded patch's resolver does not run "
                      f"(apResolveN={rn}, tick={tick}).\n"
-                     "FERMER ET ROUVRIR CEMU : recharger une sauvegarde ne "
-                     "suffit pas.")
+                     "CLOSE AND REOPEN CEMU: reloading a save is not "
+                     "enough.")
         if not be(p.read(c.push_this, 4)):
-            sys.exit("l'objet des messages n'est pas resolu "
-                     "(*(ecran 0x25 + 0x1b84) vaut 0).\n"
-                     "Charge une sauvegarde, puis relance.")
+            sys.exit("the message object is not resolved "
+                     "(*(screen 0x25 + 0x1b84) is 0).\n"
+                     "Load a save, then run again.")
 
         static = locate(p, base, c, msg, idx, cave)
         if static is None:
-            print(f"entree {msg[:34]!r} introuvable.")
-            print("  Le texte doit etre EXACTEMENT celui affiche a l'ecran.")
-            print("  Affiche le message une fois, note-le, et passe-le a --msg.")
+            print(f"entry {msg[:34]!r} not found.")
+            print("  The text must be EXACTLY the one shown on screen.")
+            print("  Show the message once, note it, and pass it to --msg.")
             return
 
         if "--locate" in argv or not positional:
             print("")
-            print(f"Place disponible : {len(msg)} caracteres.")
-            print('Donne un texte en argument pour l\'afficher.')
+            print(f"Room available: {len(msg)} characters.")
+            print('Give a text as an argument to show it.')
             return
 
-        # Le balisage {N} ... {/} devient des codes de controle du jeu.
-        # C'est la chaine APRES balisage qui compte pour la place.
+        # The {N} ... {/} markup becomes the game's control codes.
+        # The string AFTER markup counts for the room.
         text = colorize(positional[0])
         if len(text) > len(msg):
-            sys.exit(f"{len(text)} caracteres pour un emplacement de "
-                     f"{len(msg)}. Au-dela on deborde sur les messages voisins "
-                     f"-- c'est ce qui faisait planter le jeu avec la "
-                     f"notification d'objet.")
+            sys.exit(f"{len(text)} characters for a slot of "
+                     f"{len(msg)}. Beyond it, the text overflows onto neighbouring "
+                     f"messages -- which crashed the game with the item "
+                     f"notification.")
 
-        print(f"affichage : {positional[0]!r} "
-              f"({len(text)} unites de code" +
-              (", balisage couleur inclus)" if has_markup(positional[0])
+        print(f"showing: {positional[0]!r} "
+              f"({len(text)} code units" +
+              (", color markup included)" if has_markup(positional[0])
                else ")"))
         saved = p.read(base + static, max(WINDOW, len(text) * 2 + 32))
         p.write(base + static, text.encode("utf-16-be") + b"\x00\x00")
@@ -202,9 +202,9 @@ def main():
             if saved:
                 p.write(base + static, saved)
         if ret:
-            print("declenche -- regarde l'ecran.")
+            print("triggered -- look at the screen.")
         else:
-            print(f"le jeu a refuse (retour {ret}).")
+            print(f"the game refused (return {ret}).")
 
 
 if __name__ == "__main__":

@@ -24,7 +24,7 @@ class NativeSourceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             (root / 'wrong.rpx').write_bytes(b'wrong revision')
-            with self.assertRaisesRegex(ValueError, 'RPX incompatible'):
+            with self.assertRaisesRegex(ValueError, 'incompatible RPX'):
                 build(root / 'wrong.rpx', root / 'out')
             self.assertFalse((root / 'out').exists())
 
@@ -80,19 +80,26 @@ print(a.name)
         from tools.build_native_from_source import digest
         files = generate()
         self.assertEqual({Path(n).name for n in files}, set(manifest['native_files']))
-        from tools.build_tip_channel import compose as tip_channel
+        from unittest.mock import patch
+        from tools import build_tip_channel as tip
+
+        def code(text):
+            # Instructions and labels only: the comments have been rewritten since.
+            lines = (line.split(';', 1)[0].rstrip() for line in text.replace('\r\n', '\n').split('\n'))
+            return '\n'.join(line for line in lines if line.strip()) + '\n'
         for name, raw in files.items():
             with self.subTest(name=name):
                 validated = (reference / Path(name).name).read_bytes()
                 if name == 'runtime/patch_apInject.asm':
-                    # Since 26/09 every pack carries the AP journal (the tip
-                    # channel, validated in game on 25/09): the validated
-                    # file plus that composition, nothing else.
-                    validated = tip_channel(validated.decode('utf-8').replace(
-                        '\r\n', '\n')).encode('utf-8')
+                    # Every pack carries the AP journal (the tip channel): the
+                    # validated file plus that composition, nothing else.
+                    with patch.object(tip, 'FRAME_HOOK', code(tip.FRAME_HOOK)), \
+                            patch.object(tip, 'TEXT_HOOK', code(tip.TEXT_HOOK)):
+                        composed = tip.compose(code(validated.decode('utf-8')))
+                    self.assertEqual(code(raw.decode('utf-8')), code(composed))
                 else:
                     self.assertEqual(digest(raw), manifest['native_files'][Path(name).name])
-                self.assertEqual(raw, validated)
+                    self.assertEqual(raw, validated)
 
 
 if __name__ == '__main__':

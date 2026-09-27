@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.cemu.rpx import Rpx
 
-LEGACY_SHA = "60ccd6ff946c7d939b8a0c772fb60f90dc5cff54d1591e9d90d64f0d90667ee4"
+LEGACY_SHA = "f4d8c6a761bd7f6f6bc5b386313eb16b33e4152e9a57371cba3c5dd641594a0f"
 SOURCE = ROOT / ".build/ledger-validation/9bed01d0c46f146f"
 # Site, stack SafeString, inline storage, exact label, exit before consumption.
 SCOPES = ((0x030835C8, 0x16C, 0x178, b"Item_AP_Name\0", "apSubEnd", "apSubReq"),
@@ -64,9 +64,9 @@ def verify_rpx(rpx):
 def build(*, partitioned=False):
     context = verify_rpx(Rpx())
     legacy = (ROOT / "native/cemu/legacy/patch_apInject.asm").read_bytes()
-    lab = ROOT / ".build/cemu-validation/portable/graphicPacks/BOTW_Archipelago/patch_apInject.asm"
-    if lab.read_bytes() != legacy:
-        raise ValueError("laboratory base differs from the audited legacy source")
+    installed = ROOT / ".build/cemu-validation/portable/graphicPacks/BOTW_Archipelago/patch_apInject.asm"
+    if installed.read_bytes() != legacy:
+        raise ValueError("installed base differs from the audited legacy source")
     manifest = json.loads((SOURCE / "manifest.json").read_text())
     files = {}
     for prefix, group in (("content/", "files"), ("", "native_files")):

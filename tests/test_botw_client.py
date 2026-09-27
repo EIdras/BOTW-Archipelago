@@ -136,7 +136,7 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
                          LocationInfo(1, 2, 3, 4))
 
     async def test_connected_accepts_archipelago_named_tuple_json(self):
-        client = ArchipelagoClient("localhost:38281", "Simon", log=lambda _: None)
+        client = ArchipelagoClient("localhost:38281", "Player", log=lambda _: None)
         sent = []
 
         async def fake_send(*commands):
@@ -146,20 +146,20 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
         client.seed_name = "seed"
         await client._packet({
             "cmd": "Connected", "team": 0, "slot": 1,
-            "players": [[0, 1, "Simon", "Simon"]],
-            "slot_info": {"1": ["Simon", "Manual_Breath of the Wild_Simon", 0, []]},
+            "players": [[0, 1, "Player", "Player"]],
+            "slot_info": {"1": ["Player", "Breath of the Wild", 0, []]},
             "checked_locations": [7], "slot_data": {"death_link": True},
         })
         self.assertTrue(client.connected)
-        self.assertEqual(client.players, {1: "Simon"})
+        self.assertEqual(client.players, {1: "Player"})
         self.assertEqual(client.sender(NetworkItem(1, 2, 1, 0)),
-                         ("Simon", "Manual_Breath of the Wild_Simon"))
+                         ("Player", "Breath of the Wild"))
         self.assertEqual(sent[0]["cmd"], "GetDataPackage")
         self.assertEqual(sent[1], {"cmd": "ConnectUpdate",
                                    "tags": ["AP", "DeathLink"]})
 
     async def test_scouts_messages_and_deathlink_are_structured(self):
-        client = ArchipelagoClient("localhost:38281", "Simon", log=lambda _: None)
+        client = ArchipelagoClient("localhost:38281", "Player", log=lambda _: None)
         client._scout_expected = {2}
         await client._packet({"cmd": "LocationInfo", "locations": [[1, 2, 3, 4]]})
         self.assertEqual(client.scouted_locations[2], LocationInfo(1, 2, 3, 4))
@@ -184,7 +184,7 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(client.deathlinks.empty())
 
     async def test_index_zero_replaces_the_full_received_inventory(self):
-        client = ArchipelagoClient("localhost:38281", "Simon", log=lambda _: None)
+        client = ArchipelagoClient("localhost:38281", "Player", log=lambda _: None)
         client.received_items = {
             0: NetworkItem(1, 2, 3, 0),
             1: NetworkItem(4, 5, 6, 0),
@@ -195,7 +195,7 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
                          {0: NetworkItem(7, 8, 9, 0)})
 
     async def test_outgoing_deathlink_uses_bounce_and_updates_latch(self):
-        client = ArchipelagoClient("localhost:38281", "Simon", log=lambda _: None)
+        client = ArchipelagoClient("localhost:38281", "Player", log=lambda _: None)
         client.death_link_enabled = True
         sent = []
 
@@ -203,10 +203,10 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
             sent.extend(commands)
 
         client.send = fake_send
-        await client.send_death("Simon fell")
+        await client.send_death("Player fell")
         self.assertEqual(sent[0]["cmd"], "Bounce")
         self.assertEqual(sent[0]["tags"], ["DeathLink"])
-        self.assertEqual(sent[0]["data"]["cause"], "Simon fell")
+        self.assertEqual(sent[0]["data"]["cause"], "Player fell")
         self.assertEqual(client.last_death_link, sent[0]["data"]["time"])
 
     @unittest.skipUnless(importlib.util.find_spec("aiohttp"), "aiohttp absent")
@@ -224,14 +224,14 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
             received.extend(await websocket.receive_json())
             await websocket.send_json([{
                 "cmd": "Connected", "team": 0, "slot": 1,
-                "players": [[0, 1, "Simon", "Simon"]],
-                "slot_info": {"1": ["Simon", "Manual_Breath of the Wild_Simon", 0, []]},
+                "players": [[0, 1, "Player", "Player"]],
+                "slot_info": {"1": ["Player", "Breath of the Wild", 0, []]},
                 "checked_locations": [],
             }])
             received.extend(await websocket.receive_json())
             await websocket.send_json([{
                 "cmd": "DataPackage", "data": {"games": {
-                    "Manual_Breath of the Wild_Simon": {
+                    "Breath of the Wild": {
                         "item_name_to_id": {"Paraglider": 1},
                         "location_name_to_id": {"Tah Muhl Shrine": 2},
                     }
@@ -248,7 +248,7 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
         site = web.TCPSite(runner, "127.0.0.1", 0)
         await site.start()
         port = site._server.sockets[0].getsockname()[1]
-        client = ArchipelagoClient(f"127.0.0.1:{port}", "Simon",
+        client = ArchipelagoClient(f"127.0.0.1:{port}", "Player",
                                    log=lambda _: None)
         try:
             await client.connect()
@@ -322,7 +322,7 @@ class RuntimeSafetyTests(unittest.IsolatedAsyncioTestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             runtime = BotwClientRuntime(
-                "localhost:38281", "Simon",
+                "localhost:38281", "Player",
                 state_path=Path(directory) / "state.json", log=lambda _: None)
             runtime.game = Game()
             runtime.ap = AP()
@@ -352,7 +352,7 @@ class RuntimeSafetyTests(unittest.IsolatedAsyncioTestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             runtime = BotwClientRuntime(
-                "localhost:38281", "Simon",
+                "localhost:38281", "Player",
                 state_path=Path(directory) / "state.json", log=lambda _: None)
             runtime.game = Game()
             runtime.ap = AP()
@@ -405,7 +405,7 @@ class RuntimeSafetyTests(unittest.IsolatedAsyncioTestCase):
                 return ["Defeat Calamity Ganon"] if self.polls == 1 else []
 
         class AP:
-            game = "Manual_Breath of the Wild_Simon"
+            game = "Manual_Breath of the Wild_Player"
             slot_data = {}
             connected = True
             received_items = {}
@@ -432,7 +432,7 @@ class RuntimeSafetyTests(unittest.IsolatedAsyncioTestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             runtime = BotwClientRuntime(
-                "localhost:38281", "Simon", state_path=Path(directory) / "state.json",
+                "localhost:38281", "Player", state_path=Path(directory) / "state.json",
                 log=lambda _: None)
             runtime.game = Game()
             runtime.ap = AP()

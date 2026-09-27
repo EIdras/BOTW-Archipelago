@@ -1,11 +1,11 @@
 """The Archipelago key item: the seed's fixed information in the inventory.
 
-Asked by Simon (25/09): the player can check which seed and slot the save
-belongs to without leaving the game. Everything is resources, built per seed:
+The player can check which seed and slot the save belongs to without
+leaving the game. Everything is resources, built per seed:
   * one key item actor, Obj_AP_Status, cloned from Hestu's maracas (a key item
     with no use): ActorInfo declaration, actor pack with its ActorLink
     renamed, the Archipelago icon (UI/StockItem/<actor>.sbitemico);
-  * its name and description in every EU language, the seed's fixed facts:
+  * its name and description (English, in every EU language), the seed's fixed facts:
     seed, slot, goal;
   * one idempotent EventFlow entry, Demo007_1<APStatusItem>: if the pouch
     does not hold the item, put it there. No cursor, no guard: granting it
@@ -57,34 +57,29 @@ def _input_hashes() -> dict[str, str]:
 # The update resources read here (the same versions as the shop stage's).
 INPUT_HASHES = _input_hashes()
 
-GOALS_FR = {0: "vaincre Ganon", 1: "libérer {beasts} créatures divines",
-            2: "terminer {shrines} sanctuaires"}
-GOALS_EN = {0: "defeat Ganon", 1: "free {beasts} Divine Beasts",
-            2: "complete {shrines} shrines"}
+GOALS = {0: "defeat Ganon", 1: "free {beasts} Divine Beasts",
+         2: "complete {shrines} shrines"}
 
 
-def texts(manifest: dict, language: str) -> tuple[str, str]:
-    """(name, description): the seed's fixed facts, French for EUfr, else English."""
+def texts(manifest: dict) -> tuple[str, str]:
+    """(name, description): the seed's fixed facts, in English in every language."""
     data = manifest.get("slot_data", {})
     goal = int(data.get("goal_type", 0))
     values = {"beasts": data.get("divine_beasts_required", 4),
               "shrines": data.get("shrines_required", 40)}
-    french = language == "EUfr"
-    goals = GOALS_FR if french else GOALS_EN
+    goals = GOALS
     if goal not in goals:
-        raise ValueError(f"objectif inconnu : {goal}")
+        raise ValueError(f"unknown goal: {goal}")
     slot = f"{manifest['slot_name']} (slot {manifest['slot']})"
-    lines = ([f"Seed {manifest['seed']}", f"Joueur : {slot}",
-              f"Objectif : {goals[goal].format(**values)}"] if french else
-             [f"Seed {manifest['seed']}", f"Player: {slot}",
-              f"Goal: {goals[goal].format(**values)}"])
+    lines = [f"Seed {manifest['seed']}", f"Player: {slot}",
+             f"Goal: {goals[goal].format(**values)}"]
     if len(lines) > DESCRIPTION_LINES or any(len(line) > DESCRIPTION_WIDTH for line in lines):
-        raise ValueError(f"description du statut trop longue : {lines}")
+        raise ValueError(f"status description too long: {lines}")
     return "Archipelago", "\n".join(lines)
 
 
-def item(manifest: dict, language: str) -> ApShopItem:
-    return ApShopItem(ACTOR, -1, *texts(manifest, language), model_actor=MODEL_ACTOR)
+def item(manifest: dict) -> ApShopItem:
+    return ApShopItem(ACTOR, -1, *texts(manifest), model_actor=MODEL_ACTOR)
 
 
 def add_status_entry(raw: bytes) -> tuple[bytes, dict]:
@@ -93,9 +88,9 @@ def add_status_entry(raw: bytes) -> tuple[bytes, dict]:
     before = graph_snapshot(flow)
     chart = flow.flowchart
     if chart.name != FLOW_NAME:
-        raise ValueError(f"flow inattendu : {chart.name}")
+        raise ValueError(f"unexpected flow: {chart.name}")
     if ENTRY in {entry.name for entry in chart.entry_points}:
-        raise ValueError(f"{ENTRY} déjà présent")
+        raise ValueError(f"{ENTRY} already present")
     system = next(a for a in chart.actors if str(a.identifier) == "EventSystemActor")
 
     def holder(collection, command):
@@ -123,7 +118,7 @@ def add_status_entry(raw: bytes) -> tuple[bytes, dict]:
     # Held: nothing to do (an empty case ends the flow).
     check.data.cases = {0: make_rindex(grant)}
     if any(e.name in (grant.name, check.name) for e in chart.events):
-        raise ValueError("événement de statut déjà présent")
+        raise ValueError("status event already present")
     chart.events += [grant, check]
     entry = EntryPoint(ENTRY)
     entry.main_event = make_rindex(check)
@@ -131,7 +126,7 @@ def add_status_entry(raw: bytes) -> tuple[bytes, dict]:
     out = write_flow(flow)
     after = graph_snapshot(read_flow(out))
     if any(after["events"].get(name) != node for name, node in before["events"].items()):
-        raise ValueError("événement existant modifié")
+        raise ValueError("existing event changed")
     return out, {"entry": ENTRY, "grants": ACTOR}
 
 
@@ -141,7 +136,7 @@ def add_event_info(raw: bytes) -> tuple[bytes, dict]:
     donor = info[f"{FLOW_NAME}<APDisplayStandalone>"]
     key = f"{FLOW_NAME}<{ENTRY}>"
     if key in info:
-        raise ValueError(f"{key} déjà présent")
+        raise ValueError(f"{key} already present")
     info[key] = oead.byml.Hash({field: copy.deepcopy(donor[field]) for field in (
         "demo_event", "is_timeline", "mode", "slink_user", "special_actor_name")})
     return bytes(oead.yaz0.compress(oead.byml.to_binary(info, big_endian=True))), {"added": key}
@@ -153,7 +148,7 @@ def generate(files: dict[str, bytes], content: Path,
     shop stages: every resource they already changed is read from `files`)."""
     for name in (TITLE, BOOTUP, "System/Resource/ResourceSizeTable.product.srsizetable"):
         if name not in files:
-            raise ValueError(f"{name} attendu dans la surcouche")
+            raise ValueError(f"{name} expected in the overlay")
     inputs = {}
     for name, expected in INPUT_HASHES.items():
         if name in files:           # already changed by an earlier stage
@@ -161,10 +156,10 @@ def generate(files: dict[str, bytes], content: Path,
             continue
         raw = (content / name).read_bytes()
         if digest(raw) != expected:
-            raise ValueError(f"ressource de la mise à jour inattendue : {name}")
+            raise ValueError(f"unexpected update resource: {name}")
         inputs[name] = raw
     model_pack = inputs.pop(MODEL_PACK)
-    fr = item(manifest, "EUfr")
+    status = item(manifest)
     changes: list[dict] = []
     with tempfile.TemporaryDirectory() as temp:
         stage = Path(temp)
@@ -173,7 +168,7 @@ def generate(files: dict[str, bytes], content: Path,
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(raw)
         builder = ResourceBuilder(stage)
-        builder.outputs[ACTOR_INFO], detail = add_declarations(inputs[ACTOR_INFO], [fr])
+        builder.outputs[ACTOR_INFO], detail = add_declarations(inputs[ACTOR_INFO], [status])
         changes.append({"resource": ACTOR_INFO, "declarations": detail})
 
         table = builder.table
@@ -188,7 +183,7 @@ def generate(files: dict[str, bytes], content: Path,
         changes.append({"resource": pack, "clone": detail, "icon_sha256": digest(icon)})
 
         for language in LANGUAGES:
-            entry = item(manifest, language)
+            entry = status
 
             def messages(raw, entry=entry, language=language):
                 archive = oead.Sarc(unpack(raw))

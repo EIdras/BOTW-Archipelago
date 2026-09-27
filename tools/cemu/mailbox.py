@@ -1,11 +1,11 @@
 """Talk to the code injected into BOTW through its code cave.
 
-    python tools/cemu/mailbox.py            # etat : tick, inbox, outbox
-    python tools/cemu/mailbox.py 1234       # envoyer 1234 et attendre l'echo
+    python tools/cemu/mailbox.py            # state: tick, inbox, outbox
+    python tools/cemu/mailbox.py 1234       # send 1234 and wait for the echo
 
-Cemu garde en memoire hote une copie du TEXTE du patch, donc la signature
-apparait plusieurs fois. Le vrai cave est celui ou la constante de version suit
-la signature : dans les copies de Cemu ce sont des pointeurs hote 64 bits.
+Cemu keeps a copy of the patch TEXT in host memory, so the signature appears
+several times. The real cave is the one where the version constant follows
+the signature: in Cemu's copies these are 64-bit host pointers.
 """
 import pathlib
 import os
@@ -18,7 +18,7 @@ from winmem import Process
 
 MAGIC = b"APMBOX01\x00"
 VERSION = 0x0BADF00E
-HOOK_GUEST = 0x031FA97C          # adresse invitee ou notre bla doit se trouver
+HOOK_GUEST = 0x031FA97C          # guest address where our bla must be
 DEFAULT_LOG = pathlib.Path.home() / "AppData/Roaming/Cemu/log.txt"
 LOG = None   # explicit override; otherwise BOTW_CEMU_LOG, read at call time
 
@@ -27,9 +27,9 @@ def log_path():
     """Cemu log to resolve the cave from.
 
     Read at call time, not at import: this module is imported indirectly (via
-    rpx) long before a lab harness sets BOTW_CEMU_LOG, and a path frozen at
+    rpx) long before a harness sets BOTW_CEMU_LOG, and a path frozen at
     import silently pointed at the original Cemu profile's log, whose stale
-    codecave addresses made the guest base unresolvable (9f).
+    codecave addresses made the guest base unresolvable.
     """
     if LOG is not None:
         return pathlib.Path(LOG)
@@ -93,17 +93,17 @@ def cave_guest_candidates():
     return list(reversed(out))
 
 
-PROBE_GUEST = 0x02EB53E4        # entree de PauseMenuDataMgr::itemGet
-PROBE_WORD = 0x9421FF98         # stwu r1, -0x68(r1), telle qu'elle est dans le RPX
+PROBE_GUEST = 0x02EB53E4        # entry of PauseMenuDataMgr::itemGet
+PROBE_WORD = 0x9421FF98         # stwu r1, -0x68(r1), as it is in the RPX
 
 
 def guest_base(p, cave_host):
     """Map guest addresses to host ones: host = guest + base.
 
-    La base est validee sur une instruction du RPX qu'aucun pack ne patche, et
-    non sur notre propre hook : un autre graphic pack peut s'approprier la meme
-    adresse (FPS++ patche 0x031FA97C), et valider sur notre hook ferait alors
-    echouer toute la resolution alors que la base est bonne.
+    The base is checked on an instruction of the RPX that no pack patches, and
+    not on our own hook: another graphic pack may take the same address
+    (FPS++ patches 0x031FA97C), and checking our hook would then fail the
+    whole resolution although the base is right.
     """
     for g in cave_guest_candidates():
         base = cave_host - g
@@ -114,28 +114,28 @@ def guest_base(p, cave_host):
 
 
 def hook_owner(p, base):
-    """Notre hook per-frame tient-il toujours, ou un autre pack l'a-t-il pris ?"""
+    """Is our per-frame hook still in place, or did another pack take it?"""
     raw = p.read(base + HOOK_GUEST, 4)
     if not raw or len(raw) < 4:
         return None
     v = be(raw)
     if (v >> 26) != 18 or not ((v >> 1) & 1) or not (v & 1):
-        return "aucun hook"
+        return "no hook"
     return v & 0x03FFFFFC
 
 
 def hook_is_ours(p, base, cave_g, owner):
-    """La cible du hook per-frame est-elle bien NOTRE sonde ?
+    """Does the per-frame hook really jump to OUR probe?
 
-    Une simple fourchette d'adresses ne suffit pas, et la premiere version en
-    donnait la preuve : elle acceptait `cave_g + 0x400`, alors que le code du
-    cave commence apres ~5,4 Ko de donnees. Notre propre sonde etait donc
-    denoncee comme volee a chaque lancement de `mailbox.py`.
+    An address range is not enough, and the first version proved it: it
+    accepted `cave_g + 0x400`, while the cave's code starts after ~5.4 KB of
+    data. Our own probe was therefore reported as stolen at every run of
+    `mailbox.py`.
 
-    Le test decisif est la signature de la sonde : elle rejoue l'instruction
-    d'origine, puis charge la page du cave avec `lis r11, cave_g >> 16` pour
-    incrementer le tick. Un autre pack n'a aucune raison d'ecrire cette
-    constante-la.
+    The deciding test is the probe's signature: it replays the original
+    instruction, then loads the cave's page with `lis r11, cave_g >> 16` to
+    increment the tick. Another pack has no reason to write that very
+    constant.
     """
     if not isinstance(owner, int):
         return False
@@ -146,35 +146,35 @@ def hook_is_ours(p, base, cave_g, owner):
 
 
 class CaveUnavailable(RuntimeError):
-    """Cemu absent, patch inactif, ou base invite/hote irresolvable."""
+    """Cemu missing, patch inactive, or guest/host base unresolvable."""
 
 
 def open_cave(*, writable=True):
-    """Ouvrir le cave : renvoie (Process, Cave). A fermer avec le Process.
+    """Open the cave: returns (Process, Cave). Close it with the Process.
 
         from mailbox import open_cave
         p, c = open_cave()
         with p:
             ...
 
-    Tous les outils refaisaient ce passe-partout a l'identique. Le client
-    Archipelago n'a pas a le connaitre : il lui faut un objet Cave, pas la
-    procedure de recherche de signature.
+    Every tool used to repeat this boilerplate. The Archipelago client does
+    not need to know it: it needs a Cave object, not the signature search.
+
     """
     pid = cemu_pid()
     if not pid:
-        raise CaveUnavailable("Cemu n'est pas lance")
+        raise CaveUnavailable("Cemu is not running")
     p = Process(pid, writable=writable)
     try:
         addr = find_cave(p)
         if addr is None:
             raise CaveUnavailable(
-                "code cave introuvable : le graphic pack est-il actif ? "
-                "(python tools/cemu/mailbox.py pour le diagnostic)")
+                "code cave not found: is the graphic pack enabled? "
+                "(python tools/cemu/mailbox.py to diagnose)")
         base, _, _ = guest_base(p, addr - 12)
         if base is None:
             raise CaveUnavailable(
-                "base invite/hote irresolvable : relancer le jeu")
+                "guest/host base unresolvable: restart the game")
         return p, Cave(p, addr, base)
     except Exception:
         p.__exit__(None, None, None)
@@ -182,11 +182,11 @@ def open_cave(*, writable=True):
 
 
 class Cave:
-    """Carte des champs du code cave, tous relatifs au champ de version.
+    """Map of the code cave's fields, all relative to the version field.
 
-    L'ordre doit rester synchronise avec le bloc de donnees en tete de
-    patch_apInject.asm. Un decalage ici ne provoque pas d'erreur : il ecrit
-    silencieusement dans le mauvais champ.
+    The order must stay in step with the data block at the top of
+    patch_apInject.asm. An offset error raises nothing: it silently writes
+    into the wrong field.
     """
 
     def __init__(self, p, version_addr, base=None):
@@ -209,71 +209,71 @@ class Cave:
         self.notify_req = version_addr + 60
         self.notify_done = version_addr + 64
         self.hook_mask = version_addr + 68
-        self.hook_counts = version_addr + 72      # 9 compteurs consecutifs
+        self.hook_counts = version_addr + 72      # 9 consecutive counters
         self.pickup_this = version_addr + 108
-        self.screen_this = version_addr + 112     # l'ecran PickUpWin
-        self.duration = version_addr + 116        # flottant capture au vol
+        self.screen_this = version_addr + 112     # the PickUpWin screen
+        self.duration = version_addr + 116        # float captured on the fly
         self.save_f1 = version_addr + 120
-        self.list_this = version_addr + 124       # ecran + 0x1b68 : pool de lignes
+        self.list_this = version_addr + 124       # screen + 0x1b68: row pool
         self.name_buf = version_addr + 152
-        self.text_buf = version_addr + 216       # 256 octets de texte libre
-        self.ms_mask = version_addr + 472        # sondes du message central
-        self.ms_counts = version_addr + 476      # 6 compteurs consecutifs
+        self.text_buf = version_addr + 216       # 256 bytes of free text
+        self.ms_mask = version_addr + 472        # probes of the center message
+        self.ms_counts = version_addr + 476      # 6 consecutive counters
         self.ms_this = version_addr + 500
-        self.ms1_this = version_addr + 504   # 'this' de la candidate
+        self.ms1_this = version_addr + 504   # 'this' of the candidate
         self.ms_req = version_addr + 508
         self.ms_index = version_addr + 512
         self.ms_state = version_addr + 516
         self.ms_done = version_addr + 520
-        self.ms_queue = version_addr + 524   # garde this+0x150
+        self.ms_queue = version_addr + 524   # guard this+0x150
         self.ms_saveq = version_addr + 528
-        self.ms_ret = version_addr + 532     # retour de l'API, 0 = refuse
-        self.ms_flag = version_addr + 536    # r4 : booleen, pas un index
-        self.ms_pass = version_addr + 540    # atteint l'empilement
-        self.ms_bail = version_addr + 544    # sortie anticipee
-        self.ms_mid = version_addr + 552     # apres les 3 premiers tests
-        self.ms_dbg8c = version_addr + 556   # 0x8c vu par la fonction
-        self.ms_dbg154 = version_addr + 560  # releves par le cave, dans la
-        self.ms_dbg150 = version_addr + 564  # meme frame que l'appel
+        self.ms_ret = version_addr + 532     # the API's return, 0 = refused
+        self.ms_flag = version_addr + 536    # r4: a boolean, not an index
+        self.ms_pass = version_addr + 540    # reaches the push
+        self.ms_bail = version_addr + 544    # early exit
+        self.ms_mid = version_addr + 552     # after the first 3 tests
+        self.ms_dbg8c = version_addr + 556   # 0x8c as the function sees it
+        self.ms_dbg154 = version_addr + 560  # read by the cave, in the
+        self.ms_dbg150 = version_addr + 564  # same frame as the call
         self.ms_dbgc = version_addr + 568
-        self.push_this = version_addr + 572  # args releves sur l'empilement
+        self.push_this = version_addr + 572  # arguments read on the push
         self.push_a = version_addr + 576
         self.push_b = version_addr + 580
         self.push_n = version_addr + 584
-        self.play_a = version_addr + 588    # valeurs a rejouer
+        self.play_a = version_addr + 588    # values to replay
         self.play_b = version_addr + 592
         self.play_req = version_addr + 596
         self.play_done = version_addr + 600
-        self.msg_cstr = version_addr + 604   # SafeString a nous
-        self.play_raw = version_addr + 612   # 1 = rejouer le pointeur du jeu
-        # --- cadre bleu des conseils (MessageTipsRunTime_00) ---
+        self.msg_cstr = version_addr + 604   # a SafeString of ours
+        self.play_raw = version_addr + 612   # 1 = replay the game's pointer
+        # --- blue tip frame (MessageTipsRunTime_00) ---
         self.tips_mask = version_addr + 616
-        self.tips_counts = version_addr + 620     # 8 compteurs consecutifs
-        self.tips_this = version_addr + 652       # widget, vu par image
-        self.tips_show_this = version_addr + 656  # this vu a l'affichage reel
-        self.tips_show_idx = version_addr + 660   # index demande par le jeu
+        self.tips_counts = version_addr + 620     # 8 consecutive counters
+        self.tips_this = version_addr + 652       # widget, seen per frame
+        self.tips_show_this = version_addr + 656  # this seen at the real display
+        self.tips_show_idx = version_addr + 660   # index requested by the game
         self.tips_req = version_addr + 664
         self.tips_index = version_addr + 668
         self.tips_done = version_addr + 672
         self.tips_text_req = version_addr + 676
         self.tips_text_len = version_addr + 680
         self.tips_text_done = version_addr + 684
-        self.tips_spy_ptr = version_addr + 688    # objet texte du jeu : mot 0
-        self.tips_spy_len = version_addr + 692    # et mot 1
+        self.tips_spy_ptr = version_addr + 688    # the game's text object: word 0
+        self.tips_spy_len = version_addr + 692    # and word 1
         self.pane_cstr = version_addr + 696
         self.tips_str_ptr = version_addr + 704
-        # --- traceur des resolutions de message (0x03a38ad0) ---
-        self.ring_left = version_addr + 712   # quota restant
-        self.ring_ptr = version_addr + 716    # ou ecrire, adresse INVITEE
-        # --- fenetre de dialogue (Message_00 / MessageSp_00) ---
-        self.dlg_open_n = version_addr + 720   # appels vus de 0x035ff8fc
-        self.dlg_open0_n = version_addr + 724  # ... dont a drapeau NUL
-        self.dlg_set_n = version_addr + 728    # appels vus de 0x035fb5f8
-        self.dlg_this = version_addr + 732     # la fenetre ; son +0x1d0 porte
-        self.dlg_seen_arc = version_addr + 736 # le texte { ptr, longueur }
+        # --- tracer of message resolutions (0x03a38ad0) ---
+        self.ring_left = version_addr + 712   # quota left
+        self.ring_ptr = version_addr + 716    # where to write, a GUEST address
+        # --- dialog window (Message_00 / MessageSp_00) ---
+        self.dlg_open_n = version_addr + 720   # calls seen of 0x035ff8fc
+        self.dlg_open0_n = version_addr + 724  # ... of which with a NUL flag
+        self.dlg_set_n = version_addr + 728    # calls seen of 0x035fb5f8
+        self.dlg_this = version_addr + 732     # the window; its +0x1d0 holds
+        self.dlg_seen_arc = version_addr + 736 # the text { ptr, length }
         self.dlg_seen_lbl = version_addr + 740
-        self.dlg_arg6 = version_addr + 744     # arguments releves sur un vrai
-        self.dlg_arg7 = version_addr + 748     # appel, pour etre rejoues
+        self.dlg_arg6 = version_addr + 744     # arguments read on a real
+        self.dlg_arg7 = version_addr + 748     # call, to be replayed
         self.dlg_arg8 = version_addr + 752
         self.dlg_req = version_addr + 756
         self.dlg_done = version_addr + 760
@@ -281,34 +281,34 @@ class Cave:
         self.dlg_text_done = version_addr + 768
         self.dlg_str_ptr = version_addr + 772
         self.dlg_str_len = version_addr + 776
-        self.arc_buf = version_addr + 796      # 64 octets, ASCII
-        self.lbl_buf = version_addr + 860      # 32 octets, ASCII
-        self.ring = version_addr + 892         # 48 entrees { site, libelle }
+        self.arc_buf = version_addr + 796      # 64 bytes, ASCII
+        self.lbl_buf = version_addr + 860      # 32 bytes, ASCII
+        self.ring = version_addr + 892         # 48 entries { site, label }
         self.ring_n = 48
-        self.dlg_buf = version_addr + 1276     # 4096 octets = 2048 unites
+        self.dlg_buf = version_addr + 1276     # 4096 bytes = 2048 units
         self.dlg_buf_size = 4096
-        # --- interception des ramassages (itemGet) ---
-        self.ig_left = version_addr + 5372     # quota du journal
-        self.ig_ptr = version_addr + 5376      # ou ecrire, adresse INVITEE
-        self.block_req = version_addr + 5380   # 1 = neutraliser le prochain
+        # --- pickup interception (itemGet) ---
+        self.ig_left = version_addr + 5372     # the log's quota
+        self.ig_ptr = version_addr + 5376      # where to write, a GUEST address
+        self.block_req = version_addr + 5380   # 1 = neutralise the next one
         self.block_done = version_addr + 5384
-        self.grant_mark = version_addr + 5388  # 1 = objet ACCORDE en cours
-        self.block_grants = version_addr + 5392  # neutraliser tous les accordes
+        self.grant_mark = version_addr + 5388  # 1 = GRANTED item in progress
+        self.block_grants = version_addr + 5392  # neutralise every granted item
 
-        # Banc de sondes de la fenetre d'obtention d'objet (MessageGet_00) :
-        # 19 compteurs contigus, un par fonction de 0x02fcf29c a 0x02fd33e0.
-        # Ajoutes en FIN de bloc pour ne decaler aucun champ existant.
+        # Probe bench of the item get window (MessageGet_00): 19 contiguous
+        # counters, one per function from 0x02fcf29c to 0x02fd33e0. Appended
+        # at the END of the block so that no existing field moves.
         self.get0 = version_addr + 5828
         self.get_n = 19
-        self.get_from0 = version_addr + 5904   # adresse de retour
+        self.get_from0 = version_addr + 5904   # return address
         self.get_this0 = version_addr + 5980   # r3
         self.get_r4_0 = version_addr + 6056    # r4
         self.get_r5_0 = version_addr + 6132    # r5
-        self.get_seq = version_addr + 6208     # compteur d'ordre partage
-        self.get_ord0 = version_addr + 6212    # rang, banc 1
+        self.get_seq = version_addr + 6208     # shared order counter
+        self.get_ord0 = version_addr + 6212    # rank, bench 1
 
-        # Banc 2 : la classe gestionnaire, 13 fonctions de 0x03606ad0 a
-        # 0x03607560. C'est la que vit l'API appelable de la fenetre.
+        # Bench 2: the manager class, 13 functions from 0x03606ad0 to
+        # 0x03607560. That is where the window's callable API lives.
         self.get_win0 = version_addr + 6288
         self.get_win_n = 13
         self.get_win_from0 = version_addr + 6340
@@ -317,9 +317,9 @@ class Cave:
         self.get_win_r5_0 = version_addr + 6496
         self.get_win_ord0 = version_addr + 6548
 
-        # Le pilote 0x03a3ec0c : ses sept arguments releves sur un vrai
-        # declenchement, et le rejeu avec notre propre chaine a la place
-        # de r6.
+        # The driver 0x03a3ec0c: its seven arguments captured on a real
+        # trigger, and the replay with our own string in place of r6.
+
         self.get_drv_n = version_addr + 6600
         self.get_drv_from = version_addr + 6604
         self.get_drv_this = version_addr + 6608
@@ -331,11 +331,11 @@ class Cave:
         self.get_drv_a9 = version_addr + 6632
         self.get_drv_req = version_addr + 6636
         self.get_drv_done = version_addr + 6640
-        self.get_drv_name = version_addr + 6644   # 64 octets
+        self.get_drv_name = version_addr + 6644   # 64 bytes
 
-        # Capture FILTREE : ne vaut que pour MessageGet_00, figee par la sonde
-        # apGetProbe1 que seul cet ecran traverse. Les champs get_drv_* ci-
-        # dessus valent pour le dernier ecran ouvert, quel qu'il soit.
+        # FILTERED capture: only for MessageGet_00, frozen by the probe
+        # apGetProbe1 that only this screen goes through. The get_drv_* fields
+        # above hold for the last screen opened, whatever it is.
         self.get_win_ok = version_addr + 6708
         self.get_win_cthis = version_addr + 6712
         self.get_win_ca4 = version_addr + 6716
@@ -345,46 +345,46 @@ class Cave:
         self.get_win_ca8 = version_addr + 6732
         self.get_win_ca9 = version_addr + 6736
 
-        # Trois sondes du texte des panneaux : { compte, r3, mot0, mot1 }.
+        # Three probes of the panes' text: { count, r3, word0, word1 }.
         self.get_txt_n0 = version_addr + 6740
         self.get_txt_n = 3
         self.get_txt_req = version_addr + 6792
         self.get_txt_done = version_addr + 6796
-        self.get_txt_b0 = version_addr + 6800    # 64 octets recopies
-        self.get_txt_our = version_addr + 6864   # 128 octets = 64 unites
+        self.get_txt_b0 = version_addr + 6800    # 64 bytes copied
+        self.get_txt_our = version_addr + 6864   # 128 bytes = 64 units
 
-        # Sonde de l'entree du resolveur commun 0x03082c70. Quatre captures
-        # successives apres armement, 44 octets chacune :
-        # { r3, r4, r5, 32 octets du libelle pointe par *(r4) }.
+        # Probe of the entry of the common resolver 0x03082c70. Four successive
+        # captures once armed, 44 bytes each:
+        # { r3, r4, r5, 32 bytes of the label pointed to by *(r4) }.
         self.res_arm = version_addr + 6992
         self.res_n = version_addr + 6996
         self.res_a0 = version_addr + 7004
         self.res_slots = 4
         self.res_stride = 44
-        self.res_ret0 = version_addr + 7180    # adresse de retour, par creneau
+        self.res_ret0 = version_addr + 7180    # return address, per slot
 
-        # Substitution du nom d'objet a 0x030835c8, ou r3 est le texte resolu.
+        # Substitution of the item name at 0x030835c8, where r3 is the resolved text.
         self.sub_n = version_addr + 7196
         self.sub_out = version_addr + 7200
-        self.sub_w0 = version_addr + 7204      # 4 mots de l'objet renvoye
+        self.sub_w0 = version_addr + 7204      # 4 words of the returned object
         self.sub_req = version_addr + 7220
         self.sub_done = version_addr + 7224
-        self.sub_out_buf = version_addr + 7236  # r29 : la VRAIE sortie
-        self.sub_o0 = version_addr + 7240       # 8 mots de cette sortie
-        self.sub_len = version_addr + 7232      # notre objet, 4 mots
-        self.sub_buf = version_addr + 7288      # notre texte, 256 octets
+        self.sub_out_buf = version_addr + 7236  # r29: the REAL output
+        self.sub_o0 = version_addr + 7240       # 8 words of that output
+        self.sub_len = version_addr + 7232      # our object, 4 words
+        self.sub_buf = version_addr + 7288      # our text, 256 bytes
 
-        # Meme mecanisme pour la description, site 0x03083860.
+        # The same mechanism for the description, site 0x03083860.
         self.sub_desc_n = version_addr + 7544
         self.sub_desc_req = version_addr + 7548
         self.sub_desc_done = version_addr + 7552
         self.sub_desc_len = version_addr + 7556
-        self.sub_desc_buf = version_addr + 7560   # 512 octets = 256 unites
-        self.sub_auto = version_addr + 8072      # compte d'objets accordes
-        self.sub_auto_n = version_addr + 8076    # resolutions par objet
+        self.sub_desc_buf = version_addr + 7560   # 512 bytes = 256 units
+        self.sub_auto = version_addr + 8072      # count of granted items
+        self.sub_auto_n = version_addr + 8076    # resolutions per item
 
-        # Ouvrir la fenetre nous-memes : les six registres du vrai site, et
-        # le rejeu des DEUX appels enchaines (fabrique puis ouverture).
+        # Opening the window ourselves: the six registers of the real site, and
+        # the replay of BOTH chained calls (factory, then open).
         self.opn_n = version_addr + 8080
         self.opn_this = version_addr + 8084
         self.opn24 = version_addr + 8088
@@ -395,8 +395,8 @@ class Cave:
         self.opn31 = version_addr + 8108
         self.opn_req = version_addr + 8112
         self.opn_done = version_addr + 8116
-        # Capture filtree : ne vaut que pour MessageGet_00. La sonde brute se
-        # declenche a chaque ouverture d'ecran, 40 fois par partie.
+        # Filtered capture: only for MessageGet_00. The raw probe fires
+        # at every screen opening, 40 times per game.
         self.opn_ok = version_addr + 8120
         self.opn_c24 = version_addr + 8124
         self.opn_c25 = version_addr + 8128
@@ -404,26 +404,26 @@ class Cave:
         self.opn_c27 = version_addr + 8136
         self.opn_c28 = version_addr + 8140
         self.opn_c31 = version_addr + 8144
-        # r1 releve a trois endroits, pour savoir s'il y a plusieurs piles.
+        # r1 read at three places, to tell whether there are several stacks.
         self.r1_frame = version_addr + 8148
         self.r1_ui = version_addr + 8152
         self.r1_name = version_addr + 8156
         self.r1_opn = version_addr + 8160
-        self.opn_step = version_addr + 8164   # 1 = fabrique seule, 2 = tout
-        self.opn_phase = version_addr + 8168  # jusqu'ou le rejeu est alle
-        self.opn_r3 = version_addr + 8172     # ce que la fabrique a rendu
-        self.opn_heap = version_addr + 8308   # 0 = tas courant (recommande)
-        self.opn_mode = version_addr + 8312   # 0 = fabrique, 1 = trampoline, 2 = englobante
-        self.opn_ctx_on = version_addr + 8316  # 0 = ne PAS recopier le tas mort
-        self.opn_arg4 = version_addr + 8320    # r30, argument 2 de 0x03a42b94
-        # D'ou vient un tas vivant : sonde du getter 0x030aa1ac.
+        self.opn_step = version_addr + 8164   # 1 = factory only, 2 = everything
+        self.opn_phase = version_addr + 8168  # how far the replay went
+        self.opn_r3 = version_addr + 8172     # what the factory returned
+        self.opn_heap = version_addr + 8308   # 0 = current heap (recommended)
+        self.opn_mode = version_addr + 8312   # 0 = factory, 1 = trampoline, 2 = enclosing
+        self.opn_ctx_on = version_addr + 8316  # 0 = do NOT copy the dead heap
+        self.opn_arg4 = version_addr + 8320    # r30, argument 2 of 0x03a42b94
+        # Where a live heap comes from: probe of the getter 0x030aa1ac.
         self.heap_req = version_addr + 8324
         self.heap_n = version_addr + 8328
         self.heap_root = version_addr + 8332   # *(0x1046C8B0)
         self.heap_mgr = version_addr + 8336    # *(0x1046C920)
-        self.heap_fb = version_addr + 8340     # *(root + 4), repli statique
-        self.heap_cur = version_addr + 8344    # ce que 0x030aa1ac a rendu
-        # Le prologue de 0x03a42b94 : six arguments + l'appelant.
+        self.heap_fb = version_addr + 8340     # *(root + 4), static fallback
+        self.heap_cur = version_addr + 8344    # what 0x030aa1ac returned
+        # The prologue of 0x03a42b94: six arguments + the caller.
         self.opn_pro_n = version_addr + 8348
         self.opn_pro_lr = version_addr + 8352
         self.opn_pro_r1 = version_addr + 8356
@@ -442,8 +442,8 @@ class Cave:
         self.opn_prc_a4 = version_addr + 8408
         self.opn_prc_a5 = version_addr + 8412
         self.opn_prc_a6 = version_addr + 8416
-        # L'etage au-dessus : 0x030806f0, qui appelle 0x03a42b94 puis
-        # enchaine la mise en scene.
+        # The level above: 0x030806f0, which calls 0x03a42b94 and then
+        # runs the staging.
         self.up_n = version_addr + 8420
         self.up_lr = version_addr + 8424
         self.up_r1 = version_addr + 8428
@@ -458,78 +458,78 @@ class Cave:
         self.upc_a3 = version_addr + 8464
         self.upc_a4 = version_addr + 8468
         self.upc_a5 = version_addr + 8472
-        self.opn_anim = version_addr + 8476   # jouer l'animation "open"
-        self.opn_varg = version_addr + 8480   # le mode passe a vtable[0x1a4]
-        # Registre a decalage de la mise en scene 0x03a40d20(ecran, mode).
-        # Le sommet de la chaine : 0x02b769c4(r3, r4), l'objet accorde.
+        self.opn_anim = version_addr + 8476   # play the "open" animation
+        self.opn_varg = version_addr + 8480   # the mode passed to vtable[0x1a4]
+        # Shift register of the staging 0x03a40d20(screen, mode).
+        # The top of the chain: 0x02b769c4(r3, r4), the granted item.
         self.grant_r3 = version_addr + 8484
         self.grant_r4 = version_addr + 8488
         self.grant_lr = version_addr + 8492
-        # La copie de la structure de pile que 0x02b769c4 recoit en r4.
+        # The copy of the stack structure 0x02b769c4 receives in r4.
         self.grant_buf_ptr = version_addr + 8496
-        # La diffusion 0x032bc730(dispatcher, nomObjet).
+        # The broadcast 0x032bc730(dispatcher, itemName).
         self.disp_n = version_addr + 8500
         self.disp_r3 = version_addr + 8504
         self.disp_r4 = version_addr + 8508
         self.disp_lr = version_addr + 8512
         self.grant_name = version_addr + 8516
-        self.disp_arg = version_addr + 8520      # le dispatcher, MESURE
-        # L'invocateur generique : Python range une adresse et huit
-        # arguments, le cave saute. Plus aucune experience d'appel ne
-        # demande de modifier le patch.
+        self.disp_arg = version_addr + 8520      # the dispatcher, MEASURED
+        # The generic invoker: Python stores an address and eight arguments,
+        # the cave jumps. No call experiment needs a patch change any more.
+
         self.call_addr = version_addr + 8524
-        self.call_a1 = version_addr + 8528       # 8 arguments consecutifs
+        self.call_a1 = version_addr + 8528       # 8 consecutive arguments
         self.call_ret = version_addr + 8560
         self.call_n = version_addr + 8564
-        # Le MEME invocateur, mais sur le hook per-frame : celui-la tourne
-        # depuis le demarrage du jeu, sans prerequis. L'autre vit dans le
-        # pilote de MessageGet_00 et reste muet tant que la vraie fenetre n'a
-        # pas ete vue -- en laissant la requete en attente, qui partait alors
-        # au prochain vrai coffre. Partage apCallAddr / apCallA1..A8.
+        # The SAME invoker, on the per-frame hook: that one runs from the
+        # game's start, without prerequisite. The other lives in the
+        # MessageGet_00 driver and stays silent until the real window has
+        # been seen -- leaving the request pending, which then went off at
+        # the next real chest. Shares apCallAddr / apCallA1..A8.
         self.pf_req = version_addr + 9260
-        # Le resolveur de pointeurs de canaux, sur le meme hook per-frame :
-        # il reecrit pmdm_this / screen_this / list_this / ms1_this /
-        # push_this / dlg_this a chaque image depuis les globales du jeu, au
-        # lieu d'attendre qu'une sonde les voie passer.
-        self.resolve_n = version_addr + 9264     # passages -- garde-fou
-        self.scr_table = version_addr + 9268     # table d'ecrans, 0 = IHM absente
-        # Selection de rune demandee au jeu (apCheckSel), en fin de bloc.
-        # Absents des patchs anterieurs : sel_ready() le verifie.
+        # The resolver of channel pointers, on the same per-frame hook: it
+        # rewrites pmdm_this / screen_this / list_this / ms1_this /
+        # push_this / dlg_this every frame from the game's globals, instead
+        # of waiting for a probe to see them go by.
+        self.resolve_n = version_addr + 9264     # passes -- a safeguard
+        self.scr_table = version_addr + 9268     # screen table, 0 = no UI
+        # Rune selection requested from the game (apCheckSel), at the end of
+        # the block. Missing from older patches: sel_ready() checks it.
         self.sel_magic = version_addr + 9272
         self.sel_req = version_addr + 9276
         self.sel_type = version_addr + 9280
         self.sel_done = version_addr + 9284
         self.sel_result = version_addr + 9288
-        # Les douze niveaux de la chaine d'appel, sondes d'un coup.
-        # Chaque niveau : N, r3, r4, r5, r6, r7, Lr -- 7 mots.
+        # The twelve levels of the call chain, probed at once.
+        # Each level: N, r3, r4, r5, r6, r7, Lr -- 7 words.
         self.lvl0 = version_addr + 8568
         self.lvl_mots = 7
         self.lvl_ids = (0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 13)
-        # La chaine d'appel complete, deroulee depuis le cadre du grant.
-        # La chaine d'appel de la FENETRE, deroulee sur la creation de
-        # l'ecran. C'est celle qu'on veut : le deroulage du don d'objet
-        # menait a l'attribution, pas a l'affichage.
-        # Le maintien de la fenetre, une fois par image dans le cave.
-        # Compte d'images, pas booleen : un client mort laisse le jeu revenir
-        # a la normale tout seul.
+        # The whole call chain, unwound from the grant's frame.
+        # The call chain of the WINDOW, unwound on the screen's creation.
+        # That is the one wanted: unwinding the item grant led to the
+        # attribution, not to the display.
+        # Keeping the window up, once per frame in the cave.
+        # A frame count, not a boolean: a dead client lets the game go back
+        # to normal on its own.
         self.hold_n = version_addr + 8904
-        self.hold_q = version_addr + 8908        # 0 = ne pas toucher a +0x44
+        self.hold_q = version_addr + 8908        # 0 = leave +0x44 alone
         self.wstk_f = version_addr + 8912
         self.wstk_l0 = version_addr + 8916
         self.stk_f = version_addr + 8972
-        self.stk_l0 = version_addr + 8976        # 14 adresses de retour
+        self.stk_l0 = version_addr + 8976        # 14 return addresses
         self.stk_n = 14
-        self.grant_buf = version_addr + 9032     # 32 mots
+        self.grant_buf = version_addr + 9032     # 32 words
         self.show_n = version_addr + 9160
         self.show_t0 = version_addr + 9164
         self.show_m0 = version_addr + 9196
         self.show_l0 = version_addr + 9228
-        self.grant_n = version_addr + 5396     # passages dans 0x02b769c4
-        self.ig_ring = version_addr + 5400     # 32 entrees de 12 octets
+        self.grant_n = version_addr + 5396     # passes through 0x02b769c4
+        self.ig_ring = version_addr + 5400     # 32 entries of 12 bytes
         self.ig_ring_n = 32
 
     def ig_arm(self, n=None):
-        """Armer le journal des ramassages."""
+        """Arm the pickup log."""
         n = min(n or self.ig_ring_n, self.ig_ring_n)
         self.p.write(self.ig_ring, bytes(self.ig_ring_n * 12))
         self.p.write(self.ig_ptr, self.guest(self.ig_ring).to_bytes(4, "big"))
@@ -537,7 +537,7 @@ class Cave:
         return n
 
     def ig_read(self):
-        """[(site d'appel, cstr du nom, quantite)] deja enregistres."""
+        """[(call site, name cstr, quantity)] recorded so far."""
         left = be(self.p.read(self.ig_left, 4))
         used = self.ig_ring_n - left
         raw = self.p.read(self.ig_ring, used * 12) if used else b""
@@ -547,10 +547,10 @@ class Cave:
                 for i in range(used)]
 
     def ring_arm(self, n=None):
-        """Armer le traceur : il enregistrera les n prochaines resolutions.
+        """Arm the tracer: it records the next n resolutions.
 
-        Le pointeur est une adresse invitee -- c'est le code injecte qui ecrit
-        dedans, pas nous.
+        The pointer is a guest address -- the injected code writes to it,
+        not us.
         """
         n = min(n or self.ring_n, self.ring_n)
         self.p.write(self.ring, bytes(self.ring_n * 8))
@@ -559,13 +559,13 @@ class Cave:
         return n
 
     def ring_read(self):
-        """[(site d'appel, adresse invitee du libelle)] deja enregistrees.
+        """[(call site, guest address of the label)] recorded so far.
 
-        `ring_left` seul ne suffit pas a dire combien d'entrees sont ecrites :
-        au sortir d'un lancement du jeu il vaut 0, exactement comme lorsque le
-        quota est epuise, et `ring_n - 0` faisait alors passer 48 lignes vides
-        pour 48 resolutions. Le pointeur d'ecriture tranche : le code injecte
-        ne le renseigne jamais de lui-meme, seul `ring_arm` le pose.
+        `ring_left` alone does not tell how many entries are written: after
+        the game starts it is 0, exactly as when the quota is used up, and
+        `ring_n - 0` then made 48 empty rows pass for 48 resolutions. The
+        write pointer decides: the injected code never sets it by itself,
+        only `ring_arm` does.
         """
         if not be(self.p.read(self.ring_ptr, 4)):
             return []
@@ -579,12 +579,12 @@ class Cave:
         return rows
 
     def cstr(self, guest_addr, n=64):
-        """Lire une chaine C a une adresse invitee.
+        """Read a C string at a guest address.
 
-        Le decodage est en "backslashreplace" et non "replace" : la console
-        Windows est en cp1252 et ne sait pas ecrire le U+FFFD que produit
-        "replace". Le journal des messages plantait donc au premier libelle
-        non ASCII -- juste apres avoir affiche les lignes utiles.
+        Decoded with "backslashreplace", not "replace": the Windows console
+        is cp1252 and cannot write the U+FFFD that "replace" produces. The
+        message log crashed on the first non-ASCII label -- right after
+        printing the useful lines.
         """
         if not guest_addr or self.base is None:
             return None
@@ -594,12 +594,12 @@ class Cave:
         return raw.split(b"\x00")[0].decode("ascii", "backslashreplace")
 
     def get_probes(self):
-        """Compteurs des 19 sondes de la fenetre d'obtention d'objet."""
+        """Counters of the 19 probes of the item get window."""
         raw = self.p.read(self.get0, self.get_n * 4)
         return [be(raw[i * 4:i * 4 + 4]) for i in range(self.get_n)]
 
     def get_reset(self):
-        """Remettre le banc a zero, juste avant de declencher."""
+        """Reset the bench, right before triggering."""
         self.p.write(self.get0, bytes(self.get_n * 4))
         for base in (self.get_from0, self.get_this0,
                      self.get_r4_0, self.get_r5_0, self.get_ord0):
@@ -611,50 +611,50 @@ class Cave:
             self.p.write(base, bytes(self.get_win_n * 4))
 
     def sub_sample(self):
-        """(compte, sortie, [4 mots de l'objet renvoye ou None]).
+        """(count, output, [4 words of the returned object or None]).
 
-        Les quatre mots viennent de 0x60(r1), le tampon de sortie que
-        l'appelant passe au resolveur -- et non de *(r3), qui vaut 0 au retour
-        et faisait planter le jeu.
+        The four words come from 0x60(r1), the output buffer the caller
+        passes to the resolver -- not from *(r3), which is 0 on return and
+        crashed the game.
         """
         n = be(self.p.read(self.sub_n, 4))
         out = be(self.p.read(self.sub_out, 4))
         raw = self.p.read(self.sub_w0, 16)
-        mots = ([be(raw[i * 4:i * 4 + 4]) for i in range(4)]
+        words = ([be(raw[i * 4:i * 4 + 4]) for i in range(4)]
                 if raw and len(raw) == 16 else None)
         raw2 = self.p.read(self.sub_o0, 32)
-        sortie = ([be(raw2[i * 4:i * 4 + 4]) for i in range(8)]
+        output = ([be(raw2[i * 4:i * 4 + 4]) for i in range(8)]
                   if raw2 and len(raw2) == 32 else None)
-        return n, out, mots, be(self.p.read(self.sub_out_buf, 4)), sortie
+        return n, out, words, be(self.p.read(self.sub_out_buf, 4)), output
 
-    def open_item_window(self, titre=None, description=None, step=2):
-        """Ouvrir la fenetre d'obtention d'objet, sans objet.
+    def open_item_window(self, title=None, description=None, step=2):
+        """Open the item get window, without an item.
 
-        Rejoue les DEUX appels du vrai site : la fabrique qui produit l'objet
-        ecran, puis la case 0x4c de sa vtable qui l'ouvre. Ne rejouer que le
-        second -- ce que faisait `getwin.py --open` -- plantait le jeu trois
-        fois sur trois.
+        Replays BOTH calls of the real site: the factory that makes the screen
+        object, then slot 0x4c of its vtable, which opens it. Replaying only
+        the second -- what `getwin.py --open` did -- crashed the game three
+        times out of three.
 
-        Prerequis : avoir vu la vraie fenetre une fois depuis le lancement du
-        jeu, pour que les six registres du site soient captures.
+        Prerequisite: the real window seen once since the game started, so
+        that the site's six registers are captured.
         """
         if not be(self.p.read(self.opn_ok, 4)):
-            raise RuntimeError("MessageGet_00 n'a pas ete vu s'ouvrir depuis "
-                               "le lancement : ouvre un vrai coffre une fois")
+            raise RuntimeError("MessageGet_00 has not been seen opening since "
+                               "the start: open a real chest once")
         self.p.write(self.opn_step, step.to_bytes(4, "big"))
-        if titre is not None:
-            self.sub_write(titre, 2)
+        if title is not None:
+            self.sub_write(title, 2)
         if description is not None:
             self.sub_write_desc(description, 2)
         self.p.write(self.opn_phase, bytes(4))
         self.p.write(self.opn_req, (1).to_bytes(4, "big"))
 
     def heap_probe(self):
-        """Demander la sonde du tas courant, sur le fil de l'IHM.
+        """Ask for the probe of the current heap, on the UI thread.
 
-        Rend (n, root, mgr, fb, cur) apres coup. La sonde s'execute a la
-        prochaine image dans apGetWinProbe6 -- le seul point instrumente qui
-        tourne sur la bonne famille de pile.
+        Gives (n, root, mgr, fb, cur) afterwards. The probe runs at the next
+        frame in apGetWinProbe6 -- the only instrumented point that runs on
+        the right stack family.
         """
         self.p.write(self.heap_req, (1).to_bytes(4, "big"))
 
@@ -664,20 +664,20 @@ class Cave:
                       self.heap_fb, self.heap_cur))
 
     def levels(self):
-        """[(niveau, appels, [r3..r7], lr)] pour les douze etages sondes."""
+        """[(level, calls, [r3..r7], lr)] for the twelve probed levels."""
         out = []
-        for k, niv in enumerate(self.lvl_ids):
+        for k, level in enumerate(self.lvl_ids):
             b = self.lvl0 + k * self.lvl_mots * 4
-            mots = [be(self.p.read(b + i * 4, 4))
-                    for i in range(self.lvl_mots)]
-            out.append((niv, mots[0], mots[1:6], mots[6]))
+            words = [be(self.p.read(b + i * 4, 4))
+                     for i in range(self.lvl_mots)]
+            out.append((level, words[0], words[1:6], words[6]))
         return out
 
     def call(self, addr, *args):
-        """Appeler n'importe quoi depuis le fil d'IHM. Jusqu'a 8 arguments.
+        """Call anything from the UI thread. Up to 8 arguments.
 
-        Aucune verification ici : c'est a l'appelant de lire la memoire et de
-        s'assurer que ce qu'il passe tient. Le cave ne garde que le saut.
+        No check here: the caller reads the memory and makes sure what it
+        passes holds. The cave only keeps the jump.
         """
         self.p.write(self.call_addr, addr.to_bytes(4, "big"))
         for i in range(8):
@@ -688,90 +688,90 @@ class Cave:
         self.p.write(self.opn_req, (1).to_bytes(4, "big"))
 
     def pf_ready(self):
-        """Le patch charge connait-il apPfReq ?
+        """Does the loaded patch know apPfReq?
 
-        GARDE-FOU du piege 4 bis : un champ ajoute en fin de bloc tombe sur du
-        CODE tant que Cemu n'a pas ete relance, et se lit sans erreur. Le champ
-        est un drapeau : il ne peut valoir que 0 ou 1. Toute autre valeur
-        signifie que le patch en memoire est perime.
+        GUARD against a stale patch: a field appended at the end of the
+        block falls on CODE until Cemu is restarted, and reads without error.
+        The field is a flag: it can only be 0 or 1. Any other value means
+        the patch in memory is stale.
         """
         return be(self.p.read(self.pf_req, 4)) in (0, 1)
 
     def resolve_ready(self):
-        """Le patch charge connait-il le resolveur de pointeurs ?
+        """Does the loaded patch know the pointer resolver?
 
-        MEME GARDE-FOU que `pf_ready`, avec l'invariant qui a deja servi dans
-        `getprobe.py` : un compteur incremente une fois par image ne peut pas
-        depasser le nombre d'images ecoulees. Sur un patch perime le champ
-        tombe sur du code et se lit sans erreur -- mais il vaut alors un mot
-        d'instruction, tres au-dessus du tick.
+        SAME GUARD as `pf_ready`, with the invariant already used in
+        `getprobe.py`: a counter incremented once per frame cannot exceed the
+        number of frames elapsed. On a stale patch the field falls on code and
+        reads without error -- but it then holds an instruction word, far
+        above the tick.
 
-        Rend (pret, resolve_n, tick) pour que l'appelant puisse le DIRE.
+        Gives (ready, resolve_n, tick) so that the caller can SAY it.
         """
         n = be(self.p.read(self.resolve_n, 4))
         tick = be(self.p.read(self.tick, 4))
         return (0 < n <= tick), n, tick
 
     def ui_ready(self):
-        """L'IHM du jeu est-elle construite ? (table d'ecrans resolue)
+        """Is the game's UI built? (screen table resolved)
 
-        C'est le seul prerequis qui reste, et il n'a rien de notre fait : les
-        fonctions d'affichage dereferencent le gestionnaire d'ecrans sans le
-        tester. Il tombe de lui-meme des qu'une sauvegarde est chargee.
+        It is the only prerequisite left, and it is not ours: the display
+        functions dereference the screen manager without testing it. It is
+        met as soon as a save is loaded.
         """
         ok, _, _ = self.resolve_ready()
         return ok and be(self.p.read(self.scr_table, 4)) != 0
 
     def channels(self):
-        """Etat des quatre canaux d'affichage, pour le dire au demarrage.
+        """State of the four display channels, to say it at start-up.
 
-        {nom: (pointeur, pret)}. Le client Archipelago doit l'afficher : un
-        canal muet sans explication est la cause d'erreur numero un.
+        {name: (pointer, ready)}. The Archipelago client must print it: a
+        silent channel without an explanation is the first cause of errors.
         """
-        champs = (("give / itemGet", self.pmdm_this),
+        fields = (("give / itemGet", self.pmdm_this),
                   ("notification", self.list_this),
-                  ("message central", self.ms1_this),
-                  ("boite de dialogue", self.scr_table))
+                  ("center message", self.ms1_this),
+                  ("dialog box", self.scr_table))
         out = {}
-        for nom, addr in champs:
+        for name, addr in fields:
             v = be(self.p.read(addr, 4))
-            out[nom] = (v, v != 0)
+            out[name] = (v, v != 0)
         return out
 
     def call_pf(self, addr, *args):
-        """Idem `call`, mais depuis le hook PER-FRAME.
+        """Same as `call`, but from the PER-FRAME hook.
 
-        Aucun prerequis : ce hook tourne depuis le demarrage du jeu, la ou
-        `call` dort tant que MessageGet_00 n'a pas ete vu. Meme protocole,
-        memes champs d'arguments, meme compteur `call_n`.
+        No prerequisite: this hook runs from the game's start, where `call`
+        sleeps until MessageGet_00 has been seen. Same protocol, same
+        argument fields, same counter `call_n`.
 
-        Reserve : le patch documente une affinite de thread pour le REJEU du
-        site d'ouverture -- pile 0x12b3c510 la-bas, 0x0e201270 ici, quatre
-        plantages a la cle. Elle valait pour les modes qui manipulent
-        l'interieur d'un ecran ; pour un appel propre elle reste a mesurer.
+        Caveat: the patch documents a thread affinity for REPLAYING the
+        opening site -- stack 0x12b3c510 there, 0x0e201270 here, four crashes
+        as a result. It held for the modes that handle a screen's inside; for
+        a clean call it is still to be measured.
         """
         if not self.pf_ready():
             raise RuntimeError(
-                "apPfReq lit une valeur impossible : le patch charge est "
-                "PERIME. Fermer et rouvrir Cemu (recharger une sauvegarde ne "
-                "suffit pas).")
+                "apPfReq reads an impossible value: the loaded patch is "
+                "STALE. Close and reopen Cemu (reloading a save is not "
+                "enough).")
         self.p.write(self.call_addr, addr.to_bytes(4, "big"))
         for i in range(8):
             v = args[i] if i < len(args) else 0
             self.p.write(self.call_a1 + i * 4, (v & 0xFFFFFFFF).to_bytes(4, "big"))
         self.p.write(self.pf_req, (1).to_bytes(4, "big"))
 
-    def call_stack(self, fenetre=False):
-        """Adresses de retour : chaine du don d'objet, ou de la FENETRE."""
-        base = self.wstk_l0 if fenetre else self.stk_l0
+    def call_stack(self, window=False):
+        """Return addresses: the item grant chain, or the WINDOW's."""
+        base = self.wstk_l0 if window else self.stk_l0
         return [be(self.p.read(base + i * 4, 4))
                 for i in range(self.stk_n)]
 
     def show_ring(self):
-        """Les 8 derniers appels de 0x03a40d20 : (ecran, mode, appelant).
+        """The last 8 calls of 0x03a40d20: (screen, mode, caller).
 
-        La sonde ne filtre pas -- 0x03a40d20 sert 94 classes -- donc c'est
-        ici qu'on reconnait le notre. Entree 0 = la plus recente.
+        The probe does not filter -- 0x03a40d20 serves 94 classes -- so ours
+        is recognized here. Entry 0 = the most recent.
         """
         n = be(self.p.read(self.show_n, 4))
         out = []
@@ -782,51 +782,51 @@ class Cave:
         return n, out
 
     def upper_args(self):
-        """Les cinq arguments de 0x030806f0 pour MessageGet_00, et l'appelant."""
-        champs = (self.upc_ok, self.up_lr, self.upc_a1, self.upc_a2,
+        """The five arguments of 0x030806f0 for MessageGet_00, and the caller."""
+        fields = (self.upc_ok, self.up_lr, self.upc_a1, self.upc_a2,
                   self.upc_a3, self.upc_a4, self.upc_a5)
-        ok, lr, *args = [be(self.p.read(a, 4)) for a in champs]
+        ok, lr, *args = [be(self.p.read(a, 4)) for a in fields]
         return ok, lr, args
 
     def open_prologue(self):
-        """Les six arguments de 0x03a42b94 pour MessageGet_00, et l'appelant.
+        """The six arguments of 0x03a42b94 for MessageGet_00, and the caller.
 
-        Capture figee par apGetProbe1 : elle ne vaut que si le compte rendu
-        est non nul, sinon la vraie fenetre n'a pas ete vue s'ouvrir.
+        Capture frozen by apGetProbe1: it only holds when the report is
+        non-zero; otherwise the real window has not been seen opening.
         """
-        champs = (self.opn_prc_ok, self.opn_prc_lr, self.opn_prc_r1,
+        fields = (self.opn_prc_ok, self.opn_prc_lr, self.opn_prc_r1,
                   self.opn_prc_a1, self.opn_prc_a2, self.opn_prc_a3,
                   self.opn_prc_a4, self.opn_prc_a5, self.opn_prc_a6)
-        ok, lr, r1, *args = [be(self.p.read(a, 4)) for a in champs]
+        ok, lr, r1, *args = [be(self.p.read(a, 4)) for a in fields]
         return ok, lr, r1, args
 
     def open_state(self):
-        """(captures brutes, rejeux, captures filtrees MessageGet_00)."""
+        """(raw captures, replays, filtered MessageGet_00 captures)."""
         return (be(self.p.read(self.opn_n, 4)),
                 be(self.p.read(self.opn_done, 4)),
                 be(self.p.read(self.opn_ok, 4)))
 
-    def arm_next_grant(self, titre, description=None, n=2):
-        """Substituer le texte du PROCHAIN objet accorde -- coffre, Korogu,
-        sanctuaire, cadeau de PNJ.
+    def arm_next_grant(self, title, description=None, n=2):
+        """Substitute the text of the NEXT granted item -- chest, Korok,
+        shrine, NPC gift.
 
-        C'est la forme a utiliser dans un client Archipelago. Elle differe de
-        `show_item_text` sur le seul point qui compte : c'est le CAVE qui
-        choisit l'instant, sur la sonde des objets accordes, pas nous.
+        This is the form an Archipelago client uses. It differs from
+        `show_item_text` on the one point that matters: the CAVE picks the
+        moment, on the probe of granted items, not us.
 
-        Pourquoi ca compte : le site qui resout le nom est generique -- il
-        sert aussi a l'inventaire. Armer a la main puis ouvrir son sac
-        detourne le nom de l'objet regarde. Mesure en jeu. Ici la
-        substitution ne s'arme qu'a l'instant d'un objet accorde, donc jamais
-        pendant une consultation.
+        Why it matters: the site that resolves the name is generic -- the
+        inventory uses it too. Arming by hand, then opening the pouch,
+        hijacks the name of the item looked at (measured in the game). Here
+        the substitution is armed only at the moment of a granted item, so
+        never while browsing.
         """
-        self.sub_write(titre, 0)
+        self.sub_write(title, 0)
         if description is not None:
             self.sub_write_desc(description, 0)
         self.p.write(self.sub_auto_n, n.to_bytes(4, "big"))
         self.p.write(self.sub_auto, (1).to_bytes(4, "big"))
 
-    def show_item_text(self, titre, description=None, n=2):
+    def show_item_text(self, title, description=None, n=2):
         """Prototype: publish text for n resolutions, without request identity.
 
         The legacy hook is global. EventFlow callers must verify the Item_AP
@@ -835,15 +835,15 @@ class Cave:
         """
         # Validate both strings before publishing either quota. This prevents
         # an invalid description from leaving the title armed on its own.
-        self._sub_payload(titre, 256, n)
+        self._sub_payload(title, 256, n)
         if description is not None:
             self._sub_payload(description, 512, n)
-        self.sub_write(titre, n)
+        self.sub_write(title, n)
         if description is not None:
             self.sub_write_desc(description, n)
 
     def sub_write_desc(self, s, n=2):
-        """Idem pour la description, site 0x03083860."""
+        """The same for the description, site 0x03083860."""
         data, length, quota = self._sub_payload(s, 512, n)
         self.p.write(self.sub_desc_buf, data)
         self.p.write(self.sub_desc_len, length)
@@ -858,17 +858,17 @@ class Cave:
         data = s.encode("utf-16-be")
         units = len(data) // 2
         if len(data) + 2 > size:
-            raise ValueError(f"{units} unites : le tampon en tient {size // 2 - 1}")
+            raise ValueError(f"{units} units: the buffer holds {size // 2 - 1}")
         return data + bytes(size - len(data)), units.to_bytes(4, "big"), n.to_bytes(4, "big")
 
     def sub_disarm(self):
-        """Tout desarmer : la fenetre suivante redevient normale."""
+        """Disarm everything: the next window is normal again."""
         self.p.write(self.sub_req, bytes(4))
         self.p.write(self.sub_desc_req, bytes(4))
         self.p.write(self.sub_auto, bytes(4))
 
     def sub_state(self):
-        """(titre_arme, titre_pose, desc_armee, desc_posee, auto)."""
+        """(title_armed, title_set, desc_armed, desc_set, auto)."""
         return (be(self.p.read(self.sub_req, 4)),
                 be(self.p.read(self.sub_done, 4)),
                 be(self.p.read(self.sub_desc_req, 4)),
@@ -876,15 +876,15 @@ class Cave:
                 be(self.p.read(self.sub_auto, 4)))
 
     def sub_write(self, s, n=2):
-        """Poser notre texte, et armer la substitution pour n resolutions.
+        """Store our text, and arm the substitution for n resolutions.
 
-        La sortie du resolveur est le couple { const char16_t*, longueur en
-        unites }, mesure { 0x21c541ec, 17 } pour 'Opale brute'. La longueur
-        EXCLUT le terminateur, comme partout ailleurs dans ce jeu.
+        The resolver's output is the pair { const char16_t*, length in
+        units }, measured { 0x21c541ec, 17 } for a 17-unit name. The length
+        EXCLUDES the terminator, as everywhere else in this game.
 
-        n vaut 2 par defaut : la construction de la fenetre resout _Name deux
-        fois, et ne substituer qu'une seule des deux laisserait le vrai nom
-        reapparaitre.
+        n defaults to 2: building the window resolves _Name twice, and
+        substituting only one of the two would let the real name show
+        again.
         """
         data, length, quota = self._sub_payload(s, 256, n)
         self.p.write(self.sub_buf, data)
@@ -892,7 +892,7 @@ class Cave:
         self.p.write(self.sub_req, quota)
 
     def res_arm_now(self, n=None):
-        """Armer la capture des n prochaines resolutions (4 au plus)."""
+        """Arm the capture of the next n resolutions (4 at most)."""
         n = min(n or self.res_slots, self.res_slots)
         self.p.write(self.res_a0, bytes(self.res_slots * self.res_stride))
         self.p.write(self.res_n, bytes(4))
@@ -900,7 +900,7 @@ class Cave:
         return n
 
     def res_read(self):
-        """[(r3, r4, r5, libelle)] des captures faites."""
+        """[(r3, r4, r5, label)] of the captures made."""
         raw = self.p.read(self.res_a0, self.res_slots * self.res_stride)
         rets = self.p.read(self.res_ret0, self.res_slots * 4)
         out = []
@@ -915,24 +915,24 @@ class Cave:
         return out
 
     def get_txt_sample(self):
-        """Les 64 octets du texte, recopies par la sonde au moment de l'appel.
+        """The 64 bytes of the text, copied by the probe at the time of the call.
 
-        Recopies dans le cave plutot que relus a l'adresse capturee : le
-        tampon du jeu est reutilise, et le lire quelques images plus tard ne
-        montre plus ce que la fenetre a recu.
+        Copied into the cave rather than read again at the captured address:
+        the game reuses its buffer, and reading it some frames later no
+        longer shows what the window received.
         """
         return self.p.read(self.get_txt_b0, 64)
 
     def write_get_text(self, s):
-        """Poser notre texte UTF-16BE et armer la substitution (un coup)."""
+        """Store our UTF-16BE text and arm the substitution (once)."""
         data = s.encode("utf-16-be")
         if len(data) + 2 > 128:
-            raise ValueError(f"{len(s)} unites : le tampon en tient 63")
+            raise ValueError(f"{len(s)} units: the buffer holds 63")
         self.p.write(self.get_txt_our, data + bytes(128 - len(data)))
         self.p.write(self.get_txt_req, (1).to_bytes(4, "big"))
 
     def get_texts(self):
-        """[(compte, r3, mot0, mot1)] pour les 3 sondes de texte de pane."""
+        """[(count, r3, word0, word1)] for the 3 pane text probes."""
         raw = self.p.read(self.get_txt_n0, self.get_txt_n * 16)
         return [tuple(be(raw[i * 16 + j * 4:i * 16 + j * 4 + 4])
                       for j in range(4)) for i in range(self.get_txt_n)]
@@ -945,19 +945,19 @@ class Cave:
         return list(zip(*cols))
 
     def get_calls(self):
-        """[(compte, appelant, r3, r4, r5, rang)] pour le banc 1."""
+        """[(count, caller, r3, r4, r5, rank)] for bench 1."""
         return self._cols(self.get_n, self.get0, self.get_from0,
                           self.get_this0, self.get_r4_0, self.get_r5_0,
                           self.get_ord0)
 
     def get_win_calls(self):
-        """[(compte, appelant, r3, r4, r5, rang)] pour le banc 2."""
+        """[(count, caller, r3, r4, r5, rank)] for bench 2."""
         return self._cols(self.get_win_n, self.get_win0, self.get_win_from0,
                           self.get_win_this0, self.get_win_r4_0,
                           self.get_win_r5_0, self.get_win_ord0)
 
     def tips_probes(self, n=8):
-        """Masque et compteurs des sondes du cadre des conseils."""
+        """Mask and counters of the tip frame probes."""
         mask = be(self.p.read(self.tips_mask, 4))
         raw = self.p.read(self.tips_counts, n * 4)
         return mask, [be(raw[i * 4:i * 4 + 4]) for i in range(n)]
@@ -967,7 +967,7 @@ class Cave:
         self.p.write(self.tips_counts, bytes(n * 4))
 
     def ms_probes(self, n=6):
-        """Masque et compteurs des sondes MainScreen."""
+        """Mask and counters of the MainScreen probes."""
         mask = be(self.p.read(self.ms_mask, 4))
         raw = self.p.read(self.ms_counts, n * 4)
         return mask, [be(raw[i * 4:i * 4 + 4]) for i in range(n)]
@@ -977,43 +977,43 @@ class Cave:
         self.p.write(self.ms_counts, b"\x00" * (n * 4))
 
     def guest(self, host_addr):
-        """Adresse invitee correspondant a une adresse hote."""
+        """Guest address of a host address."""
         if self.base is None:
-            raise RuntimeError("base invite/hote inconnue")
+            raise RuntimeError("guest/host base unknown")
         return host_addr - self.base
 
     def write_text(self, s, encoding="utf-16-be"):
-        """Poser une chaine dans apText et renvoyer son adresse INVITEE.
+        """Store a string in apText and return its GUEST address.
 
-        Le tampon vit dans le cave : son adresse ne bouge pas de la session,
-        contrairement aux objets du tas. C'est ce qui permet d'y faire pointer
-        le jeu durablement.
+        The buffer lives in the cave: its address does not move during the
+        session, unlike heap objects. That is what lets the game point to it
+        durably.
         """
         data = s.encode(encoding)
         term = b"\x00\x00" if "16" in encoding else b"\x00"
         if len(data) + len(term) > 256:
-            raise ValueError("texte trop long pour le tampon de 256 octets")
+            raise ValueError("text too long for the 256-byte buffer")
         self.p.write(self.text_buf, data + term + b"\x00" * (256 - len(data) - len(term)))
         return self.guest(self.text_buf)
 
     def write_dlg_text(self, s):
-        """Poser du texte UTF-16BE dans le tampon de la fenetre de dialogue.
+        """Store UTF-16BE text in the dialog window's buffer.
 
-        Renvoie (adresse invitee, longueur en unites UTF-16). La longueur
-        EXCLUT le terminateur : mesure faite sur le cadre des conseils, porteur
-        de 101 unites pour une longueur relevee de 100.
+        Returns (guest address, length in UTF-16 units). The length EXCLUDES
+        the terminator: measured on the tip frame, holding 101 units for a
+        length read as 100.
         """
         data = s.encode("utf-16-be")
         if len(data) + 2 > self.dlg_buf_size:
             raise ValueError(
-                f"{len(s)} unites : le tampon en tient "
+                f"{len(s)} units: the buffer holds "
                 f"{self.dlg_buf_size // 2 - 1}")
         self.p.write(self.dlg_buf,
                      data + bytes(self.dlg_buf_size - len(data)))
         return self.guest(self.dlg_buf), len(s)
 
     def probes(self, n=9):
-        """Masque et compteurs des sondes PickUpWin."""
+        """Mask and counters of the PickUpWin probes."""
         mask = be(self.p.read(self.hook_mask, 4))
         raw = self.p.read(self.hook_counts, n * 4)
         return mask, [be(raw[i * 4:i * 4 + 4]) for i in range(n)]
@@ -1025,10 +1025,10 @@ class Cave:
     def read(self):
         raw = self.p.read(self.tick, 64)
         if not raw or len(raw) < 64:
-            # Cemu a disparu en cours de route : le dire clairement plutot que
-            # de laisser un TypeError sur du None quelques lignes plus bas.
+            # Cemu went away meanwhile: say it clearly rather than leave a
+            # TypeError on None a few lines below.
             raise RuntimeError(
-                "Cemu ne repond plus (processus ferme, ou jeu plante).")
+                "Cemu no longer answers (process closed, or game crashed).")
         return dict(tick=be(raw[0:4]), inbox=be(raw[4:8]),
                     outbox=be(raw[8:12]), lastseen=be(raw[12:16]),
                     itemget=be(raw[16:20]), name_ptr=be(raw[20:24]),
@@ -1039,14 +1039,14 @@ class Cave:
                     notify_req=be(raw[56:60]), notify_done=be(raw[60:64]))
 
     def ready(self):
-        """Le chemin de notification peut-il REELLEMENT afficher ?
+        """Can the notification path REALLY display?
 
-        Le code injecte incremente apNotifyDone meme quand apListThis vaut 0 et
-        qu'il ne peut donc rien faire : notify() renvoyait alors True sans que
-        rien ne s'affiche, et des mesures entieres ont ete prises pour valides
-        sur cette base. La seule preuve utilisable est que le pool de lignes
-        soit connu -- il l'est desormais SANS ramassage prealable : le
-        resolveur le tire de l'ecran 0x28 (PickUpWin) + 0x1b68 a chaque image.
+        The injected code increments apNotifyDone even when apListThis is 0
+        and it therefore can do nothing: notify() then returned True with
+        nothing shown, and whole measurements were taken as valid on that
+        basis. The only usable proof is that the row pool is known -- it now
+        is WITHOUT a prior pickup: the resolver takes it from screen 0x28
+        (PickUpWin) + 0x1b68 every frame.
         """
         return be(self.p.read(self.list_this, 4)) != 0
 
@@ -1055,18 +1055,18 @@ class Cave:
         return struct.unpack(">f", self.p.read(self.duration, 4))[0]
 
     def notify(self, actor_name, timeout=3.0, duration=None):
-        """Demander au jeu d'afficher son bandeau d'objet obtenu.
+        """Ask the game to show its item obtained banner.
 
-        `duration` remplace la valeur que le jeu emploie (5.0). Elle est ecrite
-        juste avant la demande, car la sonde reecrit ce champ a chaque vrai
-        ramassage : la poser une fois pour toutes ne tiendrait pas.
+        `duration` replaces the value the game uses (5.0). It is written right
+        before the request, because the probe rewrites that field at every
+        real pickup: setting it once and for all would not hold.
         """
         import struct
         if not self.ready():
             return False
         raw = actor_name.encode("ascii")
         if len(raw) > 62:
-            raise ValueError("nom trop long pour le tampon de 64 octets")
+            raise ValueError("name too long for the 64-byte buffer")
         self.p.write(self.name_buf, raw + b"\x00" * (64 - len(raw)))
         if duration is not None:
             self.p.write(self.duration, struct.pack(">f", float(duration)))
@@ -1079,28 +1079,28 @@ class Cave:
                 return True
         return False
 
-    SEL_MAGIC = 0x52534C31  # "RSL1", ecrit par tools/build_rune_selection_sync.py
+    SEL_MAGIC = 0x52534C31  # "RSL1", written by tools/build_rune_selection_sync.py
 
     def sel_ready(self):
-        """Le patch charge sait-il demander une selection de rune ?
+        """Can the loaded patch request a rune selection?
 
-        Meme piege que `pf_ready` : sur un patch sans apCheckSel, ces champs
-        tombent sur du code et se lisent sans erreur. Le mot magique tranche.
+        Same trap as `pf_ready`: on a patch without apCheckSel, these fields
+        fall on code and read without error. The magic word decides.
         """
         return be(self.p.read(self.sel_magic, 4)) == self.SEL_MAGIC
 
     def request_rune_selection(self, rune_type, timeout=1.0):
-        """Faire appeler par le jeu 0x02A2D6D4(*(0x10463798), type).
+        """Have the game call 0x02A2D6D4(*(0x10463798), type).
 
-        Rend True si l'appel a eu lieu, False si le cave l'a refuse (type
-        hors des runes livrees, objet de selection absent), None sans reponse
-        dans le delai : la requete peut alors encore partir a l'image
-        suivante. La demande n'est qu'ENREGISTREE : la mise a jour par image
-        du jeu l'applique ensuite (voir botw_client/rune_selection.py).
+        Returns True if the call happened, False if the cave refused it (type
+        outside the delivered runes, selection object missing), None without
+        an answer in time: the request may still go at the next frame. The
+        request is only RECORDED: the game's per-frame update applies it
+        afterwards (see botw_client/rune_selection.py).
         """
         if not self.sel_ready():
             raise CaveUnavailable(
-                "patch sans selection de rune : FERMER ET ROUVRIR CEMU")
+                "patch without rune selection: CLOSE AND REOPEN CEMU")
         before = be(self.p.read(self.sel_done, 4))
         self.p.write(self.sel_type, int(rune_type).to_bytes(4, "big"))
         self.p.write(self.sel_req, (1).to_bytes(4, "big"))
@@ -1112,7 +1112,7 @@ class Cave:
         return None
 
     def count_runes(self, timeout=3.0):
-        """Faire appeler par le jeu son propre compteur de runes, et le lire."""
+        """Have the game call its own rune counter, and read it."""
         before = self.read()["rune_done"]
         self.p.write(self.rune_req, (1).to_bytes(4, "big"))
         deadline = time.time() + timeout
@@ -1127,24 +1127,24 @@ class Cave:
         return self.p.write(self.inbox, int(value).to_bytes(4, "big"))
 
     def give(self, actor_name, quantity=1):
-        """Demander au code injecte d'appeler itemGet."""
+        """Ask the injected code to call itemGet."""
         raw = actor_name.encode("ascii")
         if len(raw) > 62:
-            raise ValueError("nom trop long pour le tampon de 64 octets")
+            raise ValueError("name too long for the 64-byte buffer")
         self.p.write(self.name_buf, raw + b"\x00" * (64 - len(raw)))
         self.p.write(self.give_value, int(quantity).to_bytes(4, "big"))
         return self.p.write(self.give_req, (1).to_bytes(4, "big"))
 
     def last_item_name(self, name_ptr):
-        """Suivre le SafeString* capture par le hook itemGet jusqu'a la chaine.
+        """Follow the SafeString* captured by the itemGet hook to the string.
 
-        Un sead::SafeString ici fait 8 octets : {const char* cstr; void* vtable}.
-        Le nom d'acteur est donc a deux niveaux d'indirection du pointeur capture.
+        A sead::SafeString here is 8 bytes: {const char* cstr; void* vtable}.
+        The actor name is therefore two indirections from the captured pointer.
         """
         if not name_ptr or self.base is None:
             return None
-        # le cave vit vers 0x01800000, le tas du jeu vers 0x10000000+ :
-        # accepter les deux, sinon un nom donne par nous-memes est illisible
+        # the cave lives around 0x01800000, the game's heap at 0x10000000+:
+        # accept both, otherwise a name given by ourselves is unreadable
         if not (0x01000000 <= name_ptr < 0x50000000):
             return None
         raw = self.p.read(self.base + name_ptr, 4)
@@ -1172,7 +1172,7 @@ def diagnose():
     """
     log = log_path()
     if not log.exists():
-        print(f"  log de Cemu introuvable ({log})")
+        print(f"  Cemu log not found ({log})")
         return
     lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
 
@@ -1185,34 +1185,34 @@ def diagnose():
                 errs.extend(x.strip() for x in lines[i:i + 3])
 
     if errs:
-        print("  ERREUR D'ASSEMBLAGE -- Cemu a rejete tout le fichier :")
+        print("  ASSEMBLY ERROR -- Cemu rejected the whole file:")
         for e in errs[:6]:
             print("   ", e)
         print("")
-        print("  Corrige l'instruction fautive, puis relance Cemu.")
+        print("  Fix the faulty instruction, then restart Cemu.")
     elif applied:
-        print("  Le patch s'est applique :")
+        print("  The patch was applied:")
         for a in applied[-2:]:
             print("   ", a)
         print("")
-        print("  Mais la signature reste introuvable : Cemu tourne peut-etre")
-        print("  encore sur une session anterieure. Relance le jeu.")
+        print("  But the signature is still not found: Cemu may still be")
+        print("  running an earlier session. Restart the game.")
     else:
-        print("  Aucune trace du pack dans le log.")
-        print("  - est-il coche dans Options > Graphic Packs ?")
-        print("  - Cemu a-t-il ete relance depuis ?")
+        print("  No trace of the pack in the log.")
+        print("  - is it checked in Options > Graphic Packs?")
+        print("  - has Cemu been restarted since?")
 
 
 def main():
     value = int(sys.argv[1]) if len(sys.argv) > 1 else None
     pid = cemu_pid()
     if not pid:
-        sys.exit("Cemu n'est pas lance")
+        sys.exit("Cemu is not running")
 
     with Process(pid, writable=value is not None) as p:
         a = find_cave(p)
         if a is None:
-            print("cave introuvable.")
+            print("cave not found.")
             print("")
             diagnose()
             return
@@ -1220,73 +1220,73 @@ def main():
         base, cave_g, _ = guest_base(p, a - 12)
         c = Cave(p, a, base)
         s = c.read()
-        print(f"cave trouve (version a {a:#014x})")
+        print(f"cave found (version at {a:#014x})")
         if base is not None:
-            print(f"  cave invite    = {cave_g:#010x}")
-            print(f"  base inv->hote = {base:#014x}   (hote = invite + base)")
+            print(f"  guest cave     = {cave_g:#010x}")
+            print(f"  guest->host    = {base:#014x}   (host = guest + base)")
             owner = hook_owner(p, base)
-            if owner is None or owner == "aucun hook":
-                print(f"  !! aucun hook a {HOOK_GUEST:#010x}")
+            if owner is None or owner == "no hook":
+                print(f"  !! no hook at {HOOK_GUEST:#010x}")
             elif not hook_is_ours(p, base, cave_g, owner):
-                print(f"  !! HOOK VOLE : {HOOK_GUEST:#010x} saute vers {owner:#010x},")
-                print("     hors de notre cave. Un autre graphic pack patche la meme")
-                print("     adresse -- FPS++ le fait. Desactive-le : sans ce hook,")
-                print("     la boite aux lettres et give.py ne fonctionnent plus.")
+                print(f"  !! HOOK TAKEN: {HOOK_GUEST:#010x} jumps to {owner:#010x},")
+                print("     outside our cave. Another graphic pack patches the same")
+                print("     address -- FPS++ does. Disable it: without this hook,")
+                print("     the mailbox no longer works.")
         else:
-            print("  base invite/hote introuvable")
-        print(f"  tick     = {s['tick']}      <- preuve de vie (per-frame)")
+            print("  guest/host base not found")
+        print(f"  tick     = {s['tick']}      <- proof of life (per frame)")
         print(f"  inbox    = {s['inbox']}")
         print(f"  outbox   = {s['outbox']}")
         print(f"  lastseen = {s['lastseen']}")
         print("")
-        print(f"  itemGet appele {s['itemget']} fois")
+        print(f"  itemGet called {s['itemget']} times")
         if s["itemget"]:
-            nom = c.last_item_name(s["name_ptr"])
-            print(f"  dernier objet  = {nom if nom else '(nom illisible)'}"
-                  f"   quantite = {s['value']}")
-            print(f"  name_ptr brut  = {s['name_ptr']:#010x}")
+            name = c.last_item_name(s["name_ptr"])
+            print(f"  last item      = {name if name else '(unreadable name)'}"
+                  f"   quantity = {s['value']}")
+            print(f"  raw name_ptr   = {s['name_ptr']:#010x}")
 
         if s["tick"] == 0:
             print("")
-            print("  tick a 0 : le hook n'a jamais ete atteint.")
+            print("  tick at 0: the hook was never reached.")
 
-        # --- etat des canaux, DIT et non laisse a deviner ---------------------
-        # Le message d'erreur d'un outil qui refuse est vite oublie ; le voir
-        # ici, a chaque diagnostic, coute une ligne.
+        # --- the channels' state, SAID rather than left to guess ----------------
+        # The error message of a refusing tool is soon forgotten; seeing it
+        # here, at every diagnosis, costs one line.
         print("")
         ok, rn, tick = c.resolve_ready()
         if not ok:
-            print(f"  resolveur de pointeurs : ABSENT du patch charge "
+            print(f"  pointer resolver: MISSING from the loaded patch "
                   f"(apResolveN={rn}, tick={tick})")
-            print("  -> FERMER ET ROUVRIR CEMU. Recharger une sauvegarde ne "
-                  "suffit pas.")
+            print("  -> CLOSE AND REOPEN CEMU. Reloading a save is not "
+                  "enough.")
         else:
-            print(f"  resolveur de pointeurs : {rn} passages   table d'ecrans = "
+            print(f"  pointer resolver: {rn} passes   screen table = "
                   f"{be(p.read(c.scr_table, 4)):#010x}")
-            for nom, (ptr, pret) in c.channels().items():
-                print(f"    {nom:<20} {ptr:#010x}  "
-                      f"{'pret' if pret else 'NON RESOLU -> refusera'}")
+            for name, (ptr, ready) in c.channels().items():
+                print(f"    {name:<20} {ptr:#010x}  "
+                      f"{'ready' if ready else 'NOT RESOLVED -> will refuse'}")
 
         if value is None:
             print("")
-            print("relance pour voir tick augmenter, ou passe une valeur en")
-            print("argument pour tester l'aller-retour.")
+            print("run again to see tick grow, or pass a value as an argument")
+            print("to test the round trip.")
             return
 
         print("")
-        print(f"envoi de {value} dans inbox ...")
+        print(f"sending {value} to inbox ...")
         if not c.send(value):
-            sys.exit("ecriture refusee")
+            sys.exit("write refused")
         for _ in range(50):
             time.sleep(0.1)
             s = c.read()
             if s["inbox"] == 0 and s["outbox"] == value:
-                print(f"ECHO RECU : outbox={s['outbox']}, inbox remis a {s['inbox']}")
+                print(f"ECHO RECEIVED: outbox={s['outbox']}, inbox reset to {s['inbox']}")
                 print("")
-                print("Le code injecte a lu notre message et a repondu.")
-                print("La communication Python -> jeu -> Python fonctionne.")
+                print("The injected code read our message and answered.")
+                print("Python -> game -> Python communication works.")
                 return
-        print(f"pas d'echo apres 5 s (inbox={s['inbox']}, outbox={s['outbox']})")
+        print(f"no echo after 5 s (inbox={s['inbox']}, outbox={s['outbox']})")
 
 
 if __name__ == "__main__":

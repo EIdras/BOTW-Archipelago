@@ -40,5 +40,5 @@ class InventoryWaitTests(unittest.TestCase):
 
     def test_already_closed_does_not_pretend_to_test_deferral(self):
         with tempfile.TemporaryDirectory() as folder, patch.object(menu, "screens", return_value=self.catalog()):
-            with self.assertRaisesRegex(RuntimeError, "deja ferme"):
+            with self.assertRaisesRegex(RuntimeError, "already closed"):
                 menu.wait_for_inventory(Mock(), 0, Path(folder) / "trace.json")

@@ -4,11 +4,11 @@ Pure data, importable by the client, the resource builder and the tests (the
 APWorld and data/locations_master.csv carry the same rows; a test checks
 they match this module).
 
-Beedle (Terry, Npc_TripMaster_00..15) sells from a list at the 15 stables and
+Beedle (Npc_TripMaster_00..15) sells from a list at the 15 stables and
 at Kara Kara Bazaar. Each of his 16 appearances has its own stock sheet
 (Actor/ShopData/Npc_TripMaster_k.bshop); places were read from the map units
 (nearest LocationTag) and named from LocationMarker.msbt (docs/reference/
-shops_plan.md). Up to SLOTS_PER_MERCHANT stock entries of each become AP
+shops.md). Up to SLOTS_PER_MERCHANT stock entries of each become AP
 locations, shown first in the list; buying one sets its saved s32 flag
 APShop_<id> to 1 (the merchant's flow does it, see botw_patch/shops.py), which
 the client tracks like any other location flag.
@@ -27,8 +27,7 @@ FLAG_KIND = "s32"
 @dataclass(frozen=True)
 class Merchant:
     index: int
-    place: str          # English marker name
-    place_fr: str       # French marker name
+    place: str          # marker name (LocationMarker.msbt)
     region: str         # region of the nearest shrine (logic: any region needs the paraglider)
     # Vanilla `Normal` table, in order (checked against the sheet at build time).
     stock: tuple[str, ...]
@@ -40,37 +39,37 @@ class Merchant:
 
 _A, _B1, _B2 = "Obj_ArrowNormal_A_01", "Obj_ArrowBundle_A_01", "Obj_ArrowBundle_A_02"
 MERCHANTS = (
-    Merchant(0, "Dueling Peaks Stable", "Relais des Géminés", "Dueling Peaks",
+    Merchant(0, "Dueling Peaks Stable", "Dueling Peaks",
              (_A, _B1, "Animal_Insect_H", "Animal_Insect_A", "Item_Enemy_57")),
-    Merchant(1, "Foothill Stable", "Relais du pied de la montagne", "Eldin",
+    Merchant(1, "Foothill Stable", "Eldin",
              (_A, _B1, "Animal_Insect_B", "Animal_Insect_M")),
-    Merchant(2, "Gerudo Canyon Stable", "Relais du canyon Gerudo", "Wasteland",
+    Merchant(2, "Gerudo Canyon Stable", "Wasteland",
              (_A, _B2, "Animal_Insect_N", "Animal_Insect_T", "Animal_Insect_M")),
-    Merchant(3, "East Akkala Stable", "Relais de l'est d'Akkala", "Akkala",
+    Merchant(3, "East Akkala Stable", "Akkala",
              (_A, _B2, "Item_Plant_M", "Animal_Insect_AB", "Item_Plant_B")),
-    Merchant(4, "Tabantha Bridge Stable", "Relais du pont de Tabanta", "Tabantha",
+    Merchant(4, "Tabantha Bridge Stable", "Tabantha",
              (_A, _B2, "Animal_Insect_Q", "Animal_Insect_N", "Animal_Insect_R")),
-    Merchant(5, "Serenne Stable", "Relais de Delass", "Ridgeland",
+    Merchant(5, "Serenne Stable", "Ridgeland",
              (_A, _B2, "Animal_Insect_T", "Animal_Insect_E", "Animal_Insect_B")),
-    Merchant(6, "South Akkala Stable", "Relais du sud d'Akkala", "Akkala",
+    Merchant(6, "South Akkala Stable", "Akkala",
              (_A, _B2, "Animal_Insect_S", "Animal_Insect_X", "Animal_Insect_M")),
-    Merchant(7, "Rito Stable", "Relais des Piafs", "Tabantha",
+    Merchant(7, "Rito Stable", "Tabantha",
              (_A, _B2, "Animal_Insect_E", "Animal_Insect_T", "Animal_Insect_B")),
-    Merchant(8, "Riverside Stable", "Relais de la rivière", "Dueling Peaks",
+    Merchant(8, "Riverside Stable", "Dueling Peaks",
              (_A, _B1, "Animal_Insect_R", "Animal_Insect_I", "Animal_Insect_B")),
-    Merchant(9, "Lakeside Stable", "Relais du lac", "Faron",
+    Merchant(9, "Lakeside Stable", "Faron",
              (_A, _B1, "Animal_Insect_R", "Animal_Insect_S", "Animal_Insect_B")),
-    Merchant(10, "Outskirt Stable", "Relais de l'orée de la plaine", "Central",
+    Merchant(10, "Outskirt Stable", "Central",
              (_A, _B1, "Animal_Insect_A", "Animal_Insect_H", "Animal_Insect_M")),
-    Merchant(11, "Woodland Stable", "Relais de la forêt", "Woodland",
+    Merchant(11, "Woodland Stable", "Woodland",
              (_A, _B1, "Animal_Insect_C", "Animal_Insect_E", "Animal_Insect_M")),
-    Merchant(12, "Wetland Stable", "Relais des marécages", "Lanayru",
+    Merchant(12, "Wetland Stable", "Lanayru",
              (_A, _B1, "Animal_Insect_A", "Animal_Insect_AB", "Animal_Insect_B")),
-    Merchant(13, "Snowfield Stable", "Relais des prairies gelées", "Hebra",
+    Merchant(13, "Snowfield Stable", "Hebra",
              (_A, _B2, "Animal_Insect_Q", "Animal_Insect_T", "Animal_Insect_B")),
-    Merchant(14, "Highland Stable", "Relais des alpages", "Lake",
+    Merchant(14, "Highland Stable", "Lake",
              (_A, _B2, "Animal_Insect_E", "Animal_Insect_M", "Item_Enemy_57")),
-    Merchant(15, "Kara Kara Bazaar", "Bazar Assek", "Gerudo",
+    Merchant(15, "Kara Kara Bazaar", "Gerudo",
              (_A, _B2, "Animal_Insect_Q", "Animal_Insect_C", "Animal_Insect_B")),
 )
 # Arrows (single and bundle) stay on sale: the AP entries replace insects and
@@ -103,7 +102,7 @@ class ShopLocation:
     @property
     def shown_flag(self) -> str:
         """Saved bool, true until bought: the stock entry carries ItemLookGetFlg,
-        which shows an entry only while IsGet_<its actor> is true (10f bis), so
+        which shows an entry only while IsGet_<its actor> is true, so
         clearing it takes the bought item out of the list for good."""
         return f"IsGet_{self.actor}"
 

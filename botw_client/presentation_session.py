@@ -29,7 +29,7 @@ def snapshot_ap(ap):
 
 class NativePresentationSession:
     def __init__(self, state_path, identity, game, *, backend=None):
-        if not identity or not identity[0] or identity[0] == 'seed-inconnue':
+        if not identity or not identity[0] or identity[0] == 'unknown-seed':
             raise ValueError('A known AP session is required for persistent presentation')
         namespace = json.dumps(identity, ensure_ascii=False)
         digest = hashlib.sha256(namespace.encode()).hexdigest()
@@ -109,8 +109,8 @@ class NativePresentationSession:
             if info is None:
                 return
             recipient, recipient_game = ap.sender(info)
-            enqueue(f'location/{location_id}', ap.item_name(info) or f'Objet #{info.item}',
-                    [f'Pour {recipient}', f'({recipient_game})', ap.location_name(location_id) or str(location_id)])
+            enqueue(f'location/{location_id}', ap.item_name(info) or f'Item #{info.item}',
+                    [f'For {recipient}', f'({recipient_game})', ap.location_name(location_id) or str(location_id)])
 
         def received_payload(index, item, key):
             name = ap.item_name(item)
@@ -119,7 +119,7 @@ class NativePresentationSession:
             sender, sender_game = ap.sender(item)
             delivery = game.item_map.get(name, {}).get('delivery', {})
             extra = delivery.get('text') if delivery.get('kind') == 'manual_prompt' else None
-            lines = [f'Recu de {sender}', f'({sender_game})']
+            lines = [f'From {sender}', f'({sender_game})']
             if extra:
                 lines.extend(extra[i:i+40] for i in range(0, len(extra), 40))
             enqueue(key, name, lines)

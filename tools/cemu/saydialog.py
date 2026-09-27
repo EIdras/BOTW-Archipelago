@@ -1,97 +1,98 @@
-"""Afficher NOTRE texte dans la fenetre de dialogue -- la boite bleue.
+"""Show OUR text in the dialog window -- the blue box.
 
     python tools/cemu/saydialog.py --state
-    python tools/cemu/saydialog.py --open              # porteur d'origine
-    python tools/cemu/saydialog.py "Alice t'envoie une Epee"
-    python tools/cemu/saydialog.py --colors            # quel index = quelle teinte
-    python tools/cemu/saydialog.py --fill 300          # reperes tous les 10
-    python tools/cemu/saydialog.py "..." --nowrap      # garder ses propres \n
+    python tools/cemu/saydialog.py --open              # original carrier
+    python tools/cemu/saydialog.py "Alice sends you a Sword"
+    python tools/cemu/saydialog.py --colors            # which index = which hue
+    python tools/cemu/saydialog.py --fill 300          # marks every 10
+    python tools/cemu/saydialog.py "..." --nowrap      # keep your own \n
     python tools/cemu/saydialog.py "..." --arc DemoMsg/Demo008_2 --label talk00
 
-BALISAGE
+MARKUP
 
-    {0}..{/}      couleur ; {/} revient au defaut
-    {size:80}     code groupe 0 / type 2, en pourcentage
-    {t:g,t,hex}   n'importe quel code de controle, pour experimenter
-    \n            saut de ligne
+    {0}..{/}      color; {/} goes back to the default
+    {size:80}     code group 0 / type 2, as a percentage
+    {t:g,t,hex}   any control code, to experiment
+    \n            line break
 
-COULEURS, RELEVEES A L'ECRAN
+COLORS, READ ON SCREEN
 
-    {0} rouge     {1} vert     {2} bleu clair   {3} noir (gris fonce)
-    {4} bleu      {5} gris     {6} blanc        {/} blanc (defaut)
+    {0} red       {1} green    {2} light blue   {3} black (dark grey)
+    {4} blue      {5} grey     {6} white        {/} white (default)
 
-L'ordre de la liste de zeldamods (blue, red, grey...) n'est PAS celui des
-index : seul l'ecran l'a dit. Les teintes etant definies par layout dans le
-`.bflyt`, cette table vaut pour la fenetre de dialogue -- rien ne garantit
-qu'elle vaille pour le cadre des conseils ou la notification.
+The order of zeldamods' list (blue, red, grey...) is NOT the order of the
+indices: only the screen told. The hues being defined per layout in the
+`.bflyt`, this table holds for the dialog window -- nothing guarantees it holds
+for the tip frame or the notification.
 
-DUREE : PAS TROUVEE
+DURATION: NOT FOUND
 
-Les deux candidats du recensement (groupe 1 type 3, groupe 1 type 0) n'ont eu
-aucun effet visible : le texte s'affiche d'un coup, il n'y a pas d'effet
-machine a ecrire a temporiser sur ce chemin. `{pause:N}` a donc ete RETIRE du
-balisage plutot que laisse a faire croire qu'il agit.
+The two candidates of the census (group 1 type 3, group 1 type 0) had no
+visible effect: the text shows at once, there is no typewriter effect to time
+on this path. `{pause:N}` was therefore REMOVED from the markup rather than
+left to suggest it works.
 
-Le `-1` passe en 6e argument de `0x0358fd38` n'est pas une duree non plus : la
-constante `0x24924925` qui suit est le reciproque magique de 7, et la fonction
-calcule `(index(libelle) + r6) mod 7` -- un selecteur de variante.
+The `-1` passed as 6th argument of `0x0358fd38` is not a duration either: the
+constant `0x24924925` that follows is the magic reciprocal of 7, and the
+function computes `(index(label) + r6) mod 7` -- a variant selector.
 
-L'enchainement des pages vient donc de la fenetre, pas du texte.
+Pages are therefore chained by the window, not by the text.
 
-COMBIEN DE CARACTERES
+HOW MANY CHARACTERS
 
-Le porteur ne limite rien : on n'ecrase pas l'arene des messages, on fait
-pointer `this+0x1d0` sur notre propre tampon.
+The carrier limits nothing: the message arena is not overwritten,
+`this+0x1d0` is made to point to our own buffer.
 
-Mesure : **trois lignes de 30 caracteres par page**, et le jeu pagine tout seul
-au-dela -- 309 unites se sont affichees en trois pages. Le texte est donc
-coupe aux espaces a 30 caracteres par defaut, le balisage ne comptant pas dans
-la largeur. `--nowrap` laisse la main, `--width N` change la largeur.
+Measured: **three lines of 30 characters per page**, and the game pages by
+itself beyond that -- 309 units showed in three pages. The text is therefore
+split at spaces at 30 characters by default, markup not counting in the width.
+`--nowrap` leaves it to you, `--width N` changes the width.
 
-Le plafond total vient de notre tampon (2047 unites) ; la fenetre, elle, a
-avale 826 unites sans broncher. `--fill N` place des reperes tous
-les dix caracteres pour lire une troncature d'un coup d'oeil.
+The total ceiling comes from our buffer (2047 units); the window swallowed 826
+units without a hitch. `--fill N` places marks every ten characters to read a
+truncation at a glance.
 
-LA CHAINE, ETABLIE PAR MESURE
+THE CHAIN, ESTABLISHED BY MEASUREMENT
 
-`msgring.py` a montre que le libelle `talk00` du message de sanctuaire est
-resolu depuis le site `0x035fb64c`. En remontant :
+The message resolution tracer showed that the label `talk00` of the shrine
+message is resolved from the site `0x035fb64c`. Going up:
 
-    0x035ff8fc(_, SafeString* archive, SafeString* libelle, a, b, drapeau)
-        ouvre la fenetre si besoin, puis si drapeau == 0 appelle
-    0x035fb5f8(this, archive, libelle)
-        resout le message et range { texte, longueur } dans this+0x1d0
+    0x035ff8fc(_, SafeString* archive, SafeString* label, a, b, flag)
+        opens the window if needed, then if flag == 0 calls
+    0x035fb5f8(this, archive, label)
+        resolves the message and stores { text, length } in this+0x1d0
 
-Le premier argument de `0x035ff8fc` est ignore (la fenetre vient d'un global),
-et `a` / `b` ne sont lus que sur la branche a drapeau non nul -- verifie : r26
-et r27 ne reapparaissent qu'en `0x035ffa1c` / `0x035ffa20`. On les laisse donc
-nuls. `--replay` rejoue ceux qu'une vraie ouverture a laisses, pour comparer.
+The first argument of `0x035ff8fc` is ignored (the window comes from a
+global), and `a` / `b` are only read on the branch with a non-zero flag --
+checked: r26 and r27 only appear again at `0x035ffa1c` / `0x035ffa20`. They are
+therefore left at zero. `--replay` replays the ones a real opening left, to
+compare.
 
-LE TEXTE LIBRE
+FREE TEXT
 
-Pas de detour par l'arene des messages : on ecrase directement `this+0x1d0`
-avec `{ notre tampon UTF-16BE, longueur }`, dans la MEME image que l'ouverture
-(`apCheckDlg` puis `apCheckDlgText` sont deux blocs successifs du hook
-per-frame). La longueur est en unites UTF-16, terminateur exclu -- mesure faite
-sur le cadre des conseils : porteur de 101 unites, longueur relevee 100.
+No detour through the message arena: `this+0x1d0` is overwritten directly with
+`{ our UTF-16BE buffer, length }`, in the SAME frame as the opening
+(`apCheckDlg` then `apCheckDlgText` are two consecutive blocks of the per-frame
+hook). The length is in UTF-16 units, terminator excluded -- measured on the
+tip frame: a carrier of 101 units, a length read as 100.
 
-PREREQUIS : PLUS AUCUN, sinon que l'IHM du jeu existe
+PREREQUISITE: NONE ANY MORE, except that the game's UI exists
 
-Le drapeau (6e argument) est TOUJOURS force a zero. A 1, la fonction part dans
-0x035fb1b4 qui dereference les 4e et 5e arguments : rejouer ceux d un appel
-precedent -- des pointeurs de tas deja morts -- a plante le jeu. A zero ils ne
-sont jamais relus.
+The flag (6th argument) is ALWAYS forced to zero. At 1, the function goes into
+0x035fb1b4, which dereferences the 4th and 5th arguments: replaying those of an
+earlier call -- heap pointers already dead -- crashed the game. At zero they
+are never read.
 
-Il fallait autrefois avoir vu une vraie boite de dialogue depuis le lancement.
-C'etait un verrou de NOTRE fait, et il ne protegeait rien : les arguments
-qu'il attendait sont forces a zero de toute facon. 0x035ff8fc, elle, ne
-demande rien -- elle va chercher l'ecran 0x26 dans la table du gestionnaire
-et LE CREE s'il manque (`li r3, 0x26 ; bl 0x033924c4`). Verifie a froid :
-l'emplacement 0x26 passait de 0x00000000 a un ecran vivant sur notre appel.
+A real dialog box used to be needed since the start. It was a lock of OUR
+making, and it protected nothing: the arguments it waited for are forced to
+zero anyway. 0x035ff8fc itself asks for nothing -- it fetches screen 0x26 from
+the manager's table and CREATES it when missing (`li r3, 0x26 ; bl
+0x033924c4`). Checked cold: slot 0x26 went from 0x00000000 to a live screen on
+our call.
 
-Le seul prerequis qui reste vient du jeu : 0x035ff8fc dereference
-*(0x1047E650) sans le tester. Le cave resout donc la table d'ecrans a chaque
-image (apScrTable) et refuse tant qu'elle vaut 0.
+The only prerequisite left comes from the game: 0x035ff8fc dereferences
+*(0x1047E650) without testing it. The cave therefore resolves the screen table
+every frame (apScrTable) and refuses while it is 0.
 """
 import pathlib
 import sys
@@ -107,39 +108,38 @@ DEFAULT_LABEL = "talk00"
 
 
 def tag(grp, typ, params=b""):
-    """Un code de controle : 0x000E, groupe, type, taille, parametres.
+    """A control code: 0x000E, group, type, size, parameters.
 
-    Encodage releve sur les MSBT du jeu, pas suppose : la couleur deja utilisee
-    par say.py (`000e 0000 0003 0002 <index>`) est le cas particulier
-    groupe 0 / type 3, et tous les autres codes suivent la meme forme.
+    Encoding read from the game's MSBT files, not assumed: the color already
+    used by say.py (`000e 0000 0003 0002 <index>`) is the special case
+    group 0 / type 3, and every other code has the same form.
     """
     if len(params) % 2:
-        raise ValueError("les parametres se comptent en unites de 16 bits")
+        raise ValueError("parameters are counted in 16-bit units")
     units = [0x000E, grp, typ, len(params)]
     units += [int.from_bytes(params[i:i + 2], "big")
               for i in range(0, len(params), 2)]
     for u in units:
         if 0xD800 <= u <= 0xDFFF:
-            raise ValueError(f"unite {u:#06x} dans la plage des substituts "
-                             f"UTF-16 : inencodable")
+            raise ValueError(f"unit {u:#06x} in the UTF-16 surrogate range: "
+                             f"cannot be encoded")
     return "".join(chr(u) for u in units)
 
 
-# Releve par recensement sur les 991 MSBT du jeu : le pourcentage est le seul
-# parametre observe (100, 80, 125, 120). La forme de l'encodage est certaine,
-# l'effet ne l'est que pour la couleur et la taille -- les deux candidats de
-# temporisation, eux, n'ont rien change a l'ecran. {t:g,t,hex} permet d'essayer
-# n'importe quel autre code sans toucher au code source.
+# Found by a census of the game's 991 MSBT files: the percentage is the only
+# parameter seen (100, 80, 125, 120). The encoding's form is certain, its
+# effect only for color and size -- the two timing candidates changed nothing
+# on screen. {t:g,t,hex} tries any other code without touching the source.
 SIZE = lambda pct: tag(0, 2, pct.to_bytes(2, "big"))  # 100, 80, 125, 120
 
 
 def markup(s):
-    """Balisage etendu, par-dessus le {N}...{/} de say.py.
+    """Extended markup, on top of say.py's {N}...{/}.
 
-        {0}..{/}      couleur (index 0 a 6, {/} revient au defaut)
-        {size:80}     code groupe 0 / type 2, pourcentage
-        {t:g,t,hex}   n'importe quel code, pour experimenter
-        \\n            saut de ligne (la fenetre en affiche trois)
+        {0}..{/}      color (index 0 to 6, {/} goes back to the default)
+        {size:80}     code group 0 / type 2, percentage
+        {t:g,t,hex}   any code, to experiment
+        \\n            line break (the window shows three)
     """
     s = s.replace("\\n", "\n")
     out, i = [], 0
@@ -162,19 +162,19 @@ def markup(s):
     return colorize("".join(out))
 
 
-WIDTH = 30          # mesure : trois lignes de 30 tiennent sur une page
+WIDTH = 30          # measured: three lines of 30 fit on a page
 LINES = 3
 
 
 def wrap_markup(s, width=WIDTH):
-    """Couper aux espaces, sans compter le balisage dans la largeur.
+    """Split at spaces, without counting markup in the width.
 
-    Un `{0}` ne prend aucune place a l'ecran : le compter ferait des lignes
-    trop courtes, et couper au milieu casserait la balise. Les groupes entre
-    accolades sont donc des jetons de largeur nulle, jamais scindes.
+    A `{0}` takes no room on screen: counting it would make lines too short,
+    and splitting in its middle would break the tag. Groups between braces are
+    therefore zero-width tokens, never split.
     """
     if "\n" in s or "\\n" in s:
-        return s                      # decoupe deja choisie par l'appelant
+        return s                      # split already chosen by the caller
 
     def visible(tok):
         out, i = 0, 0
@@ -203,7 +203,7 @@ def wrap_markup(s, width=WIDTH):
 def poke_cstr(p, addr, s, size):
     data = s.encode("ascii", "replace")
     if len(data) + 1 > size:
-        raise ValueError(f"{s!r} depasse le tampon de {size} octets")
+        raise ValueError(f"{s!r} exceeds the {size}-byte buffer")
     p.write(addr, data + bytes(size - len(data)))
 
 
@@ -213,28 +213,28 @@ def wait(p, field, before, timeout=5.0):
         time.sleep(0.05)
         raw = p.read(field, 4)
         if not raw:
-            raise RuntimeError("Cemu ne repond plus (le jeu a plante).")
+            raise RuntimeError("Cemu no longer answers (the game crashed).")
         if be(raw) != before:
             return True
     return False
 
 
 def state(p, c):
-    print(f"  table d ecrans (apScrTable)  : {be(p.read(c.scr_table, 4)):#010x}")
-    print(f"  ouvertures vues (0x035ff8fc) : {be(p.read(c.dlg_open_n, 4))}"
-          f"  dont a drapeau nul : {be(p.read(c.dlg_open0_n, 4))}")
-    print(f"  poses de message (0x035fb5f8): {be(p.read(c.dlg_set_n, 4))}")
-    print(f"  fenetre (this)               : {be(p.read(c.dlg_this, 4)):#010x}")
-    print(f"  arguments releves            : "
+    print(f"  screen table (apScrTable)    : {be(p.read(c.scr_table, 4)):#010x}")
+    print(f"  openings seen (0x035ff8fc)   : {be(p.read(c.dlg_open_n, 4))}"
+          f"  of which with a zero flag: {be(p.read(c.dlg_open0_n, 4))}")
+    print(f"  messages set (0x035fb5f8)    : {be(p.read(c.dlg_set_n, 4))}")
+    print(f"  window (this)                : {be(p.read(c.dlg_this, 4)):#010x}")
+    print(f"  arguments read               : "
           f"a={be(p.read(c.dlg_arg6, 4)):#010x} "
           f"b={be(p.read(c.dlg_arg7, 4)):#010x} "
-          f"drapeau={be(p.read(c.dlg_arg8, 4))}")
+          f"flag={be(p.read(c.dlg_arg8, 4))}")
     this = be(p.read(c.dlg_this, 4))
     if this and c.base is not None:
         raw = p.read(this + 0x1D0 + c.base, 8)
         if raw:
             print(f"  this+0x1d0                   : "
-                  f"ptr={be(raw[0:4]):#010x} longueur={be(raw[4:8])}")
+                  f"ptr={be(raw[0:4]):#010x} length={be(raw[4:8])}")
 
 
 def main():
@@ -251,61 +251,61 @@ def main():
                  and a not in (arc, label)), None)
 
     if "--colors" in argv:
-        # Les index 0 a 6 existent (recensement des MSBT) mais rien ne dit
-        # lequel donne quelle teinte : le seul juge est l'ecran.
-        text = ("{0}zero{/} {1}un{/} {2}deux{/}\\n"
-                "{3}trois{/} {4}quatre{/} {5}cinq{/}\\n"
-                "{6}six{/} sept-defaut")
+        # Indices 0 to 6 exist (census of the MSBT files) but nothing says
+        # which gives which hue: the only judge is the screen.
+        text = ("{0}zero{/} {1}one{/} {2}two{/}\\n"
+                "{3}three{/} {4}four{/} {5}five{/}\\n"
+                "{6}six{/} seven-default")
     if "--fill" in argv:
         n = int(opt("--fill", "200"))
-        # Reperes tous les dix caracteres : une troncature se lit d'un coup
-        # d'oeil, la ou un texte uniforme ne dirait rien.
+        # Marks every ten characters: a truncation reads at a glance, where
+        # a uniform text would say nothing.
         base = "".join(f"{(k // 10) % 10}" if k % 10 else "|"
                        for k in range(n))
         text = "\\n".join(base[k:k + 30] for k in range(0, len(base), 30))
 
     pid = cemu_pid()
     if not pid:
-        sys.exit("Cemu n'est pas lance")
+        sys.exit("Cemu is not running")
 
     with Process(pid, writable=True) as p:
         a = find_cave(p)
         if a is None:
-            print("cave introuvable.\n")
+            print("cave not found.\n")
             diagnose()
             return
         base, _, _ = guest_base(p, a - 12)
         c = Cave(p, a, base)
 
         if "--state" in argv or (not text and "--open" not in argv):
-            print("etat de la fenetre de dialogue :\n")
+            print("state of the dialog window:\n")
             state(p, c)
             print("")
-            print("Pour l'ouvrir :  --open")
-            print("Avec du texte :  saydialog.py \"mon texte\"")
+            print("To open it:     --open")
+            print("With some text: saydialog.py \"my text\"")
             return
 
         ok, rn, tick = c.resolve_ready()
         if not ok:
-            sys.exit(f"le resolveur du patch charge ne tourne pas "
+            sys.exit(f"the loaded patch's resolver does not run "
                      f"(apResolveN={rn}, tick={tick}).\n"
-                     "FERMER ET ROUVRIR CEMU : recharger une sauvegarde ne "
-                     "suffit pas.")
+                     "CLOSE AND REOPEN CEMU: reloading a save is not "
+                     "enough.")
         if not be(p.read(c.scr_table, 4)):
-            sys.exit("l'IHM du jeu n'est pas construite (table d'ecrans "
-                     "introuvable).\nCharge une sauvegarde, puis relance.")
+            sys.exit("the game's UI is not built (screen table "
+                     "not found).\nLoad a save, then run again.")
 
-        # --- le drapeau reste a zero, et ce n'est pas un detail --------------
-        # A 1, 0x035ff8fc part dans 0x035fb1b4, qui DEREFERENCE les 4e et 5e
-        # arguments. Rejouer ceux d'un appel precedent -- deux pointeurs de tas
-        # deja morts -- a plante le jeu. A 0, ils ne sont jamais relus : on les
-        # laisse nuls plutot que de propager des valeurs sans garantie.
+        # --- the flag stays at zero, and it is not a detail ------------------
+        # At 1, 0x035ff8fc goes into 0x035fb1b4, which DEREFERENCES the 4th and
+        # 5th arguments. Replaying those of an earlier call -- two heap pointers
+        # already dead -- crashed the game. At 0 they are never read: they are
+        # left at zero rather than passing on values with no guarantee.
         a6 = a7 = 0
         flag = 0
         if "--replay" in argv:
             a6 = be(p.read(c.dlg_arg6, 4))
             a7 = be(p.read(c.dlg_arg7, 4))
-            print(f"  --replay : a={a6:#010x} b={a7:#010x} (drapeau force a 0)")
+            print(f"  --replay: a={a6:#010x} b={a7:#010x} (flag forced to 0)")
         p.write(c.dlg_arg6, a6.to_bytes(4, "big"))
         p.write(c.dlg_arg7, a7.to_bytes(4, "big"))
         p.write(c.dlg_arg8, flag.to_bytes(4, "big"))
@@ -320,21 +320,21 @@ def main():
             try:
                 ptr, n = c.write_dlg_text(s)
             except ValueError as e:
-                sys.exit(f"{e}\nRien n'a ete envoye au jeu : la demande n'est\n"
-                         f"posee qu'une fois le texte ecrit.")
+                sys.exit(f"{e}\nNothing was sent to the game: the request is\n"
+                         f"only placed once the text is written.")
             p.write(c.dlg_str_ptr, ptr.to_bytes(4, "big"))
             p.write(c.dlg_str_len, n.to_bytes(4, "big"))
 
-        print(f"archive {arc!r}  libelle {label!r}")
+        print(f"archive {arc!r}  label {label!r}")
         before_open = be(p.read(c.dlg_done, 4))
         before_text = be(p.read(c.dlg_text_done, 4))
 
-        # --- ne jamais ecrire dans un 'this' perime --------------------------
-        # La fenetre est un objet transitoire : le pointeur capture a la
-        # session precedente peut avoir ete libere, et lui ecrire dessus est
-        # ce qui avait fait planter le jeu du cote de PickUpWin. On le remet a
-        # zero ; seule la sonde de NOTRE appel, dans la meme image, le
-        # repeuplera. Si l'appel n'aboutit pas, le bloc texte ne fait rien.
+        # --- never write into a stale 'this' ---------------------------------
+        # The window is a transient object: the pointer captured in the
+        # previous session may have been freed, and writing onto it is what
+        # crashed the game on the PickUpWin side. It is reset to zero; only
+        # the probe of OUR call, in the same frame, fills it again. If the
+        # call does not happen, the text block does nothing.
         p.write(c.dlg_this, bytes(4))
 
         if text:
@@ -342,11 +342,11 @@ def main():
         p.write(c.dlg_req, (1).to_bytes(4, "big"))
 
         ok = wait(p, c.dlg_done, before_open)
-        print(f"  ouverture : {'appel effectue' if ok else 'AUCUN'}")
+        print(f"  opening: {'call made' if ok else 'NONE'}")
         if text:
             ok2 = wait(p, c.dlg_text_done, before_text)
-            print(f"  texte     : {n} unites UTF-16, "
-                  f"{'ecrit' if ok2 else 'PAS ECRIT'}")
+            print(f"  text   : {n} UTF-16 units, "
+                  f"{'written' if ok2 else 'NOT WRITTEN'}")
         print("")
         state(p, c)
 

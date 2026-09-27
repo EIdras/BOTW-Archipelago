@@ -121,7 +121,7 @@ class GameFileTests(unittest.TestCase):
         ids = [202, 203, 212]
         manifest = {"slot": 1, "shops": [{"location_id": i, "price": 100} for i in ids],
                     "placements": [{"location_id": i, "item_name": f"Item {i}",
-                                    "recipient_name": "Simon",
+                                    "recipient_name": "Player",
                                     "recipient_game": "Breath of the Wild",
                                     "flags": 1, "recipient": 1} for i in ids]}
         files, _catalog, _changes = generate(UPDATE, 417391497,

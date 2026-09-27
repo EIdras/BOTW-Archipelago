@@ -68,5 +68,4 @@ medallion, with the item's name and its recipient.
 - Only the European Wii U version, update v208, in Cemu on Windows, is supported.
 - A game pack is built from the multiworld's generated archive: seeds are generated and hosted locally, by the
   player, with the tools of the project. Rooms hosted on archipelago.gg are not supported yet.
-- The client's messages are in French.
 - DeathLink and traps are not available.

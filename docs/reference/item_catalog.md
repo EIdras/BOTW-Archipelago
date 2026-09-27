@@ -1,48 +1,47 @@
-# Catalogue des objets
+# Item catalog
 
-Sources : [`botw_world/data/items.json`](../../botw_world/data/items.json) définit le pool, les identifiants et la
-classification ; [`data/item_map.json`](../../data/item_map.json) définit l'effet dans le jeu (colonne `delivery`) et
-ce qui l'a validé (colonne `evidence`). Le spoiler de chaque seed (`AP_*_Spoiler.txt` dans l'archive générée) donne les
-placements.
+Sources: [`botw_world/data/items.json`](../../botw_world/data/items.json) defines the pool, the identifiers and the
+classification; [`data/item_map.json`](../../data/item_map.json) defines what each item does in the game (its
+`delivery`). The spoiler log of a seed (`AP_*_Spoiler.txt` in the generated archive) gives the placements.
 
-## Taille du pool
+## Pool size
 
-111 objets déclarés, complétés par des `Rupee Bundle` jusqu'au nombre de locations : 152 locations sans les options de
-boutique (41 bourses de rubis), jusqu'à 212 avec deux objets par boutique et par étal (101 bourses). `Defeat Calamity
-Ganon` est la location de victoire, sans objet.
+111 items are declared, completed with `Rupee Bundle` up to the number of locations: 152 locations without the shop
+options (41 rupee bundles), up to 212 with two items per shop and per stall (101 bundles). `Defeat Calamity Ganon` is
+the victory location and holds no item.
 
-## Progression et équipement
+## Progression and equipment
 
-| Objet AP | Nombre | Effet dans le jeu |
+| Archipelago item | Count | In the game |
 |---|---:|---|
-| Paraglider | 1 | la paravoile (`PlayerStole2`) |
-| Magnesis, Remote Bomb, Stasis, Cryonis | 1 chacun | le module, présenté par l'écran de téléchargement de la tablette ; sélectionné |
-| Sheikah Sensor | 1 | les drapeaux du détecteur |
-| Warm Doublet | 1 | le pourpoint |
-| Snowquill, Flamebreaker, Desert Voe, Zora, Rubber Set | 1 chacun | les trois pièces de l'ensemble |
-| Revali's Gale, Daruk's Protection, Urbosa's Fury, Mipha's Grace | 1 chacun | le pouvoir du prodige, par sa fenêtre d'obtention |
-| Progressive Climbing Gear | 3 | torse, tête, jambes, dans cet ordre |
-| Progressive Stealth Set | 3 | torse, tête, jambes, dans cet ordre |
-| Heart Container | 17 | un cœur, par la fenêtre d'obtention du jeu |
-| Stamina Vessel | 5 | un segment d'endurance, par la fenêtre d'obtention du jeu |
-| Master Sword, Hylian Shield, Champion's Tunic | 1 chacun | l'équipement |
-| Ancient Bridle, Ancient Saddle | 1 chacun | l'équipement de cheval |
-| Barbarian, Ancient, Radiant Set | 1 chacun | les trois pièces de l'ensemble |
+| Paraglider | 1 | the paraglider (`PlayerStole2`) |
+| Magnesis, Remote Bomb, Stasis, Cryonis | 1 each | the rune, presented by the Sheikah Slate's download screen, and selected |
+| Sheikah Sensor | 1 | the sensor's flags |
+| Warm Doublet | 1 | the doublet |
+| Snowquill, Flamebreaker, Desert Voe, Zora, Rubber Set | 1 each | the three pieces of the set |
+| Revali's Gale, Daruk's Protection, Urbosa's Fury, Mipha's Grace | 1 each | the champion's ability, with its get window |
+| Progressive Climbing Gear | 3 | body, head, legs, in that order |
+| Progressive Stealth Set | 3 | body, head, legs, in that order |
+| Heart Container | 17 | one heart, with the game's get window |
+| Stamina Vessel | 5 | one stamina segment, with the game's get window |
+| Master Sword, Hylian Shield, Champion's Tunic | 1 each | the equipment |
+| Ancient Bridle, Ancient Saddle | 1 each | the horse gear |
+| Barbarian, Ancient, Radiant Set | 1 each | the three pieces of the set |
 
-Les ensembles sont volontairement puissants : ce ne sont pas des objets de remplissage.
+The sets are deliberately strong: they are not filler items.
 
-## Remplissage et pièges
+## Filler and traps
 
-| Objet AP | Nombre | Effet dans le jeu |
+| Archipelago item | Count | In the game |
 |---|---:|---|
-| Spirit Orb | 20 | un emblème de triomphe |
-| Ancient Core | 10 | un cœur antique |
-| Star Fragment | 8 | un fragment d'étoile |
-| Korok Seed | 15 | une noix Korogu |
-| Fairy | 6 | une fée |
-| Rupee Bundle | selon les locations | 20 rubis |
-| Blood Moon, Weapon Shatter | 4 chacun | déclarés, **non générés** : pas encore d'effet automatique validé |
+| Spirit Orb | 20 | one Spirit Orb |
+| Ancient Core | 10 | one ancient core |
+| Star Fragment | 8 | one star fragment |
+| Korok Seed | 15 | one Korok seed |
+| Fairy | 6 | one fairy |
+| Rupee Bundle | depends on the locations | 20 rupees |
+| Blood Moon, Weapon Shatter | 4 each | declared, **not generated**: no automatic effect yet |
 
-Un objet reçu est livré par le jeu lui-même : fenêtre d'obtention quand l'objet en a une, écran de téléchargement pour
-un module, sinon directement dans l'inventaire. Rendu après le rechargement d'une sauvegarde plus ancienne, il revient
-en silence, puis une fenêtre Archipelago résume les objets rendus (voir [messages AP](ap_messages.md)).
+A received item is delivered by the game itself: its get window when it has one, the download screen for a rune,
+otherwise straight into the inventory. Given back after the reload of an older save, it returns quietly, then an
+Archipelago window lists the items given back (see [messages and deliveries](ap_messages.md)).

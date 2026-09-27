@@ -6,17 +6,15 @@ The game keeps the selected rune twice: in the saved GameData integer
 player is created. A delivery that writes the GameData therefore leaves the
 object on its previous value: the rune is owned and saved, but absent from the
 HUD, the wheel and L until the player selects it in the inventory or reloads.
-Measured in test 9a (``20260918T112102.925953Z``): after the AP grant the
-object stayed at -1 while the GameData held 2; the inventory activation wrote
-the request field, and the game's per-frame update applied it.
+Measured: after a grant the object stayed at -1 while the GameData held 2; the
+inventory's activation wrote the request field, and the game's per-frame
+update applied it.
 
 This module does not write the object. It asks the game to select the rune
 through its own request function ``0x02A2D6D4(object, type)``, the same one the
 inventory uses; the per-frame update then applies it and writes the GameData
 itself. The persistent delivery transaction is not involved: if a request is
 lost, reloading the save re-initialises the object from the committed value.
-
-Static evidence: ``tools/audit_first_rune_selection_path.py``.
 """
 from __future__ import annotations
 
@@ -62,7 +60,7 @@ def equip_requirement(step: dict) -> int | None:
     if not values:
         return None
     if len(values) != 1 or values[0] not in RUNE_TYPES:
-        raise ValueError(f"setter {EQUIP_FLAG} inattendu dans l'étape : {values}")
+        raise ValueError(f"unexpected {EQUIP_FLAG} setter in the step: {values}")
     return int(values[0])
 
 
@@ -114,10 +112,10 @@ class SyncOutcome:
         return self.status in ("no_rune", "in_sync", "synced")
 
     def summary(self) -> str:
-        text = f"sélection de rune {self.status}"
+        text = f"rune selection {self.status}"
         if self.equip is not None:
             text += f" (type {self.equip})"
-        return text + (f" : {self.detail}" if self.detail else "")
+        return text + (f": {self.detail}" if self.detail else "")
 
 
 class RuneSelectionSync:
@@ -151,7 +149,7 @@ class RuneSelectionSync:
             return SyncOutcome("no_rune", equip)
         before = read_state(self.read_u32)
         if before is None:
-            return SyncOutcome("unavailable", equip, detail="objet de sélection illisible")
+            return SyncOutcome("unavailable", equip, detail="selection object unreadable")
         outcome = SyncOutcome("pending", equip, before=before)
         if before.current == equip:
             outcome.status, outcome.after = "in_sync", before
@@ -160,7 +158,7 @@ class RuneSelectionSync:
             answer = self.request(equip)
             if answer is False:
                 outcome.status = "refused"
-                outcome.detail = "requête native refusée par le code injecté"
+                outcome.detail = "native request refused by the injected code"
                 return outcome
             # None: no answer yet; the request may still run next frame, so
             # the application below is what decides.
@@ -175,6 +173,6 @@ class RuneSelectionSync:
                 outcome.status = "synced"
                 return outcome
             if self.clock() >= deadline:
-                outcome.detail = "demande en attente d'application par le jeu"
+                outcome.detail = "request waiting for the game to apply it"
                 return outcome
             self.sleep(self.poll_seconds)

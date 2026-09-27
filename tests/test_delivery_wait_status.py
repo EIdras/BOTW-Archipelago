@@ -9,7 +9,7 @@ class DeliveryWaitStatusTests(unittest.TestCase):
         messages=[]
         runtime=SimpleNamespace(state={'apply_queue':[1],'display_queue':[],
             'location_display_queue':[]},_next_delivery_wait_log=0,
-            _presentation_status='waiting_ready',game=SimpleNamespace(delivery_block_reason='pret'),
+            _presentation_status='waiting_ready',game=SimpleNamespace(delivery_block_reason='ready'),
             presentations=SimpleNamespace(backend=SimpleNamespace(
                 wait_reason='conditions IHM non reunies',last_submission=None)),log=messages.append)
         BotwClientRuntime._log_delivery_wait(runtime)
@@ -22,10 +22,10 @@ class DeliveryWaitStatusTests(unittest.TestCase):
             _next_delivery_wait_log=0, _presentation_status='waiting_ready',
             presentations=SimpleNamespace(backend=SimpleNamespace(
                 last_submission={'status': 'deferred'})),
-            game=SimpleNamespace(delivery_block_reason='pret'), log=messages.append)
+            game=SimpleNamespace(delivery_block_reason='ready'), log=messages.append)
         BotwClientRuntime._log_delivery_wait(runtime)
-        self.assertIn('reprise automatique', messages[0])
-        self.assertIn('annonce non soumise', messages[0])
+        self.assertIn('automatic retry', messages[0])
+        self.assertIn('announcement not submitted', messages[0])
         self.assertNotIn('/ap-replay', messages[0])
 
     def test_authorized_recovery_does_not_request_another_command(self):
@@ -35,10 +35,10 @@ class DeliveryWaitStatusTests(unittest.TestCase):
             _next_delivery_wait_log=0, _presentation_status='refused',
             presentations=SimpleNamespace(blocked_head=lambda: {
                 'replay_after_incarnation': 'old-process'}),
-            game=SimpleNamespace(delivery_block_reason='pret'), log=messages.append)
+            game=SimpleNamespace(delivery_block_reason='ready'), log=messages.append)
         BotwClientRuntime._log_delivery_wait(runtime)
-        self.assertIn('reprise deja autorisee', messages[0])
-        self.assertNotIn('suivre la commande', messages[0])
+        self.assertIn('replay already authorized', messages[0])
+        self.assertNotIn('follow the /ap-replay', messages[0])
 
     def test_blocked_presentation_takes_precedence_over_ready_game(self):
         for status in ('refused', 'uncertain', None):
@@ -48,12 +48,12 @@ class DeliveryWaitStatusTests(unittest.TestCase):
                     state={'apply_queue': [5], 'display_queue': [5],
                            'location_display_queue': [42]},
                     _next_delivery_wait_log=0, _presentation_status=status,
-                    game=SimpleNamespace(delivery_block_reason='pret'),
+                    game=SimpleNamespace(delivery_block_reason='ready'),
                     log=messages.append)
                 BotwClientRuntime._log_delivery_wait(runtime)
                 self.assertEqual(len(messages), 1)
                 if status:
-                    self.assertIn('bloquee (' + status + ')', messages[0])
-                    self.assertNotIn(': pret', messages[0])
+                    self.assertIn('blocked (' + status + ')', messages[0])
+                    self.assertNotIn(': ready', messages[0])
                 else:
-                    self.assertTrue(messages[0].endswith(': pret'))
+                    self.assertTrue(messages[0].endswith(': ready'))

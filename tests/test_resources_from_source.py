@@ -51,11 +51,7 @@ assert a.name == b.name and tree(a) == tree(b), 'non-reproducible component'
 manifest = json.loads((a / 'manifest.json').read_text())
 hashes = dict(manifest['files'])
 hashes['delivery_catalog.json'] = digest((a / 'delivery_catalog.json').read_bytes())
-# All 16 resources + catalog. Played pack 5e94d0a1880f1b2b gave 18d7167c...;
-# since 25/09 pouch items are delivered through the game's own get window
-# (botw_client/delivery_plan.py pouch_kind), champion powers too (their get
-# window back in the entry), plus silent twins of those entries (items given
-# back after a reload): new reference, to be validated in game.
+# All 16 resources + the delivery catalog.
 assert len(manifest['files']) == 16
 assert digest(encode(hashes)) == '74207570a7f979691781b045bc2e6fcbd2040373a02c5ab8a1ce7f50fc466385', 'new pin: ' + digest(encode(hashes))
 assert manifest['gameplay_aids'] is False

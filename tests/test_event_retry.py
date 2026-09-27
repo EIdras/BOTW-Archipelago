@@ -13,7 +13,7 @@ class RetryTests(unittest.TestCase):
 
     def test_unknown_outcome_never_retried(self):
         attempt = Mock(return_value={"status": "timeout"})
-        with self.assertRaisesRegex(RuntimeError, "incertain"):
+        with self.assertRaisesRegex(RuntimeError, "uncertain"):
             event.retry_until_accepted(attempt, lambda: True, Mock())
         attempt.assert_called_once()
 

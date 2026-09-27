@@ -18,7 +18,7 @@ class DeliveryPlanTests(unittest.TestCase):
         self.assertEqual(len(plan.steps), 3)
         self.assertEqual([step.capacity_actor for step in plan.steps], [
             "Armor_009_Head", "Armor_009_Upper", "Armor_009_Lower"])
-        # Each piece through the game's own get window (25/09).
+        # Each piece through the game's own get window.
         self.assertTrue(all(step.mutations[0].kind is
                             MutationKind.GET_DEMO_ACTOR for step in plan.steps))
 

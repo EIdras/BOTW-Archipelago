@@ -10,8 +10,9 @@ MESSAGE_MAX_UNITS = 2047
 def literal_text(text):
     """Keep printable Unicode and newlines; remove binary MSBT control codes.
 
-    Braces are literal: the laboratory's markup parser must not process network
-    messages. Unpaired surrogates can arrive through JSON and cannot be encoded
+    Braces are kept as text: network messages are never read as markup (the
+    journal turns them into parentheses, botw_client/ap_journal.py). Unpaired
+    surrogates can arrive through JSON and cannot be encoded
     in UTF-16/UTF-8 safely. Replace them before persistence or native encoding.
     """
     text = str(text).replace('\r\n', '\n').replace('\r', '\n')

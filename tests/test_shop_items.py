@@ -75,23 +75,23 @@ class TextTests(unittest.TestCase):
         from botw_patch.resources import unpack
         messages = oead.Sarc(unpack(vanilla(LANG_PACK, MSG_ARCHIVE)))
         raw = bytes(messages.get_file(MSBT).data)
-        items = [ApShopItem("AP_A", 10, "Un", "Ligne 1\nLigne 2"),
-                 ApShopItem("AP_B", 20, "Deux", "Texte")]
+        items = [ApShopItem("AP_A", 10, "One", "Line 1\nLine 2"),
+                 ApShopItem("AP_B", 20, "Two", "Text")]
         out, detail = add_item_texts(raw, items)
         labels = read_labels(out)
         self.assertEqual(detail["entries"], 603)
-        self.assertEqual(labels["AP_A_Desc"], "Ligne 1\nLigne 2\x00")
-        self.assertTrue(labels["AP_B_Name"].endswith("Deux\x00"))
+        self.assertEqual(labels["AP_A_Desc"], "Line 1\nLine 2\x00")
+        self.assertTrue(labels["AP_B_Name"].endswith("Two\x00"))
 
 
 @unittest.skipUnless(HAVE_UPDATE, "update content absent")
 class CleanupTests(unittest.TestCase):
-    def terry_flow(self) -> bytes:
+    def beedle_flow(self) -> bytes:
         return vanilla("Event/Npc_TripMaster_00.sbeventpack", "EventFlow/Npc_TripMaster_00.bfevfl")
 
     def test_the_deletes_sit_between_the_buy_list_and_its_successor(self):
         from botw_patch.events import graph_snapshot, read_flow
-        out, detail = add_purchase_cleanup(self.terry_flow(), "Event18", ["AP_A", "AP_B"])
+        out, detail = add_purchase_cleanup(self.beedle_flow(), "Event18", ["AP_A", "AP_B"])
         events = graph_snapshot(read_flow(out))["events"]
         self.assertEqual(events["Event18"]["nxt"], "APShopDelete00")
         self.assertEqual(events["APShopDelete00"]["nxt"], "APShopDelete01")
@@ -102,7 +102,7 @@ class CleanupTests(unittest.TestCase):
         self.assertEqual(detail["then"], "Event150")
 
     def test_the_parameters_are_the_ballad_ones(self):
-        # 9q measured this action with these parameters at the end of the Ballad.
+        # The game uses this action with these parameters at the end of the Ballad.
         from botw_patch.events import graph_snapshot, read_flow
         ballad = graph_snapshot(read_flow(vanilla("Event/Demo622_2.sbeventpack",
                                                   "EventFlow/Demo622_2.bfevfl")))
@@ -112,7 +112,7 @@ class CleanupTests(unittest.TestCase):
 
     def test_only_a_followed_subflow_can_carry_the_cleanup(self):
         with self.assertRaises(ValueError):
-            add_purchase_cleanup(self.terry_flow(), "Event150", ["AP_A"])
+            add_purchase_cleanup(self.beedle_flow(), "Event150", ["AP_A"])
 
 
 @unittest.skipUnless(HAVE_UPDATE and (MODEL_SOURCE / "AP_Item.sbfres").is_file(),

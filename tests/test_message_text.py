@@ -15,7 +15,7 @@ class MessageTests(unittest.IsolatedAsyncioTestCase):
         self.addCleanup(temporary.cleanup)
         self.path = Path(temporary.name) / 'state.json'
         self.game = Mock()
-        self.runtime = BotwClientRuntime('unused', 'Simon', state_path=self.path,
+        self.runtime = BotwClientRuntime('unused', 'Player', state_path=self.path,
             game_factory=lambda: self.game, native_presentations=True)
         self.runtime.state = self.runtime.state_store.select('seed', 0, 1)
 
@@ -24,7 +24,7 @@ class MessageTests(unittest.IsolatedAsyncioTestCase):
         self.runtime._collect_messages()
 
     def test_long_message_survives_restart_without_using_game_or_grant_queues(self):
-        text = 'Un indice important : ' + 'chercher près du sanctuaire. ' * 15
+        text = 'An important hint: ' + 'look near the shrine. ' * 15
         self.collect(text.strip())
         restored = StateStore(self.path).select('seed', 0, 1)
         self.assertEqual(restored['message_queue'][0]['text'], text.strip())
@@ -33,10 +33,10 @@ class MessageTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.game.mock_calls, [])
 
     def test_binary_commands_and_broken_unicode_are_safe_even_in_metadata(self):
-        self.collect('Salut\x0e\0\ud800{size:80}',
+        self.collect('Hello\x0e\0\ud800{size:80}',
                      ({'text': '\ud800', 'extra': ['\x0e']},))
         restored = StateStore(self.path).select('seed', 0, 1)['message_queue'][0]
-        self.assertEqual(restored['text'], 'Salut  \ufffd{size:80}')
+        self.assertEqual(restored['text'], 'Hello  \ufffd{size:80}')
         self.assertEqual(restored['nodes'][0]['text'], '\ufffd')
         self.assertEqual(restored['nodes'][0]['extra'], [' '])
 
@@ -50,7 +50,7 @@ class MessageTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_legacy_output_is_short_but_failed_display_keeps_full_message(self):
         self.runtime.native_mode = False
-        text = 'Message détaillé ' * 20
+        text = 'Detailed message ' * 20
         self.collect(text)
         self.runtime._safe_now = lambda: True
         self.game.show_ap_message.return_value = False
@@ -64,11 +64,11 @@ class MessageTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(StateStore(self.path).select('seed', 0, 1)['message_queue'], [])
 
     async def test_native_mode_refuses_historical_display_even_when_called_directly(self):
-        self.collect('Texte en attente')
+        self.collect('Pending text')
         self.runtime._safe_now = lambda: True
         await self.runtime._show_one_message()
         self.assertEqual(self.game.mock_calls, [])
-        self.assertEqual(self.runtime.state['message_queue'][0]['text'], 'Texte en attente')
+        self.assertEqual(self.runtime.state['message_queue'][0]['text'], 'Pending text')
 
     def test_dialogue_storage_capacity_counts_utf16_and_marks_truncation(self):
         text = queued_text('🙂' * 2048)

@@ -46,13 +46,13 @@ class PauseMenuReadyTests(unittest.TestCase):
 
     def test_map_still_loading(self):
         memory = loaded_ui(**{hex(MAP_LOAD + LOADER_STATE + 0xFC + 0x28): 3})
-        self.assertEqual(pause_menu_ready(memory.read), (False, "carte pas encore chargée"))
+        self.assertEqual(pause_menu_ready(memory.read), (False, "map not loaded yet"))
         memory = loaded_ui(**{hex(MAP_LOAD + LOADER_STATE + 0x100): 1})
         self.assertFalse(pause_menu_ready(memory.read)[0])
 
     def test_inventory_still_loading(self):
         memory = loaded_ui(**{hex(INVENTORY_LOAD + LOADER_STATE + 0xFC + 0x28): 0})
-        self.assertEqual(pause_menu_ready(memory.read), (False, "inventaire pas encore chargé"))
+        self.assertEqual(pause_menu_ready(memory.read), (False, "inventory not loaded yet"))
 
     def test_map_in_use_matters_only_at_rest(self):
         # In play the map is never at rest (state 2 with the HUD): the client
@@ -61,7 +61,7 @@ class PauseMenuReadyTests(unittest.TestCase):
         memory.u8(MAP + MAP_IDLE_BYTES + 1, 2)
         self.assertEqual(pause_menu_ready(memory.read), (True, ""))
         self.assertEqual(pause_menu_ready(memory.read, at_rest=True),
-                         (False, "carte en cours d'utilisation"))
+                         (False, "map in use"))
         memory = loaded_ui()
         memory.u8(MAP + MAP_IDLE_BYTES, 1)
         self.assertFalse(pause_menu_ready(memory.read, at_rest=True)[0])
@@ -71,7 +71,7 @@ class PauseMenuReadyTests(unittest.TestCase):
     def test_screens_without_loader_count_as_ready_and_no_ui_is_not(self):
         memory = loaded_ui(**{hex(MAP + MAP_LOADER): 0, hex(INVENTORY + INVENTORY_LOADER): 0})
         self.assertTrue(pause_menu_ready(memory.read)[0])
-        self.assertEqual(pause_menu_ready(Memory().read), (False, "interface du jeu illisible"))
+        self.assertEqual(pause_menu_ready(Memory().read), (False, "game UI unreadable"))
 
 
 if __name__ == "__main__":

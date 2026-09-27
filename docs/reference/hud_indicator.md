@@ -1,111 +1,79 @@
-# Indicateur de connexion AP dans le HUD
+# Archipelago connection indicator in the HUD
 
-Le logo Archipelago en bas à gauche du HUD : **en couleur** quand le client
-est connecté au serveur AP, **gris** sinon (client absent, coupure,
-reconnexion en cours). Il se cache avec le reste du HUD (menus,
-cinématiques).
+The Archipelago logo at the bottom left of the HUD: **in color** while the client is connected to the Archipelago
+server, **grey** otherwise (no client, connection lost, reconnecting). It hides with the rest of the HUD (menus,
+cutscenes).
 
-État : ressources validées en jeu (25/09 : le jeu démarre, le logo s'affiche
-au bon endroit, il se masque avec le HUD, la bascule fonctionne et le jeu ne
-réécrit jamais nos bits). Suivi de la connexion par le client : **validé
-en jeu** (25/09 : gris au chargement, couleur une fois connecté, gris pendant
-`/ap-coupure 20`, couleur à la reconnexion).
-
-## Comment ça marche
+## How it works
 
 ```
 Bootup.pack > Layout/Common.sblarc
-  blyt/MainScreen_00.bflyt     le HUD : RootPane > N_All_00 > ... > Pa_Time_00
-                                                            > Pa_APStatus_00  (ajouté)
-  blyt/PaAPStatus_00.bflyt     notre layout : RootPane > P_APOffline_00 (gris, visible)
-                                                       > P_APOnline_00  (couleur, caché)
-  timg/Nt_APOffline_00^l.bflim / Nt_APOnline_00^l.bflim   les deux logos, 64x64
+  blyt/MainScreen_00.bflyt     the HUD: RootPane > N_All_00 > ... > Pa_Time_00
+                                                            > Pa_APStatus_00  (added)
+  blyt/PaAPStatus_00.bflyt     our layout: RootPane > P_APOffline_00 (grey, visible)
+                                                    > P_APOnline_00  (color, hidden)
+  timg/Nt_APOffline_00^l.bflim / Nt_APOnline_00^l.bflim   the two logos, 64x64
 ```
 
-1. **Ressources** (`botw_patch/hud_layout.py`, appelé par
-   `tools/build_resources_from_source.py` pour **tous** les paquets) :
-   - une part `Pa_APStatus_00` est ajoutée comme dernier enfant de
-     `N_All_00`, le nœud qui porte tout le HUD : elle en hérite la
-     visibilité ;
-   - elle pointe vers le layout `PaAPStatus_00`, construit depuis le layout
-     vanilla `PaIconChallenge_00` (une image, un matériau, une texture), avec
-     deux images et deux textures ;
-   - le logo gris est visible par défaut : sans client, rien n'est connecté.
-2. **Client** (`botw_client/hud_indicator.py`, appelé par le runtime deux
-   fois par seconde au plus) :
-   - il retrouve nos deux images en mémoire, comme `panes.py` : gestionnaire
-     d'interface en `0x1047E650`, table des écrans, layout de chaque écran,
-     arbre de panneaux, nom en `+0x80` ;
-   - il écrit le bit visible (`+0x44`, bit 0) de chaque image selon
-     `ap.connected`. Il n'écrit que si ça change, et vérifie les noms avant
-     d'écrire : si l'écran a été reconstruit, il cherche à nouveau (au plus
-     toutes les 2 s) ;
-   - à l'arrêt propre du client, il remet le logo gris.
-3. Les noms communs aux deux côtés sont dans `botw_client/hud_protocol.py`.
+1. **Resources** (`botw_patch/hud_layout.py`, called by `tools/build_resources_from_source.py` for every pack):
+   - a part `Pa_APStatus_00` is added as the last child of `N_All_00`, the node that holds the whole HUD, so it
+     inherits its visibility;
+   - it points to the layout `PaAPStatus_00`, built from the vanilla layout `PaIconChallenge_00` (one picture, one
+     material, one texture), with two pictures and two textures;
+   - the grey logo is visible by default: without a client, nothing is connected.
+2. **Client** (`botw_client/hud_indicator.py`, called by the runtime at most twice a second):
+   - it finds our two pictures in memory: UI manager at `0x1047E650`, its screen table, each screen's layout, the
+     pane tree, the pane name at `+0x80`;
+   - it writes the visible bit (`+0x44`, bit 0) of each picture according to `ap.connected`. It writes only when the
+     state changes, and checks the names before writing: when a load has rebuilt the screen, it looks the panes up
+     again (at most every 2 s);
+   - when the client stops cleanly, it sets the logo back to grey.
+3. The names shared by both sides are in `botw_client/hud_protocol.py`.
 
-Aucun hook de code, aucune écriture à chaque image : une écriture d'un octet
-quand l'état change.
+No code hook and no per-frame write: one byte is written when the state changes. The game never rewrites these bits
+(measured over 10 s in the HUD screen, `0x25`).
 
-## Modifier les réglages
+## Changing the settings
 
-Tout est dans l'en-tête de `botw_patch/hud_layout.py` :
+Everything is at the top of `botw_patch/hud_layout.py`:
 
-| Réglage | Constante | Valeur actuelle |
+| Setting | Constant | Current value |
 |---|---|---|
-| Position (centre du logo, repère 1280×720, origine au centre de l'écran, y vers le haut) | `POSITION` | `(-590.0, -310.0)` : bas gauche |
-| Taille affichée (pixels du repère 1280×720) | `SIZE` | `44.0` |
-| Résolution des textures (diviseur entier de 512) | `TEXTURE_SIZE` | `64` |
-| Gris du logo hors ligne (0 = noir, 1 = gris clair) | paramètre `dim` de `grey()` | `0.55` |
-| Parent dans le HUD | `PARENT_LAST` (la part est insérée après ce frère) | `Pa_Time_00`, sous `N_All_00` |
+| Position (center of the logo, 1280×720 frame, origin at the center of the screen, y up) | `POSITION` | `(-590.0, -310.0)`: bottom left |
+| Displayed size (pixels of the 1280×720 frame) | `SIZE` | `44.0` |
+| Texture resolution (an integer divisor of 512) | `TEXTURE_SIZE` | `64` |
+| Grey of the offline logo (0 = black, 1 = light grey) | `dim` parameter of `grey()` | `0.55` |
+| Parent in the HUD | `PARENT_LAST` (the part is inserted after this sibling) | `Pa_Time_00`, under `N_All_00` |
 
-Repères utiles : les cœurs sont vers (-434, 310), les pouvoirs des prodiges
-en x = -557 (y de 40 à 190), la jauge de température vers (392, -222).
+Useful landmarks: the hearts are around (-434, 310), the champions' abilities at x = -557 (y from 40 to 190), the
+temperature gauge around (392, -222).
 
-**Changer le logo** : les deux textures sont tirées de
-`assets/wiiu/Item_AP.sbitemico` (le logo 512 du dépôt, aussi utilisé pour
-l'icône des fenêtres et des boutiques). Changer ce fichier change tout. Son
-empreinte est vérifiée par `tools/build_resource_base_from_source.py`
-(`ICON_SHA256`) et par `tests/test_resource_base_from_source.py`, à mettre à
-jour avec lui.
+**Changing the logo**: both textures are made from `assets/wiiu/Item_AP.sbitemico` (the project's 512 px logo, also
+used for the item icon in windows and shops). Changing this file changes them all. Its digest is checked by
+`tools/build_resource_base_from_source.py` (`ICON_SHA256`) and by `tests/test_resource_base_from_source.py`, to be
+updated with it.
 
-**Après un changement** :
+**After a change**:
 
-```
-venv\Scripts\python.exe -m unittest tests.test_hud_layout tests.test_hud_indicator
-venv\Scripts\python.exe tools\play_seed.py <seed.zip> --content <content> --rpx U-King.rpx
+```bat
+venv\Scripts\python -m unittest tests.test_hud_layout tests.test_hud_indicator
+venv\Scripts\python tools\play_seed.py <seed.zip> --content <content> --rpx U-King.rpx
 ```
 
-Les empreintes de référence de `tests/test_resources_from_source.py` et
-`tests/test_pack_from_source.py` changent avec les ressources : les recalculer.
+The reference digests of `tests/test_resources_from_source.py` and `tests/test_pack_from_source.py` change with the
+resources: update them (see [development](../development.md#reproducible-builds)).
 
-**Vérifier en jeu sans client** :
-`venv\Scripts\python.exe tools\cemu\hudprobe.py` trouve la part et ses
-logos. Avec `--bascule 10`, le logo couleur s'affiche 10 s, puis l'état
-d'origine revient.
+## Format details (measured)
 
-## Détails de format (mesurés)
+- FLYT and FLIM 5.2, big-endian. A section is a magic, a size (8-byte header included) and a body. Byte-for-byte round
+  trip checked on the 330 `.bflyt` files of `Common.sblarc`.
+- Pane block: flags (bit 0 visible), origin, alpha, part scale, name[24], user data[8], translation at `+0x24` of the
+  body, size at `+0x44`. Picture: material index at `+0x5c`. Part: property count, magnification, layout name.
+  Material: name[28], black and white colors (the template is tinted yellow, ours is not), texture index at `+0x28`.
+- `^l` textures are FLIM format 20 (RGBA8 sRGB), tile mode 4, with the GX2 tiling of `tools/bitemico.py`. Width
+  rounded up to 32, height to 16. Checked on the 8 vanilla textures of this format.
+- Size: `Layout/Common.blarc` grows from 31,418,128 to 31,459,088 bytes (the real growth, added to the vanilla
+  margin of the size table).
 
-- FLYT et FLIM 5.2, gros-boutistes. Une section = magic, taille (en-tête de
-  8 octets compris), corps. Aller-retour octet pour octet vérifié sur les 330
-  `.bflyt` de `Common.sblarc`.
-- Bloc de panneau : drapeaux (bit 0 visible), origine, alpha, échelle de
-  part, nom[24], données utilisateur[8], translation en `+0x24` du corps,
-  taille en `+0x44`. Image : index de matériau en `+0x5c`. Part : nombre de
-  propriétés, grossissement, nom du layout. Matériau : nom[28], couleurs
-  noire et blanche (le modèle est teinté en jaune, nous non), index de
-  texture en `+0x28`.
-- Textures `^l` = FLIM format 20 (RGBA8 sRGB), tile mode 4, pavage GX2 de
-  `tools/bitemico.py`. Largeur arrondie à 32, hauteur à 16. Vérifié sur les 8
-  textures vanilla de ce format.
-- Taille : `Layout/Common.blarc` passe de 31 418 128 à 31 459 088 octets
-  (croissance réelle ajoutée à la marge vanilla).
-
-## Historique
-
-- 25/09, analyse : faisable proprement, le risque étant de savoir si le jeu
-  crée une part qu'il ne connaît pas.
-- 25/09, étape 1 : ressources, puis essai de Simon. Réponse : oui, écran
-  `0x25`, logos atteignables depuis la part, 0 réécriture en 10 s.
-- 25/09, étape 2 : suivi de la connexion par le client.
-- Écartés : détourner une part existante (information perdue pour le
-  joueur) ; dessiner par un hook de rendu (contraire à la règle du projet).
+Alternatives set aside: repurposing an existing HUD part (the player would lose its information), and drawing with a
+render hook (native code where resources suffice).

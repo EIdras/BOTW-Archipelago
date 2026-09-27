@@ -1,6 +1,6 @@
 """What Beedle's buy list shows, read from the game's own shop GameData.
 
-Measured in 10a to 10d (docs/reference/shops_plan.md): while the buy list is
+Measured in the game (docs/reference/shops.md): while the buy list is
 open, Shop_ScreenType is 1 and the string64 Shop_SelectItemName holds the actor
 of the selected entry (the first one when the list opens). The shops built by
 botw_patch/shops.py list their AP items first, so opening the list selects
@@ -8,9 +8,9 @@ AP_Shop_<id>, which names the shop location and so the merchant.
 
 String flags are not in the scalar index (LiveGdt): their object is found once
 by its hash in the TriggerParam arrays; the text lies 0x40 bytes before the
-hash (value buffer of the Flag<string64>, measured in 10a). A string read while
-the game writes it can be torn (10a read "bj_ArrowNormal_A_01"): a name counts
-only when two consecutive reads agree.
+hash (value buffer of the Flag<string64>). A string read while the game writes
+it can be torn (a read gave "bj_ArrowNormal_A_01"): a name counts only when
+two consecutive reads agree.
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ SCREEN = "Shop_ScreenType"
 LIST_OPEN = 1
 TEXT_BEFORE_HASH = 0x40
 TEXT_BYTES = 64
-# The hash of a string64 flag sits at +0x138 (10a): read the whole object.
+# The hash of a string64 flag sits at +0x138: read the whole object.
 OBJECT_BYTES = 0x200
 # TriggerParam PtrArrays (count at 0x04 + 12 * k): strings after the three
 # scalar arrays, so search those first; the 44k bools last.
@@ -75,7 +75,7 @@ class ShopWatch:
         self.live = live
         located = locate_string_flags(self._read, live.tp, {crc(SELECTED): SELECTED})
         if SELECTED not in located:
-            raise RuntimeError(f"{SELECTED} introuvable dans les GameData")
+            raise RuntimeError(f"{SELECTED} not found in the GameData")
         info = located[SELECTED]
         self.text_address = info["object"] + info["hash_offset"] - TEXT_BEFORE_HASH
 

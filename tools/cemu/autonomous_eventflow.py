@@ -26,11 +26,11 @@ def retry_until_accepted(attempt, ready, checkpoint, timeout=90):
                     evidence.update(status="accepted", seconds=time.monotonic() - started)
                     return result
                 if result.get("native_return") != 0:
-                    raise RuntimeError("Resultat natif incertain : aucun nouvel essai automatique")
+                    raise RuntimeError("Native outcome uncertain: no automatic retry")
                 evidence["status"] = "native_refused_waiting"
                 checkpoint(evidence)
             time.sleep(0.5)
-        raise RuntimeError("Demande non acceptee en90 secondes ; aucun evenement force")
+        raise RuntimeError("Request not accepted within 90 seconds; no event forced")
     except BaseException as exc:
         evidence.update(status="failed", error=str(exc))
         raise
@@ -95,10 +95,10 @@ def request(process, cave, number, checkpoint, custom_text=False, *,
         checkpoint(result)
         raise RuntimeError("Gestionnaire/invocateur non pret")
     if ui["screen"] or ui["name"] or not ui["manager"] or word(cave.pf_req) or word(cave.opn_req):
-        raise RuntimeError("Fenetre ou demande deja presente")
+        raise RuntimeError("Window or request already present")
     title, _, desc, _, auto = cave.sub_state()
     if title or desc or auto:
-        raise RuntimeError("Substitution de texte deja armee")
+        raise RuntimeError("Text substitution already armed")
     if custom_text:
         from tools.cemu.scoped_text import verify_gates
         result["text_gates"] = verify_gates(process, cave.base)
@@ -114,7 +114,7 @@ def request(process, cave, number, checkpoint, custom_text=False, *,
     try:
         if custom_text:
             title = f"Test Archipelago {number}"
-            description = f"Message numero {number}.\nAffichage par EventFlow."
+            description = f"Message number {number}.\nShown by EventFlow."
             cave.show_item_text(title, description)
             result.update(title=title, description=description)
             checkpoint(result)
@@ -132,7 +132,7 @@ def request(process, cave, number, checkpoint, custom_text=False, *,
             time.sleep(0.01)
         result.update(status="timeout")
         checkpoint(result)
-        raise RuntimeError("Demande sans accuse de reception; requete restante annulee")
+        raise RuntimeError("Request without acknowledgement; pending request cancelled")
     finally:
         process.write(cave.pf_req, bytes(4))
         if custom_text and not accepted:

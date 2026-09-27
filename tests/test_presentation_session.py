@@ -21,7 +21,7 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
         self.game.item_map = {'Apple':{'delivery':{'kind':'actors'}}}
         self.ap = SimpleNamespace(slot=1, received_items={0:SimpleNamespace(item=10, player=2, location=55)},
             connected=True, items_synchronized=True,
-            scouted_locations={}, item_name=lambda item:'Apple', sender=lambda item:('Simon','BOTW'),
+            scouted_locations={}, item_name=lambda item:'Apple', sender=lambda item:('Player','BOTW'),
             location_name=lambda loc:'Oman Au Shrine')
         self.backend = Mock()
         self.backend.ready.return_value = True
@@ -192,7 +192,7 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.session.store.queue.snapshot(), before)
         await runtime._native_presentation_tick()
         self.assertEqual(self.session.blocked_head()['replay_after_incarnation'], 'old-cemu')
-        self.assertTrue(any('Reprise enregistree' in c.args[0] for c in log.call_args_list))
+        self.assertTrue(any('Replay recorded' in c.args[0] for c in log.call_args_list))
         self.assertEqual(self.backend.submit.call_count, 1)
 
     async def test_wrong_console_id_cannot_unblock_or_stop_runtime(self):
@@ -206,7 +206,7 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
         runtime.handle_local_command('/ap-replay received/999')
         await runtime._native_presentation_tick()
         self.assertNotIn('replay_after_incarnation', self.session.blocked_head())
-        self.assertTrue(any('Reprise refusee' in c.args[0] for c in log.call_args_list))
+        self.assertTrue(any('Replay refused' in c.args[0] for c in log.call_args_list))
 
     def test_reconnect_keeps_payload_and_pending_poll_ignores_submission_delay(self):
         self.advance()

@@ -168,7 +168,7 @@ class HintTests(unittest.TestCase):
 class SeedLocationTests(unittest.TestCase):
     def test_the_seed_is_known_only_when_the_server_lists_missing_locations(self):
         from botw_client.protocol import ArchipelagoClient
-        client = ArchipelagoClient("localhost:1", "Simon", None, log=lambda *_: None)
+        client = ArchipelagoClient("localhost:1", "Player", None, log=lambda *_: None)
 
         async def send(_packet):
             pass
@@ -188,7 +188,7 @@ class PlanTests(unittest.TestCase):
             {"location_id": 154, "item_name": "Hookshot", "recipient": 2,
              "recipient_name": "Alice", "recipient_game": "A Link to the Past", "flags": 1},
             {"location_id": 3, "item_name": "Paraglider", "recipient": 1,
-             "recipient_name": "Simon", "recipient_game": "Breath of the Wild", "flags": 1}],
+             "recipient_name": "Player", "recipient_game": "Breath of the Wild", "flags": 1}],
             "shops": [{"location_id": 154, "price": 120, **shop}]}
 
     def test_the_plan_reads_the_shop_placements(self):
@@ -213,20 +213,19 @@ class PlanTests(unittest.TestCase):
         long = ShopPlacement(BY_ID[154], 10, "An extremely long item name " * 4,
                              "SomeoneWithALongName", "A Game With A Very Long Title " * 3,
                              1, False)
-        for language in ("EUfr", "EUen"):
-            name, description = texts(long, language)
-            self.assertLessEqual(len(name), NAME_LIMIT)
-            lines = description.split("\n")
-            self.assertLessEqual(len(lines), DESCRIPTION_LINES)
-            self.assertTrue(all(len(line) <= DESCRIPTION_WIDTH for line in lines))
-        own = ShopPlacement(BY_ID[155], 10, "Heart Container", "Simon", "BotW", 1, True)
-        self.assertIn("pour toi", texts(own, "EUfr")[1])
-        self.assertIn("ta progression", texts(own, "EUfr")[1])
+        name, description = texts(long)
+        self.assertLessEqual(len(name), NAME_LIMIT)
+        lines = description.split("\n")
+        self.assertLessEqual(len(lines), DESCRIPTION_LINES)
+        self.assertTrue(all(len(line) <= DESCRIPTION_WIDTH for line in lines))
+        own = ShopPlacement(BY_ID[155], 10, "Heart Container", "Player", "BotW", 1, True)
+        self.assertIn("for you", texts(own)[1])
+        self.assertIn("Needed to progress", texts(own)[1])
         trap = ShopPlacement(BY_ID[155], 10, "Ice Trap", "Bob", "OoT", TRAP | 1, False)
-        self.assertNotIn("progression", texts(trap, "EUfr")[1])
+        self.assertNotIn("progress", texts(trap)[1])
 
 
-@unittest.skipUnless(HAS_GAME, "mise à jour Wii U absente")
+@unittest.skipUnless(HAS_GAME, "Wii U update missing")
 class GameFileTests(unittest.TestCase):
     def sheet(self, merchant):
         import oead
@@ -318,7 +317,7 @@ class GameFileTests(unittest.TestCase):
             messages = bytes(outer.get_file(f"Message/Msg_{language}.product.ssarc").data)
             archive = oead.Sarc(unpack(messages))
             out, _ = add_item_texts(bytes(archive.get_file(MSBT).data),
-                                    items([placement], language))
+                                    items([placement]))
             self.assertTrue(read_labels(out)["AP_Shop_154_Name"].endswith("Hookshot\x00"))
 
 

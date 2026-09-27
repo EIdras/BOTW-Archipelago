@@ -46,7 +46,7 @@ def wait_for_gameplay(read, path, timeout=120, activity="loading"):
                 evidence.update(status="released", seconds=time.monotonic() - start)
                 return evidence
             time.sleep(0.1)
-        raise RuntimeError(f"Activite {activity} puis retour gameplay non observes en{timeout}s : aucune demande envoyee")
+        raise RuntimeError(f"Activity {activity} then return to gameplay not observed within {timeout}s: no request sent")
     except BaseException as exc:
         evidence.update(status="failed", error=str(exc))
         raise
@@ -125,8 +125,8 @@ def capture(read, prompt, path, label, interval=0.05, limit=12000, instructions=
     worker.start()
     completed = False
     try:
-        steps = instructions or [("gameplay_after", f"Capture {label} active. Revenir dans Cemu, ouvrir la carte et se teleporter vers un point deja accessible. "
-               "Attendre la fin du chargement et Link jouable, sans ramasser d'objet. Revenir ici puis Entree : ")]
+        steps = instructions or [("gameplay_after", f"Capture {label} active. Go back to Cemu, open the map and fast travel to a point already unlocked. "
+               "Wait for the loading to end and Link to be playable, without picking anything up. Come back here, then press Enter: ")]
         for stage, instruction in steps:
             prompt(instruction)
             evidence.setdefault("user_markers", []).append(dict(stage=stage, seconds=time.monotonic() - started))
@@ -142,12 +142,12 @@ def capture(read, prompt, path, label, interval=0.05, limit=12000, instructions=
     evidence[confirmation_key] = prompt(confirmation).strip().lower() == "oui"
     flush()
     if not evidence[confirmation_key]:
-        raise RuntimeError("Retour au jeu non confirme : aucune presentation demandee")
+        raise RuntimeError("Return to the game not confirmed: no presentation requested")
     return evidence
 
 
 def exercise(process, cave, prompt, report):
     for label in ("aller", "retour"):
-        prompt(f"Avant capture {label} : rester avec Link jouable, tous menus fermes. Entree : ")
+        prompt(f"Before capture {label}: keep Link playable, every menu closed. Enter: ")
         capture(lambda: snapshot(process, cave), prompt,
                 report.with_name(f"presentation-loading-{label}.json"), label)

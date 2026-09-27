@@ -1,29 +1,28 @@
-"""Localiser en RAM le TEXTE AFFICHE d'une notification, pour le remplacer.
+"""Locate in RAM the DISPLAYED TEXT of a notification, to replace it.
 
-Le probleme : 0x02FFA888(ligne, nom) recoit un NOM D'ACTEUR ("Item_Fruit_A").
-C'est le jeu qui le resout en texte affiche ("Pomme"). Nous ne controlons donc
-que le nom, pas le texte.
+The problem: 0x02FFA888(row, name) receives an ACTOR NAME ("Item_Fruit_A").
+The game resolves it into the displayed text (the item's name in the game's
+language). Only the name is ours, not the text.
 
-UTILISATION
-  1. Affiche une notification et LIS le texte a l'ecran :
-         python tools/cemu/notify.py Item_Fruit_A --persist
-  2. Cherche-le. Les correspondances EXACTES sont listees en premier :
-         python tools/cemu/findtext.py "Pomme"
-  3. Teste un candidat -- ecrit un marqueur, fait afficher, puis restaure :
+USE
+  1. Have the game show the item's notification and READ the text on screen.
+  2. Search for it. EXACT matches are listed first:
+         python tools/cemu/findtext.py "Apple"
+  3. Test a candidate -- writes a marker, has it displayed, then restores:
          python tools/cemu/findtext.py --probe 0x21c4f244
-  4. Si le marqueur s'affiche, cherche qui POINTE dessus pour rediriger vers
-     notre tampon au lieu d'ecraser (plus aucune limite de longueur) :
+  4. If the marker shows, look for what POINTS to it, to redirect to our
+     buffer instead of overwriting (no length limit any more):
          python tools/cemu/findtext.py --refs 0x21c4f244
-         python tools/cemu/findtext.py --repoint 0xSLOT --text "Mon texte"
+         python tools/cemu/findtext.py --repoint 0xSLOT --text "My text"
 
-  --poke ADDR --text "..."   ecrase sur place, sans filet (destructif)
+  --poke ADDR --text "..."   overwrites in place, without a net (destructive)
 
-DEUX PIEGES DEJA PAYES
-  * Une correspondance n'est pas forcement le bon mot : "Pomme" est aussi un
-    PREFIXE de "Pommes", "Pomme grillee", "Pommes au four". Seule une chaine
-    suivie immediatement d'un terminateur est le nom de l'objet. D'ou le tri.
-  * Chercher en UTF-16LE trouve les memes octets decales d'un cran. Ces
-    fantomes sont filtres.
+TWO TRAPS
+  * A match is not necessarily the right word: a short name is also a PREFIX
+    of longer ones (plurals, cooked variants). Only a string immediately
+    followed by a terminator is the item's name. Hence the sort.
+  * Searching in UTF-16LE finds the same bytes shifted by one. These ghosts
+    are filtered out.
 """
 import pathlib
 import sys
@@ -38,7 +37,7 @@ CHUNK = 32 << 20
 
 
 def scan(p, base, needles, align=1):
-    """Adresses invitees ou l'un des motifs apparait."""
+    """Guest addresses where one of the patterns appears."""
     hits = []
     longest = max(len(n) for n, _ in needles)
     for rbase, rsize in p.regions(min_size=1 << 12):
@@ -63,7 +62,7 @@ def scan(p, base, needles, align=1):
 
 
 def read_utf16(p, base, guest, maxunits=64):
-    """Chaine UTF-16BE a cette adresse, et celle qui suit son terminateur."""
+    """The UTF-16BE string at this address, and the one after its terminator."""
     raw = p.read(base + guest, maxunits * 2)
     if not raw:
         return "", ""
@@ -83,7 +82,7 @@ def read_utf16(p, base, guest, maxunits=64):
 
 
 def marker_for(n):
-    """Marqueur de meme longueur que l'original : aucun debordement possible."""
+    """A marker as long as the original: no overflow possible."""
     return ("ARCHIPELAGO" * (n // 11 + 1))[:n]
 
 
@@ -94,122 +93,122 @@ def do_search(p, base, target):
         first, second = read_utf16(p, base, guest)
         (exact if first == target else prefix).append((guest, first, second))
 
-    print(f"{len(exact)} correspondance(s) EXACTE(s), "
-          f"{len(prefix)} prefixe(s) ecarte(s)\n")
+    print(f"{len(exact)} EXACT match(es), "
+          f"{len(prefix)} prefix(es) set aside\n")
     for guest, first, second in exact:
         print(f"  EXACT  {guest:#010x}  {first!r}")
         if second:
-            print(f"                     suivi de {second[:48]!r}")
+            print(f"                     followed by {second[:48]!r}")
     if not exact:
-        print("  Aucune. Le texte lu a l'ecran est-il exact (accents, casse) ?")
+        print("  None. Is the text read on screen exact (accents, case)?")
         for guest, first, _ in prefix[:10]:
-            print(f"  prefixe {guest:#010x}  {first!r}")
+            print(f"  prefix {guest:#010x}  {first!r}")
         return exact
     print("")
-    print("Teste-les un par un ; le premier qui change l'ecran est le bon :")
+    print("Test them one by one; the first that changes the screen is the one:")
     for guest, _, _ in exact:
         print(f"  python tools/cemu/findtext.py --probe {guest:#010x}")
     return exact
 
 
 def do_probe(p, base, c, guest, actor, keep, hold):
-    """Ecrire un marqueur, faire afficher, dire si le jeu l'a reecrit.
+    """Write a marker, have it displayed, say whether the game rewrote it.
 
-    Ce test remplace un classement anterieur qui etait faux : il comparait
-    l'avant et l'apres en affichant un AUTRE objet, mais avec --persist aucune
-    ligne n'est recyclee, donc rien ne pouvait changer. Ici on force la
-    difference au lieu de l'attendre.
+    This test replaces an earlier, wrong classification: it compared before
+    and after while showing ANOTHER item, but with --persist no row is
+    recycled, so nothing could change. Here the difference is forced instead
+    of waited for.
     """
     original, _ = read_utf16(p, base, guest)
     if not original:
-        sys.exit(f"aucune chaine lisible a {guest:#010x}")
+        sys.exit(f"no readable string at {guest:#010x}")
     raw_orig = original.encode("utf-16-be")
     mark = marker_for(len(original))
 
     print(f"original = {original!r}")
-    print(f"marqueur = {mark!r}   (meme longueur : rien n'est deborde)")
+    print(f"marker   = {mark!r}   (same length: nothing overflows)")
     if not p.write(base + guest, mark.encode("utf-16-be")):
-        sys.exit("ecriture refusee")
+        sys.exit("write refused")
 
     print("")
-    print(f"affichage de {actor} -- REGARDE L'ECRAN MAINTENANT")
+    print(f"showing {actor} -- LOOK AT THE SCREEN NOW")
     ok = c.notify(actor, duration=hold)
     if not ok:
-        # Sans declencheur, il n'y a pas eu de test : le dire, et s'arreter la.
-        # Demander « le marqueur s'est-il affiche ? » apres un declencheur
-        # rate, c'est reclamer une conclusion sur une mesure qui n'a pas eu
-        # lieu -- et une reponse « non » serait lue comme « mauvaise adresse ».
+        # Without a trigger, there was no test: say it, and stop there.
+        # Asking "did the marker show?" after a failed trigger asks for a
+        # conclusion on a measurement that did not happen -- and a "no" would
+        # read as "wrong address".
         print("")
-        print("LE DECLENCHEUR A ECHOUE : aucune notification n'a ete affichee,")
-        print("donc ce test n'a rien mesure. Ne conclus rien de l'ecran.")
+        print("THE TRIGGER FAILED: no notification was shown, so this test")
+        print("measured nothing. Conclude nothing from the screen.")
         print("")
-        print("Cause la plus frequente : le prerequis de session. Le cave")
-        print("capture PauseMenuDataMgr et l'ecran de notification au vol, il")
-        print("faut donc avoir ramasse un objet une fois depuis le lancement.")
+        print("Most frequent cause: the session prerequisite. The cave")
+        print("captures PauseMenuDataMgr and the notification screen on the")
+        print("fly, so an item must have been picked up once since the start.")
         print("")
-        print("Pour la fenetre d'obtention, ce test ne convient de toute")
-        print("facon pas : il force un BANDEAU, pas la grande fenetre. Passe")
-        print("plutot par --refs sur les copies en tas.")
+        print("For the get window, this test does not fit anyway: it forces")
+        print("a BANNER, not the large window. Use --refs on the heap copies")
+        print("instead.")
         p.write(base + guest, raw_orig)
         print("")
-        print("original restaure.")
+        print("original restored.")
         return
     time.sleep(1.0)
 
     now, _ = read_utf16(p, base, guest)
     print("")
     if now == mark:
-        print("Le jeu n'a PAS reecrit cette zone : c'est une table statique.")
-        print("Si le marqueur s'est affiche, cette adresse pilote le texte.")
+        print("The game did NOT rewrite this area: it is a static table.")
+        print("If the marker showed, this address drives the text.")
     else:
-        print(f"Le jeu a reecrit la zone ({now!r}) : copie vivante, refaite a")
-        print("chaque affichage. Il faudrait ecrire APRES les trois appels.")
+        print(f"The game rewrote the area ({now!r}): a live copy, redone at")
+        print("every display. It would have to be written AFTER the three calls.")
 
     if keep:
         print("")
-        print("--keep : le marqueur est laisse en place.")
+        print("--keep: the marker is left in place.")
     else:
         time.sleep(hold if hold and hold < 10 else 4.0)
         p.write(base + guest, raw_orig)
         print("")
-        print("original restaure.")
+        print("original restored.")
     print("")
-    print("Le marqueur s'est-il affiche a l'ecran ?")
+    print("Did the marker show on screen?")
 
 
 def do_refs(p, base, target):
-    """Qui pointe sur cette adresse ?
+    """What points to this address?
 
-    Rediriger un pointeur vaut mieux qu'ecraser la table : aucune limite de
-    longueur, et le texte d'origine reste intact. Seuls les emplacements alignes
-    sur 4 sont retenus -- un pointeur PowerPC l'est toujours.
+    Redirecting a pointer is better than overwriting the table: no length
+    limit, and the original text stays intact. Only 4-aligned slots are kept --
+    a PowerPC pointer always is.
     """
     hits = scan(p, base, [(target.to_bytes(4, "big"), "ptr")], align=4)
-    print(f"{len(hits)} emplacement(s) aligne(s) contenant {target:#010x}\n")
+    print(f"{len(hits)} aligned slot(s) holding {target:#010x}\n")
     for guest, _ in hits[:40]:
         print(f"  {guest:#010x}")
     if len(hits) > 40:
-        print(f"  ... et {len(hits) - 40} autres")
+        print(f"  ... and {len(hits) - 40} more")
     if hits:
         print("")
-        print("Rediriger l'un d'eux vers notre tampon :")
+        print("Redirect one of them to our buffer:")
         print(f"  python tools/cemu/findtext.py --repoint {hits[0][0]:#010x} "
-              f"--text \"Mon texte\"")
+              f"--text \"My text\"")
     else:
-        print("Aucun pointeur absolu. La table est probablement adressee par")
-        print("un index ou un decalage : il faudra ecraser sur place, donc")
-        print("rester dans la longueur d'origine.")
+        print("No absolute pointer. The table is probably addressed by an")
+        print("index or an offset: it must be overwritten in place, and so")
+        print("stay within the original length.")
     return hits
 
 
 def do_repoint(p, base, c, slot, text):
     addr = c.write_text(text)
     ok = p.write(base + slot, addr.to_bytes(4, "big"))
-    print(f"texte pose dans apText = {addr:#010x} ({len(text)} caracteres)")
-    print(f"pointeur {slot:#010x} redirige : {'OK' if ok else 'REFUSE'}")
+    print(f"text stored in apText = {addr:#010x} ({len(text)} characters)")
+    print(f"pointer {slot:#010x} redirected: {'OK' if ok else 'REFUSED'}")
     if ok:
         print("")
-        print("Refais afficher une notification pour voir le resultat.")
+        print("Show a notification again to see the result.")
     return ok
 
 
@@ -217,27 +216,27 @@ def do_poke(p, base, guest, text):
     original, _ = read_utf16(p, base, guest)
     data = text.encode("utf-16-be") + b"\x00\x00"
     if len(text) > len(original):
-        print(f"ATTENTION : {len(text)} caracteres pour {len(original)} "
-              f"d'origine -- la chaine suivante sera ecrasee.")
+        print(f"WARNING: {len(text)} characters for {len(original)} "
+              f"originally -- the next string will be overwritten.")
     ok = p.write(base + guest, data)
-    print(f"ecriture de {len(data)} octets a {guest:#010x} : "
-          f"{'OK' if ok else 'REFUSEE'}")
+    print(f"writing {len(data)} bytes at {guest:#010x}: "
+          f"{'OK' if ok else 'REFUSED'}")
     return ok
 
 
 def do_writehex(p, base, guest, hexstr):
-    """Reecrire des octets bruts : de quoi defaire un --poke rate.
+    """Rewrite raw bytes: enough to undo a failed --poke.
 
-    Aucun terminateur n'est ajoute, contrairement a --poke : on remet
-    exactement ce qui etait la, terminateurs internes compris.
+    No terminator is added, unlike --poke: exactly what was there is put back,
+    inner terminators included.
     """
     data = bytes.fromhex(hexstr.replace(" ", ""))
     ok = p.write(base + guest, data)
-    print(f"{len(data)} octets bruts a {guest:#010x} : "
-          f"{'OK' if ok else 'REFUSE'}")
+    print(f"{len(data)} raw bytes at {guest:#010x}: "
+          f"{'OK' if ok else 'REFUSED'}")
     if ok:
         first, second = read_utf16(p, base, guest)
-        print(f"relu : {first!r} puis {second[:32]!r}")
+        print(f"read back: {first!r} then {second[:32]!r}")
     return ok
 
 
@@ -259,15 +258,15 @@ def main():
 
     pid = cemu_pid()
     if not pid:
-        sys.exit("Cemu n'est pas lance")
+        sys.exit("Cemu is not running")
 
     with Process(pid, writable=True) as p:
         a = find_cave(p)
         if a is None:
-            sys.exit("cave introuvable - le graphic pack est-il actif ?")
+            sys.exit("cave not found - is the graphic pack enabled?")
         base, _, _ = guest_base(p, a - 12)
         if base is None:
-            sys.exit("base invite/hote introuvable")
+            sys.exit("guest/host base not found")
         c = Cave(p, a, base)
 
         if opt("--probe"):
@@ -276,15 +275,15 @@ def main():
             do_refs(p, base, int(opt("--refs"), 0))
         elif opt("--repoint"):
             if not text:
-                sys.exit("--repoint exige --text \"...\"")
+                sys.exit("--repoint needs --text \"...\"")
             do_repoint(p, base, c, int(opt("--repoint"), 0), text)
         elif opt("--writehex"):
             if not opt("--hex"):
-                sys.exit("--writehex exige --hex \"0050006f...\"")
+                sys.exit("--writehex needs --hex \"0050006f...\"")
             do_writehex(p, base, int(opt("--writehex"), 0), opt("--hex"))
         elif opt("--poke"):
             if not text:
-                sys.exit("--poke exige --text \"...\"")
+                sys.exit("--poke needs --text \"...\"")
             do_poke(p, base, int(opt("--poke"), 0), text)
         elif positional:
             do_search(p, base, positional[0])

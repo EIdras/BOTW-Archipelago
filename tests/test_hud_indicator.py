@@ -118,7 +118,7 @@ class RuntimeTests(unittest.TestCase):
             runtime._hud_tick()
             self.assertEqual(visible(m, panes[OFFLINE]), 1)
             self.assertEqual([line for line in logs if "HUD" in line],
-                             ["indicateur HUD : connecté"])
+                             ["HUD indicator: connected"])
 
 
 if __name__ == "__main__":

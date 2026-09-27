@@ -3,11 +3,11 @@
 The pack adds a part to the HUD with two logos (botw_patch/hud_layout.py):
 grey (offline, shown by default) and colour (online). The client shows the
 one matching the AP connection by writing their visible bit (pane +0x44, bit
-0). Measured in game (25/09, tools/cemu/hudprobe.py): the part exists in
-screen 0x25, its logos are its children, and the game never rewrote our bits
-over 10 s: one write per change is enough, no hook, no per-frame write.
+0). Measured in the game: the part exists in screen 0x25, its logos are its
+children, and the game never rewrote our bits over 10 s: one write per change
+is enough, no hook, no per-frame write.
 
-Panes are found as panes.py finds them: UI manager at 0x1047E650, its screen
+Panes are found from the UI manager at 0x1047E650: its screen
 table (+0x18, count +0x14), each screen's layout (+0x18) and root pane
 (layout +0x0c); children in an intrusive list (count +0x10, sentinel +0x14);
 name at +0x80. The addresses are checked by name before every write: a screen

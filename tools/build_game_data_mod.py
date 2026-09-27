@@ -68,7 +68,7 @@ def modify_gamedata_flags(raw: bytes, flags, is_save: bool, kind: str = "s32",
                           init: int = 0) -> bytes:
     """Append flag definitions of `kind` (s32 or bool) to its last page."""
     if kind not in ("s32", "bool"):
-        raise ValueError(f"type de drapeau non géré : {kind}")
+        raise ValueError(f"flag type not supported: {kind}")
     sarc = open_yaz_sarc(raw)
     names = sorted(
         (file.name for file in sarc.get_files()
@@ -96,7 +96,7 @@ def modify_gamedata_flags(raw: bytes, flags, is_save: bool, kind: str = "s32",
     # existing entry and its order; only append to the final non-full page.
     if len(objects[-1][f"{kind}_data"]) > 4096:
         raise RuntimeError(
-            f"derniere page {kind}_data pleine; creation de page non implementee")
+            f"last {kind}_data page full; page creation not implemented")
     replacements = {
         names[-1]: bytes(oead.byml.to_binary(
             objects[-1], big_endian=True, version=2))
@@ -130,7 +130,7 @@ def append_one_volatile_flag(raw: bytes) -> bytes:
     entries = obj["s32_data"]
     flag = FLAGS[0]
     if any(str(entry["DataName"]) == flag for entry in entries):
-        raise RuntimeError(f"definition deja presente: {flag}")
+        raise RuntimeError(f"definition already present: {flag}")
     entries.append(definition(flag, is_save=False))
     encoded = bytes(oead.byml.to_binary(obj, big_endian=True, version=2))
     return bytes(oead.yaz0.compress(write_sarc(sarc, {name: encoded})))
@@ -176,7 +176,7 @@ def build(source: pathlib.Path, destination: pathlib.Path,
           variant: str = "ledger"):
     if not source.is_file():
         raise FileNotFoundError(
-            f"Bootup.pack de la mise a jour v208 introuvable: {source}")
+            f"Bootup.pack of the v208 update not found: {source}")
     # The graphic-pack replacement shadows the mounted update. Building from
     # the disc/base archive (v0) produces a structurally valid SARC containing
     # resources incompatible with the v208 executable and crashes its resource
@@ -184,7 +184,7 @@ def build(source: pathlib.Path, destination: pathlib.Path,
     # known base-game archive used during the failed first attempt.
     if source.stat().st_size == 31_197_052:
         raise RuntimeError(
-            "Bootup.pack du jeu de base refuse; utiliser celui de la mise a jour v208")
+            "base game Bootup.pack refused; use the v208 update's")
     outer = oead.Sarc(source.read_bytes())
     game_name = "GameData/gamedata.ssarc"
     save_name = "GameData/savedataformat.ssarc"
@@ -224,7 +224,7 @@ def verify(path: pathlib.Path, expected_flags: tuple[str, ...] = FLAGS,
     outer_count = sum(1 for _ in outer.get_files())
     if outer_count != 147:
         raise RuntimeError(
-            f"Bootup.pack inattendu: {outer_count}/147 fichiers")
+            f"unexpected Bootup.pack: {outer_count}/147 files")
     game = open_yaz_sarc(bytes(outer.get_file("GameData/gamedata.ssarc").data))
     obj = oead.byml.from_binary(bytes(game.get_file("/s32_data_0.bgdata").data))
     definitions = {str(dict(entry)["DataName"]): dict(entry)
@@ -240,21 +240,21 @@ def verify(path: pathlib.Path, expected_flags: tuple[str, ...] = FLAGS,
         expect_flag = flag in expected_flags
         if expect_flag:
             if flag not in definitions:
-                raise RuntimeError(f"definition absente: {flag}")
+                raise RuntimeError(f"definition missing: {flag}")
             actual_is_save = bool(definitions[flag]["IsSave"])
             if actual_is_save != expect_definition_saved:
                 raise RuntimeError(
                     f"{flag}: IsSave={actual_is_save}, "
-                    f"attendu {expect_definition_saved}")
+                    f"expected {expect_definition_saved}")
         elif flag in definitions:
-            raise RuntimeError(f"definition inattendue dans le no-op: {flag}")
+            raise RuntimeError(f"unexpected definition in the no-op: {flag}")
         if expect_saved and flag not in saved:
-            raise RuntimeError(f"saveformat absent: {flag}")
+            raise RuntimeError(f"saveformat missing: {flag}")
         if not expect_saved and flag in saved:
-            raise RuntimeError(f"saveformat inattendu: {flag}")
+            raise RuntimeError(f"unexpected saveformat: {flag}")
         if expect_flag:
             print(f"  {flag}: hash={signed_crc(flag)}, "
-                  f"sauvegarde={'oui' if expect_saved else 'non'}")
+                  f"saved={'yes' if expect_saved else 'no'}")
 
 
 def main():
@@ -268,14 +268,14 @@ def main():
                         default="ledger")
     args = parser.parse_args()
     if args.install and args.output:
-        parser.error("--install et --output sont exclusifs")
+        parser.error("--install and --output are exclusive")
     if args.install:
         destination = DEFAULT_PACK / "content/Pack/Bootup.pack"
         if destination.exists():
             backup = destination.with_suffix(".pack.pre_ledger")
             if not backup.exists():
                 shutil.copy2(destination, backup)
-                print(f"sauvegarde: {backup}")
+                print(f"backup: {backup}")
     else:
         destination = args.output or ROOT / ".build/Bootup_AP.pack"
     build(args.source, destination, args.variant)

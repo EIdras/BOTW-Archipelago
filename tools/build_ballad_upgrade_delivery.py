@@ -1,6 +1,6 @@
 """Deliver the upgraded champion power when its Ballad has already been played.
 
-A stage of the native build chain (Simon, 21/09, question 2: "oui").
+A stage of the native build chain.
 
 The Ballad guard (tools/build_ballad_condition_candidate.py) withholds the DLC
 upgrade at the end of a Champions' Ballad dungeon when the base power is not in
@@ -9,8 +9,7 @@ this stage, a base power arriving after that scene would stay the base one for
 good, since the scene is not replayed (its second visit, BalladOfHeroX_Finish,
 never reaches GetUI).
 
-Which flag says "the Ballad scene has been played": measured in 9q
-(20260920T173920.595198Z-native-ballad-context), across the scene,
+Which flag says "the Ballad scene has been played": measured across the scene,
 IsPlayed_Demo622_2 goes 0 -> 1 and BalladOfHeroZora_Finish stays 0, so Finish
 is not the signal. The scene carries the guard, so IsPlayed_Demo622_N = 1 when
 the base power arrives means the upgrade was withheld: had the base been owned
@@ -19,13 +18,12 @@ then, the upgrade was given and the pool item cannot arrive a second time.
 The stage edits only the four champion entries of the AP delivery flow
 (Demo007_1, APD_<hash>_00). In front of the base grant it inserts the vanilla
 query EventSystemActor CheckFlag {FlagName: IsPlayed_Demo622_N}:
-  0 -> the base grant, unchanged (validated 9u);
+  0 -> the base grant, unchanged;
   1 -> the same three vanilla actions on Obj_DLC_HeroSoul_X (pouch,
        create-equip, get flag), then the get flag of the base power, as the
-       vanilla upgrade leaves both flags at 1 (9q), and the same cursor commit.
+       vanilla upgrade leaves both flags at 1, and the same cursor commit.
 No GetDemo subflow is used: a GetDemo grant of the DLC power outside its Ballad
-crashes (9l), even on a branch not taken. The DLC actor through
-Demo_SetItemDataToPouch outside the Ballad has not been measured yet.
+crashes, even on a branch not taken.
 """
 from __future__ import annotations
 
@@ -45,7 +43,7 @@ from botw_patch.resources import ResourceBuilder, digest, unpack  # noqa: E402
 from tools.build_ballad_condition_candidate import FLOWS  # noqa: E402
 from tools.build_seed_bound_candidate import FLOW_MEMBER, TITLE, verified_files  # noqa: E402
 
-# 4f8e651898d3423b: the champion power restore stage, validated 9t/9u.
+# 4f8e651898d3423b: the champion power restore stage.
 SOURCE = ROOT / ".build/hero-soul-restore-candidates/4f8e651898d3423b"
 OUTPUT = ROOT / ".build/ballad-upgrade-delivery-candidates"
 TABLE = "System/Resource/ResourceSizeTable.product.srsizetable"
@@ -89,7 +87,7 @@ def upgrade_chain(stem: str, race: str) -> list[tuple[str, str, dict]]:
         (stem + "_Dlc_Equip", "Demo_CheckAndCreateEquip",
          {"TargetActorName": dlc, "IsWaitFinish": True}),
         # No get window for the DLC power: a GetDemo grant of it outside its
-        # Ballad crashed in 9l; this chain is the one validated in 9w.
+        # Ballad crashes; this chain gives it without the window.
         (stem + "_Dlc_GetFlag", "Demo_SetGetFlagByActorName",
          {"ActorName": dlc, "IsWaitFinish": True}),
         (stem + "_Dlc_BaseFlag", "Demo_SetGetFlagByActorName",
@@ -123,9 +121,8 @@ def transform_for(entries: dict[str, tuple[str, str]], host: str = "Demo007_1"):
             grant, equip, flag = stem + "_Mut0", stem + "_Mut0_Equip", stem + "_Mut0_GetFlag"
             show = stem + "_Mut0_Show"
             events = before["events"]
-            # Since 25/09 the base entry shows the game's get window between
-            # equipment and flag, as vanilla GetItemByName; the laboratory
-            # chain's entries predate it.
+            # The base entry shows the game's get window between equipment
+            # and flag, as vanilla GetItemByName; older chain entries do not.
             shown = (events[equip].get("nxt") == show
                      and events[show].get("entry_point_name") == "ShowGetDemoDialogByName"
                      and events[show]["params"].get("CheckTargetActorName") == base

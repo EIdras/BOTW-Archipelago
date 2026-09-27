@@ -250,7 +250,7 @@ def main():
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
     # Blender writes FBX coordinates in centimetres (x100), which Switch Toolbox
-    # reads as metres (10e: a 28 m medallion); converting the axes into the
+    # reads as metres (a 28 m medallion); converting the axes into the
     # vertices keeps that x100 even without unit scaling, so scale by 0.01.
     # Checked on the file: metres, Y up, resting on y = 0.
     bpy.ops.export_scene.fbx(filepath=os.path.join(FOLDER, "ap_item.fbx"),
