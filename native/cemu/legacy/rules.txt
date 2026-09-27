@@ -1,0 +1,7 @@
+[Definition]
+titleIds = 00050000101C9300,00050000101C9400,00050000101C9500
+name = BOTW Archipelago - Injection Test
+path = "The Legend of Zelda: Breath of the Wild/Archipelago/00 Injection Test"
+description = Spike de phase 3 : boite aux lettres entre le client Python et le code injecte. N altere aucun comportement du jeu.
+version = 7
+fsPriority = 999

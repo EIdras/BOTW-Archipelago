@@ -1,0 +1,20 @@
+# Game pack build: BOTW resource formats
+oead==1.2.9.post4
+evfl==1.2.0
+rstb==1.2.2
+jsonschema>=4,<5
+# Client
+aiohttp>=3.9,<4
+numpy>=1.24
+# Archipelago 0.6.7 core, used from source for generation and the local server
+# (tools/prepare_ap_runtime.py): its own requirements
+PyYAML==6.0.3
+schema==0.7.8
+pathspec==1.0.4
+jellyfish==1.2.1
+colorama==0.4.6
+websockets==13.1
+bsdiff4==1.2.6
+orjson==3.11.7
+jinja2==3.1.6
+typing_extensions==4.15.0

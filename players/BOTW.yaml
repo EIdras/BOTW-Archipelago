@@ -1,0 +1,16 @@
+# Player options for Breath of the Wild. Generation (tools/generate_native.py)
+# reads every YAML file of this folder: one file per player of the multiworld.
+name: Player
+game: Breath of the Wild
+description: Breath of the Wild, Wii U EUR v208 in Cemu.
+Breath of the Wild:
+  progression_balancing: 50
+  accessibility: full
+  # ganon, divine_beasts or shrines
+  goal_type: ganon
+  shrines_required: 40
+  divine_beasts_required: 4
+  # 0 to 2 Archipelago items at each of Beedle's 16 shops, and on each of the 14 village stalls
+  beedle_shop_items: 2
+  stall_shop_items: 2
+  start_inventory_from_pool: {}

@@ -1,0 +1,179 @@
+"""The isolated Cemu profile that play sessions run in.
+
+    python tools/cemu_profile.py --cemu <Cemu.exe> --user-data <Cemu user folder>
+
+Creating it copies, once, the Cemu executable, the BOTW EUR update and DLC and
+the BOTW saves of an existing Cemu installation into .build/cemu-validation:
+nothing links back to the installation, which is never modified. An existing
+profile is never reset.
+
+A play session (tools/play_session.py) then uses its own Cemu account
+(PLAY_ACCOUNT), derived from the copied one (SOURCE_ACCOUNT), so that a new
+game never overwrites the copied saves, and a single graphic pack: the
+verified pack of its seed.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import shutil
+import subprocess
+import xml.etree.ElementTree as ET
+
+ROOT = Path(__file__).resolve().parents[1]
+PROFILE = ROOT / ".build/cemu-validation"
+PORTABLE = PROFILE / "portable"
+SOURCE_ACCOUNT = 0x80000001     # the account copied from the Cemu installation
+PLAY_ACCOUNT = 0x80000003       # the account of play sessions
+SAVES = PORTABLE / "mlc01/usr/save/00050000/101c9500/user"
+ACCOUNTS = PORTABLE / "mlc01/usr/save/system/act"
+PACK_PREFIX = "AP_Ledger_"
+
+
+def create(executable: Path, user_data: Path, target: Path = PROFILE) -> Path:
+    """Copy what BOTW needs from a Cemu installation into a new profile."""
+    target = target.resolve()
+    if not target.is_relative_to(ROOT / ".build"):
+        raise ValueError("the profile must be inside this project's .build folder")
+    if target.exists():
+        raise FileExistsError(f"the profile already exists; refusing to reset it: {target}")
+    mlc = user_data / "mlc01"
+    settings = ET.parse(user_data / "settings.xml")
+    configured_mlc = settings.getroot().findtext("mlc_path")
+    if configured_mlc:
+        mlc = Path(configured_mlc)
+    paths = ["usr/title/0005000e/101c9500", "usr/title/0005000c/101c9500",
+             "usr/save/00050000/101c9500", "sys"]
+    if not executable.is_file() or not (mlc / paths[0]).is_dir():
+        raise FileNotFoundError("Cemu executable or BOTW EUR update missing")
+    portable = target / "portable"
+    portable.mkdir(parents=True)
+    shutil.copy2(executable, target / "Cemu.exe")
+    for name in ("resources", "gameProfiles"):
+        if (executable.parent / name).is_dir():
+            shutil.copytree(executable.parent / name, target / name)
+    for name in paths:
+        if (mlc / name).exists():
+            print(f"Copying {name}...", flush=True)
+            shutil.copytree(mlc / name, portable / "mlc01" / name)
+    for name in ("controllerProfiles",):
+        if (user_data / name).exists():
+            shutil.copytree(user_data / name, portable / name)
+    # Keep graphics and input preferences, but never let this configuration
+    # point back to the installation's saves, nor load its graphic packs.
+    config = settings.getroot()
+    config.find("mlc_path").text = (portable / "mlc01").as_posix()
+    packs = config.find("GraphicPack")
+    if packs is not None:
+        packs.clear()
+    settings.write(portable / "settings.xml", encoding="utf-8", xml_declaration=True)
+    saves = mlc / "usr/save/00050000/101c9500"
+    manifest = {"schema": 1, "source_cemu": str(executable.resolve()),
+                "source_user_data": str(user_data.resolve()), "source_save_hashes": {
+                    path.relative_to(saves).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+                    for path in sorted(saves.rglob("*")) if path.is_file()}}
+    (target / "isolation.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    print(f"Isolated Cemu profile ready: {target}")
+    return target
+
+
+def check_isolated() -> None:
+    """The profile exists and no link leads out of it; Cemu is not running."""
+    if not (PROFILE / "isolation.json").is_file():
+        raise RuntimeError("Profil Cemu absent : exécuter tools/cemu_profile.py")
+    for path in (PROFILE, PORTABLE, PORTABLE / "settings.xml", PORTABLE / "mlc01",
+                 PORTABLE / "mlc01/usr/save"):
+        if (not path.resolve().is_relative_to(PROFILE.resolve()) or path.is_symlink()
+                or path.is_junction()):
+            raise RuntimeError(f"Chemin du profil non isolé : {path}")
+    running = subprocess.run(["powershell", "-NoProfile", "-Command",
+                              "Get-Process Cemu -ErrorAction SilentlyContinue "
+                              "| Select-Object -ExpandProperty Id"],
+                             capture_output=True, text=True, check=False)
+    if running.stdout.strip():
+        raise RuntimeError("Fermer Cemu avant de préparer une partie "
+                           "(aucun processus n'est arrêté automatiquement).")
+
+
+def play_account_dat(source_account: str) -> str:
+    """account.dat of the play account, derived from the copied one."""
+    lines = source_account.splitlines()
+    fields = dict(line.split("=", 1) for line in lines[1:] if "=" in line)
+    if fields.get("PersistentId") != f"{SOURCE_ACCOUNT:08x}":
+        raise ValueError("compte copié inattendu")
+    suffix = f"{PLAY_ACCOUNT & 0xFFFFFF:06x}"
+    out = []
+    for line in lines:
+        key = line.split("=", 1)[0]
+        if key == "PersistentId":
+            line = f"PersistentId={PLAY_ACCOUNT:08x}"
+        elif key == "TransferableIdBase":
+            line = f"TransferableIdBase={fields[key][:-6]}{suffix}"
+        elif key == "Uuid":
+            line = f"Uuid={fields[key][:-6]}{suffix}"
+        out.append(line)
+    return "\n".join(out) + "\n"
+
+
+def ensure_play_account() -> dict:
+    """Create the play account in the profile if it is absent."""
+    folder = ACCOUNTS / f"{PLAY_ACCOUNT:08x}"
+    target = folder / "account.dat"
+    if not target.resolve().is_relative_to(PROFILE.resolve()):
+        raise RuntimeError("compte de partie hors du profil")
+    created = False
+    if not target.is_file():
+        raw = (ACCOUNTS / f"{SOURCE_ACCOUNT:08x}" / "account.dat").read_bytes()
+        folder.mkdir(parents=True, exist_ok=True)
+        text = play_account_dat(raw.decode("utf-8").replace("\r\n", "\n"))
+        if b"\r\n" in raw:          # keep Cemu's own line endings
+            text = text.replace("\n", "\r\n")
+        target.write_bytes(text.encode("utf-8"))
+        created = True
+    return {"account": f"{PLAY_ACCOUNT:08x}", "created": created,
+            "account_dat_sha256": hashlib.sha256(target.read_bytes()).hexdigest()}
+
+
+def prepare_play(pack: Path) -> Path:
+    """Install a verified seed pack as the profile's only graphic pack, on the
+    play account. Returns the portable folder Cemu runs from."""
+    from tools.build_pack_from_source import verify_pack
+    check_isolated()
+    manifest = verify_pack(pack)
+    if "patch_apInject.asm" not in manifest["native_files"]:
+        raise RuntimeError("le pack ne contient pas l'injection de base")
+    settings = ET.parse(PORTABLE / "settings.xml")
+    root = settings.getroot()
+    root.find("mlc_path").text = (PORTABLE / "mlc01").as_posix()
+    account = root.find("Account")
+    if account is None:
+        account = ET.SubElement(root, "Account")
+    persistent = account.find("PersistentId")
+    if persistent is None:
+        persistent = ET.SubElement(account, "PersistentId")
+    persistent.text = str(PLAY_ACCOUNT)
+    packs = root.find("GraphicPack")
+    if packs is None:
+        packs = ET.SubElement(root, "GraphicPack")
+    packs.clear()
+    destination = PORTABLE / "graphicPacks" / (PACK_PREFIX + pack.name)
+    if not destination.exists():
+        shutil.copytree(pack, destination)
+    # An installed copy is checked like the pack itself: any change refuses it.
+    verify_pack(destination, manifest["seed_binding"])
+    ET.SubElement(packs, "Entry", filename=f"graphicPacks/{destination.name}/rules.txt")
+    settings.write(PORTABLE / "settings.xml", encoding="utf-8", xml_declaration=True)
+    return PORTABLE
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--cemu", type=Path, required=True, help="Cemu.exe of the installation")
+    parser.add_argument("--user-data", type=Path, required=True,
+                        help="Cemu's user folder (the one holding settings.xml and mlc01)")
+    parser.add_argument("--output", type=Path, default=PROFILE)
+    arguments = parser.parse_args()
+    create(arguments.cemu, arguments.user_data, arguments.output)

@@ -1,0 +1,99 @@
+import json
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import unittest
+
+from tools.build_native_from_source import ROOT, build, generate
+
+
+class NativeSourceTests(unittest.TestCase):
+    def test_resource_gate_changes_only_owner_extension(self):
+        from tools.build_owned_presentation import owner_source
+        old, new = generate(), generate(resource_gate=True)
+        name = 'runtime/patch_apInject.asm'
+        for key in old:
+            if key != name:
+                self.assertEqual(old[key], new[key])
+        self.assertEqual(new[name], old[name].replace(
+            owner_source(2, retired_guard=True, resource_gate=False).encode(),
+            owner_source(2, retired_guard=True, resource_gate=True).encode()))
+
+    def test_foreign_rpx_is_rejected_before_output(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / 'wrong.rpx').write_bytes(b'wrong revision')
+            with self.assertRaisesRegex(ValueError, 'RPX incompatible'):
+                build(root / 'wrong.rpx', root / 'out')
+            self.assertFalse((root / 'out').exists())
+
+    def test_optional_probes_have_no_runtime_dependents_or_hook_overlap(self):
+        from tools.build_runtime_cleanup import strip_probes
+        files = generate()
+        flattened = {Path(name).name: data for name, data in files.items()}
+        retained, sites = strip_probes(flattened)
+        self.assertEqual(set(retained), {'patch_apInject.asm', 'patch_event_request.asm'})
+        self.assertEqual(len(sites), 15)
+
+    @unittest.skipUnless((ROOT / 'U-King.rpx').is_file(), 'requires verified RPX dump')
+    def test_build_is_hermetic_reproducible_and_immutable(self):
+        # Separate interpreter refuses reads/listings under .build and also
+        # refuses the default RPX; only the explicitly copied input is allowed.
+        script = r'''
+import json, pathlib, sys
+root = pathlib.Path(sys.argv[1]).resolve()
+work = pathlib.Path(sys.argv[2]).resolve()
+def audit(event, args):
+    if event in ('open', 'os.listdir', 'os.scandir') and args and isinstance(args[0], (str, bytes)):
+        p = pathlib.Path(args[0]).resolve()
+        if p.is_relative_to(root / '.build') or p == root / 'U-King.rpx':
+            raise RuntimeError('Forbidden historical/default input: ' + str(p))
+sys.addaudithook(audit)
+from tools.build_native_from_source import build
+a = build(work / 'input.rpx', work / 'a')
+b = build(work / 'input.rpx', work / 'b')
+assert a.name == b.name
+assert {p.relative_to(a).as_posix():p.read_bytes() for p in a.rglob('*') if p.is_file()} == {
+    p.relative_to(b).as_posix():p.read_bytes() for p in b.rglob('*') if p.is_file()}
+assert build(work / 'input.rpx', work / 'a') == a
+(a / 'runtime/patch_apInject.asm').write_bytes(b'altered')
+try:
+    build(work / 'input.rpx', work / 'a')
+except ValueError:
+    pass
+else:
+    raise AssertionError('immutable artifact was overwritten')
+print(a.name)
+'''
+        with tempfile.TemporaryDirectory() as temp:
+            work = Path(temp)
+            (work / 'input.rpx').write_bytes((ROOT / 'U-King.rpx').read_bytes())
+            result = subprocess.run([sys.executable, '-c', script, str(ROOT), str(work)],
+                                    cwd=ROOT, text=True, capture_output=True, timeout=60)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_all_five_files_match_the_validated_play_pack(self):
+        reference = ROOT / '.build/seed-bound-candidates/5e94d0a1880f1b2b'
+        if not reference.is_dir(): self.skipTest('optional historical comparison pack absent')
+        manifest = json.loads((reference / 'manifest.json').read_text(encoding='utf-8'))
+        from tools.build_native_from_source import digest
+        files = generate()
+        self.assertEqual({Path(n).name for n in files}, set(manifest['native_files']))
+        from tools.build_tip_channel import compose as tip_channel
+        for name, raw in files.items():
+            with self.subTest(name=name):
+                validated = (reference / Path(name).name).read_bytes()
+                if name == 'runtime/patch_apInject.asm':
+                    # Since 26/09 every pack carries the AP journal (the tip
+                    # channel, validated in game on 25/09): the validated
+                    # file plus that composition, nothing else.
+                    validated = tip_channel(validated.decode('utf-8').replace(
+                        '\r\n', '\n')).encode('utf-8')
+                else:
+                    self.assertEqual(digest(raw), manifest['native_files'][Path(name).name])
+                self.assertEqual(raw, validated)
+
+
+if __name__ == '__main__':
+    unittest.main()

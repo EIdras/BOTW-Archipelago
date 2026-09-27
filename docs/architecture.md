@@ -1,0 +1,75 @@
+# Architecture
+
+Breath of the Wild has no mod loader and no scripting API. The integration therefore has three parts that work
+together: an Archipelago world for generation, a game pack built for each seed, and a client that watches and drives
+the running game through Cemu.
+
+```
+players/*.yaml ──> Archipelago + botw_world ──> AP_<seed>.zip (multidata + per-slot .apbotw.json)
+                                                        │
+               game dump (update, RPX) ──> tools/play_seed.py ──> game pack of the seed (Cemu graphic pack)
+                                                        │
+      Cemu (isolated profile, pack) <── memory ──> botw_client <── websocket ──> Archipelago server
+```
+
+## The world (`botw_world/`)
+
+A standard Archipelago world, packaged as `botw.apworld` (`tools/package_native.py`). Its data files
+(`botw_world/data/items.json`, `locations.json`) follow the project's sources: `data/locations_master.csv` for the
+locations, whose identifiers are append-only (a test checks that both agree), and `data/item_map.json` for what each
+item does in the game. `generate_output` writes, for each slot,
+a manifest `.apbotw.json`: the placements of the slot's locations and the prices drawn for its shop locations. The
+game pack is built from it.
+
+## The game pack (`tools/build_pack_from_source.py`)
+
+A Cemu graphic pack, built from the player's own game files and the seed. It is content-addressed (its folder is named
+after the hash of its content), reproducible, and verified before every use (`verify_pack`). Two builders compose it:
+
+- **Resources** (`tools/build_resources_from_source.py`, library `botw_patch/`): edits of the game's own files.
+  - The rewards of the checked locations are taken out where the game gives them (rune terminals, pedestals, Divine
+    Beasts...): the check still happens, the vanilla reward does not.
+  - EventFlow entries appended to resident flowcharts (`Demo007_1`, `OperationGuide`): one guarded entry per delivery
+    step of each item, which the client requests (`botw_patch/delivery_flow.py`).
+  - GameData flags of the integration: the session token of the save, the delivery cursor, shop records.
+  - Beedle's stocks and the village stalls, with an Archipelago item actor, icon, 3D model and texts in every language
+    (`botw_patch/shops.py`, `botw_patch/stalls.py`).
+  - The Archipelago logo in the HUD (`botw_patch/hud_layout.py`) and the "Archipelago" key item (`botw_patch/status_item.py`).
+  - The resource size table, updated for every changed file.
+- **Native code** (`tools/build_native_from_source.py`): Cemu patches (`patch_apInject.asm` and companions) assembled
+  from `native/cemu/` and a chain of transformations (`tools/build_*.py`). They install a code cave with a mailbox the
+  client writes to, and a per-frame hook that runs the client's requests on the game's own thread: requesting an
+  EventFlow entry, showing a line in the tip frame, selecting a rune. The pack refuses any RPX other than the EUR v208
+  one it was built for (SHA-256).
+
+The pack is bound to its seed: a token derived from the seed, team, slot and data package is written into the pack
+and, on the first connection, into the save (`APBindSession`). A save bound to another seed is refused.
+
+## The client (`botw_client/`)
+
+`BotwClientRuntime` (`botw_client/runtime.py`) connects to the Archipelago server (`protocol.py`) and to Cemu's memory
+(`game.py`, with the memory layer of `tools/cemu/`):
+
+- **Checks**: the locations are GameData flags of the game (shrine cleared, tower activated...). They are read from
+  the live GameData table at 5 Hz (`locations.py`) and sent to the server. Being saved by the game, a check done while
+  disconnected is sent at the next connection.
+- **Items**: each received item is delivered by requesting its EventFlow entry (`native_delivery.py`). The entry
+  performs the game's own presentation (item window, rune download screen), then advances `APReceivedCursor`, saved in
+  the game's save, under `SaveProhibition`: an item is given exactly once per save, and reloading an older save gives
+  back, quietly, what it lost. A delivery is requested only when the game is in a safe state (no menu, event, cutscene
+  or loading).
+- **Presentation**: the Archipelago journal (`tip_channel.py`) shows server messages in the game's tip frame; an
+  Archipelago window (`presentation_session.py`) summarizes items given back after a reload; the HUD logo shows the
+  connection status (`hud_indicator.py`).
+- **Shops**: when a shop list is open, the client hints the Archipelago items it shows (`shop_state.py`).
+
+## The play session (`tools/play_session.py`)
+
+Runs the Archipelago server of the seed in process (its state saved next to the seed), Cemu on the isolated profile of
+`tools/cemu_profile.py` with the seed's pack as its only graphic pack, and the client, until Cemu closes. Each session
+writes its logs to `.build/play-seeds/<seed>/sessions/`.
+
+## Technical notes
+
+The mechanisms found in the game (EventFlow requests, the tip frame, the HUD, shops and stalls, the rune download
+screen...) are described, in French, in [docs/reference](reference/README.md).

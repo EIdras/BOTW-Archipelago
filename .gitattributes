@@ -1,0 +1,3 @@
+# Byte-exact files: sources are hashed into reproducible builds, so git must not
+# convert line endings (some files use CRLF on purpose, e.g. the .cmd launchers).
+* -text

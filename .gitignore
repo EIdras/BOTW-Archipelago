@@ -1,0 +1,35 @@
+# Builds, the Archipelago runtime, the Cemu profile, seeds and session logs
+.build/
+dist/
+*.apworld
+
+# Python
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Game files are never part of the repository
+*.rpx
+*.rpl
+*.sbitemico
+!assets/wiiu/Item_AP.sbitemico
+
+# Local configuration and client state
+botw_client.json
+.botw_client_state.json
+.botw_client_state.json.tmp
+.botw_index_cache.json
+
+# Local laboratory, backups and tools
+lab/
+backups/
+external_tools/
+Manual/
+seeds/
+.claude/
+
+# Editors
+.idea/
+.vscode/
+*.blend1

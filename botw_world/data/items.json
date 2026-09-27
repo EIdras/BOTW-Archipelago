@@ -1,0 +1,272 @@
+[
+  {
+    "name": "Paraglider",
+    "category": [
+      "Paraglider"
+    ],
+    "progression": true,
+    "early": true,
+    "id": 1
+  },
+  {
+    "name": "Magnesis",
+    "category": [
+      "Rune"
+    ],
+    "progression": true,
+    "id": 2
+  },
+  {
+    "name": "Remote Bomb",
+    "category": [
+      "Rune"
+    ],
+    "progression": true,
+    "id": 3
+  },
+  {
+    "name": "Stasis",
+    "category": [
+      "Rune"
+    ],
+    "progression": true,
+    "id": 4
+  },
+  {
+    "name": "Cryonis",
+    "category": [
+      "Rune"
+    ],
+    "progression": true,
+    "id": 5
+  },
+  {
+    "name": "Sheikah Sensor",
+    "category": [
+      "Rune"
+    ],
+    "useful": true,
+    "id": 6
+  },
+  {
+    "name": "Warm Doublet",
+    "category": [
+      "Climate",
+      "Armour"
+    ],
+    "progression": true,
+    "id": 7
+  },
+  {
+    "name": "Snowquill Set",
+    "category": [
+      "Climate",
+      "Armour"
+    ],
+    "progression": true,
+    "id": 8
+  },
+  {
+    "name": "Flamebreaker Set",
+    "category": [
+      "Climate",
+      "Armour"
+    ],
+    "progression": true,
+    "id": 9
+  },
+  {
+    "name": "Desert Voe Set",
+    "category": [
+      "Climate",
+      "Armour"
+    ],
+    "progression": true,
+    "id": 10
+  },
+  {
+    "name": "Zora Set",
+    "category": [
+      "Climate",
+      "Armour"
+    ],
+    "progression": true,
+    "id": 11
+  },
+  {
+    "name": "Rubber Set",
+    "category": [
+      "Climate",
+      "Armour"
+    ],
+    "useful": true,
+    "id": 12
+  },
+  {
+    "name": "Revali's Gale",
+    "category": [
+      "Champion Ability"
+    ],
+    "progression": true,
+    "id": 13
+  },
+  {
+    "name": "Daruk's Protection",
+    "category": [
+      "Champion Ability"
+    ],
+    "progression": true,
+    "id": 14
+  },
+  {
+    "name": "Urbosa's Fury",
+    "category": [
+      "Champion Ability"
+    ],
+    "progression": true,
+    "id": 15
+  },
+  {
+    "name": "Mipha's Grace",
+    "category": [
+      "Champion Ability"
+    ],
+    "progression": true,
+    "id": 16
+  },
+  {
+    "name": "Progressive Climbing Gear",
+    "category": [
+      "Armour"
+    ],
+    "progression": true,
+    "count": 3,
+    "id": 17
+  },
+  {
+    "name": "Progressive Stealth Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "count": 3,
+    "id": 18
+  },
+  {
+    "name": "Heart Container",
+    "category": [
+      "Vessel"
+    ],
+    "progression": true,
+    "count": 17,
+    "progression_skip_balancing": true,
+    "id": 19
+  },
+  {
+    "name": "Stamina Vessel",
+    "category": [
+      "Vessel"
+    ],
+    "progression": true,
+    "count": 5,
+    "early": true,
+    "id": 20
+  },
+  {
+    "name": "Master Sword",
+    "useful": true,
+    "id": 21
+  },
+  {
+    "name": "Hylian Shield",
+    "useful": true,
+    "id": 22
+  },
+  {
+    "name": "Champion's Tunic",
+    "useful": true,
+    "id": 23
+  },
+  {
+    "name": "Ancient Bridle",
+    "useful": true,
+    "id": 24
+  },
+  {
+    "name": "Ancient Saddle",
+    "useful": true,
+    "id": 25
+  },
+  {
+    "name": "Barbarian Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 26
+  },
+  {
+    "name": "Ancient Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 27
+  },
+  {
+    "name": "Radiant Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 28
+  },
+  {
+    "name": "Spirit Orb",
+    "filler": true,
+    "count": 20,
+    "id": 29
+  },
+  {
+    "name": "Ancient Core",
+    "filler": true,
+    "count": 10,
+    "id": 30
+  },
+  {
+    "name": "Star Fragment",
+    "filler": true,
+    "count": 8,
+    "id": 31
+  },
+  {
+    "name": "Korok Seed",
+    "filler": true,
+    "count": 15,
+    "id": 32
+  },
+  {
+    "name": "Fairy",
+    "filler": true,
+    "count": 6,
+    "id": 33
+  },
+  {
+    "name": "Blood Moon",
+    "trap": true,
+    "count": 4,
+    "id": 34
+  },
+  {
+    "name": "Weapon Shatter",
+    "trap": true,
+    "count": 4,
+    "id": 35
+  },
+  {
+    "name": "Rupee Bundle",
+    "filler": true,
+    "count": 0,
+    "id": 36
+  }
+]

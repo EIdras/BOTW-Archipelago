@@ -1,0 +1,284 @@
+import json
+import asyncio
+import tempfile
+import threading
+import unittest
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, Mock, patch
+
+ROOT = Path(__file__).resolve().parents[1]
+
+from tools import cemu_profile
+from tools.cemu_profile import play_account_dat
+from tools.play_session import enabled_packs, remove_aids, tree_hashes
+
+SOURCE_ACCOUNT = ("AccountInstance_20120705\nPersistentId=80000001\n"
+               "TransferableIdBase=200000402a7c36e\n"
+               "Uuid=223026b4f405dcfd54d32a0702a7c36e\nMiiName=0064\n")
+
+
+class AccountTests(unittest.TestCase):
+    def test_the_play_account_differs_only_by_its_identifiers(self):
+        out = play_account_dat(SOURCE_ACCOUNT).splitlines()
+        self.assertEqual(out[1], "PersistentId=80000003")
+        self.assertEqual(out[2], "TransferableIdBase=200000402000003")
+        self.assertEqual(out[3], "Uuid=223026b4f405dcfd54d32a0702000003")
+        self.assertEqual([out[0], out[4]], [SOURCE_ACCOUNT.splitlines()[0],
+                                            SOURCE_ACCOUNT.splitlines()[4]])
+
+    def test_only_the_copied_account_is_used_as_a_model(self):
+        with self.assertRaises(ValueError):
+            play_account_dat(SOURCE_ACCOUNT.replace("80000001", "80000002"))
+
+    def test_every_launch_names_its_account(self):
+        import inspect
+        source = inspect.getsource(cemu_profile.prepare_play)
+        self.assertIn("persistent.text = str(PLAY_ACCOUNT)", source)
+        self.assertEqual((cemu_profile.SOURCE_ACCOUNT, cemu_profile.PLAY_ACCOUNT),
+                         (0x80000001, 0x80000003))
+
+
+class LauncherTests(unittest.TestCase):
+    def test_the_launcher_exists(self):
+        text = (ROOT / "Jouer-Partie.cmd").read_bytes()
+        self.assertIn(rb"tools\play_session.py", text)
+        self.assertIn(b"\r\n", text)
+
+
+class AidTests(unittest.TestCase):
+    """First play session: no aid was loaded (the Cemu log lists only the AP
+    patch groups), but the aid folders were still sitting in the profile."""
+
+    def make_profile(self, root: Path) -> Path:
+        packs = root / "graphicPacks"
+        for name in ("AP_Test8d_InfiniteHearts", "AP_Test9w_BossLife",
+                     "AP_Ledger_796aa895aad1ffff"):
+            (packs / name).mkdir(parents=True)
+            (packs / name / "rules.txt").write_text("[Definition]\n", encoding="utf-8")
+        (root / "settings.xml").write_text(
+            '<?xml version="1.0"?><content><GraphicPack>'
+            '<Entry filename="graphicPacks/AP_Ledger_796aa895aad1ffff/rules.txt"/>'
+            "</GraphicPack></content>", encoding="utf-8")
+        return root
+
+    def test_aids_are_deleted_and_the_seed_pack_kept(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            root = self.make_profile(Path(folder))
+            self.assertEqual(remove_aids(root),
+                             ["AP_Test8d_InfiniteHearts", "AP_Test9w_BossLife"])
+            self.assertEqual([p.name for p in (root / "graphicPacks").iterdir()],
+                             ["AP_Ledger_796aa895aad1ffff"])
+            self.assertEqual(remove_aids(root), [])   # idempotent
+
+    def test_only_the_seed_pack_is_enabled(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            root = self.make_profile(Path(folder))
+            self.assertEqual(enabled_packs(root),
+                             ["graphicPacks/AP_Ledger_796aa895aad1ffff/rules.txt"])
+
+    def test_the_session_refuses_a_profile_with_another_pack(self):
+        import inspect
+        from tools import play_session
+        source = inspect.getsource(play_session.main)
+        self.assertIn("removed = remove_aids(portable)", source)
+        self.assertIn("le profil de partie charge autre chose", source)
+
+class CrashReportTests(unittest.TestCase):
+    """The first session died without leaving a trace: the console crashed and
+    session.json stayed 'running'."""
+
+    def test_the_session_captures_native_and_python_crashes(self):
+        import inspect
+        from tools import play_session
+        source = inspect.getsource(play_session.main)
+        self.assertIn("faulthandler.enable(sys.stderr)", source)
+        self.assertIn("threading.excepthook", source)
+        self.assertIn('Stream(sys.stderr, session / "stderr.log")', source)
+
+class HashTests(unittest.TestCase):
+    def test_missing_folder_has_no_hashes(self):
+        self.assertEqual(tree_hashes(ROOT / "does-not-exist"), {})
+
+
+class ConsoleRoutingTests(unittest.IsolatedAsyncioTestCase):
+    async def test_input_returning_after_console_shutdown_is_discarded(self):
+        from tools.play_session import console
+        started, release = threading.Event(), threading.Event()
+        errors, threads = [], []
+        original_thread = threading.Thread
+        def input_later():
+            started.set()
+            if not release.wait(3): raise TimeoutError('test input not released')
+            return '/send Simon Rupee Bundle'
+        def thread(*, target, **kwargs):
+            def captured():
+                try: target()
+                except BaseException as exc: errors.append(exc)
+            worker = original_thread(target=captured, **kwargs)
+            threads.append(worker)
+            return worker
+        runtime, context = Mock(), Mock()
+        runtime.stop_event.is_set.return_value = False
+        with patch('builtins.input', side_effect=input_later), \
+                patch('tools.play_session.threading.Thread', side_effect=thread):
+            task = asyncio.create_task(console(runtime, context, Mock(), "Simon"))
+            try:
+                for _ in range(100):
+                    if started.is_set(): break
+                    await asyncio.sleep(.01)
+                self.assertTrue(started.is_set())
+                task.cancel()
+                with self.assertRaises(asyncio.CancelledError): await task
+            finally:
+                release.set()
+                for worker in threads: worker.join(1)
+        self.assertTrue(all(not worker.is_alive() for worker in threads))
+        self.assertEqual(errors, [])
+        context.commandprocessor.assert_not_called()
+        runtime.handle_local_command.assert_not_called()
+
+    async def dispatch(self, line, local=False):
+        from tools.play_session import console
+        runtime = Mock()
+        runtime.stop_event.is_set.side_effect = [False, True]
+        runtime.handle_local_command.return_value = local
+        runtime.ap.say = AsyncMock()
+        context = Mock()
+        def thread(*, target, **kwargs):
+            return Mock(start=target)
+        with patch('builtins.input', side_effect=[line, EOFError]), \
+                patch('tools.play_session.threading.Thread', side_effect=thread):
+            await console(runtime, context, Mock(), "Simon")
+        return runtime, context
+
+    async def test_recovery_command_stays_local(self):
+        runtime, context = await self.dispatch('/ap-replay received/7', local=True)
+        runtime.handle_local_command.assert_called_once_with('/ap-replay received/7')
+        context.commandprocessor.assert_not_called()
+        runtime.ap.say.assert_not_awaited()
+
+    async def test_server_command_keeps_archipelago_slash_marker(self):
+        runtime, context = await self.dispatch('/send Simon Rupee Bundle')
+        context.commandprocessor.assert_called_once_with('/send Simon Rupee Bundle')
+        runtime.ap.say.assert_not_awaited()
+
+    async def test_ordinary_message_goes_to_chat(self):
+        runtime, context = await self.dispatch('hello')
+        runtime.ap.say.assert_awaited_once_with('hello')
+        context.commandprocessor.assert_not_called()
+
+
+class ShutdownTests(unittest.IsolatedAsyncioTestCase):
+    """Exercise play() without starting Cemu, a socket, or an AP save thread."""
+
+    def setUp(self):
+        from botw_client.protocol import ArchipelagoClient, NetworkItem
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.folder = Path(self.temp.name)
+        self.ap = ArchipelagoClient("localhost:38281", "Simon")
+        self.ap.item_name_by_id = {100: "Paraglider", 101: "Remote Bomb"}
+        # AP indices, not item ids; insertion order need not be index order.
+        self.ap.received_items = {1: NetworkItem(101, 202, 1, 1),
+                                  0: NetworkItem(100, 201, 1, 1)}
+        self.ap.checked_locations = {202, 201}
+        self.runtime = SimpleNamespace(ap=self.ap, _native_session_bound=True,
+                                       run=AsyncMock(), stop=Mock())
+        self.events = []
+        self.context = Mock(save_filename=str(self.folder / "server.apsave"))
+
+        def save():
+            self.events.append("save")
+            # Independent of display-name formatting in the session report.
+            Path(self.context.save_filename).write_text(json.dumps({
+                "received_indices": sorted(self.ap.received_items),
+                "checked_locations": sorted(self.ap.checked_locations),
+            }), encoding="utf-8")
+            return True
+
+        self.context._save.side_effect = save
+        self.server = AsyncMock()
+        self.server.__aexit__.return_value = False
+
+    async def run_play(self):
+        from tools.play_session import play
+        modules = {
+            "MultiServer": SimpleNamespace(Context=Mock(return_value=self.context),
+                                           server=Mock()),
+            "worlds": SimpleNamespace(network_data_package={"games": {}}),
+            "botw_client.runtime": SimpleNamespace(
+                BotwClientRuntime=Mock(return_value=self.runtime)),
+        }
+        with patch.dict("sys.modules", modules), \
+                patch("websockets.serve", return_value=self.server), \
+                patch("tools.play_session.console", new_callable=AsyncMock):
+            return await play(self.folder, {"archive": "unused.zip",
+                                            "audit": {"slots": {"1": "Simon"}}},
+                              self.folder, self.folder, Mock(poll=Mock(return_value=0)), Mock(),
+                              journal=False)
+
+    def assert_saved(self):
+        self.context._save.assert_called_once_with()
+        data = json.loads(Path(self.context.save_filename).read_text(encoding="utf-8"))
+        self.assertEqual(data["received_indices"], sorted(self.ap.received_items))
+        self.assertEqual(data["checked_locations"], [201, 202])
+
+    async def test_received_items_are_reported_in_ap_index_order(self):
+        async def close(*args):
+            self.events.append("server_closed")
+            return False
+        self.server.__aexit__.side_effect = close
+        summary = await self.run_play()
+        self.assertEqual(summary["received_items"], ["Paraglider", "Remote Bomb"])
+        self.assertEqual(summary["checked_locations"], [201, 202])
+        self.assertTrue(summary["native_session_bound"])
+        self.assertEqual(self.events, ["server_closed", "save"])
+        self.assert_saved()
+
+    async def test_session_without_received_items_saves(self):
+        self.ap.received_items.clear()
+        self.assertEqual((await self.run_play())["received_items"], [])
+        self.assert_saved()
+
+    async def test_report_failure_does_not_prevent_save(self):
+        self.ap.item_name = Mock(side_effect=ValueError("broken report"))
+        with self.assertRaisesRegex(ValueError, "broken report"):
+            await self.run_play()
+        self.assert_saved()
+
+    async def test_runtime_failure_does_not_prevent_save(self):
+        self.runtime.run.side_effect = RuntimeError("client failed")
+        with self.assertRaisesRegex(RuntimeError, "client failed"):
+            await self.run_play()
+        self.assert_saved()
+
+    async def test_cancellation_does_not_prevent_save(self):
+        self.runtime.run.side_effect = asyncio.CancelledError
+        with self.assertRaises(asyncio.CancelledError):
+            await self.run_play()
+        self.assert_saved()
+
+    async def test_server_start_failure_does_not_prevent_save(self):
+        self.server.__aenter__.side_effect = OSError("port busy")
+        with self.assertRaisesRegex(OSError, "port busy"):
+            await self.run_play()
+        self.assert_saved()
+
+    async def test_server_close_failure_does_not_prevent_save(self):
+        self.server.__aexit__.side_effect = RuntimeError("close failed")
+        with self.assertRaisesRegex(RuntimeError, "close failed"):
+            await self.run_play()
+        self.assert_saved()
+
+    async def test_false_save_result_is_not_reported_as_success(self):
+        self.context._save.side_effect = None
+        self.context._save.return_value = False
+        with self.assertRaisesRegex(OSError, "sauvegarde finale"):
+            await self.run_play()
+        self.context._save.assert_called_once_with()
+
+if __name__ == "__main__":
+    unittest.main()

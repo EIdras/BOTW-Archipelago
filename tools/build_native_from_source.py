@@ -1,0 +1,124 @@
+"""Rebuild the native component from maintained sources and an explicit RPX.
+
+This is NOT an installable mod: resources/EventFlow and seed binding are a
+separate next stage. No historical .build candidate is an input. Optional
+standalone probes are emitted separately from runtime files. Embedded legacy
+instrumentation is deliberately preserved pending a dedicated ABI audit.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path[:] = [str(ROOT)] + [p for p in sys.path
+                            if Path(p).resolve() != ROOT / 'tools']
+
+RPX_SHA256 = 'ba58da5b95ce929e005d058ceb08b9b2788d1ab2bbc8a6c189bbadca0bb34d30'
+SOURCE_FILES = (
+    'native/cemu/legacy/patch_apInject.asm', 'native/cemu/ui_close_trace.asm',
+    'tools/build_native_from_source.py', 'tools/build_scoped_text.py',
+    'tools/build_owned_presentation.py', 'tools/native_presentation_join.py',
+    'tools/build_event_end_trace.py', 'tools/build_rune_selection_sync.py',
+    'tools/build_world_heart_withhold.py', 'tools/build_hero_soul_restore_withhold.py',
+    'tools/build_event_request_trace.py', 'tools/build_ui_lifecycle.py',
+    'tools/build_request_reject_trace.py', 'tools/build_tip_channel.py',
+    'botw_client/tip_protocol.py',
+)
+
+
+def digest(raw):
+    return hashlib.sha256(raw).hexdigest()
+
+
+def encode(data):
+    return (json.dumps(data, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode('utf-8')
+
+
+def generate(*, resource_gate=False, event_gate=False):
+    """Pure native assembly generation; no dump, candidate or Cemu access."""
+    from tools.build_scoped_text import scoped_source
+    from tools.build_owned_presentation import patch_native, owner_source
+    from tools.build_rune_selection_sync import patch_injection as rune
+    from tools.build_world_heart_withhold import patch_injection as heart
+    from tools.build_hero_soul_restore_withhold import patch_injection as restore
+    from tools.build_event_request_trace import trace_source as event
+    from tools.build_ui_lifecycle import trace_source as lifecycle
+    from tools.build_request_reject_trace import trace_source as reject
+
+    legacy = (ROOT / 'native/cemu/legacy/patch_apInject.asm').read_bytes()
+    injection = patch_native(scoped_source(legacy)).decode('utf-8').replace('\r\n', '\n')
+    current_owner = owner_source()
+    if injection.count(current_owner) != 1:
+        raise ValueError('owner source is not unique')
+    # Match the pack actually tested in game, not the separate 9c2 candidate.
+    injection = injection.replace(current_owner,
+        owner_source(2, retired_guard=True, resource_gate=resource_gate, event_gate=event_gate))
+    injection = restore(heart(rune(injection)))
+    # The AP journal in the game's tip frame (validated in game, 25/09).
+    from tools.build_tip_channel import compose as tip_channel
+    injection = tip_channel(injection)
+    from tools.patch_lint import lint
+    problems = lint(injection)
+    if problems:
+        raise ValueError('injection refused before Cemu: ' + '; '.join(problems[:5]))
+    return {
+        'runtime/patch_apInject.asm': injection.encode('utf-8'),
+        'runtime/patch_event_request.asm': event().encode('utf-8'),
+        'diagnostics/patch_ui_close_trace.asm': (ROOT / 'native/cemu/ui_close_trace.asm').read_bytes(),
+        'diagnostics/patch_ui_lifecycle.asm': lifecycle(version=2).encode('utf-8'),
+        'diagnostics/patch_request_reject_trace.asm': reject().encode('utf-8'),
+    }
+
+
+def build(rpx: Path, output: Path, *, resource_gate=False, event_gate=False) -> Path:
+    raw = rpx.read_bytes()
+    if digest(raw) != RPX_SHA256:
+        raise ValueError('RPX incompatible : fournir le dump Wii U EUR v208 vérifié')
+    files = generate(resource_gate=resource_gate, event_gate=event_gate)
+    source_hashes = {name: digest((ROOT / name).read_bytes()) for name in SOURCE_FILES}
+    hashes = {name: digest(data) for name, data in sorted(files.items())}
+    manifest = {
+        'schema': 1, 'component': 'native_only',
+        'status': 'not_installable_without_resources', 'installed': False,
+        'platform': 'wiiu', 'revision': 'EUR v208', 'rpx_sha256': RPX_SHA256,
+        'source_hashes': source_hashes, 'files': hashes,
+        'options': {'owned_presentation': 2, 'retired_executor_guard': True,
+                    'tip_channel': True,
+                    'resource_gate': resource_gate, 'event_gate': event_gate, 'gameplay_aids': False},
+        'runtime_files': sorted(n for n in files if n.startswith('runtime/')),
+        'optional_diagnostics': sorted(n for n in files if n.startswith('diagnostics/')),
+        'limits': ['resources_and_seed_binding_not_built',
+                   'embedded_legacy_instrumentation_retained',
+                   'standalone_probe_removal_not_validated_in_game'],
+    }
+    identity = digest(encode(manifest))[:16]
+    manifest['build_id'] = identity
+    files['manifest.json'] = encode(manifest)
+    target = output.resolve() / identity
+    if target.exists():
+        existing = {p.relative_to(target).as_posix() for p in target.rglob('*') if p.is_file()}
+        if existing != set(files):
+            raise ValueError('native component is incomplete or contains unexpected files')
+        for name, data in files.items():
+            if (target / name).read_bytes() != data:
+                raise ValueError(f'immutable native component changed: {name}')
+        return target
+    for name, data in files.items():
+        path = target / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+    return target
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--rpx', type=Path, required=True)
+    parser.add_argument('--output', type=Path, default=ROOT / '.build/native-from-source')
+    parser.add_argument('--resource-gate', action='store_true')
+    parser.add_argument('--event-gate', action='store_true')
+    args = parser.parse_args()
+    print(build(args.rpx, args.output, resource_gate=args.resource_gate, event_gate=args.event_gate))
