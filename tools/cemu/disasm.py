@@ -145,7 +145,7 @@ def main():
 
     pid = cemu_pid()
     if not pid:
-        sys.exit("Cemu n'est pas lance")
+        sys.exit("Cemu is not running")
     with Process(pid) as p:
         base, _, _ = guest_base(p, find_cave(p) - 12)
         if base is None:

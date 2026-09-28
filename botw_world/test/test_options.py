@@ -27,6 +27,18 @@ class TestOneItemPerShop(BotwTestBase):
         self.assertEqual(len(self.world.shop_prices), 30)
 
 
+class TestDeathLink(BotwTestBase):
+    options = {"death_link": True}
+
+    def test_slot_data_carries_death_link(self) -> None:
+        self.assertIs(self.world.fill_slot_data()["death_link"], True)
+
+
+class TestDeathLinkOffByDefault(BotwTestBase):
+    def test_slot_data_carries_death_link(self) -> None:
+        self.assertIs(self.world.fill_slot_data()["death_link"], False)
+
+
 class TestDivineBeastGoal(BotwTestBase):
     options = {"goal_type": "divine_beasts", "divine_beasts_required": 4}
 

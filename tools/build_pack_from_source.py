@@ -30,6 +30,23 @@ RUNTIME = {"patch_apInject.asm", "patch_event_request.asm"}
 DIAGNOSTICS = {"patch_ui_close_trace.asm", "patch_ui_lifecycle.asm", "patch_request_reject_trace.asm"}
 
 
+SCOPES = {"generated_solo_ap_server", "generated_two_slot_ap_server", "generated_ap_seed"}
+
+
+def seed_slot(report_path: Path) -> int:
+    """The BOTW slot a prepared seed is played as (solo seeds: 1)."""
+    return int(json.loads(report_path.read_bytes()).get("botw_slot", 1))
+
+
+def slot_manifests(archive: Path) -> list[dict]:
+    """The BOTW slot files of a seed: those inside its zip, or the file itself."""
+    if archive.suffix.lower() == ".json":
+        return [json.loads(archive.read_bytes())]
+    with zipfile.ZipFile(archive) as zipped:
+        return [json.loads(zipped.read(name)) for name in zipped.namelist()
+                if name.endswith(".apbotw.json")]
+
+
 def load_seed(report_path: Path, slot: int, archive: Path | None = None) -> dict:
     """Verify an audited AP identity against its archive and hashed slot manifest."""
     return _verified_seed(report_path, slot, archive)[0]
@@ -45,8 +62,7 @@ def _verified_seed(report_path: Path, slot: int, archive: Path | None = None) ->
         raise ValueError("invalid AP slot")
     report_raw = report_path.read_bytes()
     report = json.loads(report_raw)
-    if report.get("status") != "passed" or report.get("scope") not in {
-            "generated_solo_ap_server", "generated_two_slot_ap_server"}:
+    if report.get("status") != "passed" or report.get("scope") not in SCOPES:
         raise ValueError("AP identity report has not passed")
     identity = report["delivery"]["sessions"][str(slot)]
     values = tuple(identity[k] for k in ("seed", "team", "slot", "data_package_checksum"))
@@ -58,10 +74,7 @@ def _verified_seed(report_path: Path, slot: int, archive: Path | None = None) ->
     archive = archive if archive is not None else Path(report["archive"])
     if digest(archive.read_bytes()) != report["archive_sha256"]:
         raise ValueError("AP archive checksum mismatch")
-    with zipfile.ZipFile(archive) as zipped:
-        manifests = [json.loads(zipped.read(name)) for name in zipped.namelist()
-                     if name.endswith(".apbotw.json")]
-    matches = [m for m in manifests if m.get("slot") == slot]
+    matches = [m for m in slot_manifests(archive) if m.get("slot") == slot]
     if len(matches) != 1:
         raise ValueError("AP slot manifest absent or ambiguous")
     manifest = dict(matches[0])
@@ -74,7 +87,9 @@ def _verified_seed(report_path: Path, slot: int, archive: Path | None = None) ->
             or manifest.get("seed") != identity["seed"]
             or manifest.get("slot_name") != report["audit"]["slots"][str(slot)]
             or manifest.get("slot_data", {}).get("world_schema") not in (2, 3, 4)
-            or manifest.get("slot_data", {}).get("client_schema") != 3):
+            or manifest.get("slot_data", {}).get("client_schema") != 3
+            or manifest.get("data_package_checksum", identity["data_package_checksum"])
+            != identity["data_package_checksum"]):
         raise ValueError("AP slot manifest identity/schema mismatch")
     return ({**{key: identity[key] for key in
                 ("seed", "team", "slot", "data_package_checksum", "token")},

@@ -2,10 +2,82 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
+import zipfile
 
+from botw_client.session import session_token
 from tests.test_pack_from_source import write_seed
-from tools import play_seed, play_pack
+from tools import build_pack_from_source, play_seed, play_pack
+from tools.build_resources_from_source import digest, encode
+
+
+def slot_file(folder, *, name="Player", slot=1, checksum="checksum", **extra):
+    """A BOTW slot file, as the world writes it (placements left empty)."""
+    manifest = {"schema": 1, "game": "Breath of the Wild", "seed": "test-seed", "slot": slot,
+                "slot_name": name, "slot_data": {"world_schema": 4, "client_schema": 3},
+                "placements": [], "shops": [], **extra}
+    if checksum is not None:
+        manifest["data_package_checksum"] = checksum
+    manifest["content_sha256"] = digest(json.dumps(manifest, ensure_ascii=False, sort_keys=True,
+                                                   separators=(",", ":")).encode())
+    path = folder / f"AP_test-seed_P{slot}_{name}.apbotw.json"
+    path.write_bytes(encode(manifest))
+    return path
+
+
+class SlotFileTests(unittest.TestCase):
+    """A seed hosted elsewhere (archipelago.gg): the slot file alone binds the pack."""
+
+    def read(self, path, name=None):
+        with patch.object(play_seed, "expected_placements", return_value=0):
+            return play_seed.read_seed(path, name)
+
+    def test_the_slot_file_gives_the_servers_identity(self):
+        with tempfile.TemporaryDirectory() as temp:
+            audit, identity = self.read(slot_file(Path(temp), slot=3, name="Simon"))
+        self.assertEqual(identity, {"seed": "test-seed", "team": 0, "slot": 3,
+                                    "data_package_checksum": "checksum",
+                                    "token": session_token(("test-seed", 0, 3, "checksum"))})
+        self.assertEqual((audit["slots"], audit["hostable"]), ({"3": "Simon"}, False))
+
+    def test_an_older_slot_file_asks_for_the_zip(self):
+        with tempfile.TemporaryDirectory() as temp:
+            with self.assertRaisesRegex(ValueError, "from its zip"):
+                self.read(slot_file(Path(temp), checksum=None))
+
+    def test_an_altered_slot_file_is_refused(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = slot_file(Path(temp))
+            path.write_bytes(path.read_bytes().replace(b'"Player"', b'"Other"'))
+            with self.assertRaisesRegex(ValueError, "manifest hash"):
+                self.read(path)
+
+    def test_a_zip_with_several_botw_players_needs_a_name(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            archive = root / "seed.zip"
+            with zipfile.ZipFile(archive, "w") as zipped:
+                for slot, name in ((1, "Alice"), (2, "Bob")):
+                    path = slot_file(root, slot=slot, name=name)
+                    zipped.writestr(path.name, path.read_bytes())
+            with self.assertRaisesRegex(ValueError, "--slot: Alice, Bob"):
+                self.read(archive)
+            with self.assertRaisesRegex(ValueError, "named Carol"):
+                self.read(archive, "Carol")
+
+    def test_a_slot_file_seed_is_prepared_for_its_slot(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source = slot_file(root, slot=4, name="Simon")
+            with patch.object(play_seed, "PLAY_SEEDS", root / "play"), \
+                    patch.object(play_seed, "expected_placements", return_value=0), \
+                    patch("tools.build_pack_from_source.build", return_value=root / "pack") as build, \
+                    patch("tools.play_pack.select_pack"):
+                report, _ = play_seed.prepare(source, content=root / "dump", rpx=root / "game.rpx")
+            self.assertEqual(build.call_args.args[3], 4)
+            self.assertEqual(build_pack_from_source.seed_slot(report), 4)
+            binding = play_pack.load_seed(report, 4)
+            self.assertEqual((binding["slot"], binding["slot_name"]), (4, "Simon"))
 
 
 class PreparationTests(unittest.TestCase):
@@ -16,17 +88,16 @@ class PreparationTests(unittest.TestCase):
             data = json.loads(report.read_text())
             identity = data["delivery"]["sessions"]["1"]
             with patch.object(play_seed, "PLAY_SEEDS", root / "play"), \
-                    patch.object(play_seed, "audit_zip", return_value=data["audit"]), \
-                    patch.object(play_seed, "identify", new_callable=AsyncMock, return_value=identity) as identify, \
+                    patch.object(play_seed, "read_seed", return_value=(data["audit"], identity)) as read, \
                     patch("tools.build_pack_from_source.build", return_value=root / "pack") as build, \
                     patch("tools.play_pack.select_pack") as select:
                 new_report, pack = play_seed.prepare(archive, content=root / "dump", rpx=root / "game.rpx")
-                identify.assert_awaited_once_with(new_report.parent / archive.name, "Player")
+                read.assert_called_once_with(archive, None)
                 build.assert_called_once()
                 select.assert_called_once_with(new_report.parent, pack)
                 self.assertEqual(play_pack.load_seed(new_report, 1)["token"], identity["token"])
 
-    def test_existing_progress_is_not_reidentified_and_uses_source_builder(self):
+    def test_existing_progress_keeps_its_report_and_uses_source_builder(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             folder = root / "test-seed"
@@ -34,14 +105,13 @@ class PreparationTests(unittest.TestCase):
             report, archive = write_seed(folder)
             original = report.read_bytes()
             (folder / "seed.apsave").write_bytes(b"server progress")
-            audit = json.loads(original)["audit"]
+            data = json.loads(original)
             with patch.object(play_seed, "PLAY_SEEDS", root), \
-                    patch.object(play_seed, "audit_zip", return_value=audit), \
-                    patch.object(play_seed, "identify", new_callable=AsyncMock) as identify, \
+                    patch.object(play_seed, "read_seed",
+                                 return_value=(data["audit"], data["delivery"]["sessions"]["1"])), \
                     patch("tools.build_pack_from_source.build", return_value=root / "pack") as build, \
                     patch("tools.play_pack.select_pack") as select:
                 result = play_seed.prepare(archive, content=root / "dump", rpx=root / "game.rpx")
-                identify.assert_not_called()
                 build.assert_called_once_with(root / "dump", root / "game.rpx", report, 1,
                                                play_seed.ROOT / ".build/packs-from-source",
                                                resource_gate=True, event_gate=True)
@@ -58,8 +128,10 @@ class PreparationTests(unittest.TestCase):
             report, archive = write_seed(folder)
             pointer = folder / "play-pack.json"
             pointer.write_bytes(b"previous selection")
+            data = json.loads(report.read_text())
             with patch.object(play_seed, "PLAY_SEEDS", root), \
-                    patch.object(play_seed, "audit_zip", return_value=json.loads(report.read_text())["audit"]), \
+                    patch.object(play_seed, "read_seed",
+                                 return_value=(data["audit"], data["delivery"]["sessions"]["1"])), \
                     patch("tools.build_pack_from_source.build", side_effect=ValueError("bad dump")), \
                     patch("tools.play_pack.select_pack") as select:
                 with self.assertRaisesRegex(ValueError, "bad dump"):

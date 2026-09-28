@@ -5,7 +5,6 @@
     python tools/cemu/getdemo.py Item_Ore_E --title "Bombs" --desc "Sent by Alice"
     python tools/cemu/getdemo.py Item_Ore_E --title "{2}Bombs{/} (Alice)"
     python tools/cemu/getdemo.py Item_Fruit_A --colors   # the 7 indices on screen
-    python tools/cemu/getdemo.py Item_Fruit_A --photo
 
 MARKUP, the same as the dialog box's
 
@@ -179,7 +178,7 @@ def main():
 
     # Testing `startswith("--")` does not work: a title may start with dashes,
     # which is exactly the case of measuring rulers.
-    FLAGS = {"--state", "--photo", "--force", "--title", "--desc",
+    FLAGS = {"--state", "--force", "--title", "--desc",
              "--colors", "--legacy"}
 
     def val(name):
@@ -306,15 +305,6 @@ def main():
         if not ok and (title is not None or desc is not None):
             c.sub_disarm()
             print("substitution disarmed (the call did not go through)")
-
-        if "--photo" in opt:
-            import subprocess
-            time.sleep(0.7)
-            out = pathlib.Path(__file__).resolve().parents[2] / "getdemo.png"
-            subprocess.run([sys.executable,
-                            str(pathlib.Path(__file__).with_name("shot.py")),
-                            str(out), "--jeu"], check=False)
-            print(f"photo: {out}")
 
         if e:
             print("\nClose the window with the button before playing on:\n"

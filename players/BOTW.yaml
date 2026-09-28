@@ -13,4 +13,7 @@ Breath of the Wild:
   # 0 to 2 Archipelago items at each of Beedle's 16 shops, and on each of the 14 village stalls
   beedle_shop_items: 2
   stall_shop_items: 2
+  # When you die, everyone with DeathLink dies; when they die, so do you
+  # (Mipha's Grace and fairies still save Link)
+  death_link: true
   start_inventory_from_pool: {}

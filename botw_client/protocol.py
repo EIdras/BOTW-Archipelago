@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import json
 import time
 import uuid
@@ -124,13 +123,8 @@ class ArchipelagoClient:
 
     @property
     def data_package_checksum(self) -> str:
-        payload = {
-            "game": self.game,
-            "items": self.item_name_by_id,
-            "locations": self.location_id_by_name,
-        }
-        encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"))
-        return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+        from .session import data_package_checksum
+        return data_package_checksum(self.game, self.item_name_by_id, self.location_id_by_name)
 
     async def connect(self, timeout: float = 15.0):
         import aiohttp
@@ -250,7 +244,7 @@ class ArchipelagoClient:
             self.connected = True
             self.death_link_enabled = bool(self.slot_data.get("death_link", False))
             self.log(f"connected to {self.seed_name}, slot {self.slot_name} ({self.slot})")
-            self.log("DeathLink: " + ("actif" if self.death_link_enabled else
+            self.log("DeathLink: " + ("on" if self.death_link_enabled else
                                       "off in this seed"))
             # A BOTW location can contain an item belonging to any game.
             games = {self.game}
@@ -337,7 +331,7 @@ class ArchipelagoClient:
                 event = DeathLinkEvent(
                     timestamp,
                     str(data.get("source") or "another player"),
-                    str(data.get("cause") or "DeathLink"))
+                    str(data.get("cause") or ""))
                 await self.deathlinks.put(event)
 
     async def scout_locations(self, names: list[str], timeout: float = 15.0):

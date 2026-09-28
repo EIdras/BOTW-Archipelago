@@ -35,6 +35,7 @@ after the hash of its content), reproducible, and verified before every use (`ve
   - Beedle's stocks and the village stalls, with an Archipelago item actor, icon, 3D model and texts in every language
     (`botw_patch/shops.py`, `botw_patch/stalls.py`).
   - The Archipelago logo in the HUD (`botw_patch/hud_layout.py`) and the "Archipelago" key item (`botw_patch/status_item.py`).
+  - The DeathLink entry (`botw_patch/death_link.py`).
   - The resource size table, updated for every changed file.
 - **Native code** (`tools/build_native_from_source.py`): Cemu patches (`patch_apInject.asm` and companions) assembled
   from `native/cemu/` and a chain of transformations (`tools/build_*.py`). They install a code cave with a mailbox the
@@ -43,7 +44,10 @@ after the hash of its content), reproducible, and verified before every use (`ve
   one it was built for (SHA-256).
 
 The pack is bound to its seed: a token derived from the seed, team, slot and data package is written into the pack
-and, on the first connection, into the save (`APBindSession`). A save bound to another seed is refused.
+and, on the first connection, into the save (`APBindSession`). A save bound to another seed is refused. The world
+writes the data package's checksum into the slot file (`BotwWorld.data_package_checksum`, the same as the client's,
+`botw_client/session.py`), and the team is always 0: `tools/play_seed.py` binds a pack from the seed's zip or from the
+slot file alone, without reaching any server.
 
 ## The client (`botw_client/`)
 
@@ -62,12 +66,16 @@ and, on the first connection, into the save (`APBindSession`). A save bound to a
   Archipelago window (`presentation_session.py`) summarizes items given back after a reload; the HUD logo shows the
   connection status (`hud_indicator.py`).
 - **Shops**: when a shop list is open, the client hints the Archipelago items it shows (`shop_state.py`).
+- **DeathLink**: Link's death (`CurrentHart` at 0) is sent to the room; a received death is announced in the journal,
+  then requests the pack's entry `OperationGuide<APDeathLink>`, the game's own damage action with a lethal value
+  ([death_link.md](reference/death_link.md)).
 
 ## The play session (`tools/play_session.py`)
 
-Runs the Archipelago server of the seed in process (its state saved next to the seed), Cemu on the isolated profile of
-`tools/cemu_profile.py` with the seed's pack as its only graphic pack, and the client, until Cemu closes. Each session
-writes its logs to `.build/play-seeds/<seed>/sessions/`.
+Runs Cemu on the isolated profile of `tools/cemu_profile.py` with the seed's pack as its only graphic pack, and the
+client, until Cemu closes. The client joins the room hosting the seed (`--connect`, archipelago.gg for instance), or
+the Archipelago server of the seed, run in process from its zip (its state saved next to the seed; `--host` opens it
+to the network for the other players). Each session writes its logs to `.build/play-seeds/<seed>/sessions/`.
 
 ## Technical notes
 

@@ -138,9 +138,19 @@ class BotwWorld(World):
         self.multiworld.itempool.extend(pool)
 
     def fill_slot_data(self) -> dict[str, Any]:
-        return {"client_schema": 3, "world_schema": 4, "death_link": False,
+        return {"client_schema": 3, "world_schema": 4,
+                "death_link": bool(self.options.death_link.value),
                 **self.options.as_dict("goal_type", "shrines_required", "divine_beasts_required",
                                        "beedle_shop_items", "stall_shop_items")}
+
+    @classmethod
+    def data_package_checksum(cls) -> str:
+        """The client's checksum of this game's DataPackage, as botw_client/session.py
+        computes it from what the server sends (item ids, location ids)."""
+        payload = {"game": GAME, "items": {code: name for name, code in cls.item_name_to_id.items()},
+                   "locations": dict(cls.location_name_to_id)}
+        encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
     def generate_output(self, output_directory: str) -> None:
         """The slot manifest the game pack is built from: placements and shop prices."""
@@ -157,6 +167,9 @@ class BotwWorld(World):
                                    "flags": int(loc.item.classification)})
         manifest = {"schema": 1, "game": GAME, "seed": self.multiworld.seed_name,
                     "slot": self.player, "slot_name": self.multiworld.player_name[self.player],
+                    # With the seed, the slot and the team (always 0), what binds the game
+                    # pack to this slot: the file alone is enough to build it.
+                    "data_package_checksum": self.data_package_checksum(),
                     "slot_data": self.fill_slot_data(), "placements": placements,
                     "shops": [{"location_id": location_id, "price": price}
                               for location_id, price in sorted(self.shop_prices.items())]}

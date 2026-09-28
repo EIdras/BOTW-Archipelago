@@ -4,15 +4,21 @@ import os
 from pathlib import Path
 import tempfile
 
-from tools.build_pack_from_source import ROOT, load_seed, verify_pack
+from tools.build_pack_from_source import ROOT, load_seed, seed_slot, verify_pack
 from tools.build_resources_from_source import digest, encode
+
+
+def seed_binding(folder: Path) -> dict:
+    """The verified identity of a prepared seed, for its BOTW slot."""
+    report = folder / "analysis.json"
+    return load_seed(report, seed_slot(report))
 
 
 def select_pack(folder: Path, pack: Path) -> None:
     pack = pack.resolve()
     if not pack.is_relative_to(ROOT.resolve()):
         raise ValueError("selected play pack must be inside the project")
-    verify_pack(pack, load_seed(folder / "analysis.json", 1))
+    verify_pack(pack, seed_binding(folder))
     raw = encode({"schema": 1, "pack": pack.relative_to(ROOT.resolve()).as_posix(),
                   "manifest_sha256": digest((pack / "manifest.json").read_bytes())})
     target = folder / "play-pack.json"
@@ -37,5 +43,5 @@ def selected_pack(folder: Path) -> Path:
         raise ValueError("invalid play pack selection")
     if digest((pack / "manifest.json").read_bytes()) != data["manifest_sha256"]:
         raise ValueError("selected pack manifest changed")
-    verify_pack(pack, load_seed(folder / "analysis.json", 1))
+    verify_pack(pack, seed_binding(folder))
     return pack

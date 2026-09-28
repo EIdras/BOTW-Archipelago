@@ -8,7 +8,7 @@ the village stalls become locations of the multiworld. The paraglider, the runes
 heart containers and stamina vessels are shuffled into it, and arrive in your game while you play, presented by the
 game itself.
 
-**Status: version 1.0.** Single-player seeds, generated and hosted locally with the project's tools.
+**Status: version 1.0.** Solo seeds and multiworlds with other games, hosted on archipelago.gg or on your own server.
 
 ## Features
 
@@ -23,6 +23,8 @@ game itself.
 - **Connection status**: an Archipelago logo in the HUD, in color when connected, and an "Archipelago" key item with
   the seed and slot.
 - **Checks never lost**: locations are the game's own saved flags, sent at the next connection when done offline.
+- **DeathLink** (option): when Link dies, the other DeathLink players die; when one of them dies, Link dies, as he
+  would of a lethal blow (Mipha's Grace and fairies still save him).
 
 ## Requirements
 
@@ -43,15 +45,18 @@ venv\Scripts\python tools\play_seed.py .build\native-seeds\AP_<seed>.zip --conte
 Play.cmd --seed <seed>
 ```
 
+In a multiworld hosted on archipelago.gg, the pack is built from your slot file (`.apbotw.json`, in the seed's zip),
+and the session joins the room: `Play.cmd --seed <seed> --connect archipelago.gg:<port>`.
+
 The Archipelago world alone is packaged with `tools\package_native.py` as `dist\botw.apworld`. What the world does,
 its locations, items, goal and logic: [game page](botw_world/docs/en_Breath%20of%20the%20Wild.md).
 
 ## Limitations
 
 - Only the European Wii U version, update v208, in Cemu on Windows.
-- The game pack is built from the multiworld's generated archive, so seeds are generated and hosted locally, by the
-  player; multiplayer seeds and rooms hosted on archipelago.gg are not supported yet.
-- DeathLink and traps are not available.
+- The game pack is built for one seed: Archipelago's website cannot generate a seed with this world, which is
+  generated with Archipelago on a computer (then hosted anywhere).
+- Traps are not available.
 
 ## Documentation
 

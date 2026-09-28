@@ -53,7 +53,7 @@ hashes = dict(manifest['files'])
 hashes['delivery_catalog.json'] = digest((a / 'delivery_catalog.json').read_bytes())
 # All 16 resources + the delivery catalog.
 assert len(manifest['files']) == 16
-assert digest(encode(hashes)) == '74207570a7f979691781b045bc2e6fcbd2040373a02c5ab8a1ce7f50fc466385', 'new pin: ' + digest(encode(hashes))
+assert digest(encode(hashes)) == 'a4e61d1f32a6df0bd339c5ff124af9b219ea3c6bdd1a4fc3d08213b69f996766', 'new pin: ' + digest(encode(hashes))
 assert manifest['gameplay_aids'] is False
 assert manifest['status'] == 'not_installable'
 (a / 'content/Pack/Bootup.pack').write_bytes(b'altered')

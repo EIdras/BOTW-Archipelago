@@ -127,13 +127,14 @@ class ConsoleRoutingTests(unittest.IsolatedAsyncioTestCase):
         context.commandprocessor.assert_not_called()
         runtime.handle_local_command.assert_not_called()
 
-    async def dispatch(self, line, local=False):
+    async def dispatch(self, line, local=False, remote=False, online=True):
         from tools.play_session import console
         runtime = Mock()
         runtime.stop_event.is_set.side_effect = [False, True]
         runtime.handle_local_command.return_value = local
         runtime.ap.say = AsyncMock()
-        context = Mock()
+        runtime.ap.connected = online
+        context = None if remote else Mock()
         def thread(*, target, **kwargs):
             return Mock(start=target)
         with patch('builtins.input', side_effect=[line, EOFError]), \
@@ -156,6 +157,14 @@ class ConsoleRoutingTests(unittest.IsolatedAsyncioTestCase):
         runtime, context = await self.dispatch('hello')
         runtime.ap.say.assert_awaited_once_with('hello')
         context.commandprocessor.assert_not_called()
+
+    async def test_a_remote_room_gets_commands_as_players_type_them(self):
+        runtime, _ = await self.dispatch('/hint Paraglider', remote=True)
+        runtime.ap.say.assert_awaited_once_with('!hint Paraglider')
+        runtime, _ = await self.dispatch('/hint Paraglider', remote=True, online=False)
+        runtime.ap.say.assert_not_awaited()
+        runtime, _ = await self.dispatch('/ap-deathlink', local=True, remote=True)
+        runtime.ap.say.assert_not_awaited()
 
 
 class ShutdownTests(unittest.IsolatedAsyncioTestCase):
@@ -206,6 +215,25 @@ class ShutdownTests(unittest.IsolatedAsyncioTestCase):
                                             "audit": {"slots": {"1": "Player"}}},
                               self.folder, self.folder, Mock(poll=Mock(return_value=0)), Mock(),
                               journal=False)
+
+    async def test_a_remote_room_needs_no_local_server(self):
+        from tools.play_session import play
+        factory = Mock(return_value=self.runtime)
+        context = Mock(side_effect=AssertionError("no local server"))
+        modules = {"MultiServer": SimpleNamespace(Context=context, server=Mock()),
+                   "botw_client.runtime": SimpleNamespace(BotwClientRuntime=factory)}
+        with patch.dict("sys.modules", modules), \
+                patch("websockets.serve", side_effect=AssertionError("no socket")), \
+                patch("tools.play_session.console", new_callable=AsyncMock) as console:
+            summary = await play(self.folder, {"archive": "slot.apbotw.json", "botw_slot": 3,
+                                               "audit": {"slots": {"3": "Simon"}}},
+                                 self.folder, self.folder, Mock(poll=Mock(return_value=0)), Mock(),
+                                 journal=False, connect="archipelago.gg:38281", password="secret")
+        self.assertEqual(factory.call_args.args, ("archipelago.gg:38281", "Simon", "secret"))
+        self.assertIsNone(console.call_args.args[1])       # commands go to the room as chat
+        self.assertEqual(summary["server"], "archipelago.gg:38281")
+        self.assertEqual(summary["received_items"], ["Paraglider", "Remote Bomb"])
+        self.context._save.assert_not_called()
 
     def assert_saved(self):
         self.context._save.assert_called_once_with()

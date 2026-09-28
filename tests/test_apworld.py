@@ -62,6 +62,24 @@ class RuntimeTests(unittest.TestCase):
         result = run_in_runtime("-m", "unittest", "discover", "-s", "worlds/botw/test", "-t", ".")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_the_slot_file_checksum_is_the_clients(self):
+        # A pack is bound from the slot file alone: the world must write the
+        # checksum the client computes from the DataPackage the server sends.
+        script = (
+            "import sys\n"
+            "sys.path.insert(0, sys.argv[1])\n"
+            "import worlds\n"
+            "from worlds.botw import BotwWorld\n"
+            "from botw_client.session import data_package_checksum\n"
+            "package = worlds.network_data_package['games']['Breath of the Wild']\n"
+            "served = data_package_checksum('Breath of the Wild',\n"
+            "    {v: k for k, v in package['item_name_to_id'].items()}, package['location_name_to_id'])\n"
+            "assert BotwWorld.data_package_checksum() == served, (BotwWorld.data_package_checksum(), served)\n"
+            "print('same')\n")
+        result = run_in_runtime("-c", script, str(ROOT))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("same", result.stdout)
+
     def test_the_zipped_world_imports_and_reads_its_data(self):
         script = (
             "import sys, zipimport\n"

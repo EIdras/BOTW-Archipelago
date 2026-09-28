@@ -93,7 +93,7 @@ def request(process, cave, number, checkpoint, custom_text=False, *,
     if not state["manager_available"] or not pf_ready or not ui_ready:
         result.update(status="not_ready")
         checkpoint(result)
-        raise RuntimeError("Gestionnaire/invocateur non pret")
+        raise RuntimeError("Event manager or invoker not ready")
     if ui["screen"] or ui["name"] or not ui["manager"] or word(cave.pf_req) or word(cave.opn_req):
         raise RuntimeError("Window or request already present")
     title, _, desc, _, auto = cave.sub_state()

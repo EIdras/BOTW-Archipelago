@@ -1,7 +1,8 @@
 # Breath of the Wild Multiworld Setup Guide
 
 This guide sets up the tools of the BOTW Archipelago project on Windows: generating a seed, building the game pack of
-that seed, and playing it in Cemu with the Archipelago client. The commands run from the project's folder.
+that seed, and playing it in Cemu with the Archipelago client, alone or with other players, on a room of
+archipelago.gg or on your own server. The commands run from the project's folder.
 
 ## Requirements
 
@@ -35,44 +36,66 @@ copy botw_client.example.json botw_client.json
 
 ## Generating a seed
 
-Edit `players\BOTW.yaml` (player name, goal, shop options), then:
+**Alone**: edit `players\BOTW.yaml` (player name, goal, shop options, DeathLink), then:
 
 ```bat
 venv\Scripts\python tools\generate_native.py
 ```
 
-The multiworld archive is written to `.build\native-seeds\AP_<seed>.zip`. Only single-player Breath of the Wild seeds
-are supported for now.
+The seed is written to `.build\native-seeds\AP_<seed>.zip`.
+
+**With other players**: the person who generates needs every player's YAML file, and the worlds of their games. For
+Breath of the Wild, that is `botw.apworld` (`venv\Scripts\python tools\package_native.py` writes it to `dist\`),
+installed in Archipelago's `custom_worlds` folder. Generate with Archipelago as usual; the seed's zip holds, for each
+Breath of the Wild player, a slot file `AP_<seed>_P<n>_<name>.apbotw.json`. To host the game on
+[archipelago.gg](https://archipelago.gg), upload that zip on its "Host Game" page: it then gives the room's address,
+`archipelago.gg:<port>`.
 
 ## Building the game pack
 
 ```bat
-venv\Scripts\python tools\play_seed.py .build\native-seeds\AP_<seed>.zip --content <update content folder> --rpx <U-King.rpx>
+venv\Scripts\python tools\play_seed.py <seed file> --content <update content folder> --rpx <U-King.rpx>
 ```
 
-The update content folder is the `content` folder of the installed update, usually
-`%APPDATA%\Cemu\mlc01\usr\title\0005000e\101c9500\content`. The tool checks the archive, keeps a copy of it in
-`.build\play-seeds\<seed>\`, reads the session identity from a local server, builds the pack bound to this seed and
-selects it.
+- The seed file is the seed's zip, or your own slot file (`.apbotw.json`, taken from the zip), which is all you need
+  to play in a room hosted elsewhere. When the zip holds several Breath of the Wild players, name yours with
+  `--slot <name>`.
+- The update content folder is the `content` folder of the installed update, usually
+  `%APPDATA%\Cemu\mlc01\usr\title\0005000e\101c9500\content`.
+
+The tool checks the seed, keeps a copy of the file in `.build\play-seeds\<seed>\`, builds the pack bound to your slot
+of this seed and selects it.
 
 ## Playing
+
+In a room hosted elsewhere, archipelago.gg for instance:
+
+```bat
+Play.cmd --seed <seed> --connect archipelago.gg:<port>
+```
+
+Add `--password <password>` if the room has one. On a server of your own, from the seed's zip:
 
 ```bat
 Play.cmd --seed <seed>
 ```
 
-This starts the Archipelago server on `127.0.0.1:38281`, Cemu on its isolated profile with only the seed's pack, and
-the client. Start a **new game** for a new seed: saves are bound to the seed they were started with. Play normally;
-close Cemu to end the session. The server keeps its state next to the seed, so progress carries over between sessions.
+This starts the Archipelago server on this computer, port 38281, keeping its state next to the seed so that progress
+carries over between sessions. With `--host`, the server listens on the network too: the other players connect to
+your computer's address, port 38281 (over the Internet, that port must be forwarded to your computer).
 
-Lines typed in the console go to the server as commands (`/hint`, `/players`, `/status`...) or as chat. The client
-adds its own commands:
+In every case Cemu starts on its isolated profile with only the seed's pack, then the client. Start a **new game**
+for a new seed: saves are bound to the seed they were started with. Play normally; close Cemu to end the session.
+
+Lines typed in the console go to the server as commands (`/hint`, `/players`, `/status`...; sent to a remote room as
+`!hint`, `!players`...) or as chat. The client adds its own commands:
 
 | Command                | What it does                                                 |
 |------------------------|--------------------------------------------------------------|
 | `/ap-tip <text>`       | show a line in the in-game Archipelago journal (test)        |
 | `/ap-disconnect [s]`   | simulate a server disconnection for `s` seconds              |
 | `/ap-evt [n\|reset]`    | list the game's last event requests (diagnostic)             |
+| `/ap-deathlink [cause]` | kill Link as a received DeathLink would (test, sent to nobody) |
 
 ## Troubleshooting
 

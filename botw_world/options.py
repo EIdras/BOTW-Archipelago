@@ -1,7 +1,7 @@
 """Player options of the Breath of the Wild world."""
 from dataclasses import dataclass
 
-from Options import Choice, OptionGroup, PerGameCommonOptions, Range, StartInventoryPool
+from Options import Choice, DeathLink, OptionGroup, PerGameCommonOptions, Range, StartInventoryPool
 
 
 class Goal(Choice):
@@ -61,6 +61,7 @@ class BotwOptions(PerGameCommonOptions):
     divine_beasts_required: BeastsRequired
     beedle_shop_items: BeedleShopItems
     stall_shop_items: StallShopItems
+    death_link: DeathLink
 
 
 OPTION_GROUPS = [

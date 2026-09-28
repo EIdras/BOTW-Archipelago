@@ -9,7 +9,8 @@ By default only what concerns this slot:
   * items it sends to other players;
   * hints about its items or locations;
   * chat, which can be turned off.
-Other players' traffic is hidden unless asked.
+Other players' traffic is hidden unless asked. The client adds its own lines:
+the connection status, and a DeathLink received before Link dies.
 """
 from __future__ import annotations
 
@@ -39,6 +40,11 @@ def coloured(entry: dict, render: Callable[[dict], str]) -> str:
                   "item_id": ITEM, "item_name": ITEM}.get(node.get("type"))
         out.append(f"{{{colour}}}{text}{{/}}" if colour is not None and text else text)
     return "".join(out).strip() or _plain(entry.get("text", "")).strip()
+
+
+def death_link_line(source: str, cause: str) -> str:
+    """A DeathLink received from another player, shown before Link dies."""
+    return "{0}DeathLink{/}: " + (_plain(cause).strip() or f"{_plain(source)} died")
 
 
 def is_received_item(entry: dict, me: int) -> bool:

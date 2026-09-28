@@ -128,7 +128,7 @@ class BotwGame:
             self._validate_delivery_flags()
         if not self.native_presentation_mode:
             progress("BOTW save ledger: " +
-                     ("disponible" if self.save_ledger_available
+                     ("available" if self.save_ledger_available
                       else "unavailable (external state fallback)"))
         self.locations = LocationTracker(
             process, index, load_targets(), live=self.live)
@@ -418,7 +418,7 @@ class BotwGame:
             self.delivery_block_reason = (
                 f"stable for {elapsed:.1f}/{SAFE_STABLE_SECONDS:.0f}s")
             return False
-        self.delivery_block_reason = "pret"
+        self.delivery_block_reason = "ready"
         return True
 
     def bind_ap_session(self, token: int):
@@ -591,16 +591,13 @@ class BotwGame:
             self.process.write(address, saved)
 
     def is_dead(self) -> bool:
-        """CurrentHart is the likely death edge, not confirmed in the game."""
-        return self._read_flag("CurrentHart", "s32") <= 0
+        """Link is dead: CurrentHart is 0 from the death until the reload.
 
-    def kill_player(self):
-        """Keep an incoming DeathLink pending until BOTW's death API is known.
-
-        Measured: writing CurrentHart=0 changes the tracked
-        flag without executing the native death/reload sequence. Repeating that
-        write would corrupt state while falsely acknowledging the DeathLink.
-        Instrument the natural-death writer, then replace this stub by a call
-        to the verified game function.
+        Measured on natural deaths and lethal damage: CurrentHart reaches 0 at
+        the frame the game requests its death cutscene (Demo006_0) and stays
+        there through the Game Over screen (about 9 s). A rescue (Mipha's
+        Grace) never goes through 0, and every load, after a death or from the
+        menu, goes through 99999, never 0. Writing 0 does not kill: the
+        DeathLink entry of the pack does (botw_patch/death_link.py).
         """
-        return False
+        return self._read_flag("CurrentHart", "s32") <= 0

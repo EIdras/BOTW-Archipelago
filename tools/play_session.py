@@ -1,17 +1,24 @@
-"""A play session: Cemu, a local AP server and the client, together.
+"""A play session: Cemu, the client and an AP server, together.
 
     python tools/play_session.py [--seed <seed folder name>] [--speed <x>]
+                                 [--connect <address> [--password <p>] | --host]
 
-  * the pack bound to a solo play seed (tools/play_seed.py), the only graphic
-    pack enabled in the isolated Cemu profile (tools/cemu_profile.py);
+  * the pack bound to the seed's BOTW slot (tools/play_seed.py), the only
+    graphic pack enabled in the isolated Cemu profile (tools/cemu_profile.py);
   * a Cemu account of its own, so that a new game never overwrites the saves
     copied from the Cemu installation, which are checked unchanged at the end;
-  * the official AP server, in process, on 127.0.0.1:38281, saving its state
-    next to the seed archive (.apsave): progress carries over between sessions;
+  * the AP server:
+      - with --connect, the room the seed is hosted in, archipelago.gg for
+        instance (--connect archipelago.gg:38281);
+      - otherwise the official AP server, in process, on port 38281, saving
+        its state next to the seed's zip (.apsave): progress carries over
+        between sessions. It listens on this computer only, or with --host on
+        every network interface, for the other players of a multiworld;
   * the client runtime (native deliveries, presentations, AP journal), whose
     state also lives in the seed folder, until Cemu closes.
 Lines typed in the console go to the AP server as chat or commands (/hint,
-/status...), or to the client (/ap-... commands).
+/status...; sent as !hint, !status... to a remote room), or to the client
+(/ap-... commands).
 
 Each launch writes .build/play-seeds/<seed>/sessions/<stamp>/ : the client
 log, Cemu's log, and session.json (checks sent, items received, cursor, save
@@ -70,10 +77,10 @@ def find_seed(name: str | None, pack_path: Path | None = None) -> tuple[Path, di
     if sha(archive) != report["archive_sha256"]:
         raise RuntimeError("the seed archive changed")
     if pack_path is not None:
-        from tools.build_pack_from_source import load_seed, verify_pack
-        binding = load_seed(folder / "analysis.json", 1)
+        from tools.build_pack_from_source import verify_pack
+        from tools.play_pack import seed_binding
         pack_path = pack_path.resolve()
-        verify_pack(pack_path, binding)
+        verify_pack(pack_path, seed_binding(folder))
         return folder, report, pack_path
     from tools.play_pack import selected_pack
     return folder, report, selected_pack(folder)
@@ -119,8 +126,15 @@ class Tee:
         print(text, flush=True)
 
 
+def slot_name(report: dict) -> str:
+    """The name of the seed's BOTW slot, the one the client connects as."""
+    return report["audit"]["slots"][str(report.get("botw_slot", 1))]
+
+
 async def console(runtime, context, log, slot_name: str) -> None:
-    """Typed lines: /command for the AP server, anything else as AP chat."""
+    """Typed lines: /command for the AP server, anything else as AP chat.
+    Without a local server (context None), a command goes to the room as the
+    players type them in chat: /hint x as !hint x."""
     lines: asyncio.Queue = asyncio.Queue()
     loop = asyncio.get_running_loop()
     reader_stopped = threading.Event()
@@ -142,9 +156,12 @@ async def console(runtime, context, log, slot_name: str) -> None:
                 raise
 
     threading.Thread(target=reader, name="console", daemon=True).start()
-    log(f"Console: /send {slot_name} <item>, /hint {slot_name} <item>, /players, /status; "
+    server = (f"/send {slot_name} <item>, /hint {slot_name} <item>, /players, /status"
+              if context is not None else "/hint <item>, /players, /status (sent to the room as !hint...)")
+    log(f"Console: {server}; "
         "/ap-tip <text> (in-game journal); /ap-disconnect [s] (simulated AP outage); "
         "/ap-evt [n|reset] (event requests seen by the game); "
+        "/ap-deathlink [cause] (test: a DeathLink received, sent to nobody); "
         "any other text goes to the AP chat.")
     try:
         while not runtime.stop_event.is_set():
@@ -154,8 +171,12 @@ async def console(runtime, context, log, slot_name: str) -> None:
             try:
                 if runtime.handle_local_command(line):
                     continue
-                if line.startswith("/"):
+                if line.startswith("/") and context is not None:
                     context.commandprocessor(line)
+                elif line.startswith("/") and not runtime.ap.connected:
+                    log("command not sent: Archipelago is offline")
+                elif line.startswith("/"):
+                    await runtime.ap.say("!" + line[1:])
                 elif runtime.ap.connected:
                     await runtime.ap.say(line)
                 else:
@@ -167,11 +188,60 @@ async def console(runtime, context, log, slot_name: str) -> None:
 
 
 async def play(folder: Path, report: dict, pack: Path, session: Path,
-               process: subprocess.Popen, log: Tee, *, journal: bool) -> dict:
+               process: subprocess.Popen, log: Tee, *, journal: bool,
+               connect: str | None = None, password: str | None = None,
+               host: bool = False) -> dict:
+    """The client until Cemu closes, on the room at `connect`, or on a local
+    server hosting the seed (on every interface with `host`)."""
+    from botw_client.runtime import BotwClientRuntime
+    from botw_client.tip_channel import TipChannel
+
+    def on_loop_error(_loop, context_data):
+        log("asyncio error: " + context_data.get("message", ""))
+        error = context_data.get("exception")
+        if error is not None:
+            traceback.print_exception(type(error), error, error.__traceback__)
+
+    async def client(address: str, context) -> dict:
+        asyncio.get_running_loop().set_exception_handler(on_loop_error)
+        name = slot_name(report)
+        runtime = BotwClientRuntime(
+            address, name, password, state_path=folder / "client-state.json",
+            log=log, game_name=GAME, native_presentations=True, native_delivery=True,
+            tip_factory=TipChannel if journal else None,
+            game_process_alive=lambda: process.poll() is None,
+            delivery_catalog_path=pack / "delivery_catalog.json")
+
+        async def watch_cemu():
+            while process.poll() is None:
+                await asyncio.sleep(1.0)
+            log("Cemu closed: client stopping.")
+            runtime.stop()
+
+        watcher = asyncio.create_task(watch_cemu())
+        chat = asyncio.create_task(console(runtime, context, log, name))
+        try:
+            await runtime.run()
+        finally:
+            for task in (watcher, chat):
+                task.cancel()
+            await asyncio.gather(watcher, chat, return_exceptions=True)
+        return {
+            "checked_locations": sorted(runtime.ap.checked_locations),
+            "checked_names": sorted(runtime.ap.location_name(i) or str(i)
+                                    for i in runtime.ap.checked_locations)
+            if hasattr(runtime.ap, "location_name") else None,
+            "received_items": [runtime.ap.item_name(runtime.ap.received_items[index])
+                               for index in sorted(runtime.ap.received_items)],
+            "native_session_bound": runtime._native_session_bound,
+        }
+
+    if connect is not None:
+        log(f"Archipelago room: {connect}, slot {slot_name(report)}")
+        return {"server": connect, **await client(connect, None)}
+
     import websockets
     from MultiServer import Context, server
-    from botw_client.runtime import BotwClientRuntime
-
     import worlds
     for package in worlds.network_data_package["games"].values():
         package.setdefault("item_name_groups", {})
@@ -179,51 +249,15 @@ async def play(folder: Path, report: dict, pack: Path, session: Path,
     context = Context("127.0.0.1", PORT, "", "", 0, 0, False)
     context.load(report["archive"])
     context.init_save(True)          # .apsave next to the archive copy
-    summary = {"server_save": context.save_filename}
+    summary = {"server": f"local, port {PORT}" + (", every interface" if host else ""),
+               "server_save": context.save_filename}
+    interface = "0.0.0.0" if host else "127.0.0.1"
     try:
-        async with websockets.serve(functools.partial(server, ctx=context),
-                                    "127.0.0.1", PORT):
-            log(f"local AP server ready on 127.0.0.1:{PORT}")
-
-            def on_loop_error(_loop, context_data):
-                log("asyncio error: " + context_data.get("message", ""))
-                error = context_data.get("exception")
-                if error is not None:
-                    traceback.print_exception(type(error), error, error.__traceback__)
-
-            asyncio.get_running_loop().set_exception_handler(on_loop_error)
-            from botw_client.tip_channel import TipChannel
-            slot_name = report["audit"]["slots"]["1"]
-            runtime = BotwClientRuntime(
-                f"ws://127.0.0.1:{PORT}", slot_name, state_path=folder / "client-state.json",
-                log=log, game_name=GAME, native_presentations=True, native_delivery=True,
-                tip_factory=TipChannel if journal else None,
-                game_process_alive=lambda: process.poll() is None,
-                delivery_catalog_path=pack / "delivery_catalog.json")
-
-            async def watch_cemu():
-                while process.poll() is None:
-                    await asyncio.sleep(1.0)
-                log("Cemu closed: client stopping.")
-                runtime.stop()
-
-            watcher = asyncio.create_task(watch_cemu())
-            chat = asyncio.create_task(console(runtime, context, log, slot_name))
-            try:
-                await runtime.run()
-            finally:
-                for task in (watcher, chat):
-                    task.cancel()
-                await asyncio.gather(watcher, chat, return_exceptions=True)
-                summary.update({
-                    "checked_locations": sorted(runtime.ap.checked_locations),
-                    "checked_names": sorted(runtime.ap.location_name(i) or str(i)
-                                            for i in runtime.ap.checked_locations)
-                    if hasattr(runtime.ap, "location_name") else None,
-                    "received_items": [runtime.ap.item_name(runtime.ap.received_items[index])
-                                       for index in sorted(runtime.ap.received_items)],
-                    "native_session_bound": runtime._native_session_bound,
-                })
+        async with websockets.serve(functools.partial(server, ctx=context), interface, PORT):
+            log(f"local AP server ready on {interface}:{PORT}"
+                + (": the other players connect to this computer's address, port "
+                   f"{PORT}" if host else ""))
+            summary.update(await client(f"ws://127.0.0.1:{PORT}", context))
     finally:
         # Reporting and server shutdown must never prevent the final AP save.
         # MultiServer catches write errors internally and returns False.
@@ -241,9 +275,22 @@ def main() -> None:
     from tools.play_speed import speed_argument, variant
     parser.add_argument("--speed", type=speed_argument, default=1.0,
                         help="run/sprint/climb speed multiplier (0.1 to 10, default 1)")
+    server = parser.add_mutually_exclusive_group()
+    server.add_argument("--connect", metavar="ADDRESS",
+                        help="join the room hosting the seed (archipelago.gg:38281...) "
+                             "instead of a local server")
+    server.add_argument("--host", action="store_true",
+                        help=f"the local server listens on every network interface (port {PORT}), "
+                             "for the other players of the seed")
+    parser.add_argument("--password", help="the room's password, with --connect")
     arguments = parser.parse_args()
+    if arguments.password and not arguments.connect:
+        parser.error("--password goes with --connect")
 
     folder, report, pack = find_seed(arguments.seed, arguments.pack)
+    if not arguments.connect and not str(report["archive"]).lower().endswith(".zip"):
+        raise SystemExit("This seed was prepared from its slot file only: a local server needs "
+                         "the seed's zip. Join the room hosting it: --connect <address>.")
     pack_manifest = json.loads((pack / "manifest.json").read_text(encoding="utf-8"))
     # The AP journal lives in the game's tip frame; every pack carries it.
     journal = pack_manifest.get("ap_journal") == "tip_channel"
@@ -297,7 +344,8 @@ def main() -> None:
     result["pid"] = process.pid
     try:
         result.update(asyncio.run(play(folder, report, pack, session, process, log,
-                                      journal=journal)))
+                                      journal=journal, connect=arguments.connect,
+                                      password=arguments.password, host=arguments.host)))
         result["status"] = "finished"
     except KeyboardInterrupt:
         result["status"] = "interrupted"

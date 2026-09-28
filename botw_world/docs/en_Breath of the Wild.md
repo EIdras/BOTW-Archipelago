@@ -57,6 +57,15 @@ its rune, and leaving it needs the Paraglider. Outside the Plateau, every shrine
 conservatively require the Paraglider and all four runes. Some shrine quests need their Divine Beast freed, and the
 Master Sword needs ten Heart Containers. Food and equipment of the normal game are assumed available.
 
+## What does DeathLink do?
+
+With the `death_link` option, Link's death kills the other DeathLink players of the room, with what killed him
+("Player was slain by a Bokoblin", "Player froze to death"...), and their deaths kill Link.
+A received death is first announced in the Archipelago journal, then Link dies as he would of a lethal blow: the
+death animation, the Game Over screen and the reload of the last save. Mipha's Grace and fairies still save him, as
+they would from any lethal blow; the received death is then spent. It waits for a safe moment: not during a
+cutscene, a menu or a loading screen.
+
 ## What does another world's item look like in Breath of the Wild?
 
 Your own items appear as the game shows them. An item for another player is announced in the Archipelago journal, a
@@ -66,6 +75,6 @@ medallion, with the item's name and its recipient.
 ## Current limitations
 
 - Only the European Wii U version, update v208, in Cemu on Windows, is supported.
-- A game pack is built from the multiworld's generated archive: seeds are generated and hosted locally, by the
-  player, with the tools of the project. Rooms hosted on archipelago.gg are not supported yet.
-- DeathLink and traps are not available.
+- Each player builds a game pack for their seed, from their slot file (`.apbotw.json`, in the seed's zip). The seed
+  is generated with Archipelago on a computer, then hosted anywhere, archipelago.gg included.
+- Traps are not available.

@@ -10,7 +10,7 @@ from pathlib import Path
 from .backend import DeliveryCommand, DeliveryCoordinator, DeliveryStatus
 from .game import BotwGame, GameNotReady
 from .locations import SCHEMA_LOCATION_COUNTS, load_targets
-from .protocol import ArchipelagoClient, LocationInfo
+from .protocol import ArchipelagoClient, DeathLinkEvent, LocationInfo
 from .session import session_token
 from .message_text import clip_units, literal_metadata, literal_text, queued_text
 
@@ -23,6 +23,17 @@ MESSAGE_SETTLE_SECONDS = 4.0
 JOURNAL_LEAD_SECONDS = 2.0
 # How long a received item waits for the server's own line before ours.
 JOURNAL_SERVER_WAIT_SECONDS = 3.0
+# A received DeathLink: its journal line is read before Link dies. The entry
+# leaves its flag set on the death it causes (botw_patch/death_link.py): such a
+# death is never sent back. The flag counts for DEATHLINK_FLAG_SECONDS after
+# the request, in case it stayed set on a survival; a pack without the flag
+# falls back on the time alone (measured: Link dies in the frame the entry
+# runs). A death still waiting after DEATHLINK_EXPIRY_SECONDS (Link busy in an
+# event...) is dropped.
+DEATHLINK_LEAD_SECONDS = 3.0
+DEATHLINK_ECHO_SECONDS = 5.0
+DEATHLINK_FLAG_SECONDS = 60.0
+DEATHLINK_EXPIRY_SECONDS = 120.0
 STATE_PATH = Path(__file__).resolve().parent.parent / ".botw_client_state.json"
 GOAL_LOCATION = "Defeat Calamity Ganon"
 STATE_SCHEMA = 3
@@ -186,8 +197,9 @@ class BotwClientRuntime:
         if game_name is not None:
             self.ap.game = game_name
         self.game = game_factory()
-        # Native presentation path. No grants/ledger/DeathLink or
-        # legacy display writes are enabled by choosing this path.
+        # Native presentation path. No grants/ledger or legacy display
+        # writes are enabled by choosing this path; DeathLink goes through
+        # the native delivery backend.
         self.native_presentations = native_presentations
         self.native_delivery = native_delivery
         self.native_mode = native_presentations or native_delivery
@@ -226,6 +238,8 @@ class BotwClientRuntime:
         self._last_game_cursor = None
         self._session_token = None
         self._deathlink_retry_after = 0.0
+        self._deathlink_announced_at = None
+        self._death_requested_at = None
         self._next_delivery_wait_log = 0.0
         self._native_delivery_retry_after = 0.0
         self._native_session_bound = False
@@ -964,60 +978,123 @@ class BotwClientRuntime:
             self.state_store.save()
 
     async def _deathlink_tick(self):
+        """DeathLink, both ways (native delivery only).
+
+        Out: Link's death (game.is_dead, measured) is sent once, on its edge,
+        or when AP comes back if it happened offline, with what killed him
+        (botw_client/death_cause.py). A death the received DeathLink caused is
+        not sent back.
+        In: the latest received death waits for a safe moment, is announced
+        in the journal, then kills Link through the pack's entry
+        (botw_patch/death_link.py). The game's protections apply: Mipha's
+        Grace or a fairy may save him, which spends the DeathLink."""
+        state = self.state
         changed = False
         while True:
             try:
                 event = self.ap.deathlinks.get_nowait()
             except asyncio.QueueEmpty:
                 break
-            if event.timestamp <= float(self.state.get("last_death_link") or 0.0):
+            if event.timestamp <= float(state.get("last_death_link") or 0.0):
                 continue
-            self.state["pending_deathlinks"].append({
-                "time": event.timestamp, "source": event.source,
-                "cause": event.cause})
-            self.state["last_death_link"] = event.timestamp
-            self.log(f"DeathLink queued: {event.source} — {event.cause}")
+            state["last_death_link"] = event.timestamp
+            self.log(f"DeathLink received from {event.source}: {event.cause or '(no cause)'}")
+            if self.ap.death_link_enabled:
+                # Deaths received while one waits are one death.
+                state["pending_deathlinks"] = [{
+                    "time": event.timestamp, "source": event.source,
+                    "cause": event.cause, "received_at": time.time()}]
+                self._deathlink_announced_at = None
             changed = True
         if changed:
             self.state_store.save()
 
-        dead = await asyncio.to_thread(self.game.is_dead)
+        try:
+            dead = await asyncio.to_thread(self.game.is_dead)
+        except Exception:  # noqa: BLE001 - health unreadable (loading): next tick
+            return
         if not dead:
             self._alive_seen = True
         if (self.ap.death_link_enabled and self._alive_seen and dead
                 and self._last_dead is False):
-            if self.ap.connected:
-                await self.ap.send_death(f"{self.ap.slot_name} died in Hyrule")
+            if await self._killed_by_death_link():
+                self.log("Link died of the received DeathLink: not sent back")
             else:
-                self.state["pending_outgoing_death"] = True
-                self.state_store.save()
+                cause = await self._death_cause()
+                if self.ap.connected:
+                    await self.ap.send_death(cause)
+                else:
+                    state["pending_outgoing_death"] = cause
+                    self.state_store.save()
         self._last_dead = dead
 
-        if (self.ap.connected and self.ap.death_link_enabled
-                and self.state["pending_outgoing_death"]):
-            await self.ap.send_death(f"{self.ap.slot_name} died in Hyrule")
-            self.state["pending_outgoing_death"] = False
+        pending_out = state["pending_outgoing_death"]
+        if self.ap.connected and self.ap.death_link_enabled and pending_out:
+            await self.ap.send_death(pending_out if isinstance(pending_out, str)
+                                     else f"{self.ap.slot_name} died in Hyrule")
+            state["pending_outgoing_death"] = False
             self.state_store.save()
 
-        if (self.ap.death_link_enabled and self.state["pending_deathlinks"]
-                and not dead and self._safe_now()
-                and time.monotonic() >= self._deathlink_retry_after):
-            event = self.state["pending_deathlinks"][0]
-            killed = await asyncio.to_thread(self.game.kill_player)
-            if killed:
-                self.state["pending_deathlinks"].pop(0)
-                self._last_dead = True  # received deaths must never echo
-                text = queued_text(event["cause"])
-                if text:
-                    self.state["message_queue"].append({
-                        "text": text, "kind": "DeathLink", "nodes": []})
-                    self.state["message_queue"] = self.state["message_queue"][-100:]
-                self.state_store.save()
-                self.log(f"DeathLink applied from {event['source']}: {event['cause']}")
-            else:
-                self._deathlink_retry_after = time.monotonic() + 10.0
-                self.log("DeathLink not applied: BOTW's death function is not "
-                         "instrumented yet; death kept pending")
+        pending = state["pending_deathlinks"]
+        if not pending or dead or time.monotonic() < self._deathlink_retry_after:
+            return
+        event = pending[0]
+        received = event.get("received_at")
+        if (not self.ap.death_link_enabled or type(received) not in (int, float)
+                or time.time() - received > DEATHLINK_EXPIRY_SECONDS):
+            pending.clear()
+            self._deathlink_announced_at = None
+            self.state_store.save()
+            return
+        if self._deathlink_announced_at is None:
+            if not await asyncio.to_thread(self.game.safe_for_delivery):
+                return
+            from .ap_journal import death_link_line
+            self._journal_note(death_link_line(event["source"], event["cause"]))
+            self._deathlink_announced_at = time.monotonic()
+            return
+        if time.monotonic() - self._deathlink_announced_at < DEATHLINK_LEAD_SECONDS:
+            return
+        request = getattr(getattr(self.deliveries, "backend", None), "request_death", None)
+        result = await asyncio.to_thread(request) if request is not None else None
+        if result is False:
+            self._deathlink_retry_after = time.monotonic() + 1.0
+            return
+        pending.clear()
+        self._deathlink_announced_at = None
+        self.state_store.save()
+        if result is None:
+            self.log("DeathLink not applied: this pack has no DeathLink entry; "
+                     "rebuild it with tools/play_seed.py")
+            return
+        self._death_requested_at = time.monotonic()
+        self.log(f"DeathLink applied: {event['source']}")
+
+    async def _killed_by_death_link(self) -> bool:
+        """Did the DeathLink we requested cause this death? Its flag says so;
+        a pack without it, the time since the request."""
+        if self._death_requested_at is None:
+            return False
+        since = time.monotonic() - self._death_requested_at
+        ask = getattr(getattr(self.deliveries, "backend", None), "killed_by_death_link", None)
+        try:
+            flag = await asyncio.to_thread(ask) if ask is not None else None
+        except Exception:  # noqa: BLE001 - unreadable: the time decides
+            flag = None
+        if flag is None:
+            return since < DEATHLINK_ECHO_SECONDS
+        return flag and since < DEATHLINK_FLAG_SECONDS
+
+    async def _death_cause(self) -> str:
+        """The cause sent with Link's death: what killed him, when the game says."""
+        default = f"{self.ap.slot_name} died in Hyrule"
+        read = getattr(getattr(self.deliveries, "backend", None), "death_cause", None)
+        if read is None:
+            return default
+        try:
+            return await asyncio.to_thread(read, self.ap.slot_name) or default
+        except Exception:  # noqa: BLE001 - memory unreadable: the plain cause
+            return default
 
     async def _reconnect_after(self, delay: float):
         await self._wait_or_stop(delay)
@@ -1252,6 +1329,16 @@ class BotwClientRuntime:
         if parts and parts[0] == '/ap-evt':
             self._event_trace_command(parts[1:])
             return True
+        if parts and parts[0] == '/ap-deathlink':
+            # Test: a DeathLink received from nobody, sent to nobody.
+            if not self.ap.death_link_enabled:
+                self.log('DeathLink is off in this seed.')
+            else:
+                self.ap.deathlinks.put_nowait(DeathLinkEvent(
+                    time.time(), 'Console',
+                    line[len('/ap-deathlink'):].strip() or 'DeathLink test'))
+                self.log('DeathLink test: Link dies at the next safe moment.')
+            return True
         if parts and parts[0] == '/ap-disconnect':
             # Test of the connection status: a real close, the usual
             # reconnection, its first attempt `seconds` later.
@@ -1433,8 +1520,8 @@ class BotwClientRuntime:
                         await self._apply_one_received_native()
                         self._log_delivery_wait()
                         await self._status_item_tick()
+                        await self._deathlink_tick()
                 elif not self.native_presentations:
-                    await self._deathlink_tick()
                     displayed = await self._show_one_location_reward()
                     if not displayed:
                         displayed = await self._show_one_received()

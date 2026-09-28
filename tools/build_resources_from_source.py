@@ -30,7 +30,8 @@ from tools import build_plateau_sensor_candidate as sensor
 from tools import build_master_sword_candidate as sword
 from tools import build_ballad_condition_candidate as ballad
 from tools.build_ballad_upgrade_delivery import champion_entries, transform_for as upgrade_delivery
-from botw_patch import hud_layout
+from botw_patch import death_link, hud_layout
+from botw_patch.status_item import INPUT_HASHES as STATUS_INPUTS
 
 TITLE = "Pack/TitleBG.pack"
 BOOTUP = "Pack/Bootup.pack"
@@ -48,8 +49,12 @@ REWARD_PACKS = {
     "Event/FindDungeon.sbeventpack": "7a29348697eb73e8c17c2e2b9152afd9f271d608655658371cc79c2938ef06ab",
     "Event/Npc_DungeonPriest001.sbeventpack": "0d3015c2a8b23b2a1c6668cf4c534632d32bc20eb1af5f0dd15006594553bf75",
 }
+# The English texts, for the names of what can kill Link (DeathLink); the
+# same version as the Archipelago key item's.
+DEATH_LINK_MESSAGES = {death_link.MESSAGES: STATUS_INPUTS[death_link.MESSAGES]}
 UPDATE_HASHES = {
     **INPUT_HASHES, **REWARD_PACKS, sensor.PACK: sensor.EXPECTED_SOURCE_SHA,
+    **DEATH_LINK_MESSAGES,
     **sword.PACKS,
     **{ballad.pack(name): spec[1] for name, spec in ballad.FLOWS.items()},
 }
@@ -64,7 +69,7 @@ SOURCE_FILES = (
     "botw_patch/resources.py", "botw_patch/events.py", "botw_patch/delivery_flow.py",
     "botw_patch/ledger_experiment.py", "botw_client/delivery_plan.py",
     "botw_client/items.py", "data/item_map.json", "assets/wiiu/Item_AP.sbitemico",
-    "botw_patch/hud_layout.py", "tools/bitemico.py",
+    "botw_patch/hud_layout.py", "tools/bitemico.py", "botw_patch/death_link.py",
 )
 
 
@@ -169,6 +174,15 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
                                         if item.endswith(" (quiet)")}, host=QUIET_FLOW),
     })
     changes.extend(edits)
+    # DeathLink (botw_patch/death_link.py): in every pack, requested only when
+    # the seed has DeathLink on.
+    files, edits = patch_stage(files, TITLE, {QUIET_MEMBER: death_link.add_entry},
+                               extra_archive=(BOOTUP, {death_link.EVENT_INFO: death_link.add_event_info,
+                                                       death_link.GAMEDATA: death_link.add_flag}))
+    changes.extend(edits)
+    catalog["death_link"] = {"entry": death_link.ENTRY, "flow": death_link.FLOW_NAME,
+                             "flag": death_link.FLAG,
+                             "attackers": death_link.attacker_names(inputs[death_link.MESSAGES])}
     # The AP connection indicator of the HUD (botw_patch/hud_layout.py).
     icon = (ROOT / "assets/wiiu/Item_AP.sbitemico").read_bytes()
 

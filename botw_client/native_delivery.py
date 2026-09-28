@@ -63,6 +63,24 @@ class NativeDeliveryCatalog:
         value = self.data.get("status_item")
         return str(value["entry"]) if isinstance(value, dict) and value.get("entry") else None
 
+    def death_link_entry(self) -> tuple[str, str] | None:
+        """(flow, entry) of the pack's DeathLink entry (botw_patch/death_link.py)."""
+        value = self.data.get("death_link")
+        if not isinstance(value, dict) or not value.get("entry") or not value.get("flow"):
+            return None
+        return str(value["flow"]), str(value["entry"])
+
+    def death_link_flag(self) -> str | None:
+        """The volatile flag the DeathLink entry leaves set on the deaths it causes."""
+        value = self.data.get("death_link")
+        return str(value["flag"]) if isinstance(value, dict) and value.get("flag") else None
+
+    def attacker_names(self) -> dict[str, str]:
+        """{actor: English name} of what can kill Link, from the player's game files."""
+        value = self.data.get("death_link")
+        names = value.get("attackers") if isinstance(value, dict) else None
+        return {str(k): str(v) for k, v in names.items()} if isinstance(names, dict) else {}
+
     def steps(self, item_name: str, received_before: int = 0) -> list[dict]:
         item = self.data["items"].get(item_name)
         if item is None:
@@ -300,6 +318,75 @@ class CemuNativeDeliveryBackend:
         entry = self.catalog.status_entry()
         if entry is None:
             return None
+        # Accepted or unknown: the entry is harmless twice.
+        return self._request_once(self.catalog.data["flow"], entry) is not False
+
+    def request_death(self) -> bool | None:
+        """Kill Link through the pack's DeathLink entry: True once the game took
+        the request, False when it is to be asked again later, None when the
+        pack has no such entry. An unknown outcome counts as taken: a death
+        requested twice would kill twice."""
+        found = self.catalog.death_link_entry()
+        if found is None:
+            return None
+        return self._request_once(*found) is not False
+
+    def killed_by_death_link(self) -> bool | None:
+        """Is the DeathLink entry's flag set (a death it caused)? None when the
+        pack has no flag or it cannot be read."""
+        flag = self.catalog.death_link_flag()
+        live = getattr(self.game, "live", None)
+        if flag is None or live is None:
+            return None
+        value = live.get(zlib.crc32(flag.encode()) & 0xFFFFFFFF, "bool")
+        return None if value is None else bool(value)
+
+    def death_cause(self, slot: str) -> str:
+        """The DeathLink cause for Link's death (botw_client/death_cause.py),
+        read at once: the game's own query, its raw value and the attacker."""
+        from . import death_cause as dc
+        process, cave = self.game.process, self.game.cave
+
+        def read(guest, size):
+            return process.read(cave.base + guest, size)
+
+        actor = dc.player(read)
+        killer = dc.attacker(read, actor)
+        cause = self._call(dc.DEAD_CAUSE_QUERY, 0)
+        raw = self._call(dc.DEAD_CAUSE_RAW, actor) if actor is not None else None
+        return dc.death_text(slot, cause, raw, killer, self.catalog.attacker_names())
+
+    def _call(self, address: int, *args, timeout: float = 1.0) -> int | None:
+        """Call a game function from the cave's per-frame hook, as the event
+        requests are made: its r3, or None when it could not be called."""
+        process, cave = self.game.process, self.game.cave
+        _request, lock_factory = self._dependencies()
+
+        def word(host):
+            raw = process.read(host, 4)
+            return int.from_bytes(raw, "big") if raw and len(raw) == 4 else None
+
+        try:
+            with (lock_factory(int(process.pid)) if lock_factory else nullcontext()):
+                if word(cave.pf_req) != 0:
+                    return None
+                before = word(cave.call_n)
+                cave.call_pf(address, *args)
+                try:
+                    deadline = time.monotonic() + timeout
+                    while time.monotonic() < deadline:
+                        if word(cave.call_n) != before:
+                            return word(cave.call_ret)
+                        time.sleep(0.005)
+                    return None
+                finally:
+                    process.write(cave.pf_req, bytes(4))
+        except Exception:  # noqa: BLE001 - lock busy, stale patch: no cause
+            return None
+
+    def _request_once(self, flow: str, entry: str) -> bool | None:
+        """Request an idempotent entry of the session's pack: False when it was
+        not placed (to ask again), True when accepted, None when unknown."""
         token, _cursor, _rejected = self._state()
         since = self._frames_since_commit()
         if (token != self.token or not self._ready()
@@ -310,15 +397,14 @@ class CemuNativeDeliveryBackend:
         with (lock_factory(pid) if lock_factory else nullcontext()):
             try:
                 result = request(self.game.process, self.game.cave, 0, lambda _value: None,
-                                 custom_text=False, flow=self.catalog.data["flow"], entry=entry)
-            except Exception:  # noqa: BLE001 - not placed, or unknown: asked again
+                                 custom_text=False, flow=flow, entry=entry)
+            except Exception:  # noqa: BLE001 - not placed: asked again
                 return False
         if result.get("native_return") == 0:
             return False
-        # Accepted (or unknown: the entry is harmless twice). The next
-        # delivery lets its event run and close first.
+        # The next delivery lets this event run and close first.
         self._committed_at = self._frame()
-        return True
+        return True if result.get("native_return") == 1 else None
 
     def deliver(self, command: DeliveryCommand) -> DeliveryResult:
         token, cursor, rejected = self._state()
