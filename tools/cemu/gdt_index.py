@@ -7,7 +7,7 @@ table sorted by name holding defaults, and a 16-byte hash->index table. A real
 entry is recognised by its neighbours also being known hashes in ascending
 order, which the 16-byte tables never satisfy at an 8-byte stride.
 """
-import json, pathlib, sys
+import pathlib, sys
 import numpy as np
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
@@ -18,7 +18,10 @@ MIN_RUN = 24
 
 
 def load_flags():
-    g = json.load(open(ROOT / "data" / "gamedata.json", encoding="utf-8"))
+    if str(ROOT) not in sys.path:
+        sys.path.append(str(ROOT))
+    from botw_client.gamedata_table import load
+    g = load()
     return ({int(k) & 0xFFFFFFFF: v[1] for k, v in g.items()},
             {int(k) & 0xFFFFFFFF: v[0] for k, v in g.items()},
             {v[1]: int(k) & 0xFFFFFFFF for k, v in g.items()})

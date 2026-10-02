@@ -71,7 +71,7 @@ its locations, items, goal and logic: [game page](botw_world/docs/en_Breath%20of
 - [Archipelago](https://github.com/ArchipelagoMW/Archipelago), the multiworld randomizer this integrates with.
 - [oead](https://github.com/zeldamods/oead), [evfl](https://github.com/zeldamods/evfl) and
   [rstb](https://github.com/zeldamods/rstb) by leoetlino and the zeldamods community, for BOTW's file formats.
-- [botw-tools](https://github.com/MrCheeze/botw-tools) by MrCheeze, for the GameData flag list (`data/gamedata.json`).
+- [botw-tools](https://github.com/MrCheeze/botw-tools) by MrCheeze, whose GameData flag list served to map the locations.
 - The [zeldaret/botw](https://github.com/zeldaret/botw) decompilation, as a reference for the engine.
 - [Switch Toolbox](https://github.com/KillzXGaming/Switch-Toolbox), used to author the Archipelago item's 3D model.
 

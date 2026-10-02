@@ -243,8 +243,8 @@ class BotwGame:
         if name in CUSTOM_FLAGS:
             return CUSTOM_FLAGS[name]
         if self.flag_by_name is None:
-            data = json.loads((ROOT / "data" / "gamedata.json").read_text(
-                encoding="utf-8"))
+            from .gamedata_table import load
+            data = load()
             self.flag_by_name = {
                 flag_name: (int(key) & 0xFFFFFFFF, kind)
                 for key, (kind, flag_name) in data.items()

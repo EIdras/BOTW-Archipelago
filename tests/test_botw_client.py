@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from botw_client import gamedata_table
 from botw_client.items import load_item_map, validate_item_map
 from botw_client.locations import (EXPECTED_LOCATION_COUNT, LocationTarget,
                                    LocationTracker, load_targets)
@@ -35,8 +36,7 @@ class ClientDataTests(unittest.TestCase):
     def test_item_map_is_exact_and_all_flags_exist_with_expected_types(self):
         self.assertEqual(validate_item_map(), (39, 1))
         mapping = load_item_map()
-        gamedata = json.loads((ROOT / "data" / "gamedata.json").read_text(
-            encoding="utf-8"))
+        gamedata = gamedata_table.load()
         types = {name: kind for kind, name in gamedata.values()}
         for name, entry in mapping.items():
             delivery = entry["delivery"]
@@ -52,8 +52,7 @@ class ClientDataTests(unittest.TestCase):
         self.assertEqual(len(targets), EXPECTED_LOCATION_COUNT)
         self.assertEqual(len({target.name for target in targets}), EXPECTED_LOCATION_COUNT)
         self.assertEqual(len({target.hash_u32 for target in targets}), EXPECTED_LOCATION_COUNT)
-        gamedata = json.loads((ROOT / "data" / "gamedata.json").read_text(
-            encoding="utf-8"))
+        gamedata = gamedata_table.load()
         by_name = {name: int(hash_value) & 0xFFFFFFFF
                    for hash_value, (_, name) in gamedata.items()}
         for target in targets:

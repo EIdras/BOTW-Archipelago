@@ -42,8 +42,8 @@ def validate_item_map(items_path: Path = ITEMS_JSON,
     allowed = {"actors", "progressive_actors", "flags", "rune", "counter",
                "counter_at_least", "getdemo_actor", "champion_actor", "manual_prompt", "trap",
                "native_trap"}
-    gamedata = json.loads((ROOT / "data" / "gamedata.json").read_text(
-        encoding="utf-8"))
+    from .gamedata_table import load
+    gamedata = load()
     flag_types = {flag_name: kind for kind, flag_name in gamedata.values()}
     for name, entry in mapping.items():
         delivery = entry.get("delivery", {})

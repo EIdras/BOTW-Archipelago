@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import csv
-import json
 import time
 import zlib
 from dataclasses import dataclass
@@ -10,12 +9,12 @@ from pathlib import Path
 
 import numpy as np
 
+from . import gamedata_table
 from .shop_catalog import CATEGORY as SHOP_CATEGORY, FLAG_KIND as SHOP_FLAG_KIND
 from .stall_catalog import CATEGORY as STALL_CATEGORY
 
 ROOT = Path(__file__).resolve().parent.parent
 MASTER_CSV = ROOT / "data" / "locations_master.csv"
-GAMEDATA_JSON = ROOT / "data" / "gamedata.json"
 # The CSV is append-only; a world schema knows its first N rows. 1: the seeds
 # generated before the Divine Beast heart containers (149 rows); 2: + "Vah X
 # Heart Container" (153 rows); 3: + 32 Beedle shop
@@ -63,7 +62,7 @@ def load_targets(path: Path = MASTER_CSV,
         raise ValueError("duplicate location names")
     if len({target.hash_u32 for target in targets}) != len(targets):
         raise ValueError("duplicate location hashes")
-    gamedata = json.loads(GAMEDATA_JSON.read_text(encoding="utf-8"))
+    gamedata = gamedata_table.load()
     hashes = {flag_name: int(hash_value) & 0xFFFFFFFF
               for hash_value, (_, flag_name) in gamedata.items()}
     # Vanilla flags must match the game's table; custom ones are crc32 of their name.
@@ -75,8 +74,8 @@ def load_targets(path: Path = MASTER_CSV,
     return targets
 
 
-def known_hashes(path: Path = GAMEDATA_JSON) -> np.ndarray:
-    raw = json.loads(path.read_text(encoding="utf-8"))
+def known_hashes() -> np.ndarray:
+    raw = gamedata_table.load()
     return np.array(sorted(int(key) & 0xFFFFFFFF for key in raw), dtype=np.uint32)
 
 

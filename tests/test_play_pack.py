@@ -71,10 +71,11 @@ class SlotFileTests(unittest.TestCase):
             source = slot_file(root, slot=4, name="Simon")
             with patch.object(play_seed, "PLAY_SEEDS", root / "play"), \
                     patch.object(play_seed, "expected_placements", return_value=0), \
-                    patch("tools.build_pack_from_source.build", return_value=root / "pack") as build, \
+                    patch("tools.build_pack_from_source.build", return_value=root / "pack") as build,                     patch("botw_client.gamedata_table.build") as table, \
                     patch("tools.play_pack.select_pack"):
                 report, _ = play_seed.prepare(source, content=root / "dump", rpx=root / "game.rpx")
             self.assertEqual(build.call_args.args[3], 4)
+            table.assert_called_once_with(root / "dump")     # the flag table, from the same game
             self.assertEqual(build_pack_from_source.seed_slot(report), 4)
             binding = play_pack.load_seed(report, 4)
             self.assertEqual((binding["slot"], binding["slot_name"]), (4, "Simon"))
@@ -89,7 +90,7 @@ class PreparationTests(unittest.TestCase):
             identity = data["delivery"]["sessions"]["1"]
             with patch.object(play_seed, "PLAY_SEEDS", root / "play"), \
                     patch.object(play_seed, "read_seed", return_value=(data["audit"], identity)) as read, \
-                    patch("tools.build_pack_from_source.build", return_value=root / "pack") as build, \
+                    patch("tools.build_pack_from_source.build", return_value=root / "pack") as build,                     patch("botw_client.gamedata_table.build") as table, \
                     patch("tools.play_pack.select_pack") as select:
                 new_report, pack = play_seed.prepare(archive, content=root / "dump", rpx=root / "game.rpx")
                 read.assert_called_once_with(archive, None)
@@ -109,7 +110,7 @@ class PreparationTests(unittest.TestCase):
             with patch.object(play_seed, "PLAY_SEEDS", root), \
                     patch.object(play_seed, "read_seed",
                                  return_value=(data["audit"], data["delivery"]["sessions"]["1"])), \
-                    patch("tools.build_pack_from_source.build", return_value=root / "pack") as build, \
+                    patch("tools.build_pack_from_source.build", return_value=root / "pack") as build,                     patch("botw_client.gamedata_table.build") as table, \
                     patch("tools.play_pack.select_pack") as select:
                 result = play_seed.prepare(archive, content=root / "dump", rpx=root / "game.rpx")
                 build.assert_called_once_with(root / "dump", root / "game.rpx", report, 1,

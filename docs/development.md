@@ -10,7 +10,7 @@
 | `tools/` | Command-line tools (seed, pack, play session, packaging) and the builders of the game pack |
 | `tools/cemu/` | Access to Cemu's memory, the code cave mailbox and the native requests; RPX reading |
 | `native/cemu/` | Sources of the Cemu patches the native builder starts from |
-| `data/` | Project data: locations (`locations_master.csv`), item effects (`item_map.json`), GameData flags (`gamedata.json`) |
+| `data/` | Project data: locations (`locations_master.csv`), item effects (`item_map.json`). The GameData flag table is read from the player's game into `.build/gamedata.json` (`botw_client/gamedata_table.py`) |
 | `assets/` | The Archipelago item icon and 3D model |
 | `players/` | Player options read by `tools/generate_native.py` |
 | `tests/` | The project's tests |

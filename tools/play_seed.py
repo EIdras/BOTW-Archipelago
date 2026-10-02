@@ -17,7 +17,9 @@ game pack is built for one Breath of the Wild slot, from either:
 3. reads the session identity the server will give the slot (seed, team 0,
    slot, DataPackage checksum written by the world) and its token;
 4. preserves an existing audited analysis.json on resume, builds the pack
-   from project sources and explicit dumps, and selects it in play-pack.json.
+   from project sources and explicit dumps, and selects it in play-pack.json;
+5. writes the GameData flag table the client reads, from the same update
+   (botw_client/gamedata_table.py).
 
 One person cannot play two BOTW slots of a seed alone: one slot's Paraglider
 may sit behind the other slot's Cryonis terminal.
@@ -150,6 +152,8 @@ def prepare(source: Path, *, content: Path, rpx: Path,
     pack = build(content, rpx, report, slot, ROOT / ".build/packs-from-source",
                  resource_gate=True, event_gate=True)
     select_pack(folder, pack)
+    from botw_client.gamedata_table import build as build_gamedata_table
+    build_gamedata_table(content)
     return report, pack
 
 
