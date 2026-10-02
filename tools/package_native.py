@@ -17,7 +17,7 @@ SOURCE = ROOT / "botw_world"
 LICENSE = ROOT / "LICENSE"
 NAME = "botw"
 CONTAINER_VERSION = 7          # worlds/Files.py container_version (AP 0.6.x)
-SUFFIXES = {".py", ".json", ".md"}
+SUFFIXES = {".py", ".json", ".md", ".csv"}
 
 
 def manifest() -> bytes:

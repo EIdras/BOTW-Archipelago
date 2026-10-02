@@ -89,8 +89,7 @@ class BotwWorld(World):
             loc = BotwLocation(self.player, row["name"],
                                None if row["name"] == GOAL_LOCATION else row["id"], region)
             region.locations.append(loc)
-            needed = requirements(row)
-            set_rule(loc, lambda state, needed=needed: state.has_all(needed, self.player))
+            set_rule(loc, self.rule(requirements(row)))
             if categories(row) & {"Shrine", "Divine Beast"}:
                 # Events counted by the shrine and Divine Beast goals.
                 prefix = "Cleared" if "Shrine" in categories(row) else "Freed"
@@ -102,10 +101,13 @@ class BotwWorld(World):
         goal = self.multiworld.get_location(GOAL_LOCATION, self.player)
         goal.place_locked_item(BotwItem("Victory", ItemClassification.progression, None, self.player))
 
+    def rule(self, groups):
+        """An access rule from requirements(): every group met by one of its items."""
+        player = self.player
+        return lambda state: all(any(state.has(name, player, count) for name in names)
+                                 for names, count in groups)
+
     def set_rules(self) -> None:
-        sword = self.multiworld.get_location("Master Sword Pedestal", self.player)
-        set_rule(sword, lambda state: state.has("Paraglider", self.player)
-                 and state.has("Heart Container", self.player, 10))
         goal = self.multiworld.get_location(GOAL_LOCATION, self.player)
         base = goal.access_rule
 

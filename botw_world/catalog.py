@@ -1,4 +1,5 @@
-"""Explicit, append-only IDs and conservative logic, independent of AP imports."""
+"""Explicit, append-only IDs and the logic, independent of AP imports."""
+import csv
 import json
 from importlib.resources import files
 
@@ -9,18 +10,23 @@ LOCATIONS = json.loads(files(__package__).joinpath("data/locations.json").read_t
 ITEMS = json.loads(files(__package__).joinpath("data/items.json").read_text(encoding="utf-8"))
 RUNES = ("Magnesis", "Remote Bomb", "Stasis", "Cryonis")
 TRAPS = tuple(row["name"] for row in ITEMS if row.get("trap"))
-PLATEAU_RUNES = {"Oman Au Shrine": "Magnesis", "Ja Baij Shrine": "Remote Bomb",
-                  "Owa Daim Shrine": "Stasis", "Keh Namut Shrine": "Cryonis"}
-BEAST_QUESTS = {"Voo Lota Shrine": "Freed - Divine Beast Vah Medoh",
-                "Bareeda Naag Shrine": "Freed - Divine Beast Vah Medoh",
-                "Raqa Zunzo Shrine": "Freed - Divine Beast Vah Naboris"}
-# The heart container appears in the Divine Beast once its boss is beaten
-# (map LinkTagAnd "Create" on Clear_RemainsX); picking it up sets the check.
-BEAST_HEARTS = {"Vah Ruta Heart Container": "Freed - Divine Beast Vah Ruta",
-                "Vah Rudania Heart Container": "Freed - Divine Beast Vah Rudania",
-                "Vah Medoh Heart Container": "Freed - Divine Beast Vah Medoh",
-                "Vah Naboris Heart Container": "Freed - Divine Beast Vah Naboris"}
+# What reaching each location takes in the game (data/logic.csv, one row each):
+# the climate to cross, the runes its shrine cannot be done without, and any
+# other item or event.
+LOGIC = {row["location"]: row for row in csv.DictReader(
+    files(__package__).joinpath("data/logic.csv").read_text(encoding="utf-8").splitlines())}
+# The armour each climate asks for: every group must be met, by one of its items.
+CLIMATES = {
+    "none": (),
+    "heat": (("Flamebreaker Set",),),                   # Death Mountain
+    "desert": (("Desert Voe Set",),),                   # the Gerudo Desert by day
+    "cold": (("Warm Doublet", "Snowquill Set"),),       # Gerudo Highlands, Mount Lanayru, Tabantha's peaks
+    "cold_extreme": (("Snowquill Set",),),              # Hebra
+    "?": (("Desert Voe Set",), ("Snowquill Set",)),     # not told yet: the strictest
+}
 GOAL_LOCATION = "Defeat Calamity Ganon"
+PLATEAU_RUNES = {name: row["runes"] for name, row in LOGIC.items()
+                 if name in ("Oman Au Shrine", "Ja Baij Shrine", "Owa Daim Shrine", "Keh Namut Shrine")}
 
 
 def categories(row: dict) -> set[str]:
@@ -29,23 +35,46 @@ def categories(row: dict) -> set[str]:
     return {name for name in row["category"].split("|") if name}
 
 
-def requirements(row: dict) -> tuple[str, ...]:
-    """Sufficient ability requirements; vanilla equipment/food remain obtainable.
+def requirements(row: dict) -> tuple[tuple[tuple[str, ...], int], ...]:
+    """What reaching a location takes: groups that must all be met, each by one
+    of its items, `count` times. Outside the Great Plateau, the Paraglider; then
+    its row of data/logic.csv. A player may always do more than the logic asks
+    (elixirs instead of armour): the logic only promises what it can rely on."""
+    logic = LOGIC[row["name"]]
+    groups = [] if row["region"] == "Great Plateau" else [(("Paraglider",), 1)]
+    groups += [(names, 1) for names in CLIMATES[logic["climate"]]]
+    runes = logic["runes"]
+    groups += [((rune,), 1) for rune in (RUNES if runes == "all" else () if runes in ("", "none")
+                                          else runes.split("|"))]
+    for item in filter(None, logic["extra"].split("|")):
+        name, _, count = item.partition(":")
+        groups.append(((name,), int(count or 1)))
+    return tuple(groups)
 
-    Terminals are entrance checks, distinct from the rune-gated final altars.
-    Non-Plateau shrines conservatively require all four runes. This baseline
-    deliberately does not claim a minimal per-puzzle route or glitch logic.
-    """
-    name = row["name"]
-    if name in PLATEAU_RUNES:
-        return (PLATEAU_RUNES[name],)
-    if row["region"] == "Great Plateau":
-        return ()
-    needed = ["Paraglider"]
-    if categories(row) & {"Shrine", "Divine Beast"} or name == GOAL_LOCATION:
-        needed.extend(RUNES)
-    if name in BEAST_QUESTS:
-        needed.append(BEAST_QUESTS[name])
-    if name in BEAST_HEARTS:
-        needed.append(BEAST_HEARTS[name])
-    return tuple(needed)
+
+def required_items(row: dict) -> set[str]:
+    """Every item or event named by a location's requirements."""
+    return {name for names, _ in requirements(row) for name in names}
+
+
+def _check_logic() -> None:
+    """Every location has a valid row: a typo in data/logic.csv fails at load."""
+    names = {row["name"] for row in LOCATIONS}
+    if set(LOGIC) != names:
+        raise ValueError(f"data/logic.csv rows differ from the locations: "
+                         f"{sorted(set(LOGIC) ^ names)[:5]}")
+    items = {row["name"] for row in ITEMS}
+    events = {f"Freed - {row['name']}" for row in LOCATIONS if "Divine Beast" in categories(row)}
+    for row in LOCATIONS:
+        logic = LOGIC[row["name"]]
+        if logic["climate"] not in CLIMATES:
+            raise ValueError(f"{row['name']}: unknown climate {logic['climate']!r}")
+        runes = logic["runes"]
+        if runes not in ("", "none", "all") and not set(runes.split("|")) <= set(RUNES):
+            raise ValueError(f"{row['name']}: unknown runes {runes!r}")
+        unknown = required_items(row) - items - events
+        if unknown:
+            raise ValueError(f"{row['name']}: unknown requirement {sorted(unknown)}")
+
+
+_check_logic()

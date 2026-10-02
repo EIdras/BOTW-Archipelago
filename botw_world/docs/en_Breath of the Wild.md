@@ -55,9 +55,18 @@ Beasts, or a number of cleared shrines.
 ## How does the logic work?
 
 The Great Plateau is the only region reachable at first: its terminals need nothing, each of its four shrines needs
-its rune, and leaving it needs the Paraglider. Outside the Plateau, every shrine and Divine Beast, and Ganon,
-conservatively require the Paraglider and all four runes. Some shrine quests need their Divine Beast freed, and the
-Master Sword needs ten Heart Containers. Food and equipment of the normal game are assumed available.
+its rune, and leaving it needs the Paraglider. Beyond, each location asks for what the game asks of the player there
+(`data/logic.csv` in the world):
+
+- **The climate's armour**: the Flamebreaker Set on Death Mountain, the Desert Voe Set in the Gerudo Desert, the
+  Snowquill Set in Hebra, the Warm Doublet or the Snowquill Set in a milder cold (Gerudo Highlands, Mount Lanayru).
+  Elixirs and food work too, but the logic does not count on them: the armour comes before its region.
+- **The runes a shrine cannot be done without**; all four where the shrine has not been studied yet.
+- **Divine Beasts and shrine quests**: the Zora Set for Vah Ruta, the freed Divine Beast for its heart container and
+  for the shrines of its quest; ten Heart Containers for the Master Sword.
+
+Only what these rules name is progression; the champions' abilities, the climbing gear and the stamina vessels help
+without being required, and come wherever the seed puts them.
 
 ## What does DeathLink do?
 

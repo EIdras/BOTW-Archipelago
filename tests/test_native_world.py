@@ -71,11 +71,11 @@ class NativeWorldTests(unittest.TestCase):
         self.assertEqual(len(world.location_name_groups["Divine Beast Hearts"]), 4)
         with self.assertRaises(KeyError):
             mw.get_location("Freed - Vah Ruta Heart Container", 1)
-        from worlds.botw.catalog import LOCATIONS, requirements
+        from worlds.botw.catalog import LOCATIONS, required_items
         row = next(r for r in LOCATIONS if r["name"] == "Vah Ruta Heart Container")
-        self.assertIn("Freed - Divine Beast Vah Ruta", requirements(row))
+        self.assertIn("Freed - Divine Beast Vah Ruta", required_items(row))
         heart = mw.get_location("Vah Ruta Heart Container", 1)
-        for name in ("Paraglider", "Magnesis", "Remote Bomb", "Stasis"):
+        for name in ("Paraglider", "Magnesis", "Remote Bomb", "Stasis", "Zora Set"):
             mw.state.collect(world.create_item(name))
         mw.state.sweep_for_advancements()
         self.assertFalse(heart.can_reach(mw.state))   # beast not freeable without Cryonis

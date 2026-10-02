@@ -107,7 +107,7 @@
     "category": [
       "Champion Ability"
     ],
-    "progression": true,
+    "useful": true,
     "id": 13
   },
   {
@@ -115,7 +115,7 @@
     "category": [
       "Champion Ability"
     ],
-    "progression": true,
+    "useful": true,
     "id": 14
   },
   {
@@ -123,7 +123,7 @@
     "category": [
       "Champion Ability"
     ],
-    "progression": true,
+    "useful": true,
     "id": 15
   },
   {
@@ -131,7 +131,7 @@
     "category": [
       "Champion Ability"
     ],
-    "progression": true,
+    "useful": true,
     "id": 16
   },
   {
@@ -139,7 +139,7 @@
     "category": [
       "Armour"
     ],
-    "progression": true,
+    "useful": true,
     "count": 3,
     "id": 17
   },
@@ -167,7 +167,7 @@
     "category": [
       "Vessel"
     ],
-    "progression": true,
+    "useful": true,
     "count": 5,
     "early": true,
     "id": 20
