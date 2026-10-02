@@ -40,6 +40,7 @@ PLAY_ACCOUNT = 0x80000003       # the account of play sessions
 SAVES = PORTABLE / "mlc01/usr/save/00050000/101c9500/user"
 ACCOUNTS = PORTABLE / "mlc01/usr/save/system/act"
 PACK_PREFIX = "AP_Ledger_"
+CONTROLLER = "controllerProfiles/controller0.xml"     # player 1's controller, set in Cemu's input settings
 
 
 def create(executable: Path, install: CemuInstall | None = None, target: Path = PROFILE) -> Path:
@@ -90,6 +91,9 @@ def create(executable: Path, install: CemuInstall | None = None, target: Path = 
                     for path in sorted(saves.rglob("*")) if path.is_file()}}
     (target / "isolation.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     print(f"Isolated Cemu profile ready: {target}")
+    if not (portable / CONTROLLER).is_file():
+        print("Your Cemu has no controller set up for player 1: when the game starts, set it in Cemu's "
+              "Options > Input settings (the profile keeps it).")
     return target
 
 

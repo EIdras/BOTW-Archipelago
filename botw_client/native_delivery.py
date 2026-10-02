@@ -127,7 +127,7 @@ class CemuNativeDeliveryBackend:
     def __init__(self, game, seed: str, slot: int, token: int, *,
                  catalog=DEFAULT_CATALOG, request=None, lock_factory=None,
                  commit_timeout: float = 30.0, poll_seconds: float = 0.05,
-                 safe=None):
+                 safe=None, in_world=None):
         if not seed or not isinstance(slot, int) or not 0 < token <= 0x7FFFFFFF:
             raise ValueError("invalid native AP identity")
         self.game = game
@@ -141,6 +141,7 @@ class CemuNativeDeliveryBackend:
         self.commit_timeout = commit_timeout
         self.poll_seconds = poll_seconds
         self._safe = safe
+        self._in_world = in_world
         self._committed_at = None
 
     def _frame(self):
@@ -197,6 +198,12 @@ class CemuNativeDeliveryBackend:
         except Exception:
             return False
 
+    def _link_in_world(self) -> bool:
+        try:
+            return bool((self._in_world or self.playing)())
+        except Exception:  # noqa: BLE001 - unreadable: not yet
+            return False
+
     def _dependencies(self):
         request = self._request
         lock_factory = self._lock_factory
@@ -229,6 +236,11 @@ class CemuNativeDeliveryBackend:
             return DeliveryResult(
                 DeliveryStatus.DEFERRED, cursor,
                 getattr(self.game, "delivery_block_reason", "game busy"))
+        # The title screen passes the delivery gate (Link "alive", saving
+        # allowed, the game running), and accepts the binding entry, which
+        # never runs there: a binding waits for Link in the world.
+        if not self._link_in_world():
+            return DeliveryResult(DeliveryStatus.DEFERRED, cursor, "waiting for Link in the world")
 
         request, lock_factory = self._dependencies()
         evidence = {}

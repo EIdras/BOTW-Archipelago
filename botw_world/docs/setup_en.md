@@ -93,6 +93,8 @@ games, and the seeds. Your Cemu installation was never modified.
   the DLC not installed, a game listed by Cemu that moved...). Fix it in Cemu, start the game once there, and launch
   again.
 - **"Close Cemu before preparing a session"**: the launcher starts Cemu itself; close yours first.
+- **The game does not react to your controller**: the profile copied no controller setting from your Cemu. In the
+  game's window, open Cemu's Options > Input settings and choose your controller for player 1; the profile keeps it.
 - **Each session writes its logs** to `%LOCALAPPDATA%\BOTW Archipelago\play-seeds\<seed>\sessions\<date>\`: the
   client's log, Cemu's log and a summary. Attach that folder when you
   [report a problem](https://github.com/EIdras/BOTW-Archipelago/issues).

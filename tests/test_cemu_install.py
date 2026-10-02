@@ -170,6 +170,24 @@ class ProfileTests(unittest.TestCase):
             self.assertEqual(manifest["game"], str(install.base / "code/U-King.rpx"))
             self.assertEqual(list(manifest["source_save_hashes"]), ["user/80000001/game_data.sav"])
 
+    def test_a_cemu_without_a_controller_for_player_1_is_said(self):
+        import contextlib
+        import io
+        for controller in (False, True):
+            with self.subTest(controller=controller), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                install = Install(root)
+                if controller:
+                    (install.user / "controllerProfiles").mkdir()
+                    (install.user / cemu_profile.CONTROLLER).write_text("<emulated_controller/>")
+                exe = root / "Cemu.exe"
+                exe.write_bytes(b"cemu")
+                output = io.StringIO()
+                with mock.patch.object(cemu_profile, "DATA", root / "data"), contextlib.redirect_stdout(output):
+                    target = cemu_profile.create(exe, detect(install), root / "data/profile")
+                self.assertEqual((target / "portable" / cemu_profile.CONTROLLER).is_file(), controller)
+                self.assertEqual("no controller set up" in output.getvalue(), not controller)
+
     def test_the_game_is_found_again_when_it_moved(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

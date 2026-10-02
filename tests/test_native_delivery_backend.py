@@ -83,7 +83,7 @@ class NativeDeliveryBackendTests(unittest.TestCase):
         return CemuNativeDeliveryBackend(
             self.game, "seed", 2, 123, catalog=self.path, request=request,
             lock_factory=lambda _pid: _NullLock(), safe=lambda: True,
-            commit_timeout=0.01, poll_seconds=0, **kwargs)
+            commit_timeout=0.01, poll_seconds=0, **{"in_world": lambda: True, **kwargs})
 
     def add_binding(self, token=123):
         data = json.loads(self.path.read_text(encoding="utf-8"))
@@ -296,6 +296,19 @@ class NativeDeliveryBackendTests(unittest.TestCase):
         backend = self.backend(lambda: None)
         backend._safe = lambda: False
         self.assertEqual(backend.bind_session().status, DeliveryStatus.DEFERRED)
+
+    def test_the_title_screen_defers_the_binding_without_a_request(self):
+        # Measured: on the title screen the delivery gate passes, and the binding
+        # entry is accepted but never runs (no commit in 30 s, client stopped).
+        self.add_binding()
+        self.values[flag("APSeedToken")] = 0
+        self.values[flag("APReceivedCursor")] = 0
+        calls = []
+        for in_world in (lambda: False, lambda: 1 / 0):
+            result = self.backend(lambda *_args, **_kwargs: calls.append(1), in_world=in_world).bind_session()
+            self.assertEqual((result.status, result.detail),
+                             (DeliveryStatus.DEFERRED, "waiting for Link in the world"))
+        self.assertFalse(calls)
 
     def test_foreign_catalog_blocks_even_an_already_bound_save(self):
         self.add_binding(token=999)

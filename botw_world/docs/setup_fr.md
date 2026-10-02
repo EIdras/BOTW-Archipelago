@@ -97,6 +97,9 @@ parties Archipelago, et les seeds. Votre installation de Cemu n'a jamais été m
 - **Le lanceur refuse votre Cemu** : son message dit ce qui manque (une autre version du jeu, la mise à jour ou le DLC
   non installés, un jeu listé par Cemu qui a été déplacé...). Corriger dans Cemu, y lancer le jeu une fois, et relancer.
 - **« Close Cemu before preparing a session »** : le lanceur démarre Cemu lui-même ; fermer le vôtre d'abord.
+- **Le jeu ne réagit pas à votre manette** : le profil n'a copié aucun réglage de manette de votre Cemu. Dans la
+  fenêtre du jeu, ouvrir Options > Paramètres d'entrée de Cemu et choisir votre manette pour le joueur 1 ; le profil
+  la garde.
 - **Chaque session écrit ses journaux** dans `%LOCALAPPDATA%\BOTW Archipelago\play-seeds\<seed>\sessions\<date>\` : le
   journal du client, celui de Cemu et un résumé. Joindre ce dossier pour
   [signaler un problème](https://github.com/EIdras/BOTW-Archipelago/issues).
