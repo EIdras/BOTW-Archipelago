@@ -1,6 +1,6 @@
 """A play session: Cemu, the client and an AP server, together.
 
-    python tools/play_session.py [--seed <seed folder name>] [--speed <x>]
+    python tools/play_session.py [--seed <seed folder name>] [--speed <x>, source checkouts]
                                  [--connect <address> [--password <p>] | --host]
 
   * the pack bound to the seed's BOTW slot (tools/play_seed.py), the only
@@ -273,13 +273,18 @@ async def play(folder: Path, report: dict, pack: Path, session: Path,
 
 def main(argv: list[str] | None = None) -> None:
     import argparse
-    from tools.play_speed import speed_argument
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", help="the seed, a folder of play-seeds in the data folder")
     parser.add_argument("--pack", type=Path, help="a pack built from the sources, to use explicitly")
     parser.add_argument("--prepare-only", action="store_true")
-    parser.add_argument("--speed", type=speed_argument, default=1.0,
-                        help="run/sprint/climb speed multiplier (0.1 to 10, default 1)")
+    try:
+        # A test aid of source checkouts: a release does not ship it (tools/build_release.py).
+        from tools.play_speed import speed_argument
+    except ImportError:
+        parser.set_defaults(speed=1.0)
+    else:
+        parser.add_argument("--speed", type=speed_argument, default=1.0,
+                            help="run/sprint/climb speed multiplier (0.1 to 10, default 1), for tests")
     server = parser.add_mutually_exclusive_group()
     server.add_argument("--connect", metavar="ADDRESS",
                         help="join the room hosting the seed (archipelago.gg:38281...) "
@@ -298,7 +303,6 @@ def main(argv: list[str] | None = None) -> None:
 def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = False, speed: float = 1.0,
         connect: str | None = None, password: str | None = None, host: bool = False) -> None:
     """A session of the prepared seed `seed`, until Cemu closes."""
-    from tools.play_speed import variant
     folder, report, pack = find_seed(seed, pack)
     from tools.play_seed import hostable
     if not connect and not hostable(report):
@@ -307,7 +311,9 @@ def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = Fals
     pack_manifest = json.loads((pack / "manifest.json").read_text(encoding="utf-8"))
     # The AP journal lives in the game's tip frame; every pack carries it.
     journal = pack_manifest.get("ap_journal") == "tip_channel"
-    pack = variant(pack, speed, DATA / 'play-speed-packs')
+    if speed != 1:
+        from tools.play_speed import variant
+        pack = variant(pack, speed, DATA / 'play-speed-packs')
     source_saves = profile.SAVES / f"{profile.SOURCE_ACCOUNT:08x}"
     source_saves_before = tree_hashes(source_saves)
     account = profile.ensure_play_account()

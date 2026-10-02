@@ -43,6 +43,8 @@ PINS = ROOT / "requirements-player.txt"
 PROJECT = ("botw_client", "botw_patch", "tools", "native", "data", "botw_world/data", "botw_world/docs",
            "botw_world/archipelago.json", "assets/wiiu",
            "assets/models/ap_item/wiiu", "players/BOTW.yaml", "BOTW Archipelago.cmd", "README.md", "LICENSE")
+# Test aids of source checkouts, never in a release: the speed multiplier.
+DEVELOPMENT_ONLY = ("tools/play_speed.py", "tools/build_plateau_speed.py")
 PYTHON_FILES = ("python.exe", "pythonw.exe", "python3.dll", f"python3{sys.version_info.minor}.dll",
                 "vcruntime140.dll", "vcruntime140_1.dll", "LICENSE.txt")
 PYTHON_FOLDERS = ("DLLs", "Lib", "tcl")
@@ -60,8 +62,9 @@ def git(*arguments: str) -> str:
 
 
 def project_files() -> list[str]:
-    """The tracked files of PROJECT, as they are in the working tree."""
-    return sorted(name for name in git("ls-files", "-z", "--", *PROJECT).split("\0") if name)
+    """The tracked files of PROJECT, as they are in the working tree, test aids apart."""
+    return sorted(name for name in git("ls-files", "-z", "--", *PROJECT).split("\0")
+                  if name and name not in DEVELOPMENT_ONLY)
 
 
 def _requirement_name(requirement: str) -> str:

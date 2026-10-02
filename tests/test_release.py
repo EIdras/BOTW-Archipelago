@@ -44,6 +44,7 @@ class ContentTests(unittest.TestCase):
                      "botw_world/docs/setup_en.md", "botw_world/docs/setup_fr.md"):
             self.assertIn(name, files)
         self.assertFalse([name for name in files if name.startswith(("tests/", "lab/", "botw_world/test", ".build"))])
+        self.assertFalse(set(build_release.DEVELOPMENT_ONLY) & set(files))     # no cheat in a release
 
     def test_the_pack_sources_are_all_shipped(self):
         # A pack records the hash of each source it is built from: each must be in the release.
