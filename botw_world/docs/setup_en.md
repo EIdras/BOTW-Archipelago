@@ -17,8 +17,9 @@ Cemu emulator: installing, joining a room, and, for the person who hosts it, gen
 
 ## Installing
 
-1. Download `BOTW-Archipelago-<version>.zip` from the
-   [releases](https://github.com/EIdras/BOTW-Archipelago/releases) of the project.
+1. Download `BOTW-Archipelago-<version>-Windows.zip` from the
+   [releases](https://github.com/EIdras/BOTW-Archipelago/releases) of the project, in the release's Assets (not
+   "Source code", which GitHub adds and which has no Python).
 2. Right-click the zip > Properties, tick **Unblock**, OK. Otherwise Windows asks to confirm each program the first
    time it runs.
 3. Unzip it where you like, your Documents for instance (not in Program Files). Nothing else to install: it brings its

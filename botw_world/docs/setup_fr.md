@@ -19,8 +19,9 @@ l'émulateur Cemu : l'installation, rejoindre une salle et, pour la personne qui
 
 ## Installation
 
-1. Télécharger `BOTW-Archipelago-<version>.zip` dans les
-   [releases](https://github.com/EIdras/BOTW-Archipelago/releases) du projet.
+1. Télécharger `BOTW-Archipelago-<version>-Windows.zip` dans les
+   [releases](https://github.com/EIdras/BOTW-Archipelago/releases) du projet, parmi les Assets de la release (pas
+   « Source code », qu'ajoute GitHub et qui n'a pas de Python).
 2. Clic droit sur le zip > Propriétés, cocher **Débloquer**, OK. Sinon Windows demande de confirmer chaque programme
    la première fois qu'il se lance.
 3. Le décompresser où vous voulez, dans vos Documents par exemple (pas dans Program Files). Rien d'autre à installer :

@@ -40,8 +40,8 @@ No game file is part of this repository: the game pack of a seed is built from y
 
 ## Getting started
 
-Download the [latest release](https://github.com/EIdras/BOTW-Archipelago/releases): `BOTW-Archipelago-<version>.zip`
-for the players, `botw.apworld` for the host. The [setup guide](botw_world/docs/setup_en.md)
+Download the [latest release](https://github.com/EIdras/BOTW-Archipelago/releases):
+`BOTW-Archipelago-<version>-Windows.zip` for the players, `botw.apworld` for the host. The [setup guide](botw_world/docs/setup_en.md)
 ([en français](botw_world/docs/setup_fr.md)) covers installing, playing, hosting and updating. In short:
 
 1. The host generates the seed with Archipelago and `botw.apworld`, then hosts it, on archipelago.gg for instance.

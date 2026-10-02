@@ -102,8 +102,8 @@ world must carry its license.
 venv\Scripts\python tools\build_release.py
 ```
 
-writes `dist\BOTW-Archipelago-<version>.zip`, what a player downloads, and `dist\botw.apworld`, what a host installs.
-The zip holds a folder that runs as it is: `BOTW Archipelago.cmd`, the project's files the player's tools read (listed
+writes `dist\BOTW-Archipelago-<version>-Windows.zip`, what a player downloads, and `dist\botw.apworld`, what a host
+installs (apart from the "Source code" archive GitHub adds to a release, which has no Python). The zip holds a folder that runs as it is: `BOTW Archipelago.cmd`, the project's files the player's tools read (listed
 in `PROJECT`), and `python\`, the Python 3.12 of this checkout's base installation with only the packages those tools
 import (`PACKAGES`, with their dependencies, copied from the venv). Its `release.json` (version, commit, packages)
 makes the tools write to `%LOCALAPPDATA%\BOTW Archipelago`, so that a new release, unzipped anywhere, finds the

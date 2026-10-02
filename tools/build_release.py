@@ -14,7 +14,9 @@ dist/BOTW-Archipelago-<version>/ holds:
   * BOTW Archipelago.cmd, README.md, LICENSE, and release.json (version,
     commit, Python and packages), whose presence makes the tools write their
     files to the player's data folder (botw_client/paths.py).
-It is zipped as dist/BOTW-Archipelago-<version>.zip, next to dist/botw.apworld.
+It is zipped as dist/BOTW-Archipelago-<version>-Windows.zip, next to
+dist/botw.apworld: a name of its own, apart from the source archive GitHub
+attaches to every release (BOTW-Archipelago-<version>.zip, without Python).
 The version is the project's (botw_client/version.py). A release is made
 from committed work: a checkout with changes is refused unless --allow-dirty.
 """
@@ -176,7 +178,7 @@ def build(output: Path = ROOT / "dist", *, allow_dirty: bool = False) -> Path:
     (release / RELEASE_MARKER).write_text(json.dumps({
         "version": version(), "commit": commit + ("-dirty" if dirty else ""),
         "python": sys.version.split()[0], "packages": packages}, indent=2) + "\n", encoding="utf-8")
-    archive = zip_folder(release, output / f"{release.name}.zip")
+    archive = zip_folder(release, output / f"{release.name}-Windows.zip")
     from tools.package_native import package
     package(output / "botw.apworld")
     return archive
