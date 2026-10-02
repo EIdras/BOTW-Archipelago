@@ -31,7 +31,7 @@ given back quietly, then listed in a single Archipelago window.
 | Village stalls (option)                    | 0 to 28    |
 
 With the shop options, Archipelago items are sold by Beedle at his 16 shops (listed first in his stock) and placed as a
-medallion on 14 village stalls; buying one checks its location.
+medallion on the village stalls, spread at random over 14 stalls (2 at most on one); buying one checks its location.
 
 ## Which items can be received?
 
@@ -43,7 +43,7 @@ medallion on 14 village stalls; buying one checks its location.
 - 17 Heart Containers and 5 Stamina Vessels
 - The Master Sword, the Hylian Shield, the Champion's Tunic, the Ancient Bridle and Saddle, the Barbarian, Ancient
   and Radiant sets
-- Spirit Orbs, Ancient Cores, Star Fragments, Korok Seeds, Fairies and rupees
+- Spirit Orbs, Ancient Cores, Star Fragments, Fairies and rupees (the Koroks still give their seeds, as in the game)
 - Traps, with the `trap_percentage` option: Weapon Shatter, Blood Moon, Rupoor, Hearts Down, Strip Down and Cucco
   Swarm
 

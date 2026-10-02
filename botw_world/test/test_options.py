@@ -9,7 +9,7 @@ class TestWithoutShops(BotwTestBase):
 
 
 class TestWithShops(BotwTestBase):
-    options = {"beedle_shop_items": 2, "stall_shop_items": 2}
+    options = {"beedle_shop_items": 2, "stall_items": 28}
 
     def test_every_shop_and_stall_location_exists_and_has_a_price(self) -> None:
         names = {location.name for location in self.multiworld.get_locations(self.player)}
@@ -21,10 +21,25 @@ class TestWithShops(BotwTestBase):
 
 
 class TestOneItemPerShop(BotwTestBase):
-    options = {"beedle_shop_items": 1, "stall_shop_items": 1}
+    options = {"beedle_shop_items": 1}
 
-    def test_half_of_the_shop_locations(self) -> None:
-        self.assertEqual(len(self.world.shop_prices), 30)
+    def test_half_of_beedles_shop_locations(self) -> None:
+        self.assertEqual(len(self.world.shop_prices), 16)
+
+
+class TestSomeStallItems(BotwTestBase):
+    options = {"stall_items": 9}
+
+    def test_the_stall_items_are_spread_two_at_most_on_a_stall(self) -> None:
+        stalls = self.world.location_name_groups["Stalls"]
+        names = {location.name for location in self.multiworld.get_locations(self.player)} & stalls
+        self.assertEqual(len(names), 9)
+        self.assertEqual(len(self.world.shop_prices), 9)
+        per_stall = {}
+        for name in names:
+            stall = name.rsplit(" Item ", 1)[0]
+            per_stall[stall] = per_stall.get(stall, 0) + 1
+        self.assertLessEqual(max(per_stall.values()), 2)
 
 
 class TestDeathLink(BotwTestBase):
@@ -51,7 +66,7 @@ class TestEveryFillerATrap(BotwTestBase):
         pool = [item.name for item in self.multiworld.itempool]
         self.assertEqual(pool.count("Rupee Bundle"), 0)
         traps = [item for item in self.multiworld.itempool if item.trap]
-        self.assertEqual(len(traps), 41)
+        self.assertEqual(len(traps), 56)
         self.assertEqual({item.name for item in traps}, {
             "Weapon Shatter", "Blood Moon", "Rupoor", "Hearts Down", "Strip Down",
             "Cucco Swarm"})
@@ -64,9 +79,9 @@ class TestOneTrapOnly(BotwTestBase):
     def test_only_the_weighted_trap_comes_up(self) -> None:
         names = [item.name for item in self.multiworld.itempool if item.trap]
         self.assertEqual(set(names), {"Rupoor"})
-        self.assertEqual(len(names), round(41 * 50 / 100))
+        self.assertEqual(len(names), round(56 * 50 / 100))
         self.assertEqual([item.name for item in self.multiworld.itempool].count("Rupee Bundle"),
-                         41 - len(names))
+                         56 - len(names))
 
 
 class TestDivineBeastGoal(BotwTestBase):

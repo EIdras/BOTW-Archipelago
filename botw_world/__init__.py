@@ -74,12 +74,15 @@ class BotwWorld(World):
                 regions["Great Plateau"].connect(
                     region, rule=lambda state: state.has("Paraglider", self.player))
         self.shop_prices = {}
+        # Stall Items of the 28 stall locations, at random: a stall has 2 of
+        # them, so it ends up with none, one or two.
+        stalls = set(self.random.sample(sorted(r["id"] for r in LOCATIONS if "Stall" in categories(r)),
+                                        self.options.stall_items.value))
         for row in LOCATIONS:
             shop = categories(row) & {"Shop", "Stall"}
             if shop:
-                slots = (self.options.beedle_shop_items if "Shop" in shop
-                         else self.options.stall_shop_items).value
-                if row["slot"] > slots:
+                if ("Shop" in shop and row["slot"] > self.options.beedle_shop_items.value
+                        or "Stall" in shop and row["id"] not in stalls):
                     continue
                 self.shop_prices[row["id"]] = self.random.randint(*self.SHOP_PRICE_STEPS) * 5
             region = regions[row["region"]]
@@ -156,7 +159,7 @@ class BotwWorld(World):
         return {"client_schema": 3, "world_schema": 4, "world_version": WORLD_VERSION,
                 "death_link": bool(self.options.death_link.value),
                 **self.options.as_dict("goal_type", "shrines_required", "divine_beasts_required",
-                                       "beedle_shop_items", "stall_shop_items")}
+                                       "beedle_shop_items", "stall_items")}
 
     @classmethod
     def data_package_checksum(cls) -> str:

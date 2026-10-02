@@ -57,15 +57,17 @@ CLIENT_SCHEMA = 3
 GAME = "Breath of the Wild"
 _ROWS = json.loads((ROOT / "botw_world/data/locations.json").read_text(encoding="utf-8"))
 # Every location but the goal, shops apart: they depend on beedle_shop_items
-# and stall_shop_items.
+# and stall_items.
 PLACEMENTS = sum(1 for row in _ROWS if row["category"] not in ("Goal", "Shop", "Stall"))
 
 
 def expected_placements(slot_data: dict) -> int:
     from botw_client import shop_catalog, stall_catalog
-    return (PLACEMENTS
-            + len(shop_catalog.MERCHANTS) * int(slot_data.get("beedle_shop_items", 0))
-            + len(stall_catalog.MERCHANTS) * int(slot_data.get("stall_shop_items", 0)))
+    # stall_items: a number of stalls' items in all; seeds generated before it
+    # had stall_shop_items on each stall.
+    stalls = (int(slot_data["stall_items"]) if "stall_items" in slot_data
+              else len(stall_catalog.MERCHANTS) * int(slot_data.get("stall_shop_items", 0)))
+    return (PLACEMENTS + len(shop_catalog.MERCHANTS) * int(slot_data.get("beedle_shop_items", 0)) + stalls)
 
 
 def sha(path: Path) -> str:

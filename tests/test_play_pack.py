@@ -215,6 +215,13 @@ class PreparationTests(unittest.TestCase):
 class VersionTests(unittest.TestCase):
     """Which seeds this version plays, and its packs after an update."""
 
+    def test_stall_items_are_a_total_and_earlier_seeds_counted_them_per_stall(self):
+        base = play_seed.expected_placements({})
+        self.assertEqual(play_seed.expected_placements({"stall_items": 9}), base + 9)
+        self.assertEqual(play_seed.expected_placements({"stall_shop_items": 2}), base + 28)
+        self.assertEqual(play_seed.expected_placements({"beedle_shop_items": 1, "stall_items": 3}),
+                         base + 16 + 3)
+
     def test_a_seed_of_unknown_schemas_names_the_version_it_needs(self):
         with tempfile.TemporaryDirectory() as temp:
             path = slot_file(Path(temp), slot_data={"world_schema": 9, "client_schema": 3,

@@ -93,23 +93,24 @@ class NativeWorldTests(unittest.TestCase):
 
     def test_beedle_and_stall_items_are_locations_of_their_options(self):
         from Fill import distribute_items_restrictive
-        for beedle, stall in ((0, 1), (2, 2)):
-            mw = self.make_world(seed=7, beedle_shop_items=beedle, stall_shop_items=stall)
-            expected = 152 + 16 * beedle + 14 * stall
+        for beedle, stall in ((0, 5), (2, 28)):
+            mw = self.make_world(seed=7, beedle_shop_items=beedle, stall_items=stall)
+            expected = 152 + 16 * beedle + stall
             self.assertEqual(len(mw.get_unfilled_locations(1)), expected)
             names = {loc.name for loc in mw.get_locations()}
-            self.assertEqual("Kakariko Village - Arrow Stall Item 2" in names, stall == 2)
+            if stall == 28:
+                self.assertIn("Kakariko Village - Arrow Stall Item 2", names)
             distribute_items_restrictive(mw)
             self.assertTrue(mw.can_beat_game())
             with tempfile.TemporaryDirectory() as temp:
                 mw.worlds[1].generate_output(temp)
                 manifest = slot_manifests(next(Path(temp).glob("*.apbotw")))[0]
             self.assertEqual(len(manifest["placements"]), expected)
-            self.assertEqual(len(manifest["shops"]), 16 * beedle + 14 * stall)
+            self.assertEqual(len(manifest["shops"]), 16 * beedle + stall)
             self.assertEqual(manifest["slot_data"]["world_schema"], 4)
-            self.assertEqual(manifest["slot_data"]["stall_shop_items"], stall)
+            self.assertEqual(manifest["slot_data"]["stall_items"], stall)
             stalls = [row for row in manifest["shops"] if row["location_id"] >= 186]
-            self.assertEqual(len(stalls), 14 * stall)
+            self.assertEqual(len(stalls), stall)
             self.assertTrue(all(20 <= row["price"] <= 200 for row in manifest["shops"]))
 
     def test_traps_replace_a_share_of_the_filler_by_weight(self):
@@ -118,7 +119,7 @@ class NativeWorldTests(unittest.TestCase):
         self.assertFalse([i for i in mw.itempool if i.classification == ItemClassification.trap])
         everything = self.make_world(seed=3, trap_percentage=100)
         traps = [i.name for i in everything.itempool if i.classification == ItemClassification.trap]
-        self.assertEqual(len(traps), 41)
+        self.assertEqual(len(traps), 56)
         self.assertEqual(len(everything.itempool), len(mw.itempool))
         self.assertEqual(set(traps), {"Weapon Shatter", "Blood Moon", "Rupoor", "Hearts Down",
                                       "Strip Down", "Cucco Swarm"})

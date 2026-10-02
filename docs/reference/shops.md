@@ -1,6 +1,6 @@
 # Shops and stalls
 
-With the options `beedle_shop_items` and `stall_shop_items`, Archipelago items are sold in the game: by Beedle, from
+With the options `beedle_shop_items` and `stall_items`, Archipelago items are sold in the game: by Beedle, from
 his list, and on the village stalls, as a medallion laid among the goods. Buying one checks its location. Everything
 is done in the game's resources, built for each seed; the client only reads.
 
@@ -33,8 +33,9 @@ is done in the game's resources, built for each seed; the client only reads.
 
 ## Village stalls
 
-- **Option** `stall_shop_items` (0 to 2, default 0): 28 locations (IDs 186 to 213, world schema 4), up to 2 on each of
-  14 stalls. Single source: [`botw_client/stall_catalog.py`](../../botw_client/stall_catalog.py); resources:
+- **Option** `stall_items` (0 to 28, default 0): that many of the 28 locations (IDs 186 to 213, world schema 4), drawn
+  at random by the seed; a stall has 2 of them, so it gets none, one or two. Seeds generated before it had
+  `stall_shop_items`, 0 to 2 on every stall (still read by `tools/play_seed.py`). Single source: [`botw_client/stall_catalog.py`](../../botw_client/stall_catalog.py); resources:
   [`botw_patch/stalls.py`](../../botw_patch/stalls.py), called by `botw_patch/shops.py`.
 - **Stalls**: the 14 that sell consumables through `DisplayShop:Multiple` in their own flow and have an item on sale in
   several copies: Rito Village, Gerudo Town (fruit, arrows, materials), Kara Kara Bazaar (fruit), Korok Forest

@@ -10,9 +10,10 @@ Breath of the Wild:
   goal_type: ganon
   shrines_required: 40
   divine_beasts_required: 4
-  # 0 to 2 Archipelago items at each of Beedle's 16 shops, and on each of the 14 village stalls
+  # 0 to 2 Archipelago items at each of Beedle's 16 shops
   beedle_shop_items: 2
-  stall_shop_items: 2
+  # 0 to 28 Archipelago items on the 14 village stalls, at random (2 at most on one stall)
+  stall_items: 10
   # When you die, everyone with DeathLink dies; when they die, so do you
   # (Mipha's Grace and fairies still save Link)
   death_link: true

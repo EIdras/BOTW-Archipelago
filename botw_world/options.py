@@ -44,15 +44,16 @@ class BeedleShopItems(Range):
     default = 0
 
 
-class StallShopItems(Range):
+class StallItems(Range):
     """Items on the 3D stalls of the villages (Kakariko, Hateno, Rito, Goron,
     Zora's Domain, Gerudo Town, Kara Kara, Korok Forest, Lurelin, Tarrey Town)
-    that become Archipelago locations, at each of their 14 stalls: the
+    that become Archipelago locations, spread at random over their 14 stalls,
+    2 at most on one stall: some stalls have none, others one or two. The
     Archipelago medallion replaces one copy of an item the stall sells in
     several, priced by the seed; once bought it never comes back. 0: none."""
-    display_name = "Stall Shop Items"
+    display_name = "Stall Items"
     range_start = 0
-    range_end = 2
+    range_end = 28
     default = 0
 
 
@@ -87,7 +88,7 @@ class BotwOptions(PerGameCommonOptions):
     shrines_required: ShrinesRequired
     divine_beasts_required: BeastsRequired
     beedle_shop_items: BeedleShopItems
-    stall_shop_items: StallShopItems
+    stall_items: StallItems
     death_link: DeathLink
     trap_percentage: TrapPercentage
     trap_weights: TrapWeights
@@ -95,6 +96,6 @@ class BotwOptions(PerGameCommonOptions):
 
 OPTION_GROUPS = [
     OptionGroup("Goal", [Goal, ShrinesRequired, BeastsRequired]),
-    OptionGroup("Shops", [BeedleShopItems, StallShopItems]),
+    OptionGroup("Shops", [BeedleShopItems, StallItems]),
     OptionGroup("Traps", [TrapPercentage, TrapWeights]),
 ]
