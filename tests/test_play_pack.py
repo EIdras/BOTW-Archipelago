@@ -174,6 +174,52 @@ class PreparationTests(unittest.TestCase):
             self.assertEqual(pointer.read_bytes(), b"previous selection")
 
 
+class VersionTests(unittest.TestCase):
+    """Which seeds this version plays, and its packs after an update."""
+
+    def test_a_seed_of_unknown_schemas_names_the_version_it_needs(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = slot_file(Path(temp), slot_data={"world_schema": 9, "client_schema": 3,
+                                                    "world_version": "2.0.0"})
+            with self.assertRaisesRegex(ValueError, "world 2.0.0, which this version .* cannot play"):
+                play_seed.read_seed(path)
+
+    def test_a_newer_world_of_known_schemas_is_played(self):
+        from botw_client.version import VERSION
+        self.assertEqual(play_seed.newer_world({"world_version": "99.0.0"}), "99.0.0")
+        self.assertIsNone(play_seed.newer_world({"world_version": VERSION}))
+        self.assertIsNone(play_seed.newer_world({}))
+
+    def test_a_pack_records_what_it_was_built_from(self):
+        with tempfile.TemporaryDirectory() as temp:
+            pack = Path(temp)
+            sources = {"botw_client/session.py": digest((play_pack.ROOT / "botw_client/session.py").read_bytes()),
+                       "botw_client/items.py": "0" * 64}
+            (pack / "manifest.json").write_text(json.dumps({"source_hashes": sources}))
+            self.assertEqual(play_pack.outdated(pack), ["botw_client/items.py"])
+
+    def test_a_refreshed_seed_drops_the_pack_no_seed_uses(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp).resolve()
+            packs, seeds = root / "packs", root / "play"
+            old, new = packs / "old", packs / "new"
+            old.mkdir(parents=True)
+            folder = seeds / "seed"
+            folder.mkdir(parents=True)
+            (folder / "analysis.json").write_text(json.dumps({
+                "botw_slot": 2, "archive": str(folder / "AP.zip"), "audit": {"slots": {"2": "Simon"}}}))
+            for used in (set(), {old}):
+                old.mkdir(exist_ok=True)
+                with self.subTest(used=used), patch.object(play_seed, "PACKS", packs), \
+                        patch.object(play_seed, "PLAY_SEEDS", seeds), \
+                        patch("tools.play_pack.selected_pack", return_value=old), \
+                        patch("tools.play_pack.selections", return_value=used), \
+                        patch.object(play_seed, "prepare", return_value=(None, new)) as prepare:
+                    self.assertEqual(play_seed.refresh(folder), new)
+                    prepare.assert_called_once_with(folder / "AP.zip", slot_name="Simon")
+                    self.assertEqual(old.exists(), bool(used))
+
+
 class SelectionTests(unittest.TestCase):
     def test_no_implicit_fallback_without_selection(self):
         with tempfile.TemporaryDirectory() as temp:

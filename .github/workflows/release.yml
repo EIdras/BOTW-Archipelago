@@ -1,0 +1,62 @@
+# The release of a version, built on GitHub's Windows machines.
+#
+# Pushing a tag vX.Y.Z (the world_version of botw_world/archipelago.json) tests
+# the project, builds the player's zip and botw.apworld (tools/build_release.py)
+# and makes a draft release with both, to check and publish by hand.
+# Run by hand (Actions > Release > Run workflow), it tests and builds only:
+# the files are attached to the run, as an artifact.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: |
+          python -m venv venv
+          venv\Scripts\python -m pip install --upgrade pip
+          venv\Scripts\python -m pip install -r requirements-player.txt
+
+      - name: Check the tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: venv\Scripts\python -c "import sys; sys.path.insert(0, '.'); from tools.build_release import check_tag; check_tag('${{ github.ref_name }}')"
+
+      - name: Test
+        # The tests that need the game, Cemu or the Archipelago runtime are skipped here.
+        run: venv\Scripts\python -m unittest discover -s tests
+
+      - name: Build
+        run: venv\Scripts\python tools\build_release.py
+
+      - name: Keep the files of a run by hand
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: |
+            dist/*.zip
+            dist/botw.apworld
+
+      - name: Draft the release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart("v")
+          gh release create "${{ github.ref_name }}" (Get-ChildItem dist\*.zip).FullName dist\botw.apworld `
+            --draft --generate-notes --title "BOTW Archipelago $version"

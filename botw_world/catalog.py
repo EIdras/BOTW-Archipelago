@@ -3,6 +3,8 @@ import json
 from importlib.resources import files
 
 GAME = "Breath of the Wild"
+# The project's version, written into each seed's slot data for the client to compare.
+WORLD_VERSION = json.loads(files(__package__).joinpath("archipelago.json").read_text(encoding="utf-8"))["world_version"]
 LOCATIONS = json.loads(files(__package__).joinpath("data/locations.json").read_text(encoding="utf-8"))
 ITEMS = json.loads(files(__package__).joinpath("data/items.json").read_text(encoding="utf-8"))
 RUNES = ("Magnesis", "Remote Bomb", "Stasis", "Cryonis")

@@ -21,6 +21,8 @@ from botw_client.runtime import (MESSAGE_MAX_CHARS, BotwClientRuntime, StateStor
 
 ROOT = Path(__file__).resolve().parent.parent
 
+NEEDS_TABLE = unittest.skipUnless(gamedata_table.available(), "the GameData flag table is read from the game")
+
 
 class FakeMemory:
     def __init__(self, start, data):
@@ -33,6 +35,7 @@ class FakeMemory:
 
 
 class ClientDataTests(unittest.TestCase):
+    @NEEDS_TABLE
     def test_item_map_is_exact_and_all_flags_exist_with_expected_types(self):
         self.assertEqual(validate_item_map(), (39, 1))
         mapping = load_item_map()
@@ -47,6 +50,7 @@ class ClientDataTests(unittest.TestCase):
                 self.assertEqual(types.get(delivery["flag"]), delivery["type"],
                                  (name, delivery["flag"]))
 
+    @NEEDS_TABLE
     def test_locations_are_complete_unique_and_match_gamedata(self):
         targets = load_targets()
         self.assertEqual(len(targets), EXPECTED_LOCATION_COUNT)
@@ -62,6 +66,7 @@ class ClientDataTests(unittest.TestCase):
             self.assertEqual(by_name.get(target.flag), target.hash_u32,
                              target.name)
 
+    @NEEDS_TABLE
     def test_terminal_checks_are_distinct_from_received_rune_flags(self):
         targets = {target.name: target for target in load_targets()}
         mapping = load_item_map()
@@ -76,6 +81,7 @@ class ClientDataTests(unittest.TestCase):
             received_flags = {mapping[item]["delivery"]["flag"]}
             self.assertNotIn(check_flag, received_flags)
 
+    @NEEDS_TABLE
     def test_native_world_ids_are_append_only(self):
         world = json.loads((ROOT / "botw_world" / "data" /
                             "locations.json").read_text(encoding="utf-8"))

@@ -95,18 +95,37 @@ class SeedTests(Folder):
     def test_a_prepared_seed_is_played_as_it_is(self):
         self.seed("111", sessions=["20260901T100000Z"])
         ui = Answers(answers=["1"])
-        with mock.patch.object(launcher, "ready", return_value=True), \
-                mock.patch.object(launcher.play_seed, "prepare") as prepare:
+        with mock.patch("tools.play_pack.selected_pack"), mock.patch("tools.play_pack.outdated", return_value=[]), \
+                mock.patch.object(launcher.play_seed, "refresh") as refresh:
             self.assertEqual(launcher.choose_seed(ui, None), "111")
-        prepare.assert_not_called()
+        refresh.assert_not_called()
         self.assertIn("last played 2026-09-01", ui.text())
+
+    def test_a_pack_built_by_another_version_is_built_again(self):
+        self.seed("111")
+        for stale in ({"return_value": ["botw_client/items.py"]}, {"side_effect": RuntimeError("no pack")}):
+            with self.subTest(stale), mock.patch("tools.play_pack.selected_pack", **stale), \
+                    mock.patch("tools.play_pack.outdated", **stale), \
+                    mock.patch.object(launcher.play_seed, "refresh") as refresh:
+                ui = Answers(answers=["1"])
+                self.assertEqual(launcher.choose_seed(ui, None), "111")
+            refresh.assert_called_once_with(self.seeds / "111")
+            self.assertIn("for this version", ui.text())
+
+    def test_a_seed_of_a_newer_world_is_played_with_a_warning(self):
+        folder = self.seed("111")
+        report = json.loads((folder / "analysis.json").read_text())
+        report["audit"]["world_version"] = "99.0.0"
+        (folder / "analysis.json").write_text(json.dumps(report))
+        ui = Answers()
+        launcher.warn_newer(ui, "111")
+        self.assertIn("world 99.0.0, newer than this version", ui.text())
 
     def test_another_seed_is_chosen_then_prepared(self):
         self.seed("111")
         path = slot_file(self.root, name="Simon")
         ui = Answers(answers=["2"], files=[path])
-        with mock.patch.object(launcher, "ready", return_value=False), \
-                mock.patch.object(launcher.play_seed, "prepare") as prepare:
+        with mock.patch.object(launcher.play_seed, "prepare") as prepare:
             self.assertEqual(launcher.choose_seed(ui, None), "test-seed")
         prepare.assert_called_once_with(path.resolve(), slot_name=None)
 
@@ -114,7 +133,7 @@ class SeedTests(Folder):
         path = slot_file(self.root, name="Simon")
         folder = self.seed("test-seed", archive=path.name)
         (folder / path.name).write_bytes(path.read_bytes())
-        with mock.patch.object(launcher, "ready", return_value=True), \
+        with mock.patch("tools.play_pack.selected_pack"), mock.patch("tools.play_pack.outdated", return_value=[]), \
                 mock.patch.object(launcher.play_seed, "prepare") as prepare:
             self.assertEqual(launcher.choose_seed(Answers(), str(path)), "test-seed")
         prepare.assert_not_called()

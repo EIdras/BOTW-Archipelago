@@ -7,7 +7,8 @@
    tools/cemu_profile.py).
 2. Picks the seed: the file given (or dropped on the launcher), else one
    already prepared, or a new file chosen in a window. A new seed's game pack
-   is built (tools/play_seed.py).
+   is built (tools/play_seed.py), and a prepared seed's again when another
+   version of the project built it.
 3. Asks the address of the room (remembered for the seed) and its password; a
    seed prepared from its zip can also be hosted on this computer, where the
    Archipelago runtime is (tools/prepare_ap_runtime.py).
@@ -123,14 +124,32 @@ def prepared_seeds() -> list[Prepared]:
     return sorted(seeds, key=lambda seed: seed.last_played, reverse=True)
 
 
-def ready(seed: str) -> bool:
-    """A pack is selected for the seed and checks out."""
-    from tools.play_pack import selected_pack
+def fresh(ui, seed: str) -> str:
+    """The prepared seed, its pack built again when it is missing or was built
+    by another version of the project."""
+    from tools.play_pack import outdated, selected_pack
+    folder = play_seed.PLAY_SEEDS / seed
     try:
-        selected_pack(play_seed.PLAY_SEEDS / seed)
-        return True
+        stale = bool(outdated(selected_pack(folder)))
     except (OSError, ValueError, RuntimeError, KeyError):
-        return False
+        stale = True
+    if stale:
+        ui.say(f"Building the game pack of seed {seed} for this version (about a minute)...")
+        play_seed.refresh(folder)
+    warn_newer(ui, seed)
+    return seed
+
+
+def warn_newer(ui, seed: str) -> None:
+    from botw_client.version import VERSION
+    try:
+        report = json.loads((play_seed.PLAY_SEEDS / seed / "analysis.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return
+    made = play_seed.newer_world(report.get("audit", {}))
+    if made:
+        ui.say(f"This seed was generated with the Breath of the Wild world {made}, newer than this version "
+               f"({VERSION}): if something is missing, update BOTW Archipelago.")
 
 
 def prepare_file(ui, path: Path) -> str:
@@ -151,10 +170,11 @@ def prepare_file(ui, path: Path) -> str:
             ui.say(f"  {number}. {name}")
         slot = names[pick(ui, "Which player are you?", len(names)) - 1]
     folder = play_seed.PLAY_SEEDS / seed
-    if ready(seed) and (folder / path.name).is_file() and play_seed.sha(folder / path.name) == play_seed.sha(path):
-        return seed
+    if (folder / "analysis.json").is_file() and (folder / path.name).is_file()             and play_seed.sha(folder / path.name) == play_seed.sha(path):
+        return fresh(ui, seed)
     ui.say(f"Building the game pack of seed {seed} for {slot} (about a minute)...")
     play_seed.prepare(path, slot_name=slot if len(names) > 1 else None)
+    warn_newer(ui, seed)
     return seed
 
 
@@ -179,10 +199,7 @@ def choose_seed(ui, argument: str | None) -> str:
         ui.say(f"  {len(seeds) + 1}. another seed: your slot file (.apbotw.json) or the seed's zip")
         choice = pick(ui, "Seed", len(seeds) + 1)
         if choice <= len(seeds):
-            if ready(seeds[choice - 1].seed):
-                return seeds[choice - 1].seed
-            raise ValueError(f"the game pack of seed {seeds[choice - 1].seed} is missing: "
-                             "choose its slot file again")
+            return fresh(ui, seeds[choice - 1].seed)
     path = ui.choose_file("Your slot file (.apbotw.json) or the seed's zip", SEED_FILES)
     if path is None:
         raise Cancelled

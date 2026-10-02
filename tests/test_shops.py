@@ -9,6 +9,7 @@ import struct
 import unittest
 import zlib
 
+from botw_client import gamedata_table
 from botw_client.locations import LocationTarget, LocationTracker, load_targets
 from botw_client.shop_catalog import (BY_ID, FIRST_LOCATION_ID, KEPT, LOCATIONS,
                                       MERCHANTS, SLOTS_PER_MERCHANT, catalogue_row,
@@ -17,6 +18,8 @@ from botw_client.shop_catalog import (BY_ID, FIRST_LOCATION_ID, KEPT, LOCATIONS,
 ROOT = Path(__file__).resolve().parents[1]
 UPDATE = Path.home() / "AppData/Roaming/Cemu/mlc01/usr/title/0005000e/101c9500/content"
 HAS_GAME = (UPDATE / "Pack/TitleBG.pack").is_file()
+
+NEEDS_TABLE = unittest.skipUnless(gamedata_table.available(), "the GameData flag table is read from the game")
 
 
 class CatalogueTests(unittest.TestCase):
@@ -43,6 +46,7 @@ class CatalogueTests(unittest.TestCase):
         self.assertEqual([r for r in world if r["category"] == "Shop"],
                          [world_row(l) for l in LOCATIONS])
 
+    @NEEDS_TABLE
     def test_shop_targets_are_optional_s32_custom_flags(self):
         shops = [t for t in load_targets(world_schema=3) if t.optional]
         self.assertEqual([t.name for t in shops], [l.name for l in LOCATIONS])

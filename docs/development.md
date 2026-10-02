@@ -82,8 +82,29 @@ makes the tools write to `%LOCALAPPDATA%\BOTW Archipelago`, so that a new releas
 player's profile and seeds. The version is the world's `world_version`; a release is built from committed files
 (`--allow-dirty` otherwise). `tests/test_release.py` checks that every package the shipped code imports is shipped.
 
-To publish an update: change `world_version` in `botw_world/archipelago.json`, commit, build, and attach both files to
-a GitHub release.
+The player's packages are pinned in `requirements-player.txt` (which `requirements.txt` includes): the build refuses an
+environment whose versions differ, so that a release is the same wherever it is built. To update one, change its pin,
+`pip install -r requirements.txt`, and run the tests.
+
+### Versions and publishing
+
+The version is one for the world, the client and the release: `world_version` in `botw_world/archipelago.json`
+(`botw_client/version.py`). The world writes it into each seed's slot data. A release plays every seed whose schemas it
+knows (`world_schema`, `client_schema`), whatever version generated it, and names the version needed otherwise; the
+launcher builds a seed's pack again when the sources it was built from changed, so an update applies to the seeds
+already prepared.
+
+To publish a version, change `world_version`, commit, then tag and push:
+
+```bat
+git tag v1.0.1
+git push origin v1.0.1
+```
+
+The GitHub Action `.github/workflows/release.yml` checks that the tag names the version, runs the tests (those needing
+the game are skipped there), builds the release and makes a draft GitHub release with the zip and `botw.apworld`, to
+check and publish. Run by hand (Actions > Release > Run workflow), it only tests and builds, and keeps the files on the
+run.
 
 ## Style
 

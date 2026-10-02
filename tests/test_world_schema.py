@@ -2,14 +2,18 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from botw_client import gamedata_table
 from botw_client.locations import SCHEMA_LOCATION_COUNTS, WORLD_SCHEMA, load_targets
 from botw_client.runtime import BotwClientRuntime, FatalClientError
 
 HEARTS = ["Vah Ruta Heart Container", "Vah Rudania Heart Container",
           "Vah Medoh Heart Container", "Vah Naboris Heart Container"]
 
+NEEDS_TABLE = unittest.skipUnless(gamedata_table.available(), "the GameData flag table is read from the game")
+
 
 class CatalogueSchemaTests(unittest.TestCase):
+    @NEEDS_TABLE
     def test_schemas_are_prefixes_of_the_append_only_catalogue(self):
         old, new = load_targets(world_schema=1), load_targets(world_schema=2)
         shops, stalls = load_targets(world_schema=3), load_targets()
@@ -55,6 +59,7 @@ class RuntimeSchemaTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(FatalClientError):
                 self.runtime(directory, "Breath of the Wild", {"world_schema": 9})._world_schema()
 
+    @NEEDS_TABLE
     def test_manual_schema_comes_from_its_data_package(self):
         old = [target.name for target in load_targets(world_schema=1)]
         with tempfile.TemporaryDirectory() as directory:
@@ -68,6 +73,7 @@ class RuntimeSchemaTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(self.runtime(directory, "Manual_BOTW",
                                           names=old + HEARTS + shops + stalls)._world_schema(), 4)
 
+    @NEEDS_TABLE
     async def test_a_check_absent_from_the_seed_is_not_sent(self):
         old = [target.name for target in load_targets(world_schema=1)]
 

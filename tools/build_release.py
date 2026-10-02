@@ -1,11 +1,12 @@
 """Build a release: the folder a player unzips and runs, and the world for the host.
 
-    python tools/build_release.py [--output dist] [--allow-dirty]
+    python tools/build_release.py [--output dist] [--allow-dirty] [--tag vX.Y.Z]
 
 dist/BOTW-Archipelago-<version>/ holds:
   * python/: the Python this checkout runs on (3.12, Windows, from its base
     installation), with only the packages the player's tools import, copied
-    from this environment with their dependencies;
+    from this environment with their dependencies, at the versions of
+    requirements-player.txt (checked);
   * the project's tracked files the player's tools read: botw_client/,
     botw_patch/, tools/, native/, data/, the world's data, the Archipelago
     item's icon and model, the options template players/BOTW.yaml;
@@ -13,7 +14,7 @@ dist/BOTW-Archipelago-<version>/ holds:
     commit, Python and packages), whose presence makes the tools write their
     files to the player's data folder (botw_client/paths.py).
 It is zipped as dist/BOTW-Archipelago-<version>.zip, next to dist/botw.apworld.
-The version is the world's (botw_world/archipelago.json). A release is made
+The version is the project's (botw_client/version.py). A release is made
 from committed work: a checkout with changes is refused unless --allow-dirty.
 """
 from __future__ import annotations
@@ -30,11 +31,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:] = [str(ROOT)] + [p for p in sys.path if Path(p).resolve() != ROOT / "tools"]
 
 from botw_client.paths import RELEASE_MARKER  # noqa: E402
+from botw_client.version import VERSION  # noqa: E402
 
 NAME = "BOTW-Archipelago"
 # What the player's tools import beyond the standard library (tests/test_release.py).
 PACKAGES = ("oead", "evfl", "rstb", "aiohttp", "numpy")
-PROJECT = ("botw_client", "botw_patch", "tools", "native", "data", "botw_world/data", "assets/wiiu",
+PINS = ROOT / "requirements-player.txt"
+PROJECT = ("botw_client", "botw_patch", "tools", "native", "data", "botw_world/data",
+           "botw_world/archipelago.json", "assets/wiiu",
            "assets/models/ap_item/wiiu", "players/BOTW.yaml", "BOTW Archipelago.cmd", "README.md", "LICENSE")
 PYTHON_FILES = ("python.exe", "pythonw.exe", "python3.dll", f"python3{sys.version_info.minor}.dll",
                 "vcruntime140.dll", "vcruntime140_1.dll", "LICENSE.txt")
@@ -44,7 +48,7 @@ LIB_LEFT_OUT = {"site-packages", "test", "idlelib", "ensurepip", "lib2to3", "tur
 
 
 def version() -> str:
-    return json.loads((ROOT / "botw_world/archipelago.json").read_text(encoding="utf-8"))["world_version"]
+    return VERSION
 
 
 def git(*arguments: str) -> str:
@@ -83,6 +87,29 @@ def distributions(names=PACKAGES) -> dict:
     return found
 
 
+def pins(path: Path = PINS) -> dict[str, str]:
+    """{name: version} of the pinned requirements."""
+    found = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.split("#", 1)[0].strip()
+        if line:
+            name, _, pinned = line.partition("==")
+            found[name.strip().lower().replace("_", "-")] = pinned.strip()
+    return found
+
+
+def check_pins(found: dict, pinned: dict[str, str]) -> None:
+    """The release ships exactly the pinned versions, and nothing unpinned."""
+    problems = [f"{name} {distribution.version} installed, {pinned[name]} pinned"
+                for name, distribution in found.items() if name in pinned and distribution.version != pinned[name]]
+    problems += [f"{name} {distribution.version} is shipped but not pinned"
+                 for name, distribution in found.items() if name not in pinned]
+    problems += [f"{name}=={pinned[name]} is pinned but not needed" for name in pinned if name not in found]
+    if problems:
+        raise RuntimeError(f"this environment does not match {PINS.name} "
+                           f"(pip install -r {PINS.name}): " + "; ".join(problems))
+
+
 def copy_python(target: Path) -> None:
     base = Path(sys.base_prefix)
     target.mkdir(parents=True)
@@ -98,7 +125,9 @@ def copy_python(target: Path) -> None:
 def copy_packages(site: Path) -> dict[str, str]:
     """The packages' installed files into `site`; {name: version}."""
     installed = {}
-    for name, distribution in sorted(distributions().items()):
+    found = distributions()
+    check_pins(found, pins())
+    for name, distribution in sorted(found.items()):
         root = Path(distribution.locate_file(""))
         for file in distribution.files or []:
             source = Path(distribution.locate_file(file))
@@ -118,6 +147,13 @@ def zip_folder(folder: Path, archive: Path) -> Path:
             if path.is_file():
                 zipped.write(path, Path(folder.name, path.relative_to(folder)).as_posix())
     return archive
+
+
+def check_tag(tag: str) -> None:
+    """A release published for a git tag is the version the tag names."""
+    if tag != f"v{VERSION}":
+        raise RuntimeError(f"the tag {tag} does not name this version, {VERSION}: tag v{VERSION}, "
+                           "or change world_version in botw_world/archipelago.json")
 
 
 def build(output: Path = ROOT / "dist", *, allow_dirty: bool = False) -> Path:
@@ -152,5 +188,11 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=Path, default=ROOT / "dist")
     parser.add_argument("--allow-dirty", action="store_true",
                         help="build from a checkout whose release files have uncommitted changes")
+    parser.add_argument("--tag", help="the git tag the release is published for (vX.Y.Z): checked first")
     arguments = parser.parse_args()
-    print(build(arguments.output, allow_dirty=arguments.allow_dirty))
+    try:
+        if arguments.tag:
+            check_tag(arguments.tag)
+        print(build(arguments.output, allow_dirty=arguments.allow_dirty))
+    except RuntimeError as exc:
+        raise SystemExit(f"Error: {exc}")

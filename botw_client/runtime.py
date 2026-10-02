@@ -334,7 +334,7 @@ class BotwClientRuntime:
         if slot_schema != expected_schema:
             raise FatalClientError(
                 f"slot_data client_schema={slot_schema}; expected {expected_schema}. "
-                "Install the new APWorld and generate the seed again.")
+                + self._versions_hint())
         expected = set(target_names)
         if self.ap.game == "Breath of the Wild":
             expected.discard(GOAL_LOCATION)
@@ -870,6 +870,13 @@ class BotwClientRuntime:
                 "locations missing from the data package: " + ", ".join(unresolved))
         self.last_check_send = now
 
+    def _versions_hint(self) -> str:
+        """What to do when this version cannot play the room's seed."""
+        from .version import VERSION
+        made = self.ap.slot_data.get("world_version", "an earlier version")
+        return (f"The seed was generated with the Breath of the Wild world {made}; this is {VERSION}: "
+                "play it with the BOTW Archipelago release of the seed's version.")
+
     def _world_schema(self) -> int:
         """Location schema of the connected seed (see botw_client/locations.py)."""
         if self.ap.game == "Breath of the Wild":
@@ -878,7 +885,7 @@ class BotwClientRuntime:
             if schema not in SCHEMA_LOCATION_COUNTS:
                 raise FatalClientError(
                     f"slot_data world_schema={schema}; {sorted(SCHEMA_LOCATION_COUNTS)} "
-                    "accepted. Install the new client or generate the seed again.")
+                    "accepted. " + self._versions_hint())
             return schema
         # Manual declares no schema: its data package tells which rows it has
         # (the newest schema all of whose names it knows).

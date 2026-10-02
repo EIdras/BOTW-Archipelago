@@ -52,6 +52,7 @@ sys.path.insert(0, str(BUILD / "ap-runtime"))
 PLAY_SEEDS = DATA / "play-seeds"
 PACKS = DATA / "packs-from-source"
 SCOPE = "generated_ap_seed"
+CLIENT_SCHEMA = 3
 GAME = "Breath of the Wild"
 _ROWS = json.loads((ROOT / "botw_world/data/locations.json").read_text(encoding="utf-8"))
 # Every location but the goal, shops apart: they depend on beedle_shop_items
@@ -80,7 +81,27 @@ def verified_manifest(manifest: dict) -> dict:
         raise ValueError("wrong slot manifest hash")
     if manifest.get("game") != GAME:
         raise ValueError("not a Breath of the Wild slot file")
+    check_compatible(manifest.get("slot_data", {}))
     return manifest
+
+
+def check_compatible(slot_data: dict) -> None:
+    """This version can play a seed whose schemas it knows, whatever the world's
+    version that generated it; otherwise the player needs that version."""
+    from botw_client.locations import SCHEMA_LOCATION_COUNTS
+    from botw_client.version import VERSION
+    if (slot_data.get("world_schema") not in SCHEMA_LOCATION_COUNTS
+            or slot_data.get("client_schema") != CLIENT_SCHEMA):
+        made = slot_data.get("world_version", "an earlier version")
+        raise ValueError(f"this seed was generated with the Breath of the Wild world {made}, which this "
+                         f"version ({VERSION}) cannot play: use the BOTW Archipelago release of the seed's version")
+
+
+def newer_world(audit: dict) -> str | None:
+    """The world's version that generated the seed, when it is newer than this one."""
+    from botw_client.version import VERSION, parse
+    made = audit.get("world_version")
+    return made if made and parse(made) > parse(VERSION) else None
 
 
 def archipelago_here() -> bool:
@@ -145,7 +166,8 @@ def read_seed(path: Path, slot_name: str | None = None) -> tuple[dict, dict]:
                 "data_package_checksum": checksum}
     identity["token"] = session_token((manifest["seed"], team, slot, checksum))
     audit = {"seed": manifest["seed"], "slots": {str(slot): name}, "placements": placements,
-             "world_schema": manifest["slot_data"].get("world_schema"), "players": players,
+             "world_schema": manifest["slot_data"].get("world_schema"),
+             "world_version": manifest["slot_data"].get("world_version"), "players": players,
              "hostable": whole}
     return audit, identity
 
@@ -196,6 +218,23 @@ def prepare(source: Path, *, content: Path | None = None, rpx: Path | None = Non
     from botw_client.gamedata_table import build as build_gamedata_table
     build_gamedata_table(content)
     return report, pack
+
+
+def refresh(folder: Path) -> Path:
+    """Build the pack of a prepared seed again, from its own copy of the seed
+    and the current sources; the pack it replaces goes when no seed uses it."""
+    from tools.play_pack import selected_pack, selections
+    report = json.loads((folder / "analysis.json").read_text(encoding="utf-8"))
+    try:
+        previous = selected_pack(folder)
+    except (OSError, ValueError, RuntimeError):
+        previous = None
+    slot_name = report["audit"]["slots"][str(report.get("botw_slot", 1))]
+    _, pack = prepare(Path(report["archive"]), slot_name=slot_name)
+    if (previous is not None and previous != pack and previous.parent == PACKS.resolve()
+            and previous not in selections(PLAY_SEEDS)):
+        shutil.rmtree(previous)
+    return pack
 
 
 if __name__ == "__main__":

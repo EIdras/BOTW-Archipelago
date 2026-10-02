@@ -55,6 +55,28 @@ class ContentTests(unittest.TestCase):
 
     def test_the_version_is_the_worlds(self):
         self.assertRegex(build_release.version(), r"^\d+\.\d+\.\d+$")
+        self.assertIn("botw_world/archipelago.json", build_release.project_files())
+
+
+class VersionTests(unittest.TestCase):
+    def test_this_environment_ships_exactly_the_pinned_versions(self):
+        build_release.check_pins(build_release.distributions(), build_release.pins())
+        self.assertIn("-r requirements-player.txt",
+                      (ROOT / "requirements.txt").read_text(encoding="utf-8").splitlines())
+
+    def test_another_version_or_an_unpinned_package_is_refused(self):
+        found = build_release.distributions()
+        pinned = build_release.pins()
+        for altered, message in (({**pinned, "numpy": "0.0.1"}, "numpy .* installed, 0.0.1 pinned"),
+                                 ({k: v for k, v in pinned.items() if k != "yarl"}, "yarl .* not pinned"),
+                                 ({**pinned, "left-pad": "1.0"}, "left-pad==1.0 is pinned but not needed")):
+            with self.subTest(message), self.assertRaisesRegex(RuntimeError, message):
+                build_release.check_pins(found, altered)
+
+    def test_the_tag_names_the_version(self):
+        build_release.check_tag(f"v{build_release.version()}")
+        with self.assertRaisesRegex(RuntimeError, "does not name this version"):
+            build_release.check_tag("v0.0.0")
 
 
 if __name__ == "__main__":

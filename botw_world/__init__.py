@@ -11,7 +11,7 @@ from worlds.AutoWorld import WebWorld, World
 from Options import OptionError
 from worlds.generic.Rules import set_rule
 
-from .catalog import GAME, GOAL_LOCATION, ITEMS, LOCATIONS, TRAPS, categories, requirements
+from .catalog import GAME, GOAL_LOCATION, ITEMS, LOCATIONS, TRAPS, WORLD_VERSION, categories, requirements
 from .options import OPTION_GROUPS, BotwOptions
 
 
@@ -152,7 +152,7 @@ class BotwWorld(World):
         self.multiworld.itempool.extend(pool)
 
     def fill_slot_data(self) -> dict[str, Any]:
-        return {"client_schema": 3, "world_schema": 4,
+        return {"client_schema": 3, "world_schema": 4, "world_version": WORLD_VERSION,
                 "death_link": bool(self.options.death_link.value),
                 **self.options.as_dict("goal_type", "shrines_required", "divine_beasts_required",
                                        "beedle_shop_items", "stall_shop_items")}

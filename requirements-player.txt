@@ -1,0 +1,19 @@
+# What the player's tools need, at the exact versions a release ships
+# (tools/build_release.py checks this environment against it).
+# Game pack build: BOTW resource formats
+oead==1.2.9.post4
+evfl==1.2.0
+rstb==1.2.2
+# Client
+aiohttp==3.14.3
+numpy==2.5.2
+# Their dependencies
+aiohappyeyeballs==2.7.1
+aiosignal==1.4.0
+attrs==26.1.0
+frozenlist==1.8.0
+idna==3.19
+multidict==6.7.1
+propcache==0.5.2
+typing-extensions==4.15.0
+yarl==1.24.5

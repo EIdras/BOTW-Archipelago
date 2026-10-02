@@ -34,6 +34,29 @@ def select_pack(folder: Path, pack: Path) -> None:
         temporary.unlink(missing_ok=True)
 
 
+def selections(seeds: Path) -> set[Path]:
+    """The packs the prepared seeds of `seeds` select."""
+    found = set()
+    for folder in seeds.iterdir() if seeds.is_dir() else ():
+        try:
+            found.add(selected_pack(folder))
+        except (OSError, ValueError, RuntimeError, KeyError):
+            continue
+    return found
+
+
+def outdated(pack: Path) -> list[str]:
+    """The sources that changed since the pack was built from them: a new
+    version of the project builds it again."""
+    manifest = json.loads((pack / "manifest.json").read_text(encoding="utf-8"))
+    changed = []
+    for name, recorded in sorted(manifest.get("source_hashes", {}).items()):
+        path = ROOT / name
+        if not path.is_file() or digest(path.read_bytes()) != recorded:
+            changed.append(name)
+    return changed
+
+
 def selected_pack(folder: Path) -> Path:
     pointer = folder / "play-pack.json"
     if not pointer.is_file():
