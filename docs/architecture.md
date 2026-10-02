@@ -34,7 +34,8 @@ after the hash of its content), reproducible, and verified before every use (`ve
   - GameData flags of the integration: the session token of the save, the delivery cursor, shop records.
   - Beedle's stocks and the village stalls, with an Archipelago item actor, icon, 3D model and texts in every language
     (`botw_patch/shops.py`, `botw_patch/stalls.py`).
-  - The Archipelago logo in the HUD (`botw_patch/hud_layout.py`) and the "Archipelago" key item (`botw_patch/status_item.py`).
+  - The Archipelago logo in the HUD (`botw_patch/hud_layout.py`) and on the loading screen
+    (`botw_patch/loading_icon.py`), and the "Archipelago" key item (`botw_patch/status_item.py`).
   - The DeathLink entry (`botw_patch/death_link.py`).
   - The resource size table, updated for every changed file.
 - **Native code** (`tools/build_native_from_source.py`): Cemu patches (`patch_apInject.asm` and companions) assembled

@@ -30,7 +30,7 @@ from tools import build_plateau_sensor_candidate as sensor
 from tools import build_master_sword_candidate as sword
 from tools import build_ballad_condition_candidate as ballad
 from tools.build_ballad_upgrade_delivery import champion_entries, transform_for as upgrade_delivery
-from botw_patch import death_link, hud_layout
+from botw_patch import death_link, hud_layout, loading_icon
 from botw_patch.status_item import INPUT_HASHES as STATUS_INPUTS
 
 TITLE = "Pack/TitleBG.pack"
@@ -70,6 +70,7 @@ SOURCE_FILES = (
     "botw_patch/ledger_experiment.py", "botw_client/delivery_plan.py",
     "botw_client/items.py", "data/item_map.json", "assets/wiiu/Item_AP.sbitemico",
     "botw_patch/hud_layout.py", "tools/bitemico.py", "botw_patch/death_link.py",
+    "botw_patch/loading_icon.py",
 )
 
 
@@ -183,12 +184,14 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
     catalog["death_link"] = {"entry": death_link.ENTRY, "flow": death_link.FLOW_NAME,
                              "flag": death_link.FLAG,
                              "attackers": death_link.attacker_names(inputs[death_link.MESSAGES])}
-    # The AP connection indicator of the HUD (botw_patch/hud_layout.py).
+    # The AP connection indicator of the HUD (botw_patch/hud_layout.py) and
+    # the AP icon of the loading screen (botw_patch/loading_icon.py).
     icon = (ROOT / "assets/wiiu/Item_AP.sbitemico").read_bytes()
 
     def indicator(raw):
         out, detail = hud_layout.patch_archive(unpack(raw), icon)
-        return (bytes(oead.yaz0.compress(out)) if raw[:4] == b"Yaz0" else out), [detail]
+        out, loading = loading_icon.patch_archive(out, icon)
+        return (bytes(oead.yaz0.compress(out)) if raw[:4] == b"Yaz0" else out), [detail, loading]
 
     files, edits = patch_stage(files, BOOTUP, {hud_layout.ARCHIVE: indicator})
     changes.extend(edits)

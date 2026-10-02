@@ -110,6 +110,15 @@ def _pane(data: bytes, name: str | None = None, *, visible: bool | None = None,
 
 def part_layout(template: bytes) -> bytes:
     """PaAPStatus_00: RootPane > [P_APOffline_00 (visible), P_APOnline_00]."""
+    return picture_layout(template, PART_LAYOUT, SIZE, [
+        (OFFLINE, TEXTURES[OFFLINE], True), (ONLINE, TEXTURES[ONLINE], False)])
+
+
+def picture_layout(template: bytes, layout: str, size: float,
+                   pictures: list[tuple[str, str, bool]]) -> bytes:
+    """A part layout of pictures, from PaIconChallenge_00: RootPane > one
+    picture per (pane name, texture, visible), each with a material of its
+    name showing its texture, untinted."""
     header, sections = read_layout(template)
     kinds = [magic for magic, _ in sections]
     if kinds != [b"lyt1", b"txl1", b"mat1", b"pan1", b"pas1", b"pic1", b"pae1",
@@ -118,9 +127,9 @@ def part_layout(template: bytes) -> bytes:
     parts = dict(sections)
 
     lyt = parts[b"lyt1"]
-    lyt1 = lyt[:4] + lyt[4:12] + struct.pack(">ff", SIZE, SIZE) + _string(PART_LAYOUT)
+    lyt1 = lyt[:4] + lyt[4:12] + struct.pack(">ff", size, size) + _string(layout)
 
-    names = [TEXTURES[OFFLINE], TEXTURES[ONLINE]]
+    names = [texture for _, texture, _ in pictures]
     strings = [n.encode("ascii") + b"\0" for n in names]
     table, offset = b"", 4 * len(names)
     for raw in strings:
@@ -138,7 +147,7 @@ def part_layout(template: bytes) -> bytes:
         raise ValueError("unexpected template material")
     material[0x1c:0x24] = b"\0\0\0\0\xff\xff\xff\xff"    # no tint (the model is yellow)
     materials = []
-    for index, name in enumerate((OFFLINE, ONLINE)):
+    for index, (name, _, _) in enumerate(pictures):
         entry = bytearray(material)
         entry[:0x1c] = _name(name, 0x1c)
         struct.pack_into(">H", entry, 0x28, index)       # texture map 0: texture index
@@ -146,20 +155,22 @@ def part_layout(template: bytes) -> bytes:
     # Offsets from the section start: header, count, then the offset table.
     first = 8 + 4 + 4 * len(materials)
     mat1 = (struct.pack(">HH", len(materials), 0)
-            + struct.pack(">II", first, first + len(materials[0])) + b"".join(materials))
+            + struct.pack(f">{len(materials)}I", *(first + i * len(materials[0])
+                                                  for i in range(len(materials))))
+            + b"".join(materials))
 
-    root = _pane(parts[b"pan1"], size=(SIZE, SIZE))
+    root = _pane(parts[b"pan1"], size=(size, size))
     picture = parts[b"pic1"]
     if struct.unpack_from(">H", picture, 0x5c)[0] != 0:
         raise ValueError("unexpected template picture")
-    pictures = []
-    for index, name in enumerate((OFFLINE, ONLINE)):
-        entry = bytearray(_pane(picture, name, visible=(name == OFFLINE), size=(SIZE, SIZE)))
+    panes = []
+    for index, (name, _, visible) in enumerate(pictures):
+        entry = bytearray(_pane(picture, name, visible=visible, size=(size, size)))
         struct.pack_into(">H", entry, 0x5c, index)       # material index
-        pictures.append((b"pic1", bytes(entry)))
+        panes.append((b"pic1", bytes(entry)))
 
     out = [(b"lyt1", lyt1), (b"txl1", txl1), (b"mat1", mat1), (b"pan1", root),
-           (b"pas1", b""), *pictures, (b"pae1", b""), (b"grp1", parts[b"grp1"])]
+           (b"pas1", b""), *panes, (b"pae1", b""), (b"grp1", parts[b"grp1"])]
     return write_layout(header, out)
 
 

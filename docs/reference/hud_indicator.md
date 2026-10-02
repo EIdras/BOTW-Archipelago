@@ -63,6 +63,34 @@ venv\Scripts\python tools\play_seed.py <seed.zip> --content <content> --rpx U-Ki
 The reference digests of `tests/test_resources_from_source.py` and `tests/test_pack_from_source.py` change with the
 resources: update them (see [development](../development.md#reproducible-builds)).
 
+## The loading screen icon
+
+The loading screen (`blyt/FadeStatus_00.bflyt`, the same archive) shows, under `N_ParamInOut_00`, one icon per freed
+Divine Beast and the Master Cycle Zero. Every Archipelago pack adds the Archipelago logo left of the cycle, as a black
+silhouette in the style of those icons ([`botw_patch/loading_icon.py`](../../botw_patch/loading_icon.py)).
+
+- What the game does (read in its code: the screen's setup at `0x02f99510`, its update at `0x02f999d4`): the parts
+  `Pa_Ancient_00` to `03` sit at x = 564, 484, 404, 324 and `Pa_DLC_00` at x = 200 (y = 117). Each freed beast makes
+  the next slot visible, from `Pa_Ancient_00` on the right, with that beast's picture (so their order follows the
+  player's); the other slots are hidden, and the cycle shows once owned. No icon is ever moved: with two beasts, the
+  row already has a gap before the cycle.
+- The part `Pa_AP_00` is added after `Pa_Ancient_00`, modelled on `Pa_DLC_00` (visible, alpha inherited from its
+  parent, so it fades in and out with the others). It is always visible: only Archipelago packs have it. It points
+  to `PaFadeIconAP_00`, one picture built from `PaIconChallenge_00` like the HUD's, and its texture
+  `Nt_APFade_00^l`, 128×128.
+- The silhouette is made at build time from `assets/wiiu/Item_AP.sbitemico`: black, with the pixels lighter than
+  their surroundings (the symbols) cut out, then cleaned of the marble's speckles. Integer arithmetic, so every
+  machine builds the same texture.
+
+| Setting | Constant | Current value |
+|---|---|---|
+| Position (center, same frame as above) | `POSITION` | `(144.0, 113.0)`: left of the cycle, above the screen's line |
+| Displayed size | `SIZE` | `54.0` |
+| Texture resolution | `TEXTURE_SIZE` | `128` |
+| Silhouette: how much lighter a pixel must be to be cut out (grey levels), blur radius | `CUT_DELTA`, `BLUR_RADIUS` | `30`, `12` |
+
+Tested by `tests/test_loading_icon.py`.
+
 ## Format details (measured)
 
 - FLYT and FLIM 5.2, big-endian. A section is a magic, a size (8-byte header included) and a body. Byte-for-byte round

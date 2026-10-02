@@ -99,7 +99,7 @@ hashes = {n:digest(raw) for n,raw in tree(a).items() if n != 'manifest.json'}
 # Every installed file (metadata excluded): the native code, the resources,
 # and the Archipelago key item (actor, icon, ActorInfo, texts in 7 languages).
 assert len(hashes) == 33
-assert digest(encode(hashes)) == 'bf43dadb764ff997c08ca9efbb35a9f9dc3c8af5fd733d74ea020214d8a13aca', 'new pin: ' + digest(encode(hashes))
+assert digest(encode(hashes)) == '556f37047eef454260af9c3aa41268b3ac95760c93c258abfa9d6acbb204b016', 'new pin: ' + digest(encode(hashes))
 binding = load_seed(work/'analysis.json', 1, work/'seed.zip')
 verify_pack(a, binding)
 try:
