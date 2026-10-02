@@ -205,11 +205,12 @@ class ShutdownTests(unittest.IsolatedAsyncioTestCase):
             "MultiServer": SimpleNamespace(Context=Mock(return_value=self.context),
                                            server=Mock()),
             "worlds": SimpleNamespace(network_data_package={"games": {}}),
+            # Archipelago's, not one of the player's packages (absent from a release and the CI).
+            "websockets": SimpleNamespace(serve=Mock(return_value=self.server)),
             "botw_client.runtime": SimpleNamespace(
                 BotwClientRuntime=Mock(return_value=self.runtime)),
         }
         with patch.dict("sys.modules", modules), \
-                patch("websockets.serve", return_value=self.server), \
                 patch("tools.play_session.console", new_callable=AsyncMock):
             return await play(self.folder, {"archive": "unused.zip",
                                             "audit": {"slots": {"1": "Player"}}},
@@ -221,9 +222,9 @@ class ShutdownTests(unittest.IsolatedAsyncioTestCase):
         factory = Mock(return_value=self.runtime)
         context = Mock(side_effect=AssertionError("no local server"))
         modules = {"MultiServer": SimpleNamespace(Context=context, server=Mock()),
+                   "websockets": SimpleNamespace(serve=Mock(side_effect=AssertionError("no socket"))),
                    "botw_client.runtime": SimpleNamespace(BotwClientRuntime=factory)}
         with patch.dict("sys.modules", modules), \
-                patch("websockets.serve", side_effect=AssertionError("no socket")), \
                 patch("tools.play_session.console", new_callable=AsyncMock) as console:
             summary = await play(self.folder, {"archive": "slot.apbotw.json", "botw_slot": 3,
                                                "audit": {"slots": {"3": "Simon"}}},
