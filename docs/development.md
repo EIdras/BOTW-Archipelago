@@ -26,6 +26,34 @@ table and the client's caches. In a source checkout it is `.build/`; in a releas
 is `%LOCALAPPDATA%\BOTW Archipelago`, kept across updates; the `BOTW_AP_DATA` variable names another one. The
 developer's own builds (the Archipelago runtime, generated seeds, historical candidates) stay in `.build/`.
 
+## Running from source
+
+The same tools as a release, from this checkout (Python 3.12):
+
+```bat
+python -m venv venv
+venv\Scripts\pip install -r requirements.txt
+"BOTW Archipelago.cmd"
+```
+
+The launcher runs on the venv when the folder has no `python\`, and writes to `.build\` (the data folder of a
+checkout). To generate and host seeds here, give it an Archipelago 0.6.7 source checkout:
+`venv\Scripts\python tools\prepare_ap_runtime.py --source <checkout>` copies its core and this world into
+`.build\ap-runtime`; `venv\Scripts\python tools\generate_native.py` then generates from the YAML files of `players\`
+into `.build\native-seeds\`, and the launcher can host a seed's zip on this computer (`local`).
+
+The launcher's steps are tools of their own:
+
+- `venv\Scripts\python tools\cemu_install.py [--cemu <Cemu.exe>]` shows the game, update and DLC found in Cemu,
+  without copying anything; `tools\cemu_profile.py --cemu <Cemu.exe> [--user-data <folder>]` makes the isolated
+  profile.
+- `venv\Scripts\python tools\play_seed.py <slot file or seed zip> [--slot <name>]` prepares a seed: it checks it,
+  keeps a copy in `play-seeds\<seed>\`, builds the pack bound to the slot from the profile's update (or
+  `--content`/`--rpx`) and selects it.
+- `Play.cmd --seed <seed> [--connect <address> [--password <password>] | --host] [--speed <x>]` plays a prepared seed:
+  in a room, or hosting the seed's zip on this computer, port 38281, with its state kept next to the seed (`--host`:
+  on the network too). `--speed` multiplies Link's run, sprint and climb speed, for tests.
+
 ## Tests
 
 ```bat

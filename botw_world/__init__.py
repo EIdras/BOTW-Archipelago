@@ -27,10 +27,10 @@ class BotwWeb(WebWorld):
     theme = "grassFlowers"
     tutorials = [
         Tutorial("Multiworld Setup Guide",
-                 "Build the game pack of a seed and play Breath of the Wild in Cemu with Archipelago.",
+                 "Install the BOTW Archipelago release and play Breath of the Wild in Cemu in a multiworld.",
                  "English", "setup_en.md", "setup/en", ["Simon"]),
         Tutorial("Guide de configuration multiworld",
-                 "Construire le pack d'une seed et jouer à Breath of the Wild dans Cemu avec Archipelago.",
+                 "Installer la release BOTW Archipelago et jouer à Breath of the Wild dans Cemu en multiworld.",
                  "Français", "setup_fr.md", "setup/fr", ["Simon"]),
     ]
     option_groups = OPTION_GROUPS

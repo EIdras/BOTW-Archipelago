@@ -33,21 +33,21 @@ game itself.
 
 - Windows, Cemu 2.x, Breath of the Wild **Wii U EUR, update v208 (1.5.0) and DLC**, from your own console, installed
   in Cemu: the native code of the integration is built for this exact executable.
-- Python 3.12. To generate or host a seed, [Archipelago 0.6.7](https://github.com/ArchipelagoMW/Archipelago/releases)
-  with this world, `botw.apworld`.
+- To generate or host a seed, [Archipelago 0.6.7](https://github.com/ArchipelagoMW/Archipelago/releases) with this
+  world, `botw.apworld`.
 
 No game file is part of this repository: the game pack of a seed is built from your own copy of the game.
 
 ## Getting started
 
-The [setup guide](botw_world/docs/setup_en.md) ([en français](botw_world/docs/setup_fr.md)) covers installation,
-generation, the game pack and playing. In short:
+Download the [latest release](https://github.com/EIdras/BOTW-Archipelago/releases): `BOTW-Archipelago-<version>.zip`
+for the players, `botw.apworld` for the host. The [setup guide](botw_world/docs/setup_en.md)
+([en français](botw_world/docs/setup_fr.md)) covers installing, playing, hosting and updating. In short:
 
-1. The host generates the seed with Archipelago and `botw.apworld` (`tools\package_native.py` writes it to `dist\`),
-   then hosts it, on archipelago.gg for instance.
-2. Each Breath of the Wild player starts `BOTW Archipelago.cmd` with their slot file (`.apbotw.json`, on the room's
-   page or in the seed's zip). The launcher asks for `Cemu.exe` the first time, builds the seed's game pack, asks for
-   the room's address and plays.
+1. The host generates the seed with Archipelago and `botw.apworld`, then hosts it, on archipelago.gg for instance.
+2. Each Breath of the Wild player unzips the release and starts `BOTW Archipelago.cmd` with their slot file
+   (`.apbotw.json`, on the room's page). The launcher asks for `Cemu.exe` the first time, builds the seed's game pack,
+   asks for the room's address and plays. Nothing else to install: the release brings its own Python.
 
 What the world does, its locations, items, goal and logic: [game page](botw_world/docs/en_Breath%20of%20the%20Wild.md).
 
@@ -60,7 +60,8 @@ What the world does, its locations, items, goal and logic: [game page](botw_worl
 ## Documentation
 
 - [Architecture](docs/architecture.md): the world, the game pack, the client and how they work together.
-- [Development](docs/development.md): layout, tests, reproducible builds, changing the world.
+- [Development](docs/development.md): running from source, layout, tests, reproducible builds, changing the world,
+  releases.
 - [Technical notes](docs/reference/README.md): what was measured in the game, and why.
 
 ## Credits

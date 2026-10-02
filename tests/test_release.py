@@ -40,7 +40,8 @@ class ContentTests(unittest.TestCase):
         files = build_release.project_files()
         for name in ("BOTW Archipelago.cmd", "tools/launcher.py", "botw_client/paths.py", "tools/cemu/mailbox.py",
                      "botw_world/data/locations.json", "data/item_map.json", "assets/wiiu/Item_AP.sbitemico",
-                     "native/cemu/legacy/patch_apInject.asm", "players/BOTW.yaml", "LICENSE"):
+                     "native/cemu/legacy/patch_apInject.asm", "players/BOTW.yaml", "LICENSE",
+                     "botw_world/docs/setup_en.md", "botw_world/docs/setup_fr.md"):
             self.assertIn(name, files)
         self.assertFalse([name for name in files if name.startswith(("tests/", "lab/", "botw_world/test", ".build"))])
 

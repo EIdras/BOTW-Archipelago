@@ -1,100 +1,104 @@
 # Guide de configuration multiworld de Breath of the Wild
 
-Ce guide installe les outils du projet BOTW Archipelago sous Windows : générer une seed, construire le pack de jeu de
-cette seed, et la jouer dans Cemu avec le client Archipelago, seul ou avec d'autres joueurs, dans une salle
-d'archipelago.gg ou sur votre propre serveur. Les commandes se lancent depuis le dossier du projet.
+Ce guide permet de jouer à The Legend of Zelda: Breath of the Wild dans un multiworld Archipelago, sous Windows, dans
+l'émulateur Cemu : l'installation, rejoindre une salle et, pour la personne qui l'héberge, générer la seed.
 
-## Prérequis
+## Ce qu'il faut
 
 - Windows 10 ou 11.
-- [Cemu](https://cemu.info/) 2.x, avec **The Legend of Zelda: Breath of the Wild, Wii U, version européenne (EUR)**,
-  depuis votre propre console : le jeu dans la liste des jeux de Cemu, la mise à jour **v208** (1.5.0) et le DLC
-  installés dans Cemu (Fichier > Installer un titre, une mise à jour ou un DLC). Lancez le jeu une fois dans Cemu.
-- Python 3.12.
-- Pour générer ou héberger une seed : [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases) **0.6.7**.
-  Rejoindre une salle hébergée par quelqu'un d'autre ne demande que votre fichier de slot.
+- [Cemu](https://cemu.info/) 2.x, avec **Breath of the Wild, Wii U, version européenne (EUR)**, depuis votre propre
+  console :
+  - le jeu dans la liste des jeux de Cemu ;
+  - sa mise à jour **v208** (1.5.0) et le **DLC** installés dans Cemu (Fichier > Installer un titre, une mise à jour
+    ou un DLC).
 
-Les autres versions du jeu (US, JP, Switch) ne sont pas prises en charge : le code natif de l'intégration est construit
-pour cet exécutable précis.
+  Lancez le jeu une fois dans Cemu. Les autres versions du jeu (US, JP, Switch) ne sont pas prises en charge :
+  l'intégration est construite pour cet exécutable précis.
+- Environ 5 Go d'espace disque libre, et 140 Mo de plus par seed.
+- De la personne qui héberge la partie : votre **fichier de slot** (`.apbotw.json`) et l'**adresse de la salle**.
 
 ## Installation
 
-Depuis le dossier du projet :
+1. Télécharger `BOTW-Archipelago-<version>.zip` dans les
+   [releases](https://github.com/EIdras/BOTW-Archipelago/releases) du projet.
+2. Clic droit sur le zip > Propriétés, cocher **Débloquer**, OK. Sinon Windows demande de confirmer chaque programme
+   la première fois qu'il se lance.
+3. Le décompresser où vous voulez, dans vos Documents par exemple (pas dans Program Files). Rien d'autre à installer :
+   il apporte son propre Python.
 
-```bat
-python -m venv venv
-venv\Scripts\pip install -r requirements.txt
-```
+## Jouer
 
-## Générer une seed
+Lancer `BOTW Archipelago.cmd` (ou déposer dessus votre fichier de slot). Si Windows dit avoir protégé votre
+ordinateur, choisir « Informations complémentaires », puis « Exécuter quand même ».
 
-Une seed se génère avec [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases) **0.6.7**, comme pour
-n'importe quel jeu, par la personne qui l'héberge (seul, c'est vous) :
+1. **La première fois**, une fenêtre demande où est `Cemu.exe`. Le lanceur trouve Breath of the Wild, sa mise à jour et
+   le DLC dans cette installation et les vérifie, puis copie Cemu, la mise à jour, le DLC et vos sauvegardes dans un
+   profil à lui (environ 5 Go). Votre installation de Cemu n'est jamais modifiée.
+2. **La seed** : choisir votre fichier de slot. Son pack de jeu se construit, en une minute environ. Les fois suivantes,
+   le lanceur liste les seeds déjà préparées, la dernière jouée en tête.
+3. **La salle** : taper son adresse comme sa page l'affiche (`archipelago.gg:38281`), puis son mot de passe, ou Entrée
+   si elle n'en a pas. L'adresse est retenue pour la seed.
 
-1. Mettre `botw.apworld` dans le dossier `custom_worlds` d'Archipelago (`venv\Scripts\python tools\package_native.py`
-   l'écrit dans `dist\`).
+Cemu démarre avec le pack de jeu de la seed, puis le client Archipelago, dans la fenêtre du lanceur. **Commencer une
+nouvelle partie** pour une nouvelle seed : une sauvegarde reste liée à la seed avec laquelle elle a été commencée.
+Jouer normalement : vos objets arrivent dans le jeu, le journal Archipelago (en haut à droite de l'écran) montre ce qui
+est envoyé et reçu, et le logo Archipelago du HUD est en couleur tant que vous êtes connecté. Fermer Cemu termine la
+session ; laisser la fenêtre du lanceur ouverte jusque-là. Le client et les textes ajoutés au jeu sont en anglais.
+
+Les lignes tapées dans la fenêtre du lanceur partent à la salle comme chat, ou comme commandes : `/hint <objet>`,
+`/players`, `/status`... (envoyées à la salle sous la forme `!hint`, `!players`...). Le client en ajoute quelques-unes,
+pour les tests et les signalements de bugs :
+
+| Commande                | Effet                                                         |
+|-------------------------|---------------------------------------------------------------|
+| `/ap-tip <texte>`       | afficher une ligne dans le journal Archipelago du jeu         |
+| `/ap-disconnect [s]`    | simuler une coupure du serveur pendant `s` secondes           |
+| `/ap-evt [n\|reset]`     | lister les dernières requêtes d'événement du jeu              |
+| `/ap-deathlink [cause]` | tuer Link comme un DeathLink reçu (envoyé à personne)         |
+
+## Générer et héberger une seed
+
+La personne qui héberge la partie génère la seed avec
+[Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases) **0.6.7**, comme pour n'importe quel jeu :
+
+1. Mettre `botw.apworld`, tiré des mêmes [releases](https://github.com/EIdras/BOTW-Archipelago/releases), dans le
+   dossier `custom_worlds` d'Archipelago.
 2. Mettre le fichier YAML de chaque joueur dans le dossier `Players` d'Archipelago. Pour Breath of the Wild, partir de
-   `players\BOTW.yaml` (nom du joueur, objectif, options de boutiques, DeathLink, pièges), ou du modèle qu'écrit le
-   Launcher d'Archipelago (« Generate Template Options »).
+   `players\BOTW.yaml` de la release (nom du joueur, objectif, options de boutiques, DeathLink, pièges), ou du modèle
+   qu'écrit le Launcher d'Archipelago (« Generate Template Options »).
 3. Lancer « Generate » dans le Launcher d'Archipelago. Le zip de la seed, dans le dossier `output` d'Archipelago,
    contient un fichier de slot `AP_<seed>_P<n>_<nom>.apbotw.json` pour chaque joueur de Breath of the Wild.
 
 Pour héberger la seed sur [archipelago.gg](https://archipelago.gg), téléverser ce zip sur sa page « Host Game » : la
 page de la salle donne son adresse, `archipelago.gg:<port>`, et le fichier de slot de chaque joueur à télécharger. Pour
-l'héberger sur votre ordinateur, ouvrir le zip avec « Archipelago Server » dans le Launcher d'Archipelago ; les joueurs
-se connectent à `localhost:38281` (les autres à l'adresse de votre ordinateur, port 38281, redirigé vers lui par
-Internet).
+l'héberger sur votre ordinateur, ouvrir le zip avec « Archipelago Server » dans le Launcher d'Archipelago ; vous vous
+connectez à `localhost:38281`, les autres joueurs à l'adresse de votre ordinateur, port 38281 (par Internet, ce port
+doit être redirigé vers votre ordinateur).
 
-Depuis une copie des sources d'Archipelago 0.6.7, `venv\Scripts\python tools\prepare_ap_runtime.py --source <copie>`
-copie son cœur et ce monde dans `.build\ap-runtime` ; `venv\Scripts\python tools\generate_native.py` génère alors à
-partir des fichiers YAML de `players\` vers `.build\native-seeds\`, et le lanceur peut héberger le zip d'une seed sur
-cet ordinateur.
+Jouer seul se fait de la même façon : générer une seed avec votre seul YAML, l'héberger, et la rejoindre.
 
-## Jouer
+## Mettre à jour
 
-Lancer `BOTW Archipelago.cmd`, ou déposer dessus votre fichier de slot (`.apbotw.json`) ou le zip de la seed :
+Télécharger la nouvelle release et la décompresser, à la place de l'ancienne ou ailleurs. Votre profil, vos seeds et
+leurs sauvegardes sont gardés dans `%LOCALAPPDATA%\BOTW Archipelago`, quel que soit le dossier de la release. La
+première fois que vous jouez une seed avec la nouvelle version, le lanceur reconstruit son pack de jeu.
 
-1. **La première fois**, il demande où est `Cemu.exe`. Il trouve Breath of the Wild, sa mise à jour et le DLC dans
-   cette installation et vérifie leurs versions, puis copie Cemu, la mise à jour, le DLC et vos sauvegardes dans un
-   profil isolé (environ 5 Go). Votre installation de Cemu n'est jamais modifiée.
-2. **La seed** : une seed déjà préparée, ou une nouvelle, depuis votre fichier de slot (`.apbotw.json`, téléchargé sur
-   la page de la salle ou tiré du zip de la seed) ou le zip de la seed. Le pack de jeu d'une nouvelle seed se construit
-   en une minute environ.
-3. **La salle** : son adresse, comme sa page l'affiche (`archipelago.gg:<port>`), retenue pour la seed, et son mot de
-   passe si elle en a un. Une seed préparée depuis son zip peut aussi être hébergée sur cet ordinateur : taper `local`.
+Une release joue les seeds des versions précédentes. Si une seed demande une version plus récente, le lanceur dit
+laquelle : la télécharger, et donner à la personne qui héberge le `botw.apworld` correspondant pour les seeds suivantes.
 
-Cemu démarre alors sur son profil isolé avec le seul pack de la seed, puis le client. Pour une nouvelle
-seed, commencer une **nouvelle partie** : une sauvegarde reste liée à la seed avec laquelle elle a été commencée.
-Jouer normalement ; fermer Cemu termine la session. Le client et les textes ajoutés au jeu sont en anglais.
+## Désinstaller
 
-Les lignes tapées dans la console partent au serveur comme commandes (`/hint`, `/players`, `/status`... ; envoyées à
-une salle distante sous la forme `!hint`, `!players`...) ou comme chat. Le client ajoute ses propres commandes :
-
-| Commande                | Effet                                                         |
-|-------------------------|---------------------------------------------------------------|
-| `/ap-tip <texte>`       | afficher une ligne dans le journal Archipelago du jeu (test)  |
-| `/ap-disconnect [s]`    | simuler une coupure du serveur pendant `s` secondes           |
-| `/ap-evt [n\|reset]`     | lister les dernières requêtes d'événement du jeu (diagnostic) |
-| `/ap-deathlink [cause]` | tuer Link comme un DeathLink reçu (test, envoyé à personne)   |
-
-### Les outils en ligne de commande
-
-Le lanceur se sert de ces outils, utilisables aussi directement :
-
-- `venv\Scripts\python tools\cemu_profile.py --cemu <chemin de Cemu.exe>` crée le profil isolé, dans
-  `.build\cemu-validation`. Si le dossier utilisateur de Cemu (celui qui contient `settings.xml`) n'est pas trouvé,
-  le nommer avec `--user-data`. `tools\cemu_install.py` affiche ce qui est trouvé, sans rien copier.
-- `venv\Scripts\python tools\play_seed.py <fichier de la seed>` prépare une seed : il la vérifie, en garde une copie
-  dans `.build\play-seeds\<seed>\`, construit le pack lié à votre slot à partir de la mise à jour copiée dans le
-  profil et le sélectionne. Quand le zip contient plusieurs joueurs de Breath of the Wild, désigner le vôtre avec
-  `--slot <nom>`.
-- `Play.cmd --seed <seed> --connect archipelago.gg:<port> [--password <mot de passe>]` joue dans une salle hébergée
-  ailleurs. `Play.cmd --seed <seed>` héberge le zip de la seed sur cet ordinateur, port 38281 ; le serveur garde son
-  état à côté de la seed, et la progression se conserve d'une session à l'autre. Avec `--host`, le serveur écoute
-  aussi le réseau : les autres joueurs se connectent à l'adresse de votre ordinateur, port 38281 (par Internet, ce
-  port doit être redirigé vers votre ordinateur).
+Supprimer le dossier de la release, et `%LOCALAPPDATA%\BOTW Archipelago` : le profil, avec les sauvegardes de vos
+parties Archipelago, et les seeds. Votre installation de Cemu n'a jamais été modifiée.
 
 ## En cas de problème
 
-Chaque session écrit ses journaux dans `.build\play-seeds\<seed>\sessions\<date>\` : le journal du client, celui de
-Cemu et un résumé. Joindre ce dossier pour signaler un problème.
+- **Le lanceur refuse votre Cemu** : son message dit ce qui manque (une autre version du jeu, la mise à jour ou le DLC
+  non installés, un jeu listé par Cemu qui a été déplacé...). Corriger dans Cemu, y lancer le jeu une fois, et relancer.
+- **« Close Cemu before preparing a session »** : le lanceur démarre Cemu lui-même ; fermer le vôtre d'abord.
+- **Chaque session écrit ses journaux** dans `%LOCALAPPDATA%\BOTW Archipelago\play-seeds\<seed>\sessions\<date>\` : le
+  journal du client, celui de Cemu et un résumé. Joindre ce dossier pour
+  [signaler un problème](https://github.com/EIdras/BOTW-Archipelago/issues).
+
+Pour jouer depuis le code source plutôt qu'une release : voir
+[le développement](https://github.com/EIdras/BOTW-Archipelago/blob/master/docs/development.md#running-from-source).

@@ -9,7 +9,8 @@ dist/BOTW-Archipelago-<version>/ holds:
     requirements-player.txt (checked);
   * the project's tracked files the player's tools read: botw_client/,
     botw_patch/, tools/, native/, data/, the world's data, the Archipelago
-    item's icon and model, the options template players/BOTW.yaml;
+    item's icon and model, the options template players/BOTW.yaml, the
+    world's guides (botw_world/docs);
   * BOTW Archipelago.cmd, README.md, LICENSE, and release.json (version,
     commit, Python and packages), whose presence makes the tools write their
     files to the player's data folder (botw_client/paths.py).
@@ -37,7 +38,7 @@ NAME = "BOTW-Archipelago"
 # What the player's tools import beyond the standard library (tests/test_release.py).
 PACKAGES = ("oead", "evfl", "rstb", "aiohttp", "numpy")
 PINS = ROOT / "requirements-player.txt"
-PROJECT = ("botw_client", "botw_patch", "tools", "native", "data", "botw_world/data",
+PROJECT = ("botw_client", "botw_patch", "tools", "native", "data", "botw_world/data", "botw_world/docs",
            "botw_world/archipelago.json", "assets/wiiu",
            "assets/models/ap_item/wiiu", "players/BOTW.yaml", "BOTW Archipelago.cmd", "README.md", "LICENSE")
 PYTHON_FILES = ("python.exe", "pythonw.exe", "python3.dll", f"python3{sys.version_info.minor}.dll",
