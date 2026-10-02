@@ -62,7 +62,9 @@ def patch_stage(files: dict[str, bytes], name: str, transforms: dict, *,
                 extra_archive: tuple[str, dict] | None = None,
                 icon: bytes | None = None, new_members=()) -> tuple[dict, list]:
     """Apply a historic stage with its own resource-size table accounting."""
-    with tempfile.TemporaryDirectory() as temp:
+    # A file the antivirus still holds may outlive the build here: the system's
+    # temporary folder takes it, rather than failing the pack.
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp:
         stage_content = Path(temp)
         for filename, raw in files.items():
             path = stage_content / filename

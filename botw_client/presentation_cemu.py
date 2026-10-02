@@ -49,7 +49,7 @@ def process_incarnation(process):
 class CemuPresentationBackend:
     def __init__(self, process, cave, *, clock=time.monotonic, timeout=120,
                  native=None, guard=None, stability_guard=None,
-                 identity=process_incarnation, evidence=None):
+                 identity=process_incarnation, evidence=None, explain=None):
         if native is None:
             from tools.cemu import owned_presentation as native
         if not process.writable:
@@ -65,6 +65,7 @@ class CemuPresentationBackend:
             flags = flag_reader(process, cave)
             guard = lambda: ready(process, cave, flags)
         self.guard = guard
+        self.explain = explain
         self.stability_guard = stability_guard or (lambda: True)
         self.session = f'{self.incarnation}:{cave.base:x}:{uuid.uuid4().hex}'
         self.generation = self.owner['state']['generation']
@@ -132,6 +133,15 @@ class CemuPresentationBackend:
         self.wait_reason = ('presentation ready' if self.samples >= 3
                             else 'native presentation conditions settling')
         return self.samples >= 3
+
+    def wait_detail(self):
+        """Why the presentation guard holds, read when the log asks (it reads the screens)."""
+        if self.explain is None or not self.wait_reason.startswith('UI conditions'):
+            return None
+        try:
+            return self.explain()
+        except Exception as exc:  # noqa: BLE001 - a diagnostic only
+            return f'unreadable: {exc}'
 
     def submit(self, request_id, title, description):
         try:

@@ -342,10 +342,17 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.flag = True
         self.result = "survived"                    # Mipha saved Link, flag left set
         await self.kill()
-        with patch.object(runtime_module, "DEATHLINK_FLAG_SECONDS", 0.0):
+        with patch.object(runtime_module, "DEATHLINK_FLAG_SECONDS", 0.0), \
+                patch.object(runtime_module, "DEATHLINK_ECHO_SECONDS", 0.0):
             self.game.dead = True
             await self.tick()
         self.ap.send_death.assert_awaited_once()
+
+    async def test_a_death_right_after_the_request_is_ours_whatever_the_flag(self):
+        self.flag = False                           # read as unset (seen in a room)
+        await self.kill()
+        await self.tick()                           # dead in the same seconds
+        self.ap.send_death.assert_not_awaited()
 
     async def test_a_pack_without_the_flag_falls_back_on_the_time(self):
         self.runtime.deliveries.backend.killed_by_death_link = lambda: None

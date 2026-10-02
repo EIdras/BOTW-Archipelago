@@ -161,7 +161,9 @@ def generate(files: dict[str, bytes], content: Path,
     model_pack = inputs.pop(MODEL_PACK)
     status = item(manifest)
     changes: list[dict] = []
-    with tempfile.TemporaryDirectory() as temp:
+    # A file the antivirus still holds may outlive the build here: the system's
+    # temporary folder takes it, rather than failing the pack.
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp:
         stage = Path(temp)
         for name, raw in {**inputs, **files}.items():
             path = stage / name

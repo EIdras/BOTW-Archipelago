@@ -67,6 +67,15 @@ def ready(process, cave, read_flags, *, allow_hudless=False):
     return all(flags[name] == 0 for name in PROTECTIONS)
 
 
+def summary(diagnosis: dict) -> str:
+    """One line of diagnose(): what holds the presentations, and the HUD screen's state."""
+    hud = (diagnosis.get("gameplay", {}).get("screens") or [{}])[0]
+    state = hud.get("state_94")
+    return (", ".join(diagnosis.get("reasons", ())) or "ready") + (
+        f"; HUD {'present' if hud.get('pointer') else 'absent'}, activity {hud.get('activity')}, "
+        f"state {state:#x}" if isinstance(state, int) else "")
+
+
 def diagnose(process, cave, read_flags, *, allow_hudless=False):
     """Compact explanation of the same conservative readiness predicate."""
     from tools.cemu.menu_diagnostic import screens

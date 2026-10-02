@@ -251,7 +251,9 @@ def generate(files: dict[str, bytes], content: Path,
                 raise ValueError(f"the overlay already replaces {name}")
         inputs.update(stall_stage.stage_inputs(content))
 
-    with tempfile.TemporaryDirectory() as temp:
+    # A file the antivirus still holds may outlive the build here: the system's
+    # temporary folder takes it, rather than failing the pack.
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp:
         stage = Path(temp)
         for name, raw in {**inputs, **files, TITLE: title_raw}.items():
             path = stage / name

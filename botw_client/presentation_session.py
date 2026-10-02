@@ -39,13 +39,15 @@ class NativePresentationSession:
             if backend is not None:
                 self.backend = backend
             else:
-                from tools.cemu.presentation_ready import flag_reader, ready
+                from tools.cemu.presentation_ready import diagnose, flag_reader, ready, summary
                 flags = flag_reader(game.process, game.cave)
                 live_gate = getattr(game, "safe_for_delivery", None)
                 allow_hudless = callable(live_gate)
                 guard = lambda: ready(
                     game.process, game.cave, flags, allow_hudless=allow_hudless)
-                options = {"guard": guard}
+                explain = lambda: summary(diagnose(
+                    game.process, game.cave, flags, allow_hudless=allow_hudless))
+                options = {"guard": guard, "explain": explain}
                 import os
                 evidence_path = os.environ.get('BOTW_PRESENTATION_EVIDENCE')
                 cemu_log = os.environ.get('BOTW_CEMU_LOG')

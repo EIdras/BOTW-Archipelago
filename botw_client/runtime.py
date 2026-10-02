@@ -650,8 +650,14 @@ class BotwClientRuntime:
             backend = getattr(session, 'backend', None)
             submission = getattr(backend, 'last_submission', None)
             native_wait = getattr(backend, 'wait_reason', None)
-            if self._presentation_status == 'waiting_ready' and isinstance(native_wait, str):
+            if self._presentation_status in ('queued', 'waiting_ready') and isinstance(native_wait, str):
+                # The client's gate may say ready while the presentation's holds:
+                # its own reason, with what it sees.
                 reason = native_wait
+                detail = getattr(backend, 'wait_detail', None)
+                detail = detail() if callable(detail) else None
+                if isinstance(detail, str):
+                    reason += f' ({detail})'
             if (self._presentation_status in ('queued', 'waiting_ready')
                     and isinstance(submission, dict) and submission.get('status') == 'deferred'):
                 reason = ('native resource unavailable; announcement not submitted, '
@@ -1190,8 +1196,12 @@ class BotwClientRuntime:
         await self._native_trap_tick()
 
     async def _killed_by_death_link(self) -> bool:
-        """Did the DeathLink we requested cause this death? Its flag says so;
-        a pack without it, the time since the request."""
+        """Did the DeathLink we requested cause this death? A death within
+        DEATHLINK_ECHO_SECONDS of the request is its; later, its flag says so.
+        A death so recognised uses the request up.
+
+        Seen in a room: a death in the second the DeathLink applied was sent
+        back, its flag read as not set; the time alone keeps it home."""
         if self._death_requested_at is None:
             return False
         since = time.monotonic() - self._death_requested_at
@@ -1200,9 +1210,10 @@ class BotwClientRuntime:
             flag = await asyncio.to_thread(ask) if ask is not None else None
         except Exception:  # noqa: BLE001 - unreadable: the time decides
             flag = None
-        if flag is None:
-            return since < DEATHLINK_ECHO_SECONDS
-        return flag and since < DEATHLINK_FLAG_SECONDS
+        ours = since < DEATHLINK_ECHO_SECONDS or bool(flag and since < DEATHLINK_FLAG_SECONDS)
+        if ours:
+            self._death_requested_at = None
+        return ours
 
     async def _death_cause(self) -> str:
         """The cause sent with Link's death: what killed him, when the game says."""
