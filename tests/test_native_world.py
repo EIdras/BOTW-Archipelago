@@ -10,6 +10,8 @@ import sys
 import tempfile
 import unittest
 
+from tools.build_pack_from_source import slot_manifests
+
 RUNTIME = Path(__file__).resolve().parents[1] / ".build/ap-runtime"
 
 
@@ -101,8 +103,7 @@ class NativeWorldTests(unittest.TestCase):
             self.assertTrue(mw.can_beat_game())
             with tempfile.TemporaryDirectory() as temp:
                 mw.worlds[1].generate_output(temp)
-                manifest = json.loads(next(Path(temp).glob("*.apbotw.json")).read_text(
-                    encoding="utf-8"))
+                manifest = slot_manifests(next(Path(temp).glob("*.apbotw")))[0]
             self.assertEqual(len(manifest["placements"]), expected)
             self.assertEqual(len(manifest["shops"]), 16 * beedle + 14 * stall)
             self.assertEqual(manifest["slot_data"]["world_schema"], 4)
@@ -142,8 +143,8 @@ class NativeWorldTests(unittest.TestCase):
             with tempfile.TemporaryDirectory() as temp:
                 for world in mw.worlds.values():
                     world.generate_output(temp)
-                for path in Path(temp).glob("*.apbotw.json"):
-                    manifest = json.loads(path.read_text(encoding="utf-8"))
+                for path in Path(temp).glob("*.apbotw"):
+                    manifest = slot_manifests(path)[0]
                     trapped = [p for p in manifest["placements"]
                                if p["flags"] & int(ItemClassification.trap)]
                     self.assertTrue(trapped)
@@ -169,10 +170,10 @@ class NativeWorldTests(unittest.TestCase):
                 with tempfile.TemporaryDirectory() as temp:
                     for world in mw.worlds.values():
                         world.generate_output(temp)
-                    files = list(Path(temp).glob("*.apbotw.json"))
+                    files = list(Path(temp).glob("*.apbotw"))
                     self.assertEqual(len(files), players)
                     for path in files:
-                        manifest = json.loads(path.read_text(encoding="utf-8"))
+                        manifest = slot_manifests(path)[0]
                         self.assertEqual(len(manifest["placements"]), 152)
 
 

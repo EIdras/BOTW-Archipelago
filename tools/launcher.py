@@ -1,6 +1,6 @@
 """Breath of the Wild Archipelago: the one command a player runs.
 
-    "BOTW Archipelago.cmd" [<slot file .apbotw.json | seed zip>]
+    "BOTW Archipelago.cmd" [<slot file .apbotw | seed zip>]
 
 1. The first time, asks where Cemu.exe is, finds the game in that installation
    and makes the isolated Cemu profile (tools/cemu_install.py,
@@ -9,7 +9,8 @@
    already prepared, or a new file chosen in a window. A new seed's game pack
    is built (tools/play_seed.py), and a prepared seed's again when another
    version of the project built it.
-3. Asks the address of the room (remembered for the seed) and its password; a
+3. Asks the address of the room (the one written in a slot file downloaded
+   from the room's page, then the one remembered for the seed) and its password; a
    seed prepared from its zip can also be hosted on this computer, where the
    Archipelago runtime is (tools/prepare_ap_runtime.py).
 4. Plays (tools/play_session.py) until Cemu closes.
@@ -28,7 +29,7 @@ from tools import cemu_install, cemu_profile, play_seed  # noqa: E402
 
 ROOM_FILE = "launcher.json"
 LOCAL = "local"
-SEED_FILES = [("Breath of the Wild slot file or seed", "*.apbotw.json *.zip")]
+SEED_FILES = [("Breath of the Wild slot file or seed", "*.apbotw *.apbotw.json *.zip")]
 
 
 class Cancelled(Exception):
@@ -196,11 +197,11 @@ def choose_seed(ui, argument: str | None) -> str:
             day = seed.last_played[:8]
             played = f", last played {day[:4]}-{day[4:6]}-{day[6:]}" if day else ""
             ui.say(f"  {number}. {seed.seed} ({seed.slot}{played})")
-        ui.say(f"  {len(seeds) + 1}. another seed: your slot file (.apbotw.json) or the seed's zip")
+        ui.say(f"  {len(seeds) + 1}. another seed: your slot file (.apbotw) or the seed's zip")
         choice = pick(ui, "Seed", len(seeds) + 1)
         if choice <= len(seeds):
             return fresh(ui, seeds[choice - 1].seed)
-    path = ui.choose_file("Your slot file (.apbotw.json) or the seed's zip", SEED_FILES)
+    path = ui.choose_file("Your slot file (.apbotw) or the seed's zip", SEED_FILES)
     if path is None:
         raise Cancelled
     return prepare_file(ui, path)
@@ -215,7 +216,8 @@ def choose_room(ui, seed: str) -> tuple[str | None, str | None]:
     try:
         remembered = json.loads((folder / ROOM_FILE).read_text(encoding="utf-8")).get("room", "")
     except (OSError, ValueError):
-        remembered = ""
+        from tools.build_pack_from_source import slot_server
+        remembered = slot_server(Path(report["archive"])) or ""
     prompt = "Room address (archipelago.gg:<port>)"
     if hostable:
         prompt += f", or {LOCAL!r} to host the seed on this computer"

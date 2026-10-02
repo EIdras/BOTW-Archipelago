@@ -15,7 +15,8 @@ l'émulateur Cemu : l'installation, rejoindre une salle et, pour la personne qui
   Lancez le jeu une fois dans Cemu. Les autres versions du jeu (US, JP, Switch) ne sont pas prises en charge :
   l'intégration est construite pour cet exécutable précis.
 - Environ 5 Go d'espace disque libre, et 140 Mo de plus par seed.
-- De la personne qui héberge la partie : votre **fichier de slot** (`.apbotw.json`) et l'**adresse de la salle**.
+- La salle qui héberge la partie : sa page sur archipelago.gg propose votre **fichier de slot** (`.apbotw`,
+  « Download Patch File... » à côté de votre nom) et affiche l'**adresse de la salle**.
 
 ## Installation
 
@@ -37,8 +38,9 @@ ordinateur, choisir « Informations complémentaires », puis « Exécuter quand
    profil à lui (environ 5 Go). Votre installation de Cemu n'est jamais modifiée.
 2. **La seed** : choisir votre fichier de slot. Son pack de jeu se construit, en une minute environ. Les fois suivantes,
    le lanceur liste les seeds déjà préparées, la dernière jouée en tête.
-3. **La salle** : taper son adresse comme sa page l'affiche (`archipelago.gg:38281`), puis son mot de passe, ou Entrée
-   si elle n'en a pas. L'adresse est retenue pour la seed.
+3. **La salle** : son adresse, comme sa page l'affiche (`archipelago.gg:38281`), est déjà remplie quand votre fichier
+   de slot vient de cette page : Entrée, puis le mot de passe de la salle, ou Entrée si elle n'en a pas. L'adresse est
+   retenue pour la seed.
 
 Cemu démarre avec le pack de jeu de la seed, puis le client Archipelago, dans la fenêtre du lanceur. **Commencer une
 nouvelle partie** pour une nouvelle seed : une sauvegarde reste liée à la seed avec laquelle elle a été commencée.
@@ -68,7 +70,7 @@ La personne qui héberge la partie génère la seed avec
    `players\BOTW.yaml` de la release (nom du joueur, objectif, options de boutiques, DeathLink, pièges), ou du modèle
    qu'écrit le Launcher d'Archipelago (« Generate Template Options »).
 3. Lancer « Generate » dans le Launcher d'Archipelago. Le zip de la seed, dans le dossier `output` d'Archipelago,
-   contient un fichier de slot `AP_<seed>_P<n>_<nom>.apbotw.json` pour chaque joueur de Breath of the Wild.
+   contient un fichier de slot `AP_<seed>_P<n>_<nom>.apbotw` pour chaque joueur de Breath of the Wild.
 
 Pour héberger la seed sur [archipelago.gg](https://archipelago.gg), téléverser ce zip sur sa page « Host Game » : la
 page de la salle donne son adresse, `archipelago.gg:<port>`, et le fichier de slot de chaque joueur à télécharger. Pour

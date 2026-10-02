@@ -141,11 +141,17 @@ class RuntimeTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stdout[-2000:] + result.stderr[-2000:])
             seed_zip = next(output.glob("AP_*.zip"))
             with zipfile.ZipFile(seed_zip) as zipped:
-                slots = sorted(name for name in zipped.namelist() if name.endswith(".apbotw.json"))
+                slots = sorted(name for name in zipped.namelist() if name.endswith(".apbotw"))
                 zipped.extractall(folder / "slots", slots)
             self.assertEqual(len(slots), 2)
             for player, name in enumerate(slots, 1):
                 self.assertEqual(name.split(".")[0].split("_", 3)[2], f"P{player}")
+                # What the room page asks to offer a download (worlds.Files.is_ap_player_container),
+                # and the file ending it serves it with.
+                with zipfile.ZipFile(folder / "slots" / name) as container:
+                    manifest = json.loads(container.read("archipelago.json"))
+                self.assertEqual((manifest["game"], manifest["player"], manifest["patch_file_ending"]),
+                                 ("Breath of the Wild", player, ".apbotw"))
                 slot_name = ("Alice", "Bob")[player - 1]
                 _, alone = play_seed.read_seed(folder / "slots" / name)
                 _, whole = play_seed.read_seed(seed_zip, slot_name)

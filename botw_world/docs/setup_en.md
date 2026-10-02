@@ -13,7 +13,8 @@ Cemu emulator: installing, joining a room, and, for the person who hosts it, gen
   Start the game once in Cemu. Other versions of the game (US, JP, Switch) are not supported: the integration is
   built for this exact executable.
 - About 5 GB of free disk space, and 140 MB more for each seed.
-- From the person hosting the game: your **slot file** (`.apbotw.json`) and the **address of the room**.
+- The room the game is hosted in: its page on archipelago.gg offers your **slot file** (`.apbotw`, "Download Patch
+  File..." next to your name), and shows the **address of the room**.
 
 ## Installing
 
@@ -35,8 +36,9 @@ Start `BOTW Archipelago.cmd` (or drop your slot file on it). If Windows says it 
    own (about 5 GB). Your Cemu installation is never modified.
 2. **The seed**: choose your slot file. Its game pack is built, in about a minute. The next times, the launcher lists
    the seeds already prepared, the last played first.
-3. **The room**: type its address as the room's page shows it (`archipelago.gg:38281`), then its password, or Enter
-   if it has none. The address is remembered for the seed.
+3. **The room**: its address, as the room's page shows it (`archipelago.gg:38281`), is already filled in when your
+   slot file comes from that page: press Enter, then type the room's password, or Enter if it has none. The address
+   is remembered for the seed.
 
 Cemu starts with the seed's game pack, then the Archipelago client, in the launcher's window. **Start a new game** for
 a new seed: a save is bound to the seed it was started with. Play normally: your items arrive in the game, the
@@ -64,7 +66,7 @@ The person who hosts the game generates the seed with [Archipelago](https://gith
    `players\BOTW.yaml` in the release (player name, goal, shop options, DeathLink, traps), or from the template the
    Archipelago Launcher writes ("Generate Template Options").
 3. Run "Generate" in the Archipelago Launcher. The seed's zip, in Archipelago's `output` folder, holds a slot file
-   `AP_<seed>_P<n>_<name>.apbotw.json` for each Breath of the Wild player.
+   `AP_<seed>_P<n>_<name>.apbotw` for each Breath of the Wild player.
 
 To host the seed on [archipelago.gg](https://archipelago.gg), upload that zip on its "Host Game" page: the room's page
 gives its address, `archipelago.gg:<port>`, and each player's slot file to download. To host it on your own computer,

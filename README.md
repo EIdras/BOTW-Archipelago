@@ -46,7 +46,7 @@ Download the [latest release](https://github.com/EIdras/BOTW-Archipelago/release
 
 1. The host generates the seed with Archipelago and `botw.apworld`, then hosts it, on archipelago.gg for instance.
 2. Each Breath of the Wild player unzips the release and starts `BOTW Archipelago.cmd` with their slot file
-   (`.apbotw.json`, on the room's page). The launcher asks for `Cemu.exe` the first time, builds the seed's game pack,
+   (`.apbotw`, on the room's page). The launcher asks for `Cemu.exe` the first time, builds the seed's game pack,
    asks for the room's address and plays. Nothing else to install: the release brings its own Python.
 
 What the world does, its locations, items, goal and logic: [game page](botw_world/docs/en_Breath%20of%20the%20Wild.md).

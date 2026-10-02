@@ -11,8 +11,9 @@ from tools import build_pack_from_source, play_seed, play_pack
 from tools.build_resources_from_source import digest, encode
 
 
-def slot_file(folder, *, name="Player", slot=1, checksum="checksum", **extra):
-    """A BOTW slot file, as the world writes it (placements left empty)."""
+def slot_file(folder, *, name="Player", slot=1, checksum="checksum", container=False, server="", **extra):
+    """A BOTW slot file, as the world writes it (placements left empty): the
+    container of botw_world/slot_file.py, or the plain manifest of earlier seeds."""
     manifest = {"schema": 1, "game": "Breath of the Wild", "seed": "test-seed", "slot": slot,
                 "slot_name": name, "slot_data": {"world_schema": 4, "client_schema": 3},
                 "placements": [], "shops": [], **extra}
@@ -20,6 +21,14 @@ def slot_file(folder, *, name="Player", slot=1, checksum="checksum", **extra):
         manifest["data_package_checksum"] = checksum
     manifest["content_sha256"] = digest(json.dumps(manifest, ensure_ascii=False, sort_keys=True,
                                                    separators=(",", ":")).encode())
+    if container:
+        path = folder / f"AP_test-seed_P{slot}_{name}.apbotw"
+        with zipfile.ZipFile(path, "w") as zipped:
+            zipped.writestr("archipelago.json", json.dumps({
+                "game": "Breath of the Wild", "player": slot, "player_name": name, "server": server,
+                "patch_file_ending": ".apbotw", "compatible_version": 5, "version": 7}))
+            zipped.writestr("slot.json", json.dumps(manifest, indent=2))
+        return path
     path = folder / f"AP_test-seed_P{slot}_{name}.apbotw.json"
     path.write_bytes(encode(manifest))
     return path
@@ -39,6 +48,28 @@ class SlotFileTests(unittest.TestCase):
                                     "data_package_checksum": "checksum",
                                     "token": session_token(("test-seed", 0, 3, "checksum"))})
         self.assertEqual((audit["slots"], audit["hostable"]), ({"3": "Simon"}, False))
+
+    def test_the_slot_file_a_room_serves_gives_the_same_identity_and_its_address(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            plain = self.read(slot_file(root, slot=3, name="Simon"))
+            served = slot_file(root, slot=3, name="Simon", container=True, server="archipelago.gg:50212")
+            self.assertEqual(self.read(served), plain)
+            self.assertEqual(build_pack_from_source.slot_server(served), "archipelago.gg:50212")
+            generated = slot_file(root, slot=4, name="Ami", container=True)     # not from a room
+            self.assertIsNone(build_pack_from_source.slot_server(generated))
+            self.assertIsNone(build_pack_from_source.slot_server(root / "AP_test-seed_P3_Simon.apbotw.json"))
+
+    def test_a_seed_zip_holds_slot_files_of_either_kind(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            archive = root / "AP_test-seed.zip"
+            with zipfile.ZipFile(archive, "w") as zipped:
+                for path in (slot_file(root, slot=1, name="Alice", container=True),
+                             slot_file(root, slot=2, name="Bob")):
+                    zipped.writestr(path.name, path.read_bytes())
+            self.assertEqual(sorted(m["slot_name"] for m in build_pack_from_source.slot_manifests(archive)),
+                             ["Alice", "Bob"])
 
     def test_an_older_slot_file_asks_for_the_zip(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -71,7 +102,8 @@ class SlotFileTests(unittest.TestCase):
             source = slot_file(root, slot=4, name="Simon")
             with patch.object(play_seed, "PLAY_SEEDS", root / "play"), \
                     patch.object(play_seed, "expected_placements", return_value=0), \
-                    patch("tools.build_pack_from_source.build", return_value=root / "pack") as build,                     patch("botw_client.gamedata_table.build") as table, \
+                    patch("tools.build_pack_from_source.build", return_value=root / "pack") as build, \
+                     patch("botw_client.gamedata_table.build") as table, \
                     patch("tools.play_pack.select_pack"):
                 report, _ = play_seed.prepare(source, content=root / "dump", rpx=root / "game.rpx")
             self.assertEqual(build.call_args.args[3], 4)
@@ -106,7 +138,8 @@ class PreparationTests(unittest.TestCase):
             identity = data["delivery"]["sessions"]["1"]
             with patch.object(play_seed, "PLAY_SEEDS", root / "play"), \
                     patch.object(play_seed, "read_seed", return_value=(data["audit"], identity)) as read, \
-                    patch("tools.build_pack_from_source.build", return_value=root / "pack") as build,                     patch("botw_client.gamedata_table.build") as table, \
+                    patch("tools.build_pack_from_source.build", return_value=root / "pack") as build, \
+                     patch("botw_client.gamedata_table.build") as table, \
                     patch("tools.play_pack.select_pack") as select:
                 new_report, pack = play_seed.prepare(archive, content=root / "dump", rpx=root / "game.rpx")
                 read.assert_called_once_with(archive, None)
@@ -126,7 +159,8 @@ class PreparationTests(unittest.TestCase):
             with patch.object(play_seed, "PLAY_SEEDS", root), \
                     patch.object(play_seed, "read_seed",
                                  return_value=(data["audit"], data["delivery"]["sessions"]["1"])), \
-                    patch("tools.build_pack_from_source.build", return_value=root / "pack") as build,                     patch("botw_client.gamedata_table.build") as table, \
+                    patch("tools.build_pack_from_source.build", return_value=root / "pack") as build, \
+                     patch("botw_client.gamedata_table.build") as table, \
                     patch("tools.play_pack.select_pack") as select:
                 result = play_seed.prepare(archive, content=root / "dump", rpx=root / "game.rpx")
                 build.assert_called_once_with(root / "dump", root / "game.rpx", report, 1,
@@ -146,8 +180,12 @@ class PreparationTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "create it first"):
                     play_seed.game_update()
                 (update / "content").mkdir(parents=True)
-                with patch.object(play_seed, "PLAY_SEEDS", root / "play"),                         patch.object(play_seed, "read_seed",
-                                     return_value=(data["audit"], data["delivery"]["sessions"]["1"])),                         patch("tools.build_pack_from_source.build", return_value=root / "pack") as build,                         patch("botw_client.gamedata_table.build") as table,                         patch("tools.play_pack.select_pack"):
+                with patch.object(play_seed, "PLAY_SEEDS", root / "play"), \
+                         patch.object(play_seed, "read_seed",
+                                     return_value=(data["audit"], data["delivery"]["sessions"]["1"])), \
+                         patch("tools.build_pack_from_source.build", return_value=root / "pack") as build, \
+                         patch("botw_client.gamedata_table.build") as table, \
+                         patch("tools.play_pack.select_pack"):
                     play_seed.prepare(root / "seed.zip")
             self.assertEqual(build.call_args.args[:2], (update / "content", update / "code/U-King.rpx"))
             table.assert_called_once_with(update / "content")
@@ -234,7 +272,8 @@ class SelectionTests(unittest.TestCase):
             (pack / "manifest.json").write_text("{}")
             folder = data / "play-seeds" / "seed"
             folder.mkdir(parents=True)
-            with patch.object(play_pack, "DATA", data), patch.object(play_pack, "verify_pack"),                     patch.object(play_pack, "seed_binding"):
+            with patch.object(play_pack, "DATA", data), patch.object(play_pack, "verify_pack"), \
+                     patch.object(play_pack, "seed_binding"):
                 play_pack.select_pack(folder, pack)
                 pointer = json.loads((folder / "play-pack.json").read_text())
                 self.assertEqual((pointer["schema"], pointer["pack"]), (2, "packs-from-source/abc"))
@@ -251,7 +290,8 @@ class SelectionTests(unittest.TestCase):
             (root / "play-pack.json").write_bytes(encode({
                 "schema": 1, "pack": ".build/packs-from-source/abc",
                 "manifest_sha256": digest(b"{}")}))
-            with patch.object(play_pack, "ROOT", root), patch.object(play_pack, "verify_pack"),                     patch.object(play_pack, "seed_binding"):
+            with patch.object(play_pack, "ROOT", root), patch.object(play_pack, "verify_pack"), \
+                     patch.object(play_pack, "seed_binding"):
                 self.assertEqual(play_pack.selected_pack(root), pack)
 
     @unittest.skipUnless((play_pack.ROOT / ".build/packs-from-source/7f24dccb5d326bda").is_dir(),

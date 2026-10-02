@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import io
 import json
 from pathlib import Path
 import platform
@@ -39,13 +40,41 @@ def seed_slot(report_path: Path) -> int:
     return int(json.loads(report_path.read_bytes()).get("botw_slot", 1))
 
 
+SLOT_FILE = ".apbotw"               # an Archipelago player container (botw_world/slot_file.py)
+SLOT_MEMBER = "slot.json"
+EARLIER_SLOT_FILE = ".apbotw.json"  # the plain manifest of seeds generated before it
+
+
+def _contained(raw: bytes) -> dict:
+    with zipfile.ZipFile(io.BytesIO(raw)) as container:
+        return json.loads(container.read(SLOT_MEMBER))
+
+
 def slot_manifests(archive: Path) -> list[dict]:
-    """The BOTW slot files of a seed: those inside its zip, or the file itself."""
-    if archive.suffix.lower() == ".json":
+    """The BOTW slot manifests of a seed: those of the slot files in its zip, or
+    of the slot file itself."""
+    name = archive.name.lower()
+    if name.endswith(".json"):
         return [json.loads(archive.read_bytes())]
+    if name.endswith(SLOT_FILE):
+        return [_contained(archive.read_bytes())]
     with zipfile.ZipFile(archive) as zipped:
-        return [json.loads(zipped.read(name)) for name in zipped.namelist()
-                if name.endswith(".apbotw.json")]
+        return [json.loads(zipped.read(member)) if member.endswith(EARLIER_SLOT_FILE)
+                else _contained(zipped.read(member))
+                for member in zipped.namelist() if member.endswith((SLOT_FILE, EARLIER_SLOT_FILE))]
+
+
+def slot_server(archive: Path) -> str | None:
+    """The room a slot file was downloaded from: archipelago.gg writes its
+    address into the container it serves."""
+    if not archive.name.lower().endswith(SLOT_FILE):
+        return None
+    try:
+        with zipfile.ZipFile(archive) as container:
+            server = json.loads(container.read("archipelago.json")).get("server")
+    except (OSError, KeyError, ValueError, zipfile.BadZipFile):
+        return None
+    return server or None
 
 
 def load_seed(report_path: Path, slot: int, archive: Path | None = None) -> dict:
@@ -141,7 +170,9 @@ def build(content: Path, rpx: Path, report: Path, slot: int, output: Path, *,
     shops = plan_from_manifest(slot_data)
     if digest(rpx.read_bytes()) != native.RPX_SHA256:
         raise ValueError("incompatible RPX: provide the verified Wii U EUR v208 dump")
-    with tempfile.TemporaryDirectory() as temp:
+    # A file the antivirus still holds may outlive the build here: the system's
+    # temporary folder takes it, rather than failing the pack.
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp:
         work = Path(temp)
         native_dir = native.build(rpx, work / "native", resource_gate=resource_gate, event_gate=event_gate)
         resource_dir = resources.build(content, work / "resources", binding_token=binding["token"],

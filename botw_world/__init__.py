@@ -13,6 +13,7 @@ from worlds.generic.Rules import set_rule
 
 from .catalog import GAME, GOAL_LOCATION, ITEMS, LOCATIONS, TRAPS, WORLD_VERSION, categories, requirements
 from .options import OPTION_GROUPS, BotwOptions
+from .slot_file import BotwSlotFile
 
 
 class BotwItem(Item):
@@ -167,7 +168,7 @@ class BotwWorld(World):
         return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
     def generate_output(self, output_directory: str) -> None:
-        """The slot manifest the game pack is built from: placements and shop prices."""
+        """The slot file the game pack is built from (slot_file.py): placements and shop prices."""
         placements = []
         for row in LOCATIONS:
             if categories(row) & {"Shop", "Stall"} and row["id"] not in self.shop_prices:
@@ -189,6 +190,6 @@ class BotwWorld(World):
                               for location_id, price in sorted(self.shop_prices.items())]}
         payload = json.dumps(manifest, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
         manifest["content_sha256"] = hashlib.sha256(payload.encode()).hexdigest()
-        filename = self.multiworld.get_out_file_name_base(self.player) + ".apbotw.json"
-        Path(output_directory, filename).write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
-                                                    encoding="utf-8")
+        path = Path(output_directory, self.multiworld.get_out_file_name_base(self.player)
+                    + BotwSlotFile.patch_file_ending)
+        BotwSlotFile(manifest, str(path), self.player, self.multiworld.player_name[self.player]).write()

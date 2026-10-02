@@ -5,7 +5,7 @@ together: an Archipelago world for generation, a game pack built for each seed, 
 the running game through Cemu.
 
 ```
-players/*.yaml ──> Archipelago + botw_world ──> AP_<seed>.zip (multidata + per-slot .apbotw.json)
+players/*.yaml ──> Archipelago + botw_world ──> AP_<seed>.zip (multidata + per-slot .apbotw)
                                                         │
        Cemu's update and RPX (profile) ──> tools/play_seed.py ──> game pack of the seed (Cemu graphic pack)
                                                         │
@@ -17,9 +17,9 @@ players/*.yaml ──> Archipelago + botw_world ──> AP_<seed>.zip (multidata
 A standard Archipelago world, packaged as `botw.apworld` (`tools/package_native.py`). Its data files
 (`botw_world/data/items.json`, `locations.json`) follow the project's sources: `data/locations_master.csv` for the
 locations, whose identifiers are append-only (a test checks that both agree), and `data/item_map.json` for what each
-item does in the game. `generate_output` writes, for each slot,
-a manifest `.apbotw.json`: the placements of the slot's locations and the prices drawn for its shop locations. The
-game pack is built from it.
+item does in the game. `generate_output` writes, for each slot, a slot file `.apbotw` (`botw_world/slot_file.py`), an
+Archipelago player container that a room on archipelago.gg offers its player to download: the placements of the slot's
+locations and the prices drawn for its shop locations. The game pack is built from it.
 
 ## The game pack (`tools/build_pack_from_source.py`)
 

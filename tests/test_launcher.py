@@ -165,6 +165,13 @@ class RoomTests(Folder):
         self.assertIn("Type the room's address", ui.text())     # nothing typed: asked again
         self.assertEqual(launcher.choose_room(Answers(), "111"), ("archipelago.gg:38281", None))
 
+    def test_the_address_of_the_room_comes_from_its_slot_file(self):
+        folder = self.seed("111", archive="AP_111_P1_Simon.apbotw")
+        path = slot_file(folder, name="Simon", container=True, server="archipelago.gg:50212")
+        path.rename(folder / "AP_111_P1_Simon.apbotw")
+        ui = Answers(answers=[""])
+        self.assertEqual(launcher.choose_room(ui, "111"), ("archipelago.gg:50212", None))
+
     def test_a_seeds_zip_can_be_hosted_here(self):
         self.seed("111", archive="AP_111.zip")
         with mock.patch.object(launcher.play_seed, "archipelago_here", return_value=True):

@@ -1,6 +1,6 @@
 """Prepare a generated AP seed for play: audit, identity, bound pack.
 
-    python tools/play_seed.py <AP_xxx.zip | xxx.apbotw.json> [--slot <player name>]
+    python tools/play_seed.py <AP_xxx.zip | xxx.apbotw> [--slot <player name>]
                               [--content <update/content> --rpx <U-King.rpx>]
 
 The seed may be a solo seed or a multiworld with other games and players. The
@@ -8,7 +8,8 @@ game pack is built for one Breath of the Wild slot, from either:
   * the seed's zip, as generated (its BOTW slot; --slot when it has several).
     Where Archipelago is (a source checkout's runtime), the whole seed is
     checked, and tools/play_session.py can host it on a local AP server;
-  * the slot's own file (<seed>_P<n>_<name>.apbotw.json, inside the zip), to
+  * the slot's own file (<seed>_P<n>_<name>.apbotw, inside the zip, or downloaded
+    from the room's page; .apbotw.json for seeds generated before), to
     play in a room hosted elsewhere, archipelago.gg for instance.
 
 1. audits the slot: manifest hash, one placement per location, and, from the
@@ -241,7 +242,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("seed", type=Path, help="the seed's zip, or the slot's .apbotw.json file")
+    parser.add_argument("seed", type=Path, help="the seed's zip, or the slot's .apbotw file")
     parser.add_argument("--content", type=Path,
                         help="the update's content folder (default: the Cemu profile's copy)")
     parser.add_argument("--rpx", type=Path, help="the update's U-King.rpx, with --content")
