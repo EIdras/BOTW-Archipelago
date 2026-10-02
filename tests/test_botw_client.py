@@ -33,7 +33,7 @@ class FakeMemory:
 
 class ClientDataTests(unittest.TestCase):
     def test_item_map_is_exact_and_all_flags_exist_with_expected_types(self):
-        self.assertEqual(validate_item_map(), (35, 1))
+        self.assertEqual(validate_item_map(), (39, 1))
         mapping = load_item_map()
         gamedata = json.loads((ROOT / "data" / "gamedata.json").read_text(
             encoding="utf-8"))

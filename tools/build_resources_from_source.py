@@ -30,12 +30,13 @@ from tools import build_plateau_sensor_candidate as sensor
 from tools import build_master_sword_candidate as sword
 from tools import build_ballad_condition_candidate as ballad
 from tools.build_ballad_upgrade_delivery import champion_entries, transform_for as upgrade_delivery
-from botw_patch import death_link, hud_layout, loading_icon
+from botw_patch import death_link, hud_layout, loading_icon, traps
 from botw_patch.status_item import INPUT_HASHES as STATUS_INPUTS
 
 TITLE = "Pack/TitleBG.pack"
 BOOTUP = "Pack/Bootup.pack"
-MEMBER = "EventFlow/Demo007_1.bfevfl"
+MEMBER_FLOW = "Demo007_1"
+MEMBER = f"EventFlow/{MEMBER_FLOW}.bfevfl"
 QUIET_MEMBER = f"EventFlow/{QUIET_FLOW}.bfevfl"
 TABLE = "System/Resource/ResourceSizeTable.product.srsizetable"
 # Keep the allocation used by the played pack, including the margin retained
@@ -70,7 +71,7 @@ SOURCE_FILES = (
     "botw_patch/ledger_experiment.py", "botw_client/delivery_plan.py",
     "botw_client/items.py", "data/item_map.json", "assets/wiiu/Item_AP.sbitemico",
     "botw_patch/hud_layout.py", "tools/bitemico.py", "botw_patch/death_link.py",
-    "botw_patch/loading_icon.py",
+    "botw_patch/loading_icon.py", "botw_patch/traps.py", "botw_patch/melee_weapons.py",
 )
 
 
@@ -115,18 +116,26 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
               donor("GetDemo"), donor("Demo017_0"))
 
     def delivery(raw):
+        raw, trap_edits = traps.add_entries(raw, MEMBER_FLOW)
         result, edits = patch_delivery_flow(raw, *donors)
         result, binding_edits = patch_session_binding(result, binding_token)
-        return result, edits + binding_edits
+        return result, trap_edits + edits + binding_edits
 
     def quiet_delivery(raw):
-        # The silent twins, in their own flowchart (see QUIET_FLOW).
-        return patch_delivery_flow(raw, *donors, quiet=True)
+        # The silent twins, in their own flowchart (see QUIET_FLOW), and the
+        # traps: their entries first, which their delivery entries call.
+        raw, trap_edits = traps.add_entries(raw)
+        result, edits = patch_delivery_flow(raw, *donors, quiet=True)
+        return result, trap_edits + edits
+
+    def event_info(raw):
+        result, edits = patch_delivery_event_info(raw, specs, extra_entries=(BIND_ENTRY,))
+        result, trap_edits = traps.add_event_info(result)
+        return result, edits + trap_edits
 
     files, edits = patch_stage(files, TITLE, {MEMBER: delivery, QUIET_MEMBER: quiet_delivery},
                                extra_archive=(BOOTUP, {
-        "Event/EventInfo.product.sbyml": lambda raw:
-            patch_delivery_event_info(raw, specs, extra_entries=(BIND_ENTRY,)),
+        "Event/EventInfo.product.sbyml": event_info,
         "GameData/gamedata.ssarc": lambda raw: (
             modify_gamedata_flags(raw, ("APDeliveryRejectCounter",), is_save=False),
             ["register volatile APDeliveryRejectCounter"]),

@@ -47,6 +47,11 @@ def death_link_line(source: str, cause: str) -> str:
     return "{0}DeathLink{/}: " + (_plain(cause).strip() or f"{_plain(source)} died")
 
 
+def trap_line(item: str, text: str) -> str:
+    """What a received trap did, shown once it has struck."""
+    return "{0}" + _plain(item) + "{/}: " + _plain(text)
+
+
 def is_received_item(entry: dict, me: int) -> bool:
     """A server line announcing an item for this slot (shown with its item)."""
     return (isinstance(entry, dict) and entry.get("kind") == "ItemSend"

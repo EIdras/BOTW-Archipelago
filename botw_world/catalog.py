@@ -6,6 +6,7 @@ GAME = "Breath of the Wild"
 LOCATIONS = json.loads(files(__package__).joinpath("data/locations.json").read_text(encoding="utf-8"))
 ITEMS = json.loads(files(__package__).joinpath("data/items.json").read_text(encoding="utf-8"))
 RUNES = ("Magnesis", "Remote Bomb", "Stasis", "Cryonis")
+TRAPS = tuple(row["name"] for row in ITEMS if row.get("trap"))
 PLATEAU_RUNES = {"Oman Au Shrine": "Magnesis", "Ja Baij Shrine": "Remote Bomb",
                   "Owa Daim Shrine": "Stasis", "Keh Namut Shrine": "Cryonis"}
 BEAST_QUESTS = {"Voo Lota Shrine": "Freed - Divine Beast Vah Medoh",

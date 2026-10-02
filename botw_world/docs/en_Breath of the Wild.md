@@ -44,6 +44,8 @@ medallion on 14 village stalls; buying one checks its location.
 - The Master Sword, the Hylian Shield, the Champion's Tunic, the Ancient Bridle and Saddle, the Barbarian, Ancient
   and Radiant sets
 - Spirit Orbs, Ancient Cores, Star Fragments, Korok Seeds, Fairies and rupees
+- Traps, with the `trap_percentage` option: Weapon Shatter, Blood Moon, Rupoor, Hearts Down, Strip Down and Cucco
+  Swarm
 
 ## What is the goal?
 
@@ -66,6 +68,24 @@ death animation, the Game Over screen and the reload of the last save. Mipha's G
 they would from any lethal blow; the received death is then spent. It waits for a safe moment: not during a
 cutscene, a menu or a loading screen.
 
+## What do traps do?
+
+With the `trap_percentage` option, that share of the filler, the items that would be rupees, becomes traps, drawn
+by the `trap_weights` option (a trap of weight 0 or left out never comes up). A trap strikes when it is received,
+at a safe moment, and the Archipelago journal says what it did. Only the cuccos can kill Link.
+
+| Trap | What it does |
+|---|---|
+| Weapon Shatter | The melee weapon in Link's hand is deleted. Empty hands, or the Master Sword, which never breaks: nothing. |
+| Blood Moon | The Blood Moon rises at once: its cutscene plays and the defeated monsters come back. In a shrine or a place where the game allows none, the next midnight is the Blood Moon instead. |
+| Rupoor | Takes up to 100 rupees: the largest of 100, 50, 20, 10, 5 or 1 the purse holds. |
+| Hearts Down | Takes up to two hearts, never the last quarter. |
+| Strip Down | Link's weapon, shield, bow and armor go back in the pouch, to equip again. |
+| Cucco Swarm | The angry cuccos' swarm rushes at Link from every side for 10 s. It can kill; such a death is not sent as a DeathLink. |
+
+A trap given back after loading an older save is spent without effect: the save forgot the trap's effect with the
+rest, and a trap is not suffered twice.
+
 ## What does another world's item look like in Breath of the Wild?
 
 Your own items appear as the game shows them. An item for another player is announced in the Archipelago journal, a
@@ -77,4 +97,3 @@ medallion, with the item's name and its recipient.
 - Only the European Wii U version, update v208, in Cemu on Windows, is supported.
 - Each player builds a game pack for their seed, from their slot file (`.apbotw.json`, in the seed's zip). The seed
   is generated with Archipelago on a computer, then hosted anywhere, archipelago.gg included.
-- Traps are not available.

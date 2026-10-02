@@ -104,7 +104,7 @@ class RuntimeTests(unittest.TestCase):
                 aside.rename(copy)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         counts = result.stdout.strip().splitlines()[-1].split()
-        self.assertEqual(counts[:2], ["36", "212"])
+        self.assertEqual(counts[:2], ["40", "212"])
         self.assertIn("botw.apworld", counts[2])
 
 

@@ -117,7 +117,14 @@ def quiet_step(plan: DeliveryStep) -> DeliveryStep | None:
     items granted directly, champion powers without their window (pouch,
     equipment, flag), rupees by the game's own Demo_IncreaseRupee (a bare
     GameData counter write does not give them; quests use this action). Hearts and
-    stamina have no silent delivery. A rune's twin sets its flag only."""
+    stamina have no silent delivery. A rune's twin sets its flag only. A trap's
+    twin has no effect: given back after a reload, a trap is spent, not suffered
+    again."""
+    traps = [m for m in plan.mutations
+             if m.kind in (MutationKind.TRAP, MutationKind.NATIVE_TRAP)]
+    if traps and len(plan.mutations) == 1:
+        return replace(plan, host=None, mutations=(replace(
+            traps[0], kind=MutationKind.TRAP_SPENT, value=None),))
     if any(m.kind is MutationKind.RUNE_DOWNLOAD for m in plan.mutations):
         return replace(plan, mutations=tuple(
             DeliveryMutation(MutationKind.SET_BOOL, m.target, True, value_type="bool")
@@ -151,7 +158,11 @@ def host_of(entry: NativeDeliveryEntry) -> str:
     """Demo007_1 for a step that opens the game's window, QUIET_FLOW for all
     others: the silent twins, and the steps with no window of their own
     (Sheikah Sensor, horse gear), which would pause the game and blink the
-    HUD in Demo007_1 for nothing to show (seen with runes)."""
+    HUD in Demo007_1 for nothing to show (seen with runes). A step that names its
+    host lives there: the Blood Moon trap calls a cutscene, which only a demo
+    event can (botw_patch/traps.py)."""
+    if entry.plan.host and not entry.quiet:
+        return entry.plan.host
     return QUIET_FLOW if entry.quiet or not shows_window(entry.plan) else FLOW_NAME
 
 
@@ -562,8 +573,17 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
 
     for spec in specs:
         stem = spec.entry_name
+        # A trap strikes once its delivery is committed and the guard released:
+        # a cutscene (Blood Moon) outlasts the client's wait for the commit, and a
+        # trap committed but cut short is spent, never suffered twice.
+        strike = None
+        for index, mutation in enumerate(spec.plan.mutations):
+            if mutation.kind is MutationKind.TRAP:
+                if mutation.target not in existing_entries:
+                    raise ValueError(f"trap entry missing from {chart.name}: {mutation.target}")
+                strike = subflow(stem + f"_Mut{index}", "", mutation.target, {})
         guard_off = action(stem + "_GuardOFF", "Demo_FlagOFF", {
-            "FlagName": "SaveProhibition", "IsWaitFinish": True})
+            "FlagName": "SaveProhibition", "IsWaitFinish": True}, strike)
         commit = action(stem + "_Commit", "Demo_IncreaseGameDataInt", {
             "GameDataIntName": CURSOR_FLAG, "Value": spec.cursor_delta,
             "IsWaitFinish": True}, guard_off)
@@ -614,6 +634,11 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
                     "IsWaitFinish": True, "Frame": DOWNLOAD_SETTLE}, screen)
                 nxt = action(stem + f"_Mut{index}", "Demo_FlagON", {
                     "FlagName": DOWNLOAD_FLAG, "IsWaitFinish": True}, settle)
+            elif mutation.kind in (MutationKind.TRAP, MutationKind.TRAP_SPENT,
+                                   MutationKind.NATIVE_TRAP):
+                # TRAP: after the guard (above); SPENT: no effect; NATIVE_TRAP:
+                # played by the client once it has seen the commit.
+                continue
             elif mutation.kind is MutationKind.INCREASE_RUPEE:
                 # Not waited for: the counter's animation then runs after the
                 # event instead of freezing the player.
@@ -702,6 +727,14 @@ def patch_delivery_event_info(data: bytes,
             # Silent: registered as the game's background events, which
             # do not pause it (QUIET_EVENT_INFO).
             info[key] = oead.byml.Hash(QUIET_EVENT_INFO)
+            added.append(key)
+            continue
+        if spec is not None and spec.plan.host:
+            # The demo that calls the trap's cutscene, as the campfire rest calls
+            # Demo011_0: its EventInfo declares the cutscene and its movies as
+            # children (botw_patch/traps.py, DEMO_HOST_INFO).
+            from .traps import demo_host_info
+            info[key] = demo_host_info(info)
             added.append(key)
             continue
         metadata = oead.byml.Hash({field: copy.deepcopy(donor[field])

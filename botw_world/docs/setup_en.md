@@ -36,7 +36,7 @@ copy botw_client.example.json botw_client.json
 
 ## Generating a seed
 
-**Alone**: edit `players\BOTW.yaml` (player name, goal, shop options, DeathLink), then:
+**Alone**: edit `players\BOTW.yaml` (player name, goal, shop options, DeathLink, traps), then:
 
 ```bat
 venv\Scripts\python tools\generate_native.py

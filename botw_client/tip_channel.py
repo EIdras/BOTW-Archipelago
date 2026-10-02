@@ -83,8 +83,8 @@ class TipChannel:
     def __init__(self, game, *, clock=time.monotonic, lock_factory=None):
         self.game, self.clock = game, clock
         if lock_factory is None:
-            from tools.cemu.owned_presentation import publisher_lock
-            lock_factory = publisher_lock
+            from .invoker_turn import publisher_turn
+            lock_factory = publisher_turn
         self.lock_factory = lock_factory
         self.process, self.cave = game.process, game.cave
         self.data = self.locate()

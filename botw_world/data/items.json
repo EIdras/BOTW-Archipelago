@@ -254,13 +254,11 @@
   {
     "name": "Blood Moon",
     "trap": true,
-    "count": 4,
     "id": 34
   },
   {
     "name": "Weapon Shatter",
     "trap": true,
-    "count": 4,
     "id": 35
   },
   {
@@ -268,5 +266,25 @@
     "filler": true,
     "count": 0,
     "id": 36
+  },
+  {
+    "name": "Rupoor",
+    "trap": true,
+    "id": 37
+  },
+  {
+    "name": "Hearts Down",
+    "trap": true,
+    "id": 38
+  },
+  {
+    "name": "Strip Down",
+    "trap": true,
+    "id": 39
+  },
+  {
+    "name": "Cucco Swarm",
+    "trap": true,
+    "id": 40
   }
 ]

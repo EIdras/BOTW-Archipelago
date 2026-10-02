@@ -18,6 +18,14 @@ class MutationKind(str, Enum):
     # Slate download screen, "the module is activated" in the Slate's voice,
     # the menu closed, then the rune's flag. Its silent twin sets the flag.
     RUNE_DOWNLOAD = "rune_download"
+    # A trap: the entry of botw_patch/traps.py called as a sub-flow, its text
+    # (what the journal says once it has happened) as the value. Its silent twin,
+    # for a trap given back after a reload, spends it without effect.
+    TRAP = "trap"
+    TRAP_SPENT = "trap_spent"
+    # A trap the client plays itself once the delivery is committed (the
+    # game has no action for it): its effect's name, its text as the value.
+    NATIVE_TRAP = "native_trap"
     SET_BOOL = "set_bool"
     SET_S32 = "set_s32"
     INCREMENT = "increment"
@@ -38,6 +46,9 @@ class DeliveryMutation:
 class DeliveryStep:
     mutations: tuple[DeliveryMutation, ...]
     capacity_actor: str | None = None
+    # The flowchart the step's entry must live in, when its kind does not
+    # decide it (a trap that calls a cutscene: botw_patch/delivery_flow.host_of).
+    host: str | None = None
 
 
 @dataclass(frozen=True)
@@ -119,6 +130,12 @@ def compile_delivery_plan(item_name: str, received_before: int = 0,
         mutation = DeliveryMutation(
             MutationKind.AT_LEAST, delivery["flag"], delivery["value"],
             value_type=delivery["type"])
+        return ItemDeliveryPlan(item_name, (DeliveryStep((mutation,)),))
+    if kind == "trap":
+        mutation = DeliveryMutation(MutationKind.TRAP, delivery["entry"], delivery["text"])
+        return ItemDeliveryPlan(item_name, (DeliveryStep((mutation,), host=delivery.get("host")),))
+    if kind == "native_trap":
+        mutation = DeliveryMutation(MutationKind.NATIVE_TRAP, delivery["effect"], delivery["text"])
         return ItemDeliveryPlan(item_name, (DeliveryStep((mutation,)),))
     if kind == "manual_prompt":
         mutation = DeliveryMutation(

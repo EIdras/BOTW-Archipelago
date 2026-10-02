@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import copy
 import json
+import threading
 import time
 from pathlib import Path
 
@@ -240,6 +241,16 @@ class BotwClientRuntime:
         self._deathlink_retry_after = 0.0
         self._deathlink_announced_at = None
         self._death_requested_at = None
+        # Native traps (botw_client/cucco_swarm.py): the committed ones waiting
+        # to be played, the one playing, and, once it is over, how long its
+        # attackers may still be around (in game time: it stands still out of
+        # the world), during which a death by them is the trap's, not sent as
+        # a DeathLink.
+        self._native_traps: list[str] = []
+        self._native_trap_task = None
+        self._swarm_left = 0.0
+        self._swarm_clock = 0.0
+        self._swarm_stop = threading.Event()
         self._next_delivery_wait_log = 0.0
         self._native_delivery_retry_after = 0.0
         self._native_session_bound = False
@@ -726,13 +737,25 @@ class BotwClientRuntime:
             raise FatalClientError(
                 f"AP cursor #{index}: invalid step {step}/{len(steps)}")
         quiet = index < int(self.state.get("delivered_high", 0))
+        silent = quiet and bool(steps[step].get("quiet_entry"))
         command = DeliveryCommand(
             self._session_identity[0], self._session_identity[2], index, name,
             step, len(steps), before, quiet=quiet)
         result = await asyncio.to_thread(self.deliveries.deliver, command)
         if result.status in (DeliveryStatus.APPLIED,
                              DeliveryStatus.ALREADY_APPLIED):
-            if quiet and step == 0 and steps[step].get("quiet_entry"):
+            trap = next((m for m in steps[step].get("mutations", ())
+                         if m.get("kind") in ("trap", "native_trap")), None)
+            if trap is not None:
+                if not silent:
+                    # The trap has no window: the journal says what it did. Given
+                    # back after a reload, it is spent without effect and without a word.
+                    from .ap_journal import trap_line
+                    self._journal_note(trap_line(name, trap["value"]))
+                    if trap["kind"] == "native_trap":
+                        # Committed: the client plays it (_native_trap_tick).
+                        self._native_traps.append(trap["target"])
+            elif silent and step == 0:
                 # Given back without its window: named in one AP summary.
                 self.state.setdefault("replay_batch", []).append(name)
                 self.state_store.save()
@@ -1019,6 +1042,8 @@ class BotwClientRuntime:
                 and self._last_dead is False):
             if await self._killed_by_death_link():
                 self.log("Link died of the received DeathLink: not sent back")
+            elif await self._killed_by_trap():
+                self.log("Link died of a Cucco Swarm trap: not sent as a DeathLink")
             else:
                 cause = await self._death_cause()
                 if self.ap.connected:
@@ -1036,7 +1061,8 @@ class BotwClientRuntime:
             self.state_store.save()
 
         pending = state["pending_deathlinks"]
-        if not pending or dead or time.monotonic() < self._deathlink_retry_after:
+        if (not pending or dead or self._swarming()
+                or time.monotonic() < self._deathlink_retry_after):
             return
         event = pending[0]
         received = event.get("received_at")
@@ -1069,6 +1095,90 @@ class BotwClientRuntime:
             return
         self._death_requested_at = time.monotonic()
         self.log(f"DeathLink applied: {event['source']}")
+
+    async def _killed_by_trap(self) -> bool:
+        """Did a Cucco Swarm the client played kill Link? While its attackers may
+        be around, a death whose last attacker is one of them is the trap's."""
+        if not self._swarming() and self._swarm_left <= 0:
+            return False
+        from .cucco_swarm import ATTACKER
+        ask = getattr(getattr(self.deliveries, "backend", None), "last_attacker", None)
+        try:
+            killer = await asyncio.to_thread(ask) if ask is not None else None
+        except Exception:  # noqa: BLE001 - unreadable: a death like any other
+            killer = None
+        return killer == ATTACKER
+
+    async def _native_trap_tick(self):
+        """Plays the committed native traps, one at a time. Not kept across a
+        restart of the client: a trap committed but not played is spent."""
+        from .cucco_swarm import ALIVE
+        task = self._native_trap_task
+        if task is None and self._swarm_left > 0:
+            await self._swarm_window_tick()
+        if task is not None:
+            if not task.done():
+                return
+            self._native_trap_task = None
+            try:
+                self.log(f"Cucco Swarm played: {task.result()}")
+            except Exception as exc:  # noqa: BLE001 - a trap never stops the client
+                self.log(f"Cucco Swarm failed: {exc!r}")
+            self._swarm_left, self._swarm_clock = ALIVE + 3.0, time.monotonic()
+            return
+        if not self._native_traps:
+            return
+        play = getattr(getattr(self.deliveries, "backend", None), "cucco_swarm", None)
+        if play is None:
+            self._native_traps.clear()
+            return
+        # No safety check of its own: the trap is queued at its commit, which
+        # happened at a safe moment, and safe_for_delivery() is stateful (a
+        # second caller in the loop makes the deliveries read "game paused").
+        effect = self._native_traps.pop(0)
+        if effect != "cucco_swarm":
+            self.log(f"native trap without an effect in this client: {effect}")
+            return
+        self._swarm_stop.clear()
+        self._native_trap_task = asyncio.create_task(
+            asyncio.to_thread(play, self._swarm_should_stop), name="Cucco Swarm")
+
+    async def _swarm_window_tick(self):
+        """The last attackers' time runs out only while Link is in the world:
+        in a menu they stand still, and may still kill once it closes."""
+        now, before = time.monotonic(), self._swarm_clock
+        self._swarm_clock = now
+        playing = getattr(getattr(self.deliveries, "backend", None), "playing", None)
+        try:
+            in_world = await asyncio.to_thread(playing) if playing is not None else True
+        except Exception:  # noqa: BLE001 - unreadable (loading): time stands still
+            in_world = False
+        if in_world:
+            self._swarm_left -= now - before
+
+    def _swarming(self) -> bool:
+        """A swarm is playing: it has the invoker, the loop's events wait."""
+        task = self._native_trap_task
+        return task is not None and not task.done()
+
+    def _swarm_should_stop(self) -> bool:
+        """Asked by the swarm's thread before each attacker."""
+        if self.stop_event.is_set() or self._swarm_stop.is_set():
+            return True
+        try:
+            return bool(self.game.is_dead())
+        except Exception:  # noqa: BLE001 - unreadable: the stop of the loop decides
+            return False
+
+    async def _end_swarm(self):
+        """The loop leaves: the swarm stops at its next attacker, and is waited
+        for, so that it never uses a game connection being closed."""
+        task = self._native_trap_task
+        if task is None:
+            return
+        self._swarm_stop.set()
+        await asyncio.wait([task])
+        await self._native_trap_tick()
 
     async def _killed_by_death_link(self) -> bool:
         """Did the DeathLink we requested cause this death? Its flag says so;
@@ -1297,8 +1407,9 @@ class BotwClientRuntime:
         return f"{{2}}{sender}{{/}} sent {{1}}{name}{{/}} to {{2}}{me}{{/}}{where}"
 
     def _vanilla_window(self, index: int) -> bool:
-        """Its native delivery shows the game's own presentation: the get
-        window (GetDemo), or the rune terminal's download screen."""
+        """Its native delivery has a presentation of its own: the game's get
+        window (GetDemo), the rune terminal's download screen, or, for a trap,
+        the journal line that says what it did."""
         item = self.ap.received_items[index]
         name = self.ap.item_name(item)
         try:
@@ -1306,7 +1417,8 @@ class BotwClientRuntime:
                 name, self._received_before(index, name))
         except (AttributeError, KeyError, ValueError):
             return False
-        return any(m.get("kind") in ("get_demo_actor", "champion_actor", "rune_download")
+        return any(m.get("kind") in ("get_demo_actor", "champion_actor", "rune_download", "trap",
+                                     "native_trap")
                    for step in steps for m in step.get("mutations", ()))
 
     def _close_presentations(self):
@@ -1510,16 +1622,23 @@ class BotwClientRuntime:
                     await self._poll_shops()
                     self._discover_received()
                     self._collect_messages()
-                if self.native_presentations and session_bound:
+                # A swarm playing has the invoker for its 10 s: the events
+                # (presentations, deliveries, the key item, a received
+                # DeathLink) wait for its end; the journal and the death of
+                # Link do not.
+                swarming = self._swarming()
+                if self.native_presentations and session_bound and not swarming:
                     await self._native_presentation_tick()
                 if session_bound:
                     await self._journal_tick()
                 self._hud_tick()
                 if self.native_delivery:
                     if session_bound:
-                        await self._apply_one_received_native()
-                        self._log_delivery_wait()
-                        await self._status_item_tick()
+                        if not swarming:
+                            await self._apply_one_received_native()
+                            self._log_delivery_wait()
+                            await self._status_item_tick()
+                        await self._native_trap_tick()
                         await self._deathlink_tick()
                 elif not self.native_presentations:
                     displayed = await self._show_one_location_reward()
@@ -1532,6 +1651,7 @@ class BotwClientRuntime:
                 await self._wait_or_stop(max(
                     0.0, POLL_SECONDS - (time.monotonic() - started)))
         finally:
+            await self._end_swarm()
             lease.cancel()
             try:
                 await lease

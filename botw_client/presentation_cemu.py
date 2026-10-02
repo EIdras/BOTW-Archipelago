@@ -146,8 +146,13 @@ class CemuPresentationBackend:
             self._capture_evidence('before')
             def checkpoint(update):
                 self.last_submission.update(update)
-            result = self.native.request(self.process, self.cave, self.owner, title, description,
-                                         final_guard, checkpoint, resolution_quota=2)
+            # native.request takes the emulator's mutex; the client's turn first
+            # (botw_client/invoker_turn.py).
+            from .invoker_turn import client_turn
+            with client_turn():
+                result = self.native.request(self.process, self.cave, self.owner, title,
+                                             description, final_guard, checkpoint,
+                                             resolution_quota=2)
             self.last_submission.update(result)
             self._capture_evidence('after')
             self._check()

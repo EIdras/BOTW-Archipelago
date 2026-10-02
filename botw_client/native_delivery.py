@@ -203,8 +203,8 @@ class CemuNativeDeliveryBackend:
         if request is None:
             from tools.cemu.autonomous_eventflow import request
         if lock_factory is None:
-            from tools.cemu.owned_presentation import publisher_lock
-            lock_factory = publisher_lock
+            from .invoker_turn import publisher_turn
+            lock_factory = publisher_turn
         return request, lock_factory
 
     def bind_session(self) -> DeliveryResult:
@@ -355,6 +355,46 @@ class CemuNativeDeliveryBackend:
         cause = self._call(dc.DEAD_CAUSE_QUERY, 0)
         raw = self._call(dc.DEAD_CAUSE_RAW, actor) if actor is not None else None
         return dc.death_text(slot, cause, raw, killer, self.catalog.attacker_names())
+
+    def last_attacker(self) -> str | None:
+        """The name of the last actor that hurt Link (botw_client/death_cause.py)."""
+        from . import death_cause as dc
+        process, cave = self.game.process, self.game.cave
+
+        def read(guest, size):
+            return process.read(cave.base + guest, size)
+
+        actor = dc.player(read)
+        return dc.attacker(read, actor) if actor is not None else None
+
+    def playing(self) -> bool:
+        """Link in the world: no menu, inventory, dialogue, event or loading
+        (the stateless guard of the presentations and the journal)."""
+        from tools.cemu.presentation_ready import flag_reader, ready
+        process, cave = self.game.process, self.game.cave
+        if getattr(self, "_playing_for", None) is not process:
+            self._playing_flags, self._playing_for = flag_reader(process, cave), process
+        return ready(process, cave, self._playing_flags, allow_hudless=True)
+
+    def cucco_swarm(self, stop=lambda: False) -> dict[str, int]:
+        """Play the Cucco Swarm trap (botw_client/cucco_swarm.py): {outcome: count}."""
+        from .cucco_swarm import CuccoSwarm
+        process, cave = self.game.process, self.game.cave
+        _request, lock_factory = self._dependencies()
+        pid = int(process.pid)
+
+        def read(guest, size):
+            return process.read(cave.base + guest, size)
+
+        def write(guest, data):
+            if not process.write(cave.base + guest, data):
+                raise RuntimeError(f"memory write failed at {guest:#x}")
+
+        # One turn per attacker: the loop's deliveries and journal wait for
+        # it, and never cut an attacker's calls in two (botw_client/invoker_turn.py).
+        return CuccoSwarm(read, write, self._call,
+                          turn=lambda: lock_factory(pid) if lock_factory else nullcontext(),
+                          playing=self.playing).run(stop)
 
     def _call(self, address: int, *args, timeout: float = 1.0) -> int | None:
         """Call a game function from the cave's per-frame hook, as the event

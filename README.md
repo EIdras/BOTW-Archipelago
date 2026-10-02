@@ -25,6 +25,9 @@ game itself.
 - **Checks never lost**: locations are the game's own saved flags, sent at the next connection when done offline.
 - **DeathLink** (option): when Link dies, the other DeathLink players die; when one of them dies, Link dies, as he
   would of a lethal blow (Mipha's Grace and fairies still save him).
+- **Traps** (option): a share of the filler turns into Weapon Shatter, Blood Moon, Rupoor, Hearts Down, Strip
+  Down and Cucco Swarm, which strike when received. Only the cuccos can kill, and a trap given back by a reload is
+  spent, not suffered twice.
 
 ## Requirements
 
@@ -56,7 +59,6 @@ its locations, items, goal and logic: [game page](botw_world/docs/en_Breath%20of
 - Only the European Wii U version, update v208, in Cemu on Windows.
 - The game pack is built for one seed: Archipelago's website cannot generate a seed with this world, which is
   generated with Archipelago on a computer (then hosted anywhere).
-- Traps are not available.
 
 ## Documentation
 

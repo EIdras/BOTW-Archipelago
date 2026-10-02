@@ -44,8 +44,12 @@
     {"name":"Star Fragment","delivery":{"kind":"actors","actors":["Item_Ore_J"]},"display_actor":"Item_Ore_J"},
     {"name":"Korok Seed","delivery":{"kind":"actors","actors":["Obj_KorokNuts"]},"display_actor":"Obj_KorokNuts"},
     {"name":"Fairy","delivery":{"kind":"actors","actors":["Animal_Insect_F"]},"display_actor":"Animal_Insect_F"},
-    {"name":"Blood Moon","delivery":{"kind":"counter_at_least","flag":"WM_BloodyMoonTimer","type":"f32","value":2520.0},"display_actor":"Item_AP"},
-    {"name":"Weapon Shatter","delivery":{"kind":"manual_prompt","text":"Break or drop your equipped weapon."},"display_actor":"Item_AP"},
+    {"name":"Weapon Shatter","delivery":{"kind":"trap","entry":"APTrapWeaponShatter","text":"Your weapon shatters!"},"display_actor":"Item_AP"},
+    {"name":"Blood Moon","delivery":{"kind":"trap","entry":"APTrapBloodMoon","host":"Demo007_1","text":"The Blood Moon rises!"},"display_actor":"Item_AP"},
+    {"name":"Rupoor","delivery":{"kind":"trap","entry":"APTrapRupoor","text":"Rupees slip through your fingers."},"display_actor":"Item_AP"},
+    {"name":"Hearts Down","delivery":{"kind":"trap","entry":"APTrapHeartsDown","text":"Two hearts drain away."},"display_actor":"Item_AP"},
+    {"name":"Cucco Swarm","delivery":{"kind":"native_trap","effect":"cucco_swarm","text":"The cuccos want revenge!"},"display_actor":"Item_AP"},
+    {"name":"Strip Down","delivery":{"kind":"trap","entry":"APTrapStripDown","text":"Your gear falls off."},"display_actor":"Item_AP"},
 
     {"name":"Rupee Bundle","generated_filler":true,"delivery":{"kind":"getdemo_actor","actor":"PutRupee_Red"},"display_actor":"PutRupee_Red"}
   ]

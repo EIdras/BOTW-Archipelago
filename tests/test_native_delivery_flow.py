@@ -9,6 +9,7 @@ from botw_patch.delivery_flow import (
     retarget_session_binding)
 from botw_patch.events import graph_snapshot, read_flow
 from botw_patch.resources import unpack
+from botw_patch.traps import TRAPS, add_entries
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,9 +19,8 @@ SOURCE = ROOT / ".build/ledger-validation/4e60affc56def09f/content"
 class NativeDeliveryCompilationTests(unittest.TestCase):
     def test_catalog_covers_verified_action_families_only(self):
         entries, unsupported = compile_native_entries()
-        self.assertEqual(len([e for e in entries if not e.quiet]), 54)
-        self.assertEqual(set(unsupported), {
-            "Blood Moon", "Weapon Shatter"})
+        self.assertEqual(len([e for e in entries if not e.quiet]), 60)
+        self.assertEqual(set(unsupported), set())
         self.assertEqual(len({entry.entry_name for entry in entries}), len(entries))
         self.assertTrue(all(entry.plan.mutations for entry in entries))
 
@@ -33,7 +33,8 @@ class NativeDeliveryCompilationTests(unittest.TestCase):
             self.assertEqual((twin.item_name, twin.step, twin.cursor_delta),
                              (step.item_name, step.step, step.cursor_delta))
             self.assertTrue(all(m.kind.value in ("grant_actor", "champion_actor",
-                                                 "increase_rupee", "set_bool", "set_s32")
+                                                 "increase_rupee", "set_bool", "set_s32",
+                                                 "trap_spent")
                                 for m in twin.plan.mutations))
         self.assertEqual({e.item_name for e in quiet if e.item_name in (
             "Heart Container", "Stamina Vessel", "Ancient Bridle")}, set())
@@ -104,12 +105,14 @@ class NativeDeliveryGraphTests(unittest.TestCase):
             f"EventFlow/{name}.bfevfl").data))
         cls.original = cls.member("Demo007_1")
         cls.specs, cls.unsupported = compile_native_entries()
+        cls.with_traps, _ = add_entries(cls.original, "Demo007_1")
         cls.patched, cls.changes = patch_delivery_flow(
-            cls.original, cls.member("OperationGuide"),
+            cls.with_traps, cls.member("OperationGuide"),
             cls.member("Demo002_0"), cls.member("GetDemo"),
             cls.member("GetDemo"), cls.member("Demo017_0"))
+        with_traps, _ = add_entries(cls.member("OperationGuide"))
         cls.quiet, _ = patch_delivery_flow(
-            cls.member("OperationGuide"), cls.member("OperationGuide"),
+            with_traps, cls.member("OperationGuide"),
             cls.member("Demo002_0"), cls.member("GetDemo"),
             cls.member("GetDemo"), cls.member("Demo017_0"), quiet=True)
 
@@ -130,11 +133,14 @@ class NativeDeliveryGraphTests(unittest.TestCase):
         # With the twins, the steps that open no window of their own.
         self.assertEqual({s.item_name for s in self.specs
                           if host_of(s) == QUIET_FLOW and not s.quiet}, {
-            "Sheikah Sensor", "Ancient Bridle", "Ancient Saddle"})
+            "Sheikah Sensor", "Ancient Bridle", "Ancient Saddle",
+            *(trap.item for trap in TRAPS if trap.host == QUIET_FLOW), "Cucco Swarm"})
+        # The traps' own entries come first, then the delivery entries.
         added = [name for name, _ in quiet["entry_points"][len(vanilla["entry_points"]):]]
         self.assertEqual(quiet["entry_points"][:len(vanilla["entry_points"])],
                          vanilla["entry_points"])
-        self.assertEqual(set(added), twins)
+        self.assertEqual(set(added), twins | {trap.entry for trap in TRAPS
+                                              if trap.host == QUIET_FLOW})
         self.assertFalse(twins & {name for name, _ in demo["entry_points"]})
         for name, node in vanilla["events"].items():
             self.assertEqual(quiet["events"][name], node)
@@ -149,7 +155,7 @@ class NativeDeliveryGraphTests(unittest.TestCase):
 
     def test_patch_is_deterministic_and_preserves_existing_graph(self):
         repeated, _ = patch_delivery_flow(
-            self.original, self.member("OperationGuide"),
+            self.with_traps, self.member("OperationGuide"),
             self.member("Demo002_0"), self.member("GetDemo"),
             self.member("GetDemo"), self.member("Demo017_0"))
         self.assertEqual(repeated, self.patched)
@@ -341,6 +347,11 @@ class NativeDeliveryGraphTests(unittest.TestCase):
                 self.assertNotIn("demo_event", registered)
                 continue
             metadata = after[f"Demo007_1<{spec.entry_name}>"]
+            if spec.plan.host:
+                # A trap that calls a cutscene: registered as the rest that calls it.
+                self.assertEqual(oead.byml.to_text(metadata),
+                                 oead.byml.to_text(before["Demo007_1<Demo007_1_Sub>"]))
+                continue
             if not spec.quiet and any(m.kind.value in ("get_demo_actor", "champion_actor")
                                       for m in spec.plan.mutations):
                 self.assertEqual([value["file"] for value in metadata["subfile"]],

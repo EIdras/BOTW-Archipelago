@@ -32,6 +32,10 @@ The sets are deliberately strong: they are not filler items.
 
 ## Filler and traps
 
+The filler is generated to fill the pool. With the `trap_percentage` option, that share of the `Rupee Bundle` slots
+is taken by traps instead, drawn by `trap_weights` (0 by default: no trap). What each trap does, and how:
+[traps.md](traps.md).
+
 | Archipelago item | Count | In the game |
 |---|---:|---|
 | Spirit Orb | 20 | one Spirit Orb |
@@ -40,7 +44,7 @@ The sets are deliberately strong: they are not filler items.
 | Korok Seed | 15 | one Korok seed |
 | Fairy | 6 | one fairy |
 | Rupee Bundle | depends on the locations | 20 rupees |
-| Blood Moon, Weapon Shatter | 4 each | declared, **not generated**: no automatic effect yet |
+| Weapon Shatter, Blood Moon, Rupoor, Hearts Down, Strip Down, Cucco Swarm | none fixed | traps, see below |
 
 A received item is delivered by the game itself: its get window when it has one, the download screen for a rune,
 otherwise straight into the inventory. Given back after the reload of an older save, it returns quietly, then an

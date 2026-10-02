@@ -1,7 +1,10 @@
 """Player options of the Breath of the Wild world."""
 from dataclasses import dataclass
 
-from Options import Choice, DeathLink, OptionGroup, PerGameCommonOptions, Range, StartInventoryPool
+from Options import (Choice, DeathLink, OptionCounter, OptionGroup, PerGameCommonOptions, Range,
+                     StartInventoryPool)
+
+from .catalog import TRAPS
 
 
 class Goal(Choice):
@@ -53,6 +56,30 @@ class StallShopItems(Range):
     default = 0
 
 
+class TrapPercentage(Range):
+    """Share of the filler, the items that would be Rupee Bundles, that become traps,
+    chosen among the traps of Trap Weights. 0: no trap. A trap strikes when it is
+    received: Weapon Shatter breaks the weapon in Link's hand, Blood Moon calls a
+    Blood Moon at once, Rupoor takes up to 100 rupees, Hearts Down takes up
+    to two hearts (never the last quarter), Strip Down puts Link's weapon, shield,
+    bow and armor back in the pouch, and Cucco Swarm sends the angry cuccos' swarm,
+    which can kill (such a death is not sent as a DeathLink)."""
+    display_name = "Trap Percentage"
+    range_start = 0
+    range_end = 100
+    default = 0
+
+
+class TrapWeights(OptionCounter):
+    """How likely each trap is compared with the others: a trap of weight 2 comes up
+    twice as often as one of weight 1. A trap left out of the list, or of weight 0,
+    never comes up."""
+    display_name = "Trap Weights"
+    valid_keys = frozenset(TRAPS)
+    min = 0
+    default = {name: 1 for name in TRAPS}
+
+
 @dataclass
 class BotwOptions(PerGameCommonOptions):
     start_inventory_from_pool: StartInventoryPool
@@ -62,9 +89,12 @@ class BotwOptions(PerGameCommonOptions):
     beedle_shop_items: BeedleShopItems
     stall_shop_items: StallShopItems
     death_link: DeathLink
+    trap_percentage: TrapPercentage
+    trap_weights: TrapWeights
 
 
 OPTION_GROUPS = [
     OptionGroup("Goal", [Goal, ShrinesRequired, BeastsRequired]),
     OptionGroup("Shops", [BeedleShopItems, StallShopItems]),
+    OptionGroup("Traps", [TrapPercentage, TrapWeights]),
 ]

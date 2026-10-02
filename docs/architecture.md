@@ -36,7 +36,7 @@ after the hash of its content), reproducible, and verified before every use (`ve
     (`botw_patch/shops.py`, `botw_patch/stalls.py`).
   - The Archipelago logo in the HUD (`botw_patch/hud_layout.py`) and on the loading screen
     (`botw_patch/loading_icon.py`), and the "Archipelago" key item (`botw_patch/status_item.py`).
-  - The DeathLink entry (`botw_patch/death_link.py`).
+  - The DeathLink entry (`botw_patch/death_link.py`), and the traps' (`botw_patch/traps.py`).
   - The resource size table, updated for every changed file.
 - **Native code** (`tools/build_native_from_source.py`): Cemu patches (`patch_apInject.asm` and companions) assembled
   from `native/cemu/` and a chain of transformations (`tools/build_*.py`). They install a code cave with a mailbox the
@@ -70,6 +70,10 @@ slot file alone, without reaching any server.
 - **DeathLink**: Link's death (`CurrentHart` at 0) is sent to the room; a received death is announced in the journal,
   then requests the pack's entry `OperationGuide<APDeathLink>`, the game's own damage action with a lethal value
   ([death_link.md](reference/death_link.md)).
+- **Traps**: a received trap item is delivered like any other, by a guarded entry that commits, then calls the trap's
+  own entry as a sub-flow; the journal says what it did. Cucco Swarm has no entry of its own: the client plays it once
+  it has seen the commit, through the game's actor creation (`cucco_swarm.py`). Given back by a reload, a trap is spent
+  without effect ([traps.md](reference/traps.md)).
 
 ## The play session (`tools/play_session.py`)
 

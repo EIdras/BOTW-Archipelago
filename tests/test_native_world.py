@@ -111,6 +111,52 @@ class NativeWorldTests(unittest.TestCase):
             self.assertEqual(len(stalls), 14 * stall)
             self.assertTrue(all(20 <= row["price"] <= 200 for row in manifest["shops"]))
 
+    def test_traps_replace_a_share_of_the_filler_by_weight(self):
+        from BaseClasses import ItemClassification
+        mw = self.make_world(seed=3)
+        self.assertFalse([i for i in mw.itempool if i.classification == ItemClassification.trap])
+        everything = self.make_world(seed=3, trap_percentage=100)
+        traps = [i.name for i in everything.itempool if i.classification == ItemClassification.trap]
+        self.assertEqual(len(traps), 41)
+        self.assertEqual(len(everything.itempool), len(mw.itempool))
+        self.assertEqual(set(traps), {"Weapon Shatter", "Blood Moon", "Rupoor", "Hearts Down",
+                                      "Strip Down", "Cucco Swarm"})
+        weighted = self.make_world(seed=3, trap_percentage=100,
+                                   trap_weights={"Hearts Down": 5, "Strip Down": 1})
+        names = [i.name for i in weighted.itempool if i.classification == ItemClassification.trap]
+        self.assertEqual(set(names), {"Hearts Down", "Strip Down"})
+        self.assertGreater(names.count("Hearts Down"), names.count("Strip Down"))
+        # The same seed draws the same traps.
+        again = self.make_world(seed=3, trap_percentage=100,
+                                trap_weights={"Hearts Down": 5, "Strip Down": 1})
+        self.assertEqual(names, [i.name for i in again.itempool
+                                 if i.classification == ItemClassification.trap])
+
+    def test_a_seed_with_traps_fills_and_writes_them_flagged(self):
+        from BaseClasses import ItemClassification
+        from Fill import distribute_items_restrictive
+        for players in (1, 2):
+            mw = self.make_world(seed=11, players=players, trap_percentage=100)
+            distribute_items_restrictive(mw)
+            self.assertTrue(mw.can_beat_game())
+            with tempfile.TemporaryDirectory() as temp:
+                for world in mw.worlds.values():
+                    world.generate_output(temp)
+                for path in Path(temp).glob("*.apbotw.json"):
+                    manifest = json.loads(path.read_text(encoding="utf-8"))
+                    trapped = [p for p in manifest["placements"]
+                               if p["flags"] & int(ItemClassification.trap)]
+                    self.assertTrue(trapped)
+                    self.assertTrue(all(p["item_name"] in {
+                        "Weapon Shatter", "Blood Moon", "Rupoor", "Hearts Down", "Strip Down",
+                        "Cucco Swarm"}
+                        for p in trapped))
+
+    def test_trap_weights_leave_no_trap_to_draw(self):
+        from Options import OptionError
+        with self.assertRaises(OptionError):
+            self.make_world(trap_percentage=10, trap_weights={"Rupoor": 0})
+
     def test_seed_fill_solo_and_multiworld(self):
         from Fill import distribute_items_restrictive
         for players in (1, 2):

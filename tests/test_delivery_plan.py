@@ -60,8 +60,18 @@ class DeliveryPlanTests(unittest.TestCase):
                          (MutationKind.GET_DEMO_ACTOR,
                           "Obj_HeartUtuwa_A_01", 1))
 
-    def test_manual_trap_is_never_automatic(self):
+    def test_a_trap_calls_its_entry_and_carries_its_text(self):
         plan = compile_delivery_plan("Weapon Shatter")
+        self.assertTrue(plan.automatic)
+        (step,) = plan.steps
+        (mutation,) = step.mutations
+        self.assertEqual((mutation.kind, mutation.target, mutation.value),
+                         (MutationKind.TRAP, "APTrapWeaponShatter", "Your weapon shatters!"))
+        self.assertIsNone(step.capacity_actor)
+
+    def test_a_manual_prompt_is_never_automatic(self):
+        mapping = {"Prompt": {"delivery": {"kind": "manual_prompt", "text": "Do it."}}}
+        plan = compile_delivery_plan("Prompt", mapping=mapping)
         self.assertFalse(plan.automatic)
         self.assertIs(plan.steps[0].mutations[0].kind, MutationKind.MANUAL)
 

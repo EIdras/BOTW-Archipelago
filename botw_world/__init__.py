@@ -8,9 +8,10 @@ from typing import Any
 
 from BaseClasses import CollectionState, Item, ItemClassification, Location, Region, Tutorial
 from worlds.AutoWorld import WebWorld, World
+from Options import OptionError
 from worlds.generic.Rules import set_rule
 
-from .catalog import GAME, GOAL_LOCATION, ITEMS, LOCATIONS, categories, requirements
+from .catalog import GAME, GOAL_LOCATION, ITEMS, LOCATIONS, TRAPS, categories, requirements
 from .options import OPTION_GROUPS, BotwOptions
 
 
@@ -126,14 +127,27 @@ class BotwWorld(World):
     def get_filler_item_name(self) -> str:
         return "Rupee Bundle"
 
+    def trap_names(self, filler: int) -> list[str]:
+        """The traps that take the place of a share of the `filler` slots: Trap
+        Percentage of them, each drawn by the weights of Trap Weights."""
+        count = round(filler * self.options.trap_percentage.value / 100)
+        weights = {name: self.options.trap_weights.value.get(name, 0) for name in TRAPS}
+        names = [name for name, weight in weights.items() if weight > 0]
+        if not count:
+            return []
+        if not names:
+            raise OptionError(f"{self.player_name}: trap_percentage is above 0 "
+                              "but every trap of trap_weights has a weight of 0")
+        return self.random.choices(names, weights=[weights[name] for name in names], k=count)
+
     def create_items(self) -> None:
-        # Traps without an automatic, accepted game operation are not generated.
         pool = [self.create_item(row["name"]) for row in ITEMS if not row.get("trap")
                 for _ in range(int(row.get("count", 1)))]
         # Main.py applies start_inventory_from_pool centrally after create_items.
         capacity = len(self.multiworld.get_unfilled_locations(self.player))
         if len(pool) > capacity:
             raise ValueError("BOTW item pool exceeds available locations")
+        pool.extend(self.create_item(name) for name in self.trap_names(capacity - len(pool)))
         pool.extend(self.create_item(self.get_filler_item_name()) for _ in range(capacity - len(pool)))
         self.multiworld.itempool.extend(pool)
 

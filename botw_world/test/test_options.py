@@ -39,6 +39,36 @@ class TestDeathLinkOffByDefault(BotwTestBase):
         self.assertIs(self.world.fill_slot_data()["death_link"], False)
 
 
+class TestNoTrapsByDefault(BotwTestBase):
+    def test_the_pool_has_no_trap(self) -> None:
+        self.assertEqual([item.name for item in self.multiworld.itempool if item.trap], [])
+
+
+class TestEveryFillerATrap(BotwTestBase):
+    options = {"trap_percentage": 100}
+
+    def test_the_filler_becomes_traps_of_the_default_weights(self) -> None:
+        pool = [item.name for item in self.multiworld.itempool]
+        self.assertEqual(pool.count("Rupee Bundle"), 0)
+        traps = [item for item in self.multiworld.itempool if item.trap]
+        self.assertEqual(len(traps), 41)
+        self.assertEqual({item.name for item in traps}, {
+            "Weapon Shatter", "Blood Moon", "Rupoor", "Hearts Down", "Strip Down",
+            "Cucco Swarm"})
+        self.assertEqual(len(pool), 152)
+
+
+class TestOneTrapOnly(BotwTestBase):
+    options = {"trap_percentage": 50, "trap_weights": {"Rupoor": 3, "Blood Moon": 0}}
+
+    def test_only_the_weighted_trap_comes_up(self) -> None:
+        names = [item.name for item in self.multiworld.itempool if item.trap]
+        self.assertEqual(set(names), {"Rupoor"})
+        self.assertEqual(len(names), round(41 * 50 / 100))
+        self.assertEqual([item.name for item in self.multiworld.itempool].count("Rupee Bundle"),
+                         41 - len(names))
+
+
 class TestDivineBeastGoal(BotwTestBase):
     options = {"goal_type": "divine_beasts", "divine_beasts_required": 4}
 
