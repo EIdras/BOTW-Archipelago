@@ -33,7 +33,8 @@ game itself.
 
 - Windows, Cemu 2.x, Breath of the Wild **Wii U EUR, update v208 (1.5.0) and DLC**, from your own console, installed
   in Cemu: the native code of the integration is built for this exact executable.
-- Python 3.12 and an [Archipelago 0.6.7](https://github.com/ArchipelagoMW/Archipelago) source checkout.
+- Python 3.12. To generate or host a seed, [Archipelago 0.6.7](https://github.com/ArchipelagoMW/Archipelago/releases)
+  with this world, `botw.apworld`.
 
 No game file is part of this repository: the game pack of a seed is built from your own copy of the game.
 
@@ -42,17 +43,13 @@ No game file is part of this repository: the game pack of a seed is built from y
 The [setup guide](botw_world/docs/setup_en.md) ([en français](botw_world/docs/setup_fr.md)) covers installation,
 generation, the game pack and playing. In short:
 
-```bat
-venv\Scripts\python tools\generate_native.py
-"BOTW Archipelago.cmd" .build\native-seeds\AP_<seed>.zip
-```
+1. The host generates the seed with Archipelago and `botw.apworld` (`tools\package_native.py` writes it to `dist\`),
+   then hosts it, on archipelago.gg for instance.
+2. Each Breath of the Wild player starts `BOTW Archipelago.cmd` with their slot file (`.apbotw.json`, on the room's
+   page or in the seed's zip). The launcher asks for `Cemu.exe` the first time, builds the seed's game pack, asks for
+   the room's address and plays.
 
-The launcher asks for `Cemu.exe` the first time, builds the seed's game pack, asks for the room and plays. In a
-multiworld hosted on archipelago.gg, give it your slot file (`.apbotw.json`, on the room's page or in the seed's zip)
-and the room's address, `archipelago.gg:<port>`.
-
-The Archipelago world alone is packaged with `tools\package_native.py` as `dist\botw.apworld`. What the world does,
-its locations, items, goal and logic: [game page](botw_world/docs/en_Breath%20of%20the%20Wild.md).
+What the world does, its locations, items, goal and logic: [game page](botw_world/docs/en_Breath%20of%20the%20Wild.md).
 
 ## Limitations
 

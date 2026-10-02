@@ -300,9 +300,10 @@ def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = Fals
     """A session of the prepared seed `seed`, until Cemu closes."""
     from tools.play_speed import variant
     folder, report, pack = find_seed(seed, pack)
-    if not connect and not str(report["archive"]).lower().endswith(".zip"):
+    from tools.play_seed import hostable
+    if not connect and not hostable(report):
         raise SystemExit("This seed was prepared from its slot file only: a local server needs "
-                         "the seed's zip. Join the room hosting it: --connect <address>.")
+                         "the seed's zip, and Archipelago. Join the room hosting it: --connect <address>.")
     pack_manifest = json.loads((pack / "manifest.json").read_text(encoding="utf-8"))
     # The AP journal lives in the game's tip frame; every pack carries it.
     journal = pack_manifest.get("ap_journal") == "tip_channel"

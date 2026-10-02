@@ -6,7 +6,8 @@
 The seed may be a solo seed or a multiworld with other games and players. The
 game pack is built for one Breath of the Wild slot, from either:
   * the seed's zip, as generated (its BOTW slot; --slot when it has several).
-    It also lets tools/play_session.py host the seed on a local AP server;
+    Where Archipelago is (a source checkout's runtime), the whole seed is
+    checked, and tools/play_session.py can host it on a local AP server;
   * the slot's own file (<seed>_P<n>_<name>.apbotw.json, inside the zip), to
     play in a room hosted elsewhere, archipelago.gg for instance.
 
@@ -82,8 +83,23 @@ def verified_manifest(manifest: dict) -> dict:
     return manifest
 
 
+def archipelago_here() -> bool:
+    """Archipelago's server code is importable (the runtime of a source
+    checkout): a seed's zip can then be checked whole, and hosted."""
+    import importlib.util
+    return importlib.util.find_spec("MultiServer") is not None
+
+
+def hostable(report: dict) -> bool:
+    """A prepared seed can be hosted here: prepared from its whole zip."""
+    audit = report.get("audit", {})
+    return bool(audit.get("hostable", str(report.get("archive", "")).lower().endswith(".zip")))
+
+
 def read_seed(path: Path, slot_name: str | None = None) -> tuple[dict, dict]:
-    """(audit, identity) of the seed's BOTW slot, from its zip or its slot file."""
+    """(audit, identity) of the seed's BOTW slot, from its zip or its slot file.
+
+    Without Archipelago here, a zip is read as the slot files it holds."""
     from botw_client.session import data_package_checksum, session_token
     from tools.build_pack_from_source import slot_manifests
     manifests = [verified_manifest(m) for m in slot_manifests(path)]
@@ -100,7 +116,8 @@ def read_seed(path: Path, slot_name: str | None = None) -> tuple[dict, dict]:
     placements = len(manifest["placements"])
     checksum = manifest.get("data_package_checksum")
     team, players = 0, None
-    if path.suffix.lower() == ".zip":
+    whole = path.suffix.lower() == ".zip" and archipelago_here()
+    if whole:
         from MultiServer import Context
         with zipfile.ZipFile(path) as archive:
             multidata = Context.decompress(archive.read(
@@ -129,7 +146,7 @@ def read_seed(path: Path, slot_name: str | None = None) -> tuple[dict, dict]:
     identity["token"] = session_token((manifest["seed"], team, slot, checksum))
     audit = {"seed": manifest["seed"], "slots": {str(slot): name}, "placements": placements,
              "world_schema": manifest["slot_data"].get("world_schema"), "players": players,
-             "hostable": path.suffix.lower() == ".zip"}
+             "hostable": whole}
     return audit, identity
 
 

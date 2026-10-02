@@ -81,6 +81,22 @@ class SlotFileTests(unittest.TestCase):
             self.assertEqual((binding["slot"], binding["slot_name"]), (4, "Simon"))
 
 
+    def test_without_archipelago_a_zip_is_read_as_its_slot_file(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            path = slot_file(root, slot=2, name="Simon")
+            archive = root / "AP_test-seed.zip"
+            with zipfile.ZipFile(archive, "w") as zipped:
+                zipped.writestr(path.name, path.read_bytes())
+            with patch.object(play_seed, "archipelago_here", return_value=False):
+                audit, identity = self.read(archive)
+        self.assertEqual((identity["team"], identity["slot"], identity["data_package_checksum"]),
+                         (0, 2, "checksum"))
+        self.assertFalse(audit["hostable"])
+        self.assertFalse(play_seed.hostable({"archive": str(archive), "audit": audit}))
+        self.assertTrue(play_seed.hostable({"archive": str(archive), "audit": {}}))   # before the field
+
+
 class PreparationTests(unittest.TestCase):
     def test_new_seed_is_identified_then_built_and_selected(self):
         with tempfile.TemporaryDirectory() as temp:

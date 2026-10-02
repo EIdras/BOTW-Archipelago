@@ -11,7 +11,8 @@ archipelago.gg or on your own server. The commands run from the project's folder
   from your own console: the game in Cemu's game list, its update **v208** (1.5.0) and the DLC installed in Cemu
   (File > Install game title, update or DLC). Start the game once in Cemu.
 - Python 3.12.
-- A source checkout of [Archipelago](https://github.com/ArchipelagoMW/Archipelago) **0.6.7**.
+- To generate or host a seed: [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases) **0.6.7**. Joining a
+  room hosted by someone else needs only your slot file.
 
 Other versions of the game (US, JP, Switch) are not supported: the native code of the integration is built for this
 exact executable.
@@ -23,28 +24,30 @@ From the folder of the project:
 ```bat
 python -m venv venv
 venv\Scripts\pip install -r requirements.txt
-venv\Scripts\python tools\prepare_ap_runtime.py --source <Archipelago 0.6.7 checkout>
 ```
-
-`prepare_ap_runtime.py` copies the Archipelago core and this world into `.build\ap-runtime`, used for generation and
-for the local server. Playing in a room hosted elsewhere does not need it.
 
 ## Generating a seed
 
-**Alone**: edit `players\BOTW.yaml` (player name, goal, shop options, DeathLink, traps), then:
+A seed is generated with [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases) **0.6.7**, as for any
+game, by the person who hosts it (alone, that is you):
 
-```bat
-venv\Scripts\python tools\generate_native.py
-```
+1. Put `botw.apworld` in Archipelago's `custom_worlds` folder (`venv\Scripts\python tools\package_native.py` writes it
+   to `dist\`).
+2. Put every player's YAML file in Archipelago's `Players` folder. For Breath of the Wild, start from
+   `players\BOTW.yaml` (player name, goal, shop options, DeathLink, traps), or from the template the Archipelago
+   Launcher writes ("Generate Template Options").
+3. Run "Generate" in the Archipelago Launcher. The seed's zip, in Archipelago's `output` folder, holds a slot file
+   `AP_<seed>_P<n>_<name>.apbotw.json` for each Breath of the Wild player.
 
-The seed is written to `.build\native-seeds\AP_<seed>.zip`.
+To host the seed on [archipelago.gg](https://archipelago.gg), upload that zip on its "Host Game" page: the room's page
+gives its address, `archipelago.gg:<port>`, and each player's slot file to download. To host it on your computer,
+open the zip with "Archipelago Server" in the Archipelago Launcher; the players connect to `localhost:38281` (the
+others to your computer's address, port 38281, forwarded to it over the Internet).
 
-**With other players**: the person who generates needs every player's YAML file, and the worlds of their games. For
-Breath of the Wild, that is `botw.apworld` (`venv\Scripts\python tools\package_native.py` writes it to `dist\`),
-installed in Archipelago's `custom_worlds` folder. Generate with Archipelago as usual; the seed's zip holds, for each
-Breath of the Wild player, a slot file `AP_<seed>_P<n>_<name>.apbotw.json`. To host the game on
-[archipelago.gg](https://archipelago.gg), upload that zip on its "Host Game" page: it then gives the room's address,
-`archipelago.gg:<port>`.
+From a source checkout of Archipelago 0.6.7, `venv\Scripts\python tools\prepare_ap_runtime.py --source <checkout>`
+copies its core and this world into `.build\ap-runtime`; `venv\Scripts\python tools\generate_native.py` then
+generates from the YAML files of `players\` into `.build\native-seeds\`, and the launcher can host a seed's zip on
+this computer.
 
 ## Playing
 

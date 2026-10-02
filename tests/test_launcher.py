@@ -148,14 +148,14 @@ class RoomTests(Folder):
 
     def test_a_seeds_zip_can_be_hosted_here(self):
         self.seed("111", archive="AP_111.zip")
-        with mock.patch.object(launcher, "can_host", return_value=True):
+        with mock.patch.object(launcher.play_seed, "archipelago_here", return_value=True):
             self.assertEqual(launcher.choose_room(Answers(answers=["local"]), "111"), (None, None))
             self.assertEqual(launcher.choose_room(Answers(), "111"), (None, None))
 
     def test_without_the_archipelago_server_a_room_is_needed(self):
         self.seed("111", archive="AP_111.zip")
         ui = Answers(answers=["archipelago.gg:1"])
-        with mock.patch.object(launcher, "can_host", return_value=False):
+        with mock.patch.object(launcher.play_seed, "archipelago_here", return_value=False):
             self.assertEqual(launcher.choose_room(ui, "111"), ("archipelago.gg:1", None))
 
 

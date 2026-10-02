@@ -107,6 +107,50 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(counts[:2], ["40", "212"])
         self.assertIn("botw.apworld", counts[2])
 
+    def test_a_host_generates_with_the_apworld_and_each_player_prepares_from_their_slot_file(self):
+        # The host's way: Archipelago with botw.apworld in custom_worlds, two
+        # players. Each slot file must be offered by archipelago.gg's room page
+        # (its name gives the slot, as the upload reads it), and bind the same
+        # identity as the whole seed.
+        from tools import play_seed
+        with tempfile.TemporaryDirectory() as folder:
+            folder = Path(folder)
+            players, output = folder / "players", folder / "output"
+            players.mkdir()
+            for name in ("Alice", "Bob"):
+                (players / f"{name}.yaml").write_text(
+                    f"name: {name}\ngame: Breath of the Wild\nBreath of the Wild:\n  goal_type: ganon\n",
+                    encoding="utf-8")
+            archive = package(folder / "botw.apworld")
+            copy, aside = RUNTIME / "worlds/botw", RUNTIME / "worlds/_botw_folder"
+            custom = RUNTIME / "custom_worlds"
+            created = not custom.exists()
+            copy.rename(aside)
+            try:
+                custom.mkdir(exist_ok=True)
+                (custom / "botw.apworld").write_bytes(archive.read_bytes())
+                try:
+                    result = run_in_runtime("Generate.py", "--player_files_path", str(players),
+                                            "--outputpath", str(output))
+                finally:
+                    (custom / "botw.apworld").unlink()
+                    if created:
+                        custom.rmdir()
+            finally:
+                aside.rename(copy)
+            self.assertEqual(result.returncode, 0, result.stdout[-2000:] + result.stderr[-2000:])
+            seed_zip = next(output.glob("AP_*.zip"))
+            with zipfile.ZipFile(seed_zip) as zipped:
+                slots = sorted(name for name in zipped.namelist() if name.endswith(".apbotw.json"))
+                zipped.extractall(folder / "slots", slots)
+            self.assertEqual(len(slots), 2)
+            for player, name in enumerate(slots, 1):
+                self.assertEqual(name.split(".")[0].split("_", 3)[2], f"P{player}")
+                slot_name = ("Alice", "Bob")[player - 1]
+                _, alone = play_seed.read_seed(folder / "slots" / name)
+                _, whole = play_seed.read_seed(seed_zip, slot_name)
+                self.assertEqual(alone, whole)
+
 
 if __name__ == "__main__":
     unittest.main()

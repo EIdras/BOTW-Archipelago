@@ -189,18 +189,12 @@ def choose_seed(ui, argument: str | None) -> str:
     return prepare_file(ui, path)
 
 
-def can_host() -> bool:
-    """The Archipelago server is here (the runtime of a source checkout)."""
-    import importlib.util
-    return importlib.util.find_spec("MultiServer") is not None
-
-
 def choose_room(ui, seed: str) -> tuple[str | None, str | None]:
     """The room's address and password, or (None, None) to host the seed here."""
     from botw_client.protocol import server_url
     folder = play_seed.PLAY_SEEDS / seed
     report = json.loads((folder / "analysis.json").read_text(encoding="utf-8"))
-    hostable = str(report["archive"]).lower().endswith(".zip") and can_host()
+    hostable = play_seed.hostable(report) and play_seed.archipelago_here()
     try:
         remembered = json.loads((folder / ROOM_FILE).read_text(encoding="utf-8")).get("room", "")
     except (OSError, ValueError):
