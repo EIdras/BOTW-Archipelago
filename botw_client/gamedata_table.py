@@ -2,9 +2,9 @@
 
 It comes from GameData/gamedata.ssarc in the update's Pack/Bootup.pack (one
 BYML per type, each entry with its DataName and HashValue). Nothing of it is in
-the repository: tools/play_seed.py writes it to .build/gamedata.json from the
---content it is given, and a missing table is read from the default Cemu
-update when it is there.
+the repository: tools/play_seed.py writes it to gamedata.json in the data
+folder (botw_client/paths.py) from the --content it is given, and a missing
+table is read from the default Cemu update when it is there.
 """
 from __future__ import annotations
 
@@ -12,8 +12,9 @@ from functools import lru_cache
 import json
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-TABLE = ROOT / ".build" / "gamedata.json"
+from .paths import DATA
+
+TABLE = DATA / "gamedata.json"
 DEFAULT_CONTENT = (Path.home() / "AppData/Roaming/Cemu/mlc01/usr/title"
                    / "0005000e/101c9500/content")
 BOOTUP = "Pack/Bootup.pack"

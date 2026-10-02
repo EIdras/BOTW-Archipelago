@@ -11,6 +11,7 @@ from pathlib import Path
 from .backend import DeliveryCommand, DeliveryCoordinator, DeliveryStatus
 from .game import BotwGame, GameNotReady
 from .locations import SCHEMA_LOCATION_COUNTS, load_targets
+from .paths import DATA
 from .protocol import ArchipelagoClient, DeathLinkEvent, LocationInfo
 from .session import session_token
 from .message_text import clip_units, literal_metadata, literal_text, queued_text
@@ -35,7 +36,7 @@ DEATHLINK_LEAD_SECONDS = 3.0
 DEATHLINK_ECHO_SECONDS = 5.0
 DEATHLINK_FLAG_SECONDS = 60.0
 DEATHLINK_EXPIRY_SECONDS = 120.0
-STATE_PATH = Path(__file__).resolve().parent.parent / ".botw_client_state.json"
+STATE_PATH = DATA / "client-state.json"
 GOAL_LOCATION = "Defeat Calamity Ganon"
 STATE_SCHEMA = 3
 CLIENT_SCHEMA = 2
@@ -163,6 +164,7 @@ class StateStore:
     def save(self):
         if self.current is None:
             return
+        self.path.parent.mkdir(parents=True, exist_ok=True)
         temporary = self.path.with_suffix(self.path.suffix + ".tmp")
         temporary.write_text(
             json.dumps(self.data, ensure_ascii=False, indent=2) + "\n",

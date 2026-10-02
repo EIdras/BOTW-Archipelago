@@ -80,7 +80,8 @@ slot file alone, without reaching any server.
 Runs Cemu on the isolated profile of `tools/cemu_profile.py` with the seed's pack as its only graphic pack, and the
 client, until Cemu closes. The client joins the room hosting the seed (`--connect`, archipelago.gg for instance), or
 the Archipelago server of the seed, run in process from its zip (its state saved next to the seed; `--host` opens it
-to the network for the other players). Each session writes its logs to `.build/play-seeds/<seed>/sessions/`.
+to the network for the other players). Each session writes its logs to `play-seeds/<seed>/sessions/` in the data
+folder (see [Development](development.md#local-folders)).
 
 ## Technical notes
 

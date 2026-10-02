@@ -20,7 +20,8 @@ Lines typed in the console go to the AP server as chat or commands (/hint,
 /status...; sent as !hint, !status... to a remote room), or to the client
 (/ap-... commands).
 
-Each launch writes .build/play-seeds/<seed>/sessions/<stamp>/ : the client
+Each launch writes play-seeds/<seed>/sessions/<stamp>/ in the data folder
+(botw_client/paths.py): the client
 log, Cemu's log, and session.json (checks sent, items received, cursor, save
 hashes).
 """
@@ -43,11 +44,15 @@ ROOT = Path(__file__).resolve().parents[1]
 os.environ["SKIP_REQUIREMENTS_UPDATE"] = "1"
 sys.path[:] = [str(ROOT)] + [p for p in sys.path
                             if Path(p).resolve() != ROOT / 'tools']
-sys.path.insert(0, str(ROOT / ".build/ap-runtime"))
+
+from botw_client.paths import BUILD, DATA  # noqa: E402
+
+# The Archipelago runtime of a source checkout, for the local server.
+sys.path.insert(0, str(BUILD / "ap-runtime"))
 
 from tools import cemu_profile as profile  # noqa: E402
 
-PLAY_SEEDS = ROOT / ".build/play-seeds"
+PLAY_SEEDS = DATA / "play-seeds"
 PORT = 38281
 GAME = "Breath of the Wild"
 
@@ -269,7 +274,7 @@ async def play(folder: Path, report: dict, pack: Path, session: Path,
 def main() -> None:
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--seed", help="folder of .build/play-seeds")
+    parser.add_argument("--seed", help="the seed, a folder of play-seeds in the data folder")
     parser.add_argument("--pack", type=Path, help="a pack built from the sources, to use explicitly")
     parser.add_argument("--prepare-only", action="store_true")
     from tools.play_speed import speed_argument, variant
@@ -294,7 +299,7 @@ def main() -> None:
     pack_manifest = json.loads((pack / "manifest.json").read_text(encoding="utf-8"))
     # The AP journal lives in the game's tip frame; every pack carries it.
     journal = pack_manifest.get("ap_journal") == "tip_channel"
-    pack = variant(pack, arguments.speed, ROOT / '.build/play-speed-packs')
+    pack = variant(pack, arguments.speed, DATA / 'play-speed-packs')
     source_saves = profile.SAVES / f"{profile.SOURCE_ACCOUNT:08x}"
     source_saves_before = tree_hashes(source_saves)
     account = profile.ensure_play_account()

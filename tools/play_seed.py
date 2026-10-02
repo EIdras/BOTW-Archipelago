@@ -12,7 +12,8 @@ game pack is built for one Breath of the Wild slot, from either:
 
 1. audits the slot: manifest hash, one placement per location, and, from the
    zip, its agreement with the seed's data;
-2. copies the file into .build/play-seeds/<seed>/ (a local server keeps its
+2. copies the file into play-seeds/<seed>/ of the data folder
+   (botw_client/paths.py; a local server keeps its
    .apsave next to that copy, so progress survives between sessions);
 3. reads the session identity the server will give the slot (seed, team 0,
    slot, DataPackage checksum written by the world) and its token;
@@ -37,9 +38,14 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 os.environ["SKIP_REQUIREMENTS_UPDATE"] = "1"
 sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / ".build/ap-runtime"))
 
-PLAY_SEEDS = ROOT / ".build/play-seeds"
+from botw_client.paths import BUILD, DATA  # noqa: E402
+
+# The Archipelago runtime of a source checkout, to read a seed's zip.
+sys.path.insert(0, str(BUILD / "ap-runtime"))
+
+PLAY_SEEDS = DATA / "play-seeds"
+PACKS = DATA / "packs-from-source"
 SCOPE = "generated_ap_seed"
 GAME = "Breath of the Wild"
 _ROWS = json.loads((ROOT / "botw_world/data/locations.json").read_text(encoding="utf-8"))
@@ -149,7 +155,7 @@ def prepare(source: Path, *, content: Path, rpx: Path,
                 "archive": str(archive), "archive_sha256": sha(archive),
                 "audit": audit, "delivery": {"sessions": {str(slot): identity}}}
         report.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    pack = build(content, rpx, report, slot, ROOT / ".build/packs-from-source",
+    pack = build(content, rpx, report, slot, PACKS,
                  resource_gate=True, event_gate=True)
     select_pack(folder, pack)
     from botw_client.gamedata_table import build as build_gamedata_table

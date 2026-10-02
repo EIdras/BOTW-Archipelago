@@ -10,14 +10,21 @@
 | `tools/` | Command-line tools (seed, pack, play session, packaging) and the builders of the game pack |
 | `tools/cemu/` | Access to Cemu's memory, the code cave mailbox and the native requests; RPX reading |
 | `native/cemu/` | Sources of the Cemu patches the native builder starts from |
-| `data/` | Project data: locations (`locations_master.csv`), item effects (`item_map.json`). The GameData flag table is read from the player's game into `.build/gamedata.json` (`botw_client/gamedata_table.py`) |
+| `data/` | Project data: locations (`locations_master.csv`), item effects (`item_map.json`). The GameData flag table is read from the player's game into `gamedata.json` in the data folder (`botw_client/gamedata_table.py`) |
 | `assets/` | The Archipelago item icon and 3D model |
 | `players/` | Player options read by `tools/generate_native.py` |
 | `tests/` | The project's tests |
 | `docs/` | Architecture, development and technical notes |
 
-Local folders, ignored by git: `.build/` (builds, the Archipelago runtime, the Cemu profile, seeds and session logs),
-`venv/`, `dist/`.
+### Local folders
+
+Ignored by git: `.build/` (builds, the Archipelago runtime, the Cemu profile, seeds and session logs), `venv/`, `dist/`.
+
+What the tools write for the player goes to the **data folder** (`botw_client/paths.py`): the Cemu profile
+(`cemu-validation/`), the seeds and their sessions (`play-seeds/`), their packs (`packs-from-source/`), the GameData flag
+table and the client's caches. In a source checkout it is `.build/`; in a release (a `release.json` at its root), it
+is `%LOCALAPPDATA%\BOTW Archipelago`, kept across updates; the `BOTW_AP_DATA` variable names another one. The
+developer's own builds (the Archipelago runtime, generated seeds, historical candidates) stay in `.build/`.
 
 ## Tests
 

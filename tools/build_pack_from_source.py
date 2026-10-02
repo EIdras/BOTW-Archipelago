@@ -12,6 +12,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:] = [str(ROOT)] + [p for p in sys.path if Path(p).resolve() != ROOT / "tools"]
 
+from botw_client.paths import DATA
 from botw_client.session import session_token
 from tools import build_native_from_source as native
 from tools import build_resources_from_source as resources
@@ -215,7 +216,7 @@ if __name__ == "__main__":
     parser.add_argument("--resource-gate", action="store_true",
                         help="experimental native preflight: defer before submission when resource is unavailable")
     parser.add_argument("--event-gate", action="store_true", help="defer before submission while native event admission is blocked (requires --resource-gate)")
-    parser.add_argument("--output", type=Path, default=ROOT / ".build/packs-from-source")
+    parser.add_argument("--output", type=Path, default=DATA / "packs-from-source")
     args = parser.parse_args()
     print(build(args.content, args.rpx, args.report, args.slot, args.output,
                 archive=args.archive, diagnostics=not args.without_diagnostics,

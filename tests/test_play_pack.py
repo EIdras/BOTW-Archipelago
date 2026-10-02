@@ -114,7 +114,7 @@ class PreparationTests(unittest.TestCase):
                     patch("tools.play_pack.select_pack") as select:
                 result = play_seed.prepare(archive, content=root / "dump", rpx=root / "game.rpx")
                 build.assert_called_once_with(root / "dump", root / "game.rpx", report, 1,
-                                               play_seed.ROOT / ".build/packs-from-source",
+                                               play_seed.PACKS,
                                                resource_gate=True, event_gate=True)
                 select.assert_called_once_with(folder, root / "pack")
                 self.assertEqual(result, (report, root / "pack"))
@@ -146,6 +146,34 @@ class SelectionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             with self.assertRaisesRegex(RuntimeError, "no pack selected"):
                 play_pack.selected_pack(Path(temp))
+
+    def test_the_selection_is_relative_to_the_data_folder(self):
+        with tempfile.TemporaryDirectory() as temp:
+            data = Path(temp).resolve()
+            pack = data / "packs-from-source" / "abc"
+            pack.mkdir(parents=True)
+            (pack / "manifest.json").write_text("{}")
+            folder = data / "play-seeds" / "seed"
+            folder.mkdir(parents=True)
+            with patch.object(play_pack, "DATA", data), patch.object(play_pack, "verify_pack"),                     patch.object(play_pack, "seed_binding"):
+                play_pack.select_pack(folder, pack)
+                pointer = json.loads((folder / "play-pack.json").read_text())
+                self.assertEqual((pointer["schema"], pointer["pack"]), (2, "packs-from-source/abc"))
+                self.assertEqual(play_pack.selected_pack(folder), pack)
+                with self.assertRaisesRegex(ValueError, "inside the data folder"):
+                    play_pack.select_pack(folder, Path(temp).parent)
+
+    def test_a_checkout_selection_from_before_the_data_folder_still_reads(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp).resolve()
+            pack = root / ".build/packs-from-source/abc"
+            pack.mkdir(parents=True)
+            (pack / "manifest.json").write_text("{}")
+            (root / "play-pack.json").write_bytes(encode({
+                "schema": 1, "pack": ".build/packs-from-source/abc",
+                "manifest_sha256": digest(b"{}")}))
+            with patch.object(play_pack, "ROOT", root), patch.object(play_pack, "verify_pack"),                     patch.object(play_pack, "seed_binding"):
+                self.assertEqual(play_pack.selected_pack(root), pack)
 
     @unittest.skipUnless((play_pack.ROOT / ".build/packs-from-source/7f24dccb5d326bda").is_dir(),
                          "validated play pack absent")

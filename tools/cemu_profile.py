@@ -3,7 +3,8 @@
     python tools/cemu_profile.py --cemu <Cemu.exe> --user-data <Cemu user folder>
 
 Creating it copies, once, the Cemu executable, the BOTW EUR update and DLC and
-the BOTW saves of an existing Cemu installation into .build/cemu-validation:
+the BOTW saves of an existing Cemu installation into cemu-validation/ of the
+data folder (botw_client/paths.py):
 nothing links back to the installation, which is never modified. An existing
 profile is never reset.
 
@@ -20,10 +21,16 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
-PROFILE = ROOT / ".build/cemu-validation"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from botw_client.paths import DATA  # noqa: E402
+
+PROFILE = DATA / "cemu-validation"
 PORTABLE = PROFILE / "portable"
 SOURCE_ACCOUNT = 0x80000001     # the account copied from the Cemu installation
 PLAY_ACCOUNT = 0x80000003       # the account of play sessions
@@ -35,8 +42,8 @@ PACK_PREFIX = "AP_Ledger_"
 def create(executable: Path, user_data: Path, target: Path = PROFILE) -> Path:
     """Copy what BOTW needs from a Cemu installation into a new profile."""
     target = target.resolve()
-    if not target.is_relative_to(ROOT / ".build"):
-        raise ValueError("the profile must be inside this project's .build folder")
+    if not target.is_relative_to(DATA.resolve()):
+        raise ValueError(f"the profile must be inside the data folder: {DATA}")
     if target.exists():
         raise FileExistsError(f"the profile already exists; refusing to reset it: {target}")
     mlc = user_data / "mlc01"

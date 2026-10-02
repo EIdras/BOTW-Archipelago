@@ -10,6 +10,7 @@ import zlib
 
 from .items import load_item_map
 from .locations import LocationTracker, known_hashes, load_targets
+from .paths import DATA
 from .rune_selection import EQUIP_HASH, RuneSelectionSync, SyncOutcome
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -170,7 +171,7 @@ class BotwGame:
                 + ", ".join(missing[:5]))
 
     def _load_or_build_index(self, progress):
-        cache_path = self.index_cache_path or ROOT / ".botw_index_cache.json"
+        cache_path = self.index_cache_path or DATA / "index-cache.json"
         legacy_cache = CEMU_TOOLS / ".index_cache.json"
         pid = cemu_pid()
         for candidate in ((cache_path,) if self.index_cache_path is not None else (cache_path, legacy_cache)):
@@ -190,6 +191,7 @@ class BotwGame:
         index = build_index(self.process, known_hashes())
         progress(f"index built in {time.monotonic() - started:.0f}s: {len(index)} flags")
         try:
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
             cache_path.write_text(json.dumps({
                 "pid": pid, "index": {str(k): v for k, v in index.items()}
             }), encoding="utf-8")
