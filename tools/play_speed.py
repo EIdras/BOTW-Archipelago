@@ -9,7 +9,7 @@ import rstb
 
 from botw_patch.resources import ResourceBuilder, unpack
 from tools.build_pack_from_source import verify_pack
-from tools.build_resources_from_source import digest, encode, TITLE, TABLE
+from tools.build_resources_from_source import digest, encode, pack_path, TITLE, TABLE
 from tools.build_plateau_speed import faster_animation
 from tools.build_vanilla_locomotion import MEMBER, VANILLA_SHA
 
@@ -65,11 +65,12 @@ def variant(source: Path, speed: float, output: Path) -> Path:
     replacements[TABLE] = bytes(oead.yaz0.compress(stream.getvalue()))
     files = {p.relative_to(source).as_posix(): p.read_bytes()
              for p in source.rglob('*') if p.is_file() and p.name != 'manifest.json'}
-    files.update({'content/' + name: raw for name, raw in replacements.items()})
+    files.update({pack_path(name): raw for name, raw in replacements.items()})
     manifest.pop('build_id')
     manifest.update(locomotion_speed_multiplier=speed, gameplay_aids=True,
                     locomotion_base_pack=source.name, status='requires_in_game_validation')
-    manifest['files'] = {name: digest(files['content/' + name]) for name in manifest['files']}
+    # DLC files (stalls) sit at the pack's root, the rest in content/.
+    manifest['files'] = {name: digest(files[pack_path(name)]) for name in manifest['files']}
     for name in ('tools/play_speed.py', 'tools/build_plateau_speed.py'):
         manifest['source_hashes'][name] = digest((Path(__file__).resolve().parents[1] / name).read_bytes())
     identity = digest(encode(manifest))[:16]

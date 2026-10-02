@@ -12,6 +12,7 @@ from tools.build_vanilla_locomotion import AIDED_SHA
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / '.build/packs-from-source/1c912b3869c94a1a'
+STALLS = ROOT / '.build/packs-from-source/024441ae80c0c7bb'      # a seed with stall locations
 
 
 class PlaySpeedTests(unittest.TestCase):
@@ -38,6 +39,18 @@ class PlaySpeedTests(unittest.TestCase):
                 self.assertTrue(edits)
                 for edit in edits:
                     self.assertAlmostEqual(edit['after'], edit['before'] * 6, places=5)
+
+    @unittest.skipUnless(STALLS.is_dir(), 'requires a local pack with stalls')
+    def test_a_pack_with_dlc_files_keeps_them_at_its_root(self):
+        # Seen in play: the variant of a seed with stalls failed on its aoc/ files.
+        from tools.build_pack_from_source import verify_pack
+        with tempfile.TemporaryDirectory() as directory:
+            target = variant(STALLS, 3, Path(directory))
+            manifest = verify_pack(target)
+            dlc = [name for name in manifest['files'] if name.startswith('aoc/')]
+            self.assertTrue(dlc)
+            for name in dlc:
+                self.assertEqual((target / name).read_bytes(), (STALLS / name).read_bytes())
 
     def test_direct_script_import_path_does_not_shadow_rstb_package(self):
         script = '''
