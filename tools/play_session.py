@@ -271,13 +271,13 @@ async def play(folder: Path, report: dict, pack: Path, session: Path,
     return summary
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     import argparse
+    from tools.play_speed import speed_argument
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", help="the seed, a folder of play-seeds in the data folder")
     parser.add_argument("--pack", type=Path, help="a pack built from the sources, to use explicitly")
     parser.add_argument("--prepare-only", action="store_true")
-    from tools.play_speed import speed_argument, variant
     parser.add_argument("--speed", type=speed_argument, default=1.0,
                         help="run/sprint/climb speed multiplier (0.1 to 10, default 1)")
     server = parser.add_mutually_exclusive_group()
@@ -288,18 +288,25 @@ def main() -> None:
                         help=f"the local server listens on every network interface (port {PORT}), "
                              "for the other players of the seed")
     parser.add_argument("--password", help="the room's password, with --connect")
-    arguments = parser.parse_args()
+    arguments = parser.parse_args(argv)
     if arguments.password and not arguments.connect:
         parser.error("--password goes with --connect")
+    run(arguments.seed, pack=arguments.pack, prepare_only=arguments.prepare_only, speed=arguments.speed,
+        connect=arguments.connect, password=arguments.password, host=arguments.host)
 
-    folder, report, pack = find_seed(arguments.seed, arguments.pack)
-    if not arguments.connect and not str(report["archive"]).lower().endswith(".zip"):
+
+def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = False, speed: float = 1.0,
+        connect: str | None = None, password: str | None = None, host: bool = False) -> None:
+    """A session of the prepared seed `seed`, until Cemu closes."""
+    from tools.play_speed import variant
+    folder, report, pack = find_seed(seed, pack)
+    if not connect and not str(report["archive"]).lower().endswith(".zip"):
         raise SystemExit("This seed was prepared from its slot file only: a local server needs "
                          "the seed's zip. Join the room hosting it: --connect <address>.")
     pack_manifest = json.loads((pack / "manifest.json").read_text(encoding="utf-8"))
     # The AP journal lives in the game's tip frame; every pack carries it.
     journal = pack_manifest.get("ap_journal") == "tip_channel"
-    pack = variant(pack, arguments.speed, DATA / 'play-speed-packs')
+    pack = variant(pack, speed, DATA / 'play-speed-packs')
     source_saves = profile.SAVES / f"{profile.SOURCE_ACCOUNT:08x}"
     source_saves_before = tree_hashes(source_saves)
     account = profile.ensure_play_account()
@@ -309,13 +316,13 @@ def main() -> None:
         raise RuntimeError(f"the play profile loads something else: {packs}")
     game = profile.game()
     print(f"Play profile ready: seed {folder.name}, pack {pack.name}, account "
-          f"{account['account']}. Link's speed: x{arguments.speed:g}; one graphic pack enabled.",
+          f"{account['account']}. Link's speed: x{speed:g}; one graphic pack enabled.",
           flush=True)
     if journal:
         print("AP journal in the tip frame; try it: /ap-tip <text>.", flush=True)
     else:
         print("No AP journal in the tip frame with this pack.", flush=True)
-    if arguments.prepare_only:
+    if prepare_only:
         return
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
@@ -323,7 +330,7 @@ def main() -> None:
     session.mkdir(parents=True)
     play_saves = profile.SAVES / f"{profile.PLAY_ACCOUNT:08x}"
     result = {"schema": 1, "started_utc": stamp, "seed": folder.name, "pack": pack.name,
-              "locomotion_speed_multiplier": arguments.speed,
+              "locomotion_speed_multiplier": speed,
               "native_tip_channel": journal,
               "account": account, "graphic_packs": packs,
               "play_saves_before": tree_hashes(play_saves), "status": "running"}
@@ -349,8 +356,8 @@ def main() -> None:
     result["pid"] = process.pid
     try:
         result.update(asyncio.run(play(folder, report, pack, session, process, log,
-                                      journal=journal, connect=arguments.connect,
-                                      password=arguments.password, host=arguments.host)))
+                                      journal=journal, connect=connect,
+                                      password=password, host=host)))
         result["status"] = "finished"
     except KeyboardInterrupt:
         result["status"] = "interrupted"

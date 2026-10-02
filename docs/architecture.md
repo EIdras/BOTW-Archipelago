@@ -84,6 +84,12 @@ executable, DLC 3.0. `cemu_profile` copies the update, the DLC, the saves and th
 in the data folder, and records where the base game is; packs are built from that copy of the update, the one the
 game runs from.
 
+## The launcher (`tools/launcher.py`, `BOTW Archipelago.cmd`)
+
+The one command a player runs: the first time, it makes the Cemu profile from `Cemu.exe`; then it picks a prepared
+seed or prepares a new one from a slot file or a seed's zip (`tools/play_seed.py`), asks for the room, and starts the
+play session.
+
 ## The play session (`tools/play_session.py`)
 
 Runs Cemu on the isolated profile of `tools/cemu_profile.py` with the seed's pack as its only graphic pack, and the

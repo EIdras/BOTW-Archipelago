@@ -44,12 +44,12 @@ generation, the game pack and playing. In short:
 
 ```bat
 venv\Scripts\python tools\generate_native.py
-venv\Scripts\python tools\play_seed.py .build\native-seeds\AP_<seed>.zip
-Play.cmd --seed <seed>
+"BOTW Archipelago.cmd" .build\native-seeds\AP_<seed>.zip
 ```
 
-In a multiworld hosted on archipelago.gg, the pack is built from your slot file (`.apbotw.json`, in the seed's zip),
-and the session joins the room: `Play.cmd --seed <seed> --connect archipelago.gg:<port>`.
+The launcher asks for `Cemu.exe` the first time, builds the seed's game pack, asks for the room and plays. In a
+multiworld hosted on archipelago.gg, give it your slot file (`.apbotw.json`, on the room's page or in the seed's zip)
+and the room's address, `archipelago.gg:<port>`.
 
 The Archipelago world alone is packaged with `tools\package_native.py` as `dist\botw.apworld`. What the world does,
 its locations, items, goal and logic: [game page](botw_world/docs/en_Breath%20of%20the%20Wild.md).

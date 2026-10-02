@@ -18,20 +18,16 @@ pour cet exécutable précis.
 
 ## Installation
 
+Depuis le dossier du projet :
+
 ```bat
 python -m venv venv
 venv\Scripts\pip install -r requirements.txt
 venv\Scripts\python tools\prepare_ap_runtime.py --source <sources d'Archipelago 0.6.7>
-venv\Scripts\python tools\cemu_profile.py --cemu <chemin de Cemu.exe>
 ```
 
-- `prepare_ap_runtime.py` copie le cœur d'Archipelago et ce monde dans `.build\ap-runtime`, qui sert à la génération
-  et au serveur local.
-- `cemu_profile.py` trouve le jeu, la mise à jour et le DLC dans votre installation de Cemu et vérifie leurs versions,
-  puis copie Cemu, la mise à jour, le DLC et les sauvegardes du jeu dans un profil isolé, `.build\cemu-validation`
-  (environ 5 Go). Votre installation de Cemu n'est jamais modifiée. Si elle n'est pas trouvée, nommer son dossier
-  utilisateur, celui qui contient `settings.xml`, avec `--user-data`. `tools\cemu_install.py` affiche ce qui est
-  trouvé, sans rien copier.
+`prepare_ap_runtime.py` copie le cœur d'Archipelago et ce monde dans `.build\ap-runtime`, qui sert à la génération et
+au serveur local. Jouer dans une salle hébergée ailleurs n'en a pas besoin.
 
 ## Générer une seed
 
@@ -50,40 +46,20 @@ le zip de la seed contient, pour chaque joueur de Breath of the Wild, un fichier
 `AP_<seed>_P<n>_<nom>.apbotw.json`. Pour héberger la partie sur [archipelago.gg](https://archipelago.gg), téléverser
 ce zip sur sa page « Host Game » : elle donne ensuite l'adresse de la salle, `archipelago.gg:<port>`.
 
-## Construire le pack de jeu
-
-```bat
-venv\Scripts\python tools\play_seed.py <fichier de la seed>
-```
-
-- Le fichier de la seed est son zip, ou votre propre fichier de slot (`.apbotw.json`, tiré du zip), qui suffit pour
-  jouer dans une salle hébergée ailleurs. Quand le zip contient plusieurs joueurs de Breath of the Wild, désigner le
-  vôtre avec `--slot <nom>`.
-- Le pack est construit à partir de la mise à jour copiée dans le profil isolé.
-
-L'outil vérifie la seed, en garde une copie dans `.build\play-seeds\<seed>\`, construit le pack lié à votre slot de
-cette seed et le sélectionne.
-
 ## Jouer
 
-Dans une salle hébergée ailleurs, archipelago.gg par exemple :
+Lancer `BOTW Archipelago.cmd`, ou déposer dessus votre fichier de slot (`.apbotw.json`) ou le zip de la seed :
 
-```bat
-Play.cmd --seed <seed> --connect archipelago.gg:<port>
-```
+1. **La première fois**, il demande où est `Cemu.exe`. Il trouve Breath of the Wild, sa mise à jour et le DLC dans
+   cette installation et vérifie leurs versions, puis copie Cemu, la mise à jour, le DLC et vos sauvegardes dans un
+   profil isolé (environ 5 Go). Votre installation de Cemu n'est jamais modifiée.
+2. **La seed** : une seed déjà préparée, ou une nouvelle, depuis votre fichier de slot (`.apbotw.json`, téléchargé sur
+   la page de la salle ou tiré du zip de la seed) ou le zip de la seed. Le pack de jeu d'une nouvelle seed se construit
+   en une minute environ.
+3. **La salle** : son adresse, comme sa page l'affiche (`archipelago.gg:<port>`), retenue pour la seed, et son mot de
+   passe si elle en a un. Une seed préparée depuis son zip peut aussi être hébergée sur cet ordinateur : taper `local`.
 
-Ajouter `--password <mot de passe>` si la salle en a un. Sur votre propre serveur, à partir du zip de la seed :
-
-```bat
-Play.cmd --seed <seed>
-```
-
-Cela démarre le serveur Archipelago sur cet ordinateur, port 38281 ; il garde son état à côté de la seed, et la
-progression se conserve d'une session à l'autre. Avec `--host`, le serveur écoute aussi le réseau : les autres joueurs
-se connectent à l'adresse de votre ordinateur, port 38281 (par Internet, ce port doit être redirigé vers votre
-ordinateur).
-
-Dans tous les cas, Cemu démarre sur son profil isolé avec le seul pack de la seed, puis le client. Pour une nouvelle
+Cemu démarre alors sur son profil isolé avec le seul pack de la seed, puis le client. Pour une nouvelle
 seed, commencer une **nouvelle partie** : une sauvegarde reste liée à la seed avec laquelle elle a été commencée.
 Jouer normalement ; fermer Cemu termine la session. Le client et les textes ajoutés au jeu sont en anglais.
 
@@ -96,6 +72,23 @@ une salle distante sous la forme `!hint`, `!players`...) ou comme chat. Le clien
 | `/ap-disconnect [s]`    | simuler une coupure du serveur pendant `s` secondes           |
 | `/ap-evt [n\|reset]`     | lister les dernières requêtes d'événement du jeu (diagnostic) |
 | `/ap-deathlink [cause]` | tuer Link comme un DeathLink reçu (test, envoyé à personne)   |
+
+### Les outils en ligne de commande
+
+Le lanceur se sert de ces outils, utilisables aussi directement :
+
+- `venv\Scripts\python tools\cemu_profile.py --cemu <chemin de Cemu.exe>` crée le profil isolé, dans
+  `.build\cemu-validation`. Si le dossier utilisateur de Cemu (celui qui contient `settings.xml`) n'est pas trouvé,
+  le nommer avec `--user-data`. `tools\cemu_install.py` affiche ce qui est trouvé, sans rien copier.
+- `venv\Scripts\python tools\play_seed.py <fichier de la seed>` prépare une seed : il la vérifie, en garde une copie
+  dans `.build\play-seeds\<seed>\`, construit le pack lié à votre slot à partir de la mise à jour copiée dans le
+  profil et le sélectionne. Quand le zip contient plusieurs joueurs de Breath of the Wild, désigner le vôtre avec
+  `--slot <nom>`.
+- `Play.cmd --seed <seed> --connect archipelago.gg:<port> [--password <mot de passe>]` joue dans une salle hébergée
+  ailleurs. `Play.cmd --seed <seed>` héberge le zip de la seed sur cet ordinateur, port 38281 ; le serveur garde son
+  état à côté de la seed, et la progression se conserve d'une session à l'autre. Avec `--host`, le serveur écoute
+  aussi le réseau : les autres joueurs se connectent à l'adresse de votre ordinateur, port 38281 (par Internet, ce
+  port doit être redirigé vers votre ordinateur).
 
 ## En cas de problème
 

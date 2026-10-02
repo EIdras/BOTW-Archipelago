@@ -70,7 +70,7 @@ class ProfileTests(unittest.TestCase):
     def test_the_session_refuses_a_profile_with_another_pack(self):
         import inspect
         from tools import play_session
-        source = inspect.getsource(play_session.main)
+        source = inspect.getsource(play_session.run)
         self.assertIn("the play profile loads something else", source)
 
 class CrashReportTests(unittest.TestCase):
@@ -80,7 +80,7 @@ class CrashReportTests(unittest.TestCase):
     def test_the_session_captures_native_and_python_crashes(self):
         import inspect
         from tools import play_session
-        source = inspect.getsource(play_session.main)
+        source = inspect.getsource(play_session.run)
         self.assertIn("faulthandler.enable(sys.stderr)", source)
         self.assertIn("threading.excepthook", source)
         self.assertIn('Stream(sys.stderr, session / "stderr.log")', source)

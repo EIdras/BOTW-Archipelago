@@ -24,15 +24,10 @@ From the folder of the project:
 python -m venv venv
 venv\Scripts\pip install -r requirements.txt
 venv\Scripts\python tools\prepare_ap_runtime.py --source <Archipelago 0.6.7 checkout>
-venv\Scripts\python tools\cemu_profile.py --cemu <path to Cemu.exe>
 ```
 
-- `prepare_ap_runtime.py` copies the Archipelago core and this world into `.build\ap-runtime`, used for generation
-  and for the local server.
-- `cemu_profile.py` finds the game, its update and the DLC in your Cemu installation and checks their versions, then
-  copies Cemu, the update, the DLC and the game's saves into an isolated profile, `.build\cemu-validation` (about
-  5 GB). Your Cemu installation is never modified. When it is not found, name Cemu's user folder, the one holding
-  `settings.xml`, with `--user-data`. `tools\cemu_install.py` shows what is found, without copying anything.
+`prepare_ap_runtime.py` copies the Archipelago core and this world into `.build\ap-runtime`, used for generation and
+for the local server. Playing in a room hosted elsewhere does not need it.
 
 ## Generating a seed
 
@@ -51,39 +46,19 @@ Breath of the Wild player, a slot file `AP_<seed>_P<n>_<name>.apbotw.json`. To h
 [archipelago.gg](https://archipelago.gg), upload that zip on its "Host Game" page: it then gives the room's address,
 `archipelago.gg:<port>`.
 
-## Building the game pack
-
-```bat
-venv\Scripts\python tools\play_seed.py <seed file>
-```
-
-- The seed file is the seed's zip, or your own slot file (`.apbotw.json`, taken from the zip), which is all you need
-  to play in a room hosted elsewhere. When the zip holds several Breath of the Wild players, name yours with
-  `--slot <name>`.
-- The pack is built from the update copied into the isolated profile.
-
-The tool checks the seed, keeps a copy of the file in `.build\play-seeds\<seed>\`, builds the pack bound to your slot
-of this seed and selects it.
-
 ## Playing
 
-In a room hosted elsewhere, archipelago.gg for instance:
+Start `BOTW Archipelago.cmd`, or drop your slot file (`.apbotw.json`) or the seed's zip on it:
 
-```bat
-Play.cmd --seed <seed> --connect archipelago.gg:<port>
-```
+1. **The first time**, it asks where `Cemu.exe` is. It finds Breath of the Wild, its update and the DLC in that
+   installation and checks their versions, then copies Cemu, the update, the DLC and your saves into an isolated
+   profile (about 5 GB). Your Cemu installation is never modified.
+2. **The seed**: a seed already prepared, or a new one, from your slot file (`.apbotw.json`, downloaded from the room's
+   page or taken from the seed's zip) or the seed's zip. A new seed's game pack is built, in about a minute.
+3. **The room**: its address, as the room's page shows it (`archipelago.gg:<port>`), remembered for the seed, and its
+   password if it has one. A seed prepared from its zip can also be hosted on this computer: type `local`.
 
-Add `--password <password>` if the room has one. On a server of your own, from the seed's zip:
-
-```bat
-Play.cmd --seed <seed>
-```
-
-This starts the Archipelago server on this computer, port 38281, keeping its state next to the seed so that progress
-carries over between sessions. With `--host`, the server listens on the network too: the other players connect to
-your computer's address, port 38281 (over the Internet, that port must be forwarded to your computer).
-
-In every case Cemu starts on its isolated profile with only the seed's pack, then the client. Start a **new game**
+Cemu then starts on its isolated profile with only the seed's pack, then the client. Start a **new game**
 for a new seed: saves are bound to the seed they were started with. Play normally; close Cemu to end the session.
 
 Lines typed in the console go to the server as commands (`/hint`, `/players`, `/status`...; sent to a remote room as
@@ -95,6 +70,22 @@ Lines typed in the console go to the server as commands (`/hint`, `/players`, `/
 | `/ap-disconnect [s]`   | simulate a server disconnection for `s` seconds              |
 | `/ap-evt [n\|reset]`    | list the game's last event requests (diagnostic)             |
 | `/ap-deathlink [cause]` | kill Link as a received DeathLink would (test, sent to nobody) |
+
+### The command-line tools
+
+The launcher runs these tools, which can also be used directly:
+
+- `venv\Scripts\python tools\cemu_profile.py --cemu <path to Cemu.exe>` makes the isolated profile, in
+  `.build\cemu-validation`. When Cemu's user folder (the one holding `settings.xml`) is not found, name it with
+  `--user-data`. `tools\cemu_install.py` shows what is found, without copying anything.
+- `venv\Scripts\python tools\play_seed.py <seed file>` prepares a seed: it checks the seed, keeps a copy of the file
+  in `.build\play-seeds\<seed>\`, builds the pack bound to your slot from the update copied into the profile and
+  selects it. When the zip holds several Breath of the Wild players, name yours with `--slot <name>`.
+- `Play.cmd --seed <seed> --connect archipelago.gg:<port> [--password <password>]` plays in a room hosted elsewhere.
+  `Play.cmd --seed <seed>` hosts the seed's zip on this computer, port 38281, keeping the server's state next to the
+  seed so that progress carries over between sessions; with `--host`, the server listens on the network too: the
+  other players connect to your computer's address, port 38281 (over the Internet, that port must be forwarded to
+  your computer).
 
 ## Troubleshooting
 
