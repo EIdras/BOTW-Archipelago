@@ -57,7 +57,7 @@ updated with it.
 
 ```bat
 venv\Scripts\python -m unittest tests.test_hud_layout tests.test_hud_indicator
-venv\Scripts\python tools\play_seed.py <seed.zip> --content <content> --rpx U-King.rpx
+venv\Scripts\python tools\play_seed.py <seed.zip>
 ```
 
 The reference digests of `tests/test_resources_from_source.py` and `tests/test_pack_from_source.py` change with the

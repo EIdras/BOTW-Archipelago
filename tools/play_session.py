@@ -307,6 +307,7 @@ def main() -> None:
     packs = enabled_packs(portable)
     if packs != [f"graphicPacks/{profile.PACK_PREFIX}{pack.name}/rules.txt"]:
         raise RuntimeError(f"the play profile loads something else: {packs}")
+    game = profile.game()
     print(f"Play profile ready: seed {folder.name}, pack {pack.name}, account "
           f"{account['account']}. Link's speed: x{arguments.speed:g}; one graphic pack enabled.",
           flush=True)
@@ -336,7 +337,6 @@ def main() -> None:
     sys.excepthook = traceback.print_exception
     (session / "session.json").write_text(json.dumps(result, indent=2) + "\n",
                                           encoding="utf-8")
-    game = Path(json.loads((ROOT / "botw_client.json").read_text(encoding="utf-8"))["game"])
     log = Tee(session / "client.log")
     print("Archipelago session: Cemu starts on the play account. Play normally and "
           "save whenever you like; close Cemu to end the session. "

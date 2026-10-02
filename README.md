@@ -31,8 +31,8 @@ game itself.
 
 ## Requirements
 
-- Windows, Cemu 2.x, Breath of the Wild **Wii U EUR, update v208 (1.5.0) and DLC**, from your own console.
-- The game's `U-King.rpx` of that version: the native code of the integration is built for this exact executable.
+- Windows, Cemu 2.x, Breath of the Wild **Wii U EUR, update v208 (1.5.0) and DLC**, from your own console, installed
+  in Cemu: the native code of the integration is built for this exact executable.
 - Python 3.12 and an [Archipelago 0.6.7](https://github.com/ArchipelagoMW/Archipelago) source checkout.
 
 No game file is part of this repository: the game pack of a seed is built from your own copy of the game.
@@ -44,7 +44,7 @@ generation, the game pack and playing. In short:
 
 ```bat
 venv\Scripts\python tools\generate_native.py
-venv\Scripts\python tools\play_seed.py .build\native-seeds\AP_<seed>.zip --content <update content> --rpx <U-King.rpx>
+venv\Scripts\python tools\play_seed.py .build\native-seeds\AP_<seed>.zip
 Play.cmd --seed <seed>
 ```
 

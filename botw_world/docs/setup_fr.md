@@ -8,9 +8,8 @@ d'archipelago.gg ou sur votre propre serveur. Les commandes se lancent depuis le
 
 - Windows 10 ou 11.
 - [Cemu](https://cemu.info/) 2.x, avec **The Legend of Zelda: Breath of the Wild, Wii U, version européenne (EUR)**,
-  la mise à jour **v208** (1.5.0) et le DLC installés, depuis votre propre console.
-- Le fichier `code/U-King.rpx` du jeu dans cette version, extrait de votre propre console. Le constructeur de pack
-  vérifie son SHA-256.
+  depuis votre propre console : le jeu dans la liste des jeux de Cemu, la mise à jour **v208** (1.5.0) et le DLC
+  installés dans Cemu (Fichier > Installer un titre, une mise à jour ou un DLC). Lancez le jeu une fois dans Cemu.
 - Python 3.12.
 - Une copie des sources d'[Archipelago](https://github.com/ArchipelagoMW/Archipelago) **0.6.7**.
 
@@ -23,16 +22,16 @@ pour cet exécutable précis.
 python -m venv venv
 venv\Scripts\pip install -r requirements.txt
 venv\Scripts\python tools\prepare_ap_runtime.py --source <sources d'Archipelago 0.6.7>
-venv\Scripts\python tools\cemu_profile.py --cemu <chemin de Cemu.exe> --user-data <dossier utilisateur de Cemu>
-copy botw_client.example.json botw_client.json
+venv\Scripts\python tools\cemu_profile.py --cemu <chemin de Cemu.exe>
 ```
 
 - `prepare_ap_runtime.py` copie le cœur d'Archipelago et ce monde dans `.build\ap-runtime`, qui sert à la génération
   et au serveur local.
-- `cemu_profile.py` copie Cemu, la mise à jour, le DLC et les sauvegardes du jeu dans un profil isolé,
-  `.build\cemu-validation`. Votre installation de Cemu n'est jamais modifiée. Le dossier utilisateur de Cemu est
-  celui qui contient `settings.xml` et `mlc01`.
-- Dans `botw_client.json`, renseigner `game` avec le chemin du `U-King.rpx` du jeu.
+- `cemu_profile.py` trouve le jeu, la mise à jour et le DLC dans votre installation de Cemu et vérifie leurs versions,
+  puis copie Cemu, la mise à jour, le DLC et les sauvegardes du jeu dans un profil isolé, `.build\cemu-validation`
+  (environ 5 Go). Votre installation de Cemu n'est jamais modifiée. Si elle n'est pas trouvée, nommer son dossier
+  utilisateur, celui qui contient `settings.xml`, avec `--user-data`. `tools\cemu_install.py` affiche ce qui est
+  trouvé, sans rien copier.
 
 ## Générer une seed
 
@@ -54,14 +53,13 @@ ce zip sur sa page « Host Game » : elle donne ensuite l'adresse de la salle, `
 ## Construire le pack de jeu
 
 ```bat
-venv\Scripts\python tools\play_seed.py <fichier de la seed> --content <dossier content de la mise à jour> --rpx <U-King.rpx>
+venv\Scripts\python tools\play_seed.py <fichier de la seed>
 ```
 
 - Le fichier de la seed est son zip, ou votre propre fichier de slot (`.apbotw.json`, tiré du zip), qui suffit pour
   jouer dans une salle hébergée ailleurs. Quand le zip contient plusieurs joueurs de Breath of the Wild, désigner le
   vôtre avec `--slot <nom>`.
-- Le dossier `content` de la mise à jour installée est en général
-  `%APPDATA%\Cemu\mlc01\usr\title\0005000e\101c9500\content`.
+- Le pack est construit à partir de la mise à jour copiée dans le profil isolé.
 
 L'outil vérifie la seed, en garde une copie dans `.build\play-seeds\<seed>\`, construit le pack lié à votre slot de
 cette seed et le sélectionne.

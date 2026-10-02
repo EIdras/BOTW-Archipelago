@@ -1,7 +1,7 @@
 """Prepare a generated AP seed for play: audit, identity, bound pack.
 
-    python tools/play_seed.py <AP_xxx.zip | xxx.apbotw.json> --content <update/content> --rpx <U-King.rpx>
-                              [--slot <player name>]
+    python tools/play_seed.py <AP_xxx.zip | xxx.apbotw.json> [--slot <player name>]
+                              [--content <update/content> --rpx <U-King.rpx>]
 
 The seed may be a solo seed or a multiworld with other games and players. The
 game pack is built for one Breath of the Wild slot, from either:
@@ -18,9 +18,13 @@ game pack is built for one Breath of the Wild slot, from either:
 3. reads the session identity the server will give the slot (seed, team 0,
    slot, DataPackage checksum written by the world) and its token;
 4. preserves an existing audited analysis.json on resume, builds the pack
-   from project sources and explicit dumps, and selects it in play-pack.json;
+   from project sources and the game's update, and selects it in
+   play-pack.json;
 5. writes the GameData flag table the client reads, from the same update
    (botw_client/gamedata_table.py).
+
+The update is the copy in the isolated Cemu profile (tools/cemu_profile.py),
+the one the game runs from; --content and --rpx name another one.
 
 One person cannot play two BOTW slots of a seed alone: one slot's Paraglider
 may sit behind the other slot's Cryonis terminal.
@@ -129,8 +133,22 @@ def read_seed(path: Path, slot_name: str | None = None) -> tuple[dict, dict]:
     return audit, identity
 
 
-def prepare(source: Path, *, content: Path, rpx: Path,
+def game_update() -> tuple[Path, Path]:
+    """The update's content and U-King.rpx in the isolated Cemu profile."""
+    from tools import cemu_profile
+    update = cemu_profile.update()
+    if not (update / "content").is_dir():
+        raise ValueError("no isolated Cemu profile to build the pack from: create it first "
+                         "(tools/cemu_profile.py --cemu <Cemu.exe>), or name --content and --rpx")
+    return update / "content", update / "code" / "U-King.rpx"
+
+
+def prepare(source: Path, *, content: Path | None = None, rpx: Path | None = None,
             slot_name: str | None = None) -> tuple[Path, Path]:
+    if (content is None) != (rpx is None):
+        raise ValueError("name both --content and --rpx, or neither")
+    if content is None:
+        content, rpx = game_update()
     audit, identity = read_seed(source, slot_name)
     folder = PLAY_SEEDS / audit["seed"]
     archive = folder / source.name
@@ -168,8 +186,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("seed", type=Path, help="the seed's zip, or the slot's .apbotw.json file")
-    parser.add_argument("--content", type=Path, required=True)
-    parser.add_argument("--rpx", type=Path, required=True)
+    parser.add_argument("--content", type=Path,
+                        help="the update's content folder (default: the Cemu profile's copy)")
+    parser.add_argument("--rpx", type=Path, help="the update's U-King.rpx, with --content")
     parser.add_argument("--slot", help="the BOTW player's name, when the seed has several")
     arguments = parser.parse_args()
     report, pack = prepare(arguments.seed.resolve(), content=arguments.content,

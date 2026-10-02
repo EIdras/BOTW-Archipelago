@@ -121,6 +121,23 @@ class PreparationTests(unittest.TestCase):
             self.assertEqual(report.read_bytes(), original)
             self.assertEqual((folder / "seed.apsave").read_bytes(), b"server progress")
 
+    def test_the_pack_is_built_from_the_cemu_profiles_update_by_default(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            update = root / "profile/update"
+            data = json.loads(write_seed(root)[0].read_text())
+            with patch("tools.cemu_profile.update", return_value=update):
+                with self.assertRaisesRegex(ValueError, "create it first"):
+                    play_seed.game_update()
+                (update / "content").mkdir(parents=True)
+                with patch.object(play_seed, "PLAY_SEEDS", root / "play"),                         patch.object(play_seed, "read_seed",
+                                     return_value=(data["audit"], data["delivery"]["sessions"]["1"])),                         patch("tools.build_pack_from_source.build", return_value=root / "pack") as build,                         patch("botw_client.gamedata_table.build") as table,                         patch("tools.play_pack.select_pack"):
+                    play_seed.prepare(root / "seed.zip")
+            self.assertEqual(build.call_args.args[:2], (update / "content", update / "code/U-King.rpx"))
+            table.assert_called_once_with(update / "content")
+            with self.assertRaisesRegex(ValueError, "both --content and --rpx"):
+                play_seed.prepare(root / "seed.zip", content=root)
+
     def test_failed_build_does_not_replace_selected_pack(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

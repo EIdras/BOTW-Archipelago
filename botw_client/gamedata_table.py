@@ -3,8 +3,8 @@
 It comes from GameData/gamedata.ssarc in the update's Pack/Bootup.pack (one
 BYML per type, each entry with its DataName and HashValue). Nothing of it is in
 the repository: tools/play_seed.py writes it to gamedata.json in the data
-folder (botw_client/paths.py) from the --content it is given, and a missing
-table is read from the default Cemu update when it is there.
+folder (botw_client/paths.py) from the update it builds the pack from, and a
+missing table is read from the default Cemu update when it is there.
 """
 from __future__ import annotations
 
@@ -60,7 +60,7 @@ def load(path: Path = TABLE) -> dict[str, list[str]]:
     if not path.is_file():
         if not (DEFAULT_CONTENT / BOOTUP).is_file():
             raise GameDataTableMissing(
-                f"{path} is missing: build the seed's pack with tools/play_seed.py "
-                "--content <update/content>, which reads it from your game")
+                f"{path} is missing: prepare the seed with tools/play_seed.py, "
+                "which reads it from your game")
         build(DEFAULT_CONTENT, path)
     return json.loads(path.read_text(encoding="utf-8"))

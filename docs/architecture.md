@@ -7,7 +7,7 @@ the running game through Cemu.
 ```
 players/*.yaml ──> Archipelago + botw_world ──> AP_<seed>.zip (multidata + per-slot .apbotw.json)
                                                         │
-               game dump (update, RPX) ──> tools/play_seed.py ──> game pack of the seed (Cemu graphic pack)
+       Cemu's update and RPX (profile) ──> tools/play_seed.py ──> game pack of the seed (Cemu graphic pack)
                                                         │
       Cemu (isolated profile, pack) <── memory ──> botw_client <── websocket ──> Archipelago server
 ```
@@ -74,6 +74,15 @@ slot file alone, without reaching any server.
   own entry as a sub-flow; the journal says what it did. Cucco Swarm has no entry of its own: the client plays it once
   it has seen the commit, through the game's actor creation (`cucco_swarm.py`). Given back by a reload, a trap is spent
   without effect ([traps.md](reference/traps.md)).
+
+## The player's Cemu (`tools/cemu_install.py`, `tools/cemu_profile.py`)
+
+Cemu's user folder (the `portable` folder next to `Cemu.exe`, else `%APPDATA%\Cemu`) holds its settings and the list
+of the games it found; the update and the DLC are installed in its `mlc01` folder. `cemu_install` finds the three
+titles of the European version there and checks them: update v208 as a folder, its `U-King.rpx` the expected
+executable, DLC 3.0. `cemu_profile` copies the update, the DLC, the saves and the accounts into an isolated profile
+in the data folder, and records where the base game is; packs are built from that copy of the update, the one the
+game runs from.
 
 ## The play session (`tools/play_session.py`)
 

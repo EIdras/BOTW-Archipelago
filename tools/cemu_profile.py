@@ -1,12 +1,13 @@
 """The isolated Cemu profile that play sessions run in.
 
-    python tools/cemu_profile.py --cemu <Cemu.exe> --user-data <Cemu user folder>
+    python tools/cemu_profile.py --cemu <Cemu.exe> [--user-data <Cemu user folder>]
 
-Creating it copies, once, the Cemu executable, the BOTW EUR update and DLC and
-the BOTW saves of an existing Cemu installation into cemu-validation/ of the
-data folder (botw_client/paths.py):
-nothing links back to the installation, which is never modified. An existing
-profile is never reset.
+Creating it copies, once, the Cemu executable, the BOTW EUR update and DLC, the
+BOTW saves and the accounts of an existing Cemu installation, found and checked
+by tools/cemu_install.py, into cemu-validation/ of the data folder
+(botw_client/paths.py): nothing links back to the installation, which is never
+modified. An existing profile is never reset. The base game is not copied:
+Cemu launches it where it is.
 
 A play session (tools/play_session.py) then uses its own Cemu account
 (PLAY_ACCOUNT), derived from the copied one (SOURCE_ACCOUNT), so that a new
@@ -29,6 +30,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from botw_client.paths import DATA  # noqa: E402
+from tools import cemu_install  # noqa: E402
+from tools.cemu_install import CemuInstall  # noqa: E402
 
 PROFILE = DATA / "cemu-validation"
 PORTABLE = PROFILE / "portable"
@@ -39,38 +42,41 @@ ACCOUNTS = PORTABLE / "mlc01/usr/save/system/act"
 PACK_PREFIX = "AP_Ledger_"
 
 
-def create(executable: Path, user_data: Path, target: Path = PROFILE) -> Path:
+def create(executable: Path, install: CemuInstall | None = None, target: Path = PROFILE) -> Path:
     """Copy what BOTW needs from a Cemu installation into a new profile."""
     target = target.resolve()
     if not target.is_relative_to(DATA.resolve()):
         raise ValueError(f"the profile must be inside the data folder: {DATA}")
     if target.exists():
         raise FileExistsError(f"the profile already exists; refusing to reset it: {target}")
-    mlc = user_data / "mlc01"
-    settings = ET.parse(user_data / "settings.xml")
-    configured_mlc = settings.getroot().findtext("mlc_path")
-    if configured_mlc:
-        mlc = Path(configured_mlc)
-    paths = ["usr/title/0005000e/101c9500", "usr/title/0005000c/101c9500",
-             "usr/save/00050000/101c9500", "sys"]
-    if not executable.is_file() or not (mlc / paths[0]).is_dir():
-        raise FileNotFoundError("Cemu executable or BOTW EUR update missing")
+    if not executable.is_file():
+        raise FileNotFoundError(f"Cemu.exe not found: {executable}")
+    install = install or cemu_install.detect(executable)
+    mlc, user_data = install.mlc, install.user_data
+    # The update and DLC wherever Cemu has them, the game's saves and the
+    # accounts (the play account is derived from the first one) from mlc01.
+    copies = {install.update: "usr/title/0005000e/101c9500", install.dlc: "usr/title/0005000c/101c9500",
+              mlc / "usr/save/00050000/101c9500": "usr/save/00050000/101c9500",
+              mlc / "usr/save/system/act": "usr/save/system/act", mlc / "sys": "sys"}
     portable = target / "portable"
     portable.mkdir(parents=True)
     shutil.copy2(executable, target / "Cemu.exe")
     for name in ("resources", "gameProfiles"):
         if (executable.parent / name).is_dir():
             shutil.copytree(executable.parent / name, target / name)
-    for name in paths:
-        if (mlc / name).exists():
+    for source, name in copies.items():
+        if source.exists():
             print(f"Copying {name}...", flush=True)
-            shutil.copytree(mlc / name, portable / "mlc01" / name)
+            shutil.copytree(source, portable / "mlc01" / name)
     for name in ("controllerProfiles",):
         if (user_data / name).exists():
             shutil.copytree(user_data / name, portable / name)
     # Keep graphics and input preferences, but never let this configuration
     # point back to the installation's saves, nor load its graphic packs.
+    settings = ET.parse(user_data / "settings.xml")
     config = settings.getroot()
+    if config.find("mlc_path") is None:
+        ET.SubElement(config, "mlc_path")
     config.find("mlc_path").text = (portable / "mlc01").as_posix()
     packs = config.find("GraphicPack")
     if packs is not None:
@@ -78,12 +84,28 @@ def create(executable: Path, user_data: Path, target: Path = PROFILE) -> Path:
     settings.write(portable / "settings.xml", encoding="utf-8", xml_declaration=True)
     saves = mlc / "usr/save/00050000/101c9500"
     manifest = {"schema": 1, "source_cemu": str(executable.resolve()),
-                "source_user_data": str(user_data.resolve()), "source_save_hashes": {
+                "source_user_data": str(user_data.resolve()), "game": str(install.game),
+                "source_save_hashes": {
                     path.relative_to(saves).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
                     for path in sorted(saves.rglob("*")) if path.is_file()}}
     (target / "isolation.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     print(f"Isolated Cemu profile ready: {target}")
     return target
+
+
+def game() -> Path:
+    """What Cemu launches: the game found when the profile was made, else
+    found again in the installation it was copied from."""
+    manifest = json.loads((PROFILE / "isolation.json").read_text(encoding="utf-8"))
+    recorded = manifest.get("game")
+    if recorded and Path(recorded).exists():
+        return Path(recorded)
+    return cemu_install.base_game(Path(manifest["source_user_data"]))
+
+
+def update() -> Path:
+    """The profile's copy of the update, which packs are built from."""
+    return PORTABLE / "mlc01/usr/title/0005000e/101c9500"
 
 
 def check_isolated() -> None:
@@ -179,8 +201,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--cemu", type=Path, required=True, help="Cemu.exe of the installation")
-    parser.add_argument("--user-data", type=Path, required=True,
-                        help="Cemu's user folder (the one holding settings.xml and mlc01)")
+    parser.add_argument("--user-data", type=Path,
+                        help="Cemu's user folder (the one holding settings.xml), when it is not found")
     parser.add_argument("--output", type=Path, default=PROFILE)
     arguments = parser.parse_args()
-    create(arguments.cemu, arguments.user_data, arguments.output)
+    try:
+        found = cemu_install.detect(arguments.cemu, arguments.user_data)
+    except cemu_install.CemuInstallError as exc:
+        raise SystemExit(str(exc))
+    create(arguments.cemu, found, arguments.output)

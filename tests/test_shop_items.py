@@ -1,9 +1,8 @@
 """botw_patch.shop_items: shop item texts, purchase cleanup and the AP model checks.
 
 The game-file tests read the BOTW EUR update installed in Cemu, and the base
-game next to the RPX named in botw_client.json; they are skipped without them.
+game Cemu lists; they are skipped without them.
 """
-import json
 import unittest
 from pathlib import Path
 
@@ -35,9 +34,10 @@ def amber_file(part: str) -> bytes | None:
     member = title.get_file(f"Model/Item_Ore_F{part}.sbfres")
     if member is not None:
         return bytes(member.data)
+    from tools import cemu_install
     try:
-        game = Path(json.loads((ROOT / "botw_client.json").read_text(encoding="utf-8"))["game"])
-    except (OSError, ValueError, KeyError):
+        game = cemu_install.base_game(cemu_install.user_data_of())
+    except (OSError, ValueError, cemu_install.CemuInstallError):
         return None
     for root in (UPDATE, game.parent.parent / "content"):
         path = root / f"Model/Item_Ore_F{part}.sbfres"

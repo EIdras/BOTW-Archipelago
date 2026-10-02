@@ -15,7 +15,7 @@ __pycache__/
 *.sbitemico
 !assets/wiiu/Item_AP.sbitemico
 
-# Local configuration
+# Local configuration of the lab tools
 botw_client.json
 
 # Local work folders

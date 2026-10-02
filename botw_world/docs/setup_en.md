@@ -8,8 +8,8 @@ archipelago.gg or on your own server. The commands run from the project's folder
 
 - Windows 10 or 11.
 - [Cemu](https://cemu.info/) 2.x, with **The Legend of Zelda: Breath of the Wild, Wii U, European version (EUR)**,
-  update **v208** (1.5.0) and the DLC installed, from your own console.
-- The game's `code/U-King.rpx` of that version, dumped from your own console. The pack builder checks its SHA-256.
+  from your own console: the game in Cemu's game list, its update **v208** (1.5.0) and the DLC installed in Cemu
+  (File > Install game title, update or DLC). Start the game once in Cemu.
 - Python 3.12.
 - A source checkout of [Archipelago](https://github.com/ArchipelagoMW/Archipelago) **0.6.7**.
 
@@ -24,15 +24,15 @@ From the folder of the project:
 python -m venv venv
 venv\Scripts\pip install -r requirements.txt
 venv\Scripts\python tools\prepare_ap_runtime.py --source <Archipelago 0.6.7 checkout>
-venv\Scripts\python tools\cemu_profile.py --cemu <path to Cemu.exe> --user-data <Cemu user folder>
-copy botw_client.example.json botw_client.json
+venv\Scripts\python tools\cemu_profile.py --cemu <path to Cemu.exe>
 ```
 
 - `prepare_ap_runtime.py` copies the Archipelago core and this world into `.build\ap-runtime`, used for generation
   and for the local server.
-- `cemu_profile.py` copies Cemu, the game's update, DLC and saves into an isolated profile, `.build\cemu-validation`.
-  Your Cemu installation is never modified. The Cemu user folder is the one holding `settings.xml` and `mlc01`.
-- In `botw_client.json`, set `game` to the path of the game's `U-King.rpx`.
+- `cemu_profile.py` finds the game, its update and the DLC in your Cemu installation and checks their versions, then
+  copies Cemu, the update, the DLC and the game's saves into an isolated profile, `.build\cemu-validation` (about
+  5 GB). Your Cemu installation is never modified. When it is not found, name Cemu's user folder, the one holding
+  `settings.xml`, with `--user-data`. `tools\cemu_install.py` shows what is found, without copying anything.
 
 ## Generating a seed
 
@@ -54,14 +54,13 @@ Breath of the Wild player, a slot file `AP_<seed>_P<n>_<name>.apbotw.json`. To h
 ## Building the game pack
 
 ```bat
-venv\Scripts\python tools\play_seed.py <seed file> --content <update content folder> --rpx <U-King.rpx>
+venv\Scripts\python tools\play_seed.py <seed file>
 ```
 
 - The seed file is the seed's zip, or your own slot file (`.apbotw.json`, taken from the zip), which is all you need
   to play in a room hosted elsewhere. When the zip holds several Breath of the Wild players, name yours with
   `--slot <name>`.
-- The update content folder is the `content` folder of the installed update, usually
-  `%APPDATA%\Cemu\mlc01\usr\title\0005000e\101c9500\content`.
+- The pack is built from the update copied into the isolated profile.
 
 The tool checks the seed, keeps a copy of the file in `.build\play-seeds\<seed>\`, builds the pack bound to your slot
 of this seed and selects it.
