@@ -13,7 +13,10 @@ or if the tip's GuideS_ flag is already true), and the per-frame update
 
 The channel, all on the game thread:
   * apTipSubmit, run by the per-frame invoker when the client asks: refuses
-    while a tip of ours is active or the borrowed index is queued or shown;
+    while a tip of ours is active or any tip is queued or shown (forced over
+    the game's heat warning, which the game asks for again at once, ours
+    evicted it and was evicted in turn: the warning came back in a loop,
+    measured on 03/10);
     reads the tip's flag with the game's getter, clears its live value bit
     (object checked by its hash), publishes the request, calls the game's
     request with force, and checks it was queued; otherwise the flag is given
@@ -98,10 +101,12 @@ def submit_source() -> list[str]:
               "blt apTipSubmitInvalid", "lis r0, 0x6000", "cmplw r12, r0",
               "bge apTipSubmitInvalid", f"lwz r0, {tp.BOOL_HASH}(r12)",
               f"lwz r11, {o('flag_hash')}(r31)", "cmpw r0, r11", "bne apTipSubmitInvalid",
-              # the borrowed tip must be neither queued nor on screen
-              f"lwz r11, {o('index')}(r31)", f"lwz r0, {tp.QUEUED}(r30)", "cmpw r0, r11",
-              "beq apTipSubmitBusy", f"lwz r0, {tp.SHOWN}(r30)", "cmpw r0, r11",
-              "beq apTipSubmitBusy",
+              # no tip queued nor on screen, the game's included: forced over
+              # one, ours evicts it, and a tip the game keeps asking for (the
+              # heat warning) evicts ours in turn, again at every retry
+              f"lwz r11, {o('index')}(r31)", f"lwz r0, {tp.QUEUED}(r30)", "cmpwi r0, -1",
+              "bne apTipSubmitBusy", f"lwz r0, {tp.SHOWN}(r30)", "cmpwi r0, -1",
+              "bne apTipSubmitBusy",
               # the flag as the game reads it, through its own getter and key
               f"lis r12, {tp.TABLE_POINTER >> 16:#x}",
               f"lwz r12, {tp.TABLE_POINTER & 0xFFFF:#x}(r12)", "slwi r0, r11, 4",

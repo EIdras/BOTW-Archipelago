@@ -29,7 +29,9 @@ used for the journal: it blocks the game while it is open.
 - The channel borrows tip index 21, `GuideS_RelicControl` (the tip about controlling a Divine Beast, shown once, inside
   the Divine Beasts).
 - `apTipSubmit` runs on the game's thread, from the per-frame invoker, under the common lock. It refuses when an
-  Archipelago tip is active or when the index is queued or on screen. It reads the flag through the game's own reader
+  Archipelago tip is active or when any tip is queued or on screen, the game's included: forced over the heat warning,
+  which the game asks for again at once, ours evicted it and was evicted in turn, and the warning came back in a loop
+  (measured on 03/10). It reads the flag through the game's own reader
   (as `0x02fd4730` does), sets its value bit to 0 (the flag object is checked by its hash), publishes a generation,
   and makes the official request `0x02fd4730(widget, 21, 1)`. When the game did not queue it, the flag is restored at
   once.
@@ -46,7 +48,8 @@ composed patch.
 
 - [`botw_client/tip_channel.py`](../../botw_client/tip_channel.py) finds the channel's data by its signature in the
   code cave. It cuts text into pages of 3 lines of 34 characters, with colors written `{N}…{/}` (players `{2}`, items
-  `{1}`), and shows one tip at a time, the next one once the game has closed the frame.
+  `{1}`), and shows one tip at a time, the next one once the game has closed the frame. A received item waits for its
+  line at most 8 s (`JOURNAL_BLOCK_SECONDS`): in the heat, the warning keeps the frame, and the item then comes first.
 - [`botw_client/ap_journal.py`](../../botw_client/ap_journal.py) chooses what is shown: the server's own text
   (`PrintJSON`) for what concerns the slot, meaning items received (from another player or found in the player's own
   world), items sent, and hints; chat, which can be turned off; nothing about other players by default. Items found

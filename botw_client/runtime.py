@@ -25,6 +25,10 @@ MESSAGE_SETTLE_SECONDS = 4.0
 JOURNAL_LEAD_SECONDS = 2.0
 # How long a received item waits for the server's own line before ours.
 JOURNAL_SERVER_WAIT_SECONDS = 3.0
+# How long a received item waits for its journal line to be shown: the tip
+# frame can stay taken (the heat warning, as long as Link is in the heat); the
+# item then comes without it, and its line follows once the frame is free.
+JOURNAL_BLOCK_SECONDS = 8.0
 # A received DeathLink: its journal line is read before Link dies. The entry
 # leaves its flag set on the death it causes (botw_patch/death_link.py): such a
 # death is never sent back. The flag counts for DEATHLINK_FLAG_SECONDS after
@@ -192,6 +196,7 @@ class BotwClientRuntime:
         self._journal_queued: set[int] = set()
         self._journal_times: dict[int, float] = {}
         self._journal_waiting: dict[int, float] = {}
+        self._journal_queued_at: dict[int, float] = {}
         self._journal_current = None
         self._journal_retry_after = 0.0
         self._journal_started = time.time()
@@ -1396,8 +1401,13 @@ class BotwClientRuntime:
                 if line is None:
                     return 'pending'      # the server's line may still come
                 self._journal_queued.add(index)
+                self._journal_queued_at[index] = time.monotonic()
                 self._journal_note(line, tag=index)
-            return 'pending'
+            queued = self._journal_queued_at.get(index)
+            if queued is None or time.monotonic() - queued < JOURNAL_BLOCK_SECONDS:
+                return 'pending'
+            # The frame stays taken: the item does not wait for its line.
+            return 'skip' if self._vanilla_window(index) else 'present'
         shown = self._journal_times.get(index)
         if shown is not None and time.monotonic() - shown < JOURNAL_LEAD_SECONDS:
             return 'pending'

@@ -166,6 +166,7 @@ def runtime(tips):
     r._journal_current, r._journal_retry_after = None, 0.0
     r._journal_started = time.time() - 1
     r._journal_queued, r._journal_times, r._journal_waiting = set(), {}, {}
+    r._journal_queued_at = {}
     def unsafe():
         raise AssertionError("the journal must not call the stateful delivery guard")
     r._safe_now = unsafe
@@ -266,6 +267,18 @@ class ReceivedAnnouncementTests(unittest.TestCase):
                          "Player found their Paraglider (Oman Au Shrine)")
         self.assertEqual(self.announce_and_show(r, 2),
                          "Rupee Bundle sent to Player by the server")
+
+    def test_a_frame_that_stays_taken_does_not_hold_the_item(self):
+        # 03/10: in the heat, the warning kept the tip frame; the item waited.
+        r = self.runtime("grant_actor")
+        r.state["message_queue"] = [item_send(ALICE, ME, item=5, location=77)]
+        self.assertEqual(r._received_announcement(0), "pending")
+        r.tips.world = False                      # the frame never frees up
+        asyncio.run(r._journal_tick())
+        self.assertEqual(r._received_announcement(0), "pending")
+        r._journal_queued_at[0] -= 10
+        self.assertEqual(r._received_announcement(0), "present")
+        self.assertEqual(len(r._journal_pages) + len(r._journal_notes), 1)  # its line still comes
 
     def test_a_silent_delivery_keeps_its_ap_window(self):
         r = self.runtime("grant_actor")
