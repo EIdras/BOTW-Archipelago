@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "notes": "AP item -> what it does in BOTW. Rupee Bundle is the generated filler (generated_filler).",
+  "notes": "AP item -> what it does in BOTW. Rupee Bundle is the generated filler (generated_filler). pickup: a filler received again comes with the game's pickup notification, not its window (runtime._repeat_filler).",
   "sources": {
     "gamedata_names_and_types": "data/gamedata.json",
     "actor_names": "https://github.com/MrCheeze/botw-tools/blob/master/botw_names.json"
@@ -40,11 +40,11 @@
     {"name":"Ancient Set","delivery":{"kind":"actors","actors":["Armor_021_Head","Armor_021_Upper","Armor_021_Lower"]},"display_actor":"Armor_021_Upper"},
     {"name":"Radiant Set","delivery":{"kind":"actors","actors":["Armor_017_Head","Armor_017_Upper","Armor_017_Lower"]},"display_actor":"Armor_017_Upper"},
 
-    {"name":"Spirit Orb","delivery":{"kind":"actors","actors":["Obj_DungeonClearSeal"]},"display_actor":"Obj_DungeonClearSeal"},
-    {"name":"Ancient Core","delivery":{"kind":"actors","actors":["Item_Enemy_30"]},"display_actor":"Item_Enemy_30"},
-    {"name":"Star Fragment","delivery":{"kind":"actors","actors":["Item_Ore_J"]},"display_actor":"Item_Ore_J"},
-    {"name":"Korok Seed","delivery":{"kind":"actors","actors":["Obj_KorokNuts"]},"display_actor":"Obj_KorokNuts"},
-    {"name":"Fairy","delivery":{"kind":"actors","actors":["Animal_Insect_F"]},"display_actor":"Animal_Insect_F"},
+    {"name":"Spirit Orb","delivery":{"kind":"actors","actors":["Obj_DungeonClearSeal"]},"display_actor":"Obj_DungeonClearSeal","pickup":true},
+    {"name":"Ancient Core","delivery":{"kind":"actors","actors":["Item_Enemy_30"]},"display_actor":"Item_Enemy_30","pickup":true},
+    {"name":"Star Fragment","delivery":{"kind":"actors","actors":["Item_Ore_J"]},"display_actor":"Item_Ore_J","pickup":true},
+    {"name":"Korok Seed","delivery":{"kind":"actors","actors":["Obj_KorokNuts"]},"display_actor":"Obj_KorokNuts","pickup":true},
+    {"name":"Fairy","delivery":{"kind":"actors","actors":["Animal_Insect_F"]},"display_actor":"Animal_Insect_F","pickup":true},
     {"name":"Weapon Shatter","delivery":{"kind":"trap","entry":"APTrapWeaponShatter","text":"Your weapon shatters!"},"display_actor":"Item_AP"},
     {"name":"Blood Moon","delivery":{"kind":"trap","entry":"APTrapBloodMoon","host":"Demo007_1","text":"The Blood Moon rises!"},"display_actor":"Item_AP"},
     {"name":"Rupoor","delivery":{"kind":"trap","entry":"APTrapRupoor","text":"Rupees slip through your fingers."},"display_actor":"Item_AP"},

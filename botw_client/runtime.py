@@ -23,6 +23,9 @@ MESSAGE_MAX_CHARS = 39
 MESSAGE_SETTLE_SECONDS = 4.0
 # Reading time of a received item's journal line before its window.
 JOURNAL_LEAD_SECONDS = 2.0
+# Ticks a pickup notification may wait for Link back in the world (a menu, an
+# entry closing) before it is given up.
+PICKUP_ATTEMPTS = 600
 # How long a received item waits for the server's own line before ours.
 JOURNAL_SERVER_WAIT_SECONDS = 3.0
 # How long a received item waits for its journal line to be shown: the tip
@@ -256,6 +259,9 @@ class BotwClientRuntime:
         # the world), during which a death by them is the trap's, not sent as
         # a DeathLink.
         self._native_traps: list[str] = []
+        # Pickup notifications of fillers received again, shown once their
+        # delivery has committed and Link is back in the world.
+        self._pickups: list[tuple[str, int]] = []
         self._native_trap_task = None
         self._swarm_left = 0.0
         self._swarm_clock = 0.0
@@ -756,7 +762,7 @@ class BotwClientRuntime:
         silent = quiet and bool(steps[step].get("quiet_entry"))
         command = DeliveryCommand(
             self._session_identity[0], self._session_identity[2], index, name,
-            step, len(steps), before, quiet=quiet)
+            step, len(steps), before, quiet=quiet, pickup=self._repeat_filler(index))
         result = await asyncio.to_thread(self.deliveries.deliver, command)
         if result.status in (DeliveryStatus.APPLIED,
                              DeliveryStatus.ALREADY_APPLIED):
@@ -775,6 +781,10 @@ class BotwClientRuntime:
                 # Given back without its window: named in one AP summary.
                 self.state.setdefault("replay_batch", []).append(name)
                 self.state_store.save()
+            elif command.pickup:
+                actor = self._pickup_actor(name)
+                if actor:
+                    self._pickups.append((actor, PICKUP_ATTEMPTS))
             self._native_delivery_retry_after = 0.0
             self._discover_received()
             self.log(f"native step committed #{index}/{step}: {name}"
@@ -1132,6 +1142,30 @@ class BotwClientRuntime:
             killer = None
         return killer == ATTACKER
 
+    def _pickup_actor(self, name: str) -> str | None:
+        """The actor of the game's pickup notification for this item, if the
+        item map opts in ("pickup": rupees have their counter)."""
+        entry = getattr(self.game, "item_map", {}).get(name) or {}
+        return entry.get("display_actor") if entry.get("pickup") else None
+
+    async def _pickup_tick(self):
+        """One pickup notification per tick, once Link is back in the world.
+        Never fatal: a notification refused or lost is only not seen."""
+        if not self._pickups:
+            return
+        show = getattr(getattr(self.deliveries, "backend", None), "show_pickup", None)
+        if show is None:
+            self._pickups.clear()
+            return
+        actor, attempts = self._pickups[0]
+        shown = await asyncio.to_thread(show, actor)
+        if shown is False and attempts > 1:
+            self._pickups[0] = (actor, attempts - 1)
+            return
+        self._pickups.pop(0)
+        if shown is not True:
+            self.log(f"pickup notification not shown: {actor}")
+
     async def _native_trap_tick(self):
         """Plays the committed native traps, one at a time. Not kept across a
         restart of the client: a trap committed but not played is spent."""
@@ -1407,11 +1441,13 @@ class BotwClientRuntime:
             if queued is None or time.monotonic() - queued < JOURNAL_BLOCK_SECONDS:
                 return 'pending'
             # The frame stays taken: the item does not wait for its line.
-            return 'skip' if self._vanilla_window(index) else 'present'
+            return 'skip' if self._vanilla_window(index) or self._repeat_filler(index) else 'present'
+        if self._repeat_filler(index):
+            return 'skip'          # no window to read the line before: at once
         shown = self._journal_times.get(index)
         if shown is not None and time.monotonic() - shown < JOURNAL_LEAD_SECONDS:
             return 'pending'
-        return 'skip' if self._vanilla_window(index) else 'present'
+        return 'skip' if self._vanilla_window(index) or self._repeat_filler(index) else 'present'
 
     def _received_line(self, index: int, item) -> str | None:
         """The server's own line for this item (PrintJSON ItemSend), taken out
@@ -1438,6 +1474,17 @@ class BotwClientRuntime:
         if item.player == self.ap.slot:
             return f"{{2}}{me}{{/}} found their {{1}}{name}{{/}}{where}"
         return f"{{2}}{sender}{{/}} sent {{1}}{name}{{/}} to {{2}}{me}{{/}}{where}"
+
+    def _repeat_filler(self, index: int) -> bool:
+        """A filler item (AP flags 0: rupees, materials) received before: its
+        journal line alone, delivered without a window nor a pause (its quiet
+        entry). A unique, useful or progression item, or a first one, keeps its
+        window (Simon's rule, 03/10)."""
+        item = self.ap.received_items.get(index)
+        if item is None or getattr(item, "flags", None) != 0:
+            return False
+        name = self.ap.item_name(item)
+        return bool(name) and self._received_before(index, name) > 0
 
     def _vanilla_window(self, index: int) -> bool:
         """Its native delivery has a presentation of its own: the game's get
@@ -1669,6 +1716,7 @@ class BotwClientRuntime:
                     if session_bound:
                         if not swarming:
                             await self._apply_one_received_native()
+                            await self._pickup_tick()
                             self._log_delivery_wait()
                             await self._status_item_tick()
                         await self._native_trap_tick()

@@ -26,6 +26,9 @@ class DeliveryCommand:
     # Giving back an item a reloaded save lost: its silent entry, if the step
     # has one (the game's get window is replaced by one AP summary).
     quiet: bool = False
+    # A filler received again: its silent entry, the game's pickup notification
+    # shown by the client once it has committed (rupees: their counter shows them).
+    pickup: bool = False
 
     def __post_init__(self):
         if (self.index < 0 or self.received_before < 0

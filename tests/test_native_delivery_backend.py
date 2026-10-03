@@ -163,6 +163,64 @@ class NativeDeliveryBackendTests(unittest.TestCase):
         self.assertEqual(calls, [("OperationGuide", "APD_CORE_00Q"),
                                  ("Demo007_1", "APD_CORE_00")])
 
+    def test_a_filler_received_again_takes_its_silent_twin(self):
+        data = json.loads(self.path.read_text(encoding="utf-8"))
+        data["items"]["Core"]["variants"]["default"][0].update(
+            quiet_entry="APD_CORE_00Q", quiet_flow="OperationGuide")
+        self.path.write_text(json.dumps(data), encoding="utf-8")
+        calls = []
+
+        def request(_process, _cave, _number, checkpoint, **kwargs):
+            calls.append((kwargs["flow"], kwargs["entry"]))
+            checkpoint({"status": "prepared"})
+            self.values[flag("APReceivedCursor")] += 256
+            return {"native_return": 1}
+
+        backend = self.backend(request)
+        self.assertEqual(backend.deliver(DeliveryCommand("seed", 2, 7, "Core", pickup=True)).status,
+                         DeliveryStatus.APPLIED)
+        self.assertEqual(calls, [("OperationGuide", "APD_CORE_00Q")])
+
+    def test_the_pickup_notification_is_asked_once_link_plays_again(self):
+        # 04/10: from our entry, Demo_OpenPickup showed nothing; the game's
+        # function, from the invoker with Link in the world, shows it.
+        from botw_client.native_delivery import PICKUP_SETTLE_FRAMES, SAFESTRING_VTABLE, SHOW_PICKUP
+        memory = {}
+
+        class Cave:
+            name_buf, call_n, call_ret = 0x1000, 0x2000, 0x2004
+
+            def guest(self, host):
+                return host + 0x10000000
+
+            def call_pf(self, address, *args):
+                memory["call"] = (address, args)
+                memory[0x2000] = (1).to_bytes(4, "big")
+                memory[0x2004] = (1).to_bytes(4, "big")
+
+        class Process:
+            pid = 42
+
+            def write(self, address, data):
+                memory[address] = data
+                return True
+
+            def read(self, address, size):
+                return memory.get(address, bytes(size))
+
+        self.game.process, self.game.cave = Process(), Cave()
+        frame, playing = [100], [False]
+        self.game.frame_tick = lambda: frame[0]
+        backend = self.backend(None, in_world=lambda: playing[0])
+        backend._committed_at = 100
+        self.assertIs(backend.show_pickup("Item_Ore_J"), False)    # a menu, the entry closing
+        playing[0], frame[0] = True, 100 + PICKUP_SETTLE_FRAMES
+        self.assertIs(backend.show_pickup("Item_Ore_J"), True)
+        name = 0x10001000
+        self.assertEqual(memory["call"], (SHOW_PICKUP, (name + 0x38,)))
+        self.assertEqual(memory[0x1000][:11], b"Item_Ore_J\0")
+        self.assertEqual(memory[0x1000][0x38:], name.to_bytes(4, "big") + SAFESTRING_VTABLE.to_bytes(4, "big"))
+
     def test_rune_download_waits_for_a_pause_menu_built_at_once(self):
         data = json.loads(self.path.read_text(encoding="utf-8"))
         data["items"]["Core"]["variants"]["default"][0].update(

@@ -31,6 +31,18 @@ GUARD_HASH = zlib.crc32(b"SaveProhibition") & 0xFFFFFFFF
 SETTLE_FRAMES = 30
 # The longest wait for an accepted entry's commit, a window left open included.
 COMMIT_LIMIT = 600.0
+# The game's pickup notification (the list on the right), as a real pickup asks
+# for it: 0x03073C2C(SafeString* actor name) opens the PickUpWin screen and adds
+# the line, with the game's duration (lab/journal/archive/notification_handoff.md).
+# Demo_OpenPickup calls it too (its action, 0x02354048), but from our event it
+# showed nothing; from the per-frame invoker, with Link in the world, it shows
+# (lab/tools/cemu/pickup_probe.py, 04/10). r3 = 1 once the screen took it.
+SHOW_PICKUP = 0x03073C2C
+SAFESTRING_VTABLE = 0x10263910     # {const char*, vtable}, as itemGet takes a name
+PICKUP_NAME_ROOM = 0x38            # the name, then the SafeString, in the cave's 64-byte name buffer
+# Frames after the commit before the notification: its entry (silent, quiet
+# flowchart) is over a few frames after its guard is down.
+PICKUP_SETTLE_FRAMES = 10
 
 
 class NativeDeliveryCatalog:
@@ -188,6 +200,34 @@ class CemuNativeDeliveryBackend:
             return self._guard() or not self._link_in_world()
         except Exception:  # noqa: BLE001 - a loading: not idle
             return True
+
+    def show_pickup(self, actor: str) -> bool | None:
+        """The game's pickup notification for `actor`, nothing given: True
+        shown, False not now (an entry closing, Link out of the world: ask
+        again), None refused by the game."""
+        raw = actor.encode("ascii") + b"\0"
+        if len(raw) > PICKUP_NAME_ROOM:
+            raise ValueError(f"actor name too long for the notification: {actor}")
+        since = self._frames_since_commit()
+        if self._busy() or (since is not None and since < PICKUP_SETTLE_FRAMES):
+            return False
+        _request, lock_factory = self._dependencies()
+        process, cave = self.game.process, self.game.cave
+        try:
+            with (lock_factory(int(process.pid)) if lock_factory else nullcontext()):
+                name = cave.guest(cave.name_buf)
+                process.write(cave.name_buf, raw.ljust(PICKUP_NAME_ROOM, b"\0")
+                              + name.to_bytes(4, "big") + SAFESTRING_VTABLE.to_bytes(4, "big"))
+                before = int.from_bytes(process.read(cave.call_n, 4), "big")
+                cave.call_pf(SHOW_PICKUP, name + PICKUP_NAME_ROOM)
+                deadline = time.monotonic() + 3.0
+                while time.monotonic() < deadline:
+                    if int.from_bytes(process.read(cave.call_n, 4), "big") != before:
+                        return int.from_bytes(process.read(cave.call_ret, 4), "big") == 1 or None
+                    time.sleep(0.01)
+        except Exception:  # noqa: BLE001 - invoker busy or unreadable: not now
+            return False
+        return False
 
     def checkpoint(self) -> DeliveryCheckpoint:
         token, cursor, _ = self._state()
@@ -511,17 +551,18 @@ class CemuNativeDeliveryBackend:
             lock = lock_factory(pid) if lock_factory else nullcontext()
             with lock:
                 try:
-                    silent = command.quiet and step.get("quiet_entry")
-                    # Silent twins and steps without a window live in their own
-                    # flowchart, registered not to pause the game
+                    # Silent twins and steps without a window live in their
+                    # own flowchart, registered not to pause the game
                     # (botw_patch/delivery_flow.host_of); older catalogues
                     # kept them in the delivery flow.
+                    twin = ("quiet" if (command.quiet or command.pickup)
+                            and step.get("quiet_entry") else None)
                     result = request(
                         self.game.process, self.game.cave, command.index + 1,
                         lambda value: evidence.update(value), custom_text=False,
-                        flow=(step.get("quiet_flow", flow) if silent
+                        flow=(step.get(f"{twin}_flow", flow) if twin
                               else step.get("flow", flow)),
-                        entry=step["quiet_entry"] if silent else step["entry"])
+                        entry=step[f"{twin}_entry"] if twin else step["entry"])
                 except Exception:
                     # Before "prepared", no call was placed. Once prepared, the
                     # request outcome can only be reconciled from the ledger.

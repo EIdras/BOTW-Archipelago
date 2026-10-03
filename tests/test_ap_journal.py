@@ -280,6 +280,38 @@ class ReceivedAnnouncementTests(unittest.TestCase):
         self.assertEqual(r._received_announcement(0), "present")
         self.assertEqual(len(r._journal_pages) + len(r._journal_notes), 1)  # its line still comes
 
+    def test_a_filler_received_again_has_its_journal_line_only(self):
+        # 04/10: twenty rupee bundles, each with its window. Simon's rule: a filler
+        # (AP flags 0) already received comes with its line alone, quietly.
+        from botw_client.runtime import BotwClientRuntime
+        r = self.runtime("grant_actor")
+        r._received_before = BotwClientRuntime._received_before.__get__(r)
+        r.state["journal_announced"] = [0, 2]
+        self.assertFalse(r._repeat_filler(0))                     # flags 1: not a filler
+        self.assertTrue(r._repeat_filler(2))                      # a second Rupee Bundle, flags 0
+        self.assertEqual(r._received_announcement(0), "present")
+        self.assertEqual(r._received_announcement(2), "skip")
+        r.ap.received_items = {2: r.ap.received_items[2]}         # the first one
+        self.assertFalse(r._repeat_filler(2))
+
+    def test_the_pickup_notification_waits_for_link_and_never_stops_the_client(self):
+        from botw_client.runtime import BotwClientRuntime
+        r = self.runtime()
+        r.game = type("G", (), {"item_map": {
+            "Star Fragment": {"display_actor": "Item_Ore_J", "pickup": True},
+            "Rupee Bundle": {"display_actor": "PutRupee_Red"}}})()
+        self.assertEqual(r._pickup_actor("Star Fragment"), "Item_Ore_J")
+        self.assertIsNone(r._pickup_actor("Rupee Bundle"))       # its counter shows it
+        answers, logs = [False, True, None], []
+        r.deliveries.backend.show_pickup = lambda actor: answers.pop(0)
+        r.log = logs.append
+        r._pickups = [("Item_Ore_J", 5), ("Item_Enemy_30", 1)]
+        asyncio.run(BotwClientRuntime._pickup_tick(r))           # not now: kept
+        self.assertEqual(r._pickups[0], ("Item_Ore_J", 4))
+        asyncio.run(BotwClientRuntime._pickup_tick(r))           # shown
+        asyncio.run(BotwClientRuntime._pickup_tick(r))           # refused: given up, logged
+        self.assertEqual((r._pickups, logs), ([], ["pickup notification not shown: Item_Enemy_30"]))
+
     def test_a_silent_delivery_keeps_its_ap_window(self):
         r = self.runtime("grant_actor")
         r.state["journal_announced"] = [0]                        # earlier session

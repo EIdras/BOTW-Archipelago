@@ -39,6 +39,14 @@ def validate_item_map(items_path: Path = ITEMS_JSON,
     if missing or extra:
         raise ItemMapError(f"incomplete item map: missing={missing}, extra={extra}")
 
+    # A pickup twin only for a filler: the client takes it for a filler
+    # received again (runtime._repeat_filler).
+    world = {entry["name"]: entry for entry in json.loads(items_path.read_text(encoding="utf-8"))}
+    useful = sorted(name for name, entry in mapping.items() if entry.get("pickup") and (
+        world.get(name, {}).get("progression") or world.get(name, {}).get("useful")))
+    if useful:
+        raise ItemMapError(f"pickup notification for an item that is not a filler: {useful}")
+
     allowed = {"actors", "progressive_actors", "flags", "rune", "counter",
                "counter_at_least", "getdemo_actor", "champion_actor", "manual_prompt", "trap",
                "native_trap"}

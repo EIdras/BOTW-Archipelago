@@ -95,6 +95,17 @@ never played, because the commit comes before the previous event has ended.
   with `QUIET_EVENT_INFO`, like the quiet twins below, so that it neither pauses the game nor makes the HUD blink. The
   step names its flowchart in the catalog (`flow`, from `delivery_flow.host_of`). An Archipelago window names the item
   and its sender.
+- **A filler item received again** (AP flags 0, `BotwClientRuntime._repeat_filler`): as a known item is picked up, its
+  journal line and the game's pickup notification on the right, without a window nor a pause. It is delivered by its
+  quiet twin; once the entry has closed and Link is back in the world, the client asks for the notification with the
+  game's own function, the one a real pickup goes through: `0x03073C2C(SafeString* actor)`, which opens the
+  `PickUpWin` screen and adds the line (`CemuNativeDeliveryBackend.show_pickup`, from the per-frame invoker). Measured
+  on 04/10: `Demo_OpenPickup` (`IsAddPorch`), the action the Rito brothers hand over materials with
+  (`Rito_BrosRock`), calls that same function but showed nothing from our entry; called from the invoker, it shows
+  (`lab/tools/cemu/pickup_probe.py`). The item map opts in with `"pickup": true` (Spirit Orb, Ancient Core, Star
+  Fragment, Korok Seed, Fairy; `validate_item_map` refuses it on a useful or progression item). A notification not
+  shown is only logged. Rupee bundles: their silent twin, `Demo_IncreaseRupee`, whose counter shows them. A unique,
+  useful or progression item, or the first of a kind, keeps its window.
 
 The commit comes at the entry's end, after the window, which waits for the player. The client waits for it as long as
 the entry runs (its `SaveProhibition` guard up) or a window or menu is open; only 30 s of Link playing with nothing
