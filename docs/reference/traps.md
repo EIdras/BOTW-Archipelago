@@ -65,8 +65,8 @@ this relies on without a vanilla example.
 A trap is an item like the others: a guarded entry per item (`APD_xxxx_00`, in `OperationGuide` like the steps with
 no window of their own, in `Demo007_1` for the Blood Moon: the item map's `delivery.host`), under the save's delivery
 cursor. Its mutation, `trap`, is a **sub-flow call** to the trap's own entry in the same flowchart, made once the
-cursor is committed and the guard released: the Blood Moon's cutscene outlasts the 30 s the client waits for a commit,
-and a trap cut short after its commit is spent, never suffered twice. The entries are added first
+cursor is committed and the guard released: the Blood Moon's cutscene runs long after the commit, and a trap cut
+short after its commit is spent, never suffered twice. The entries are added first
 (`traps.add_entries`), and the delivery builder refuses a trap whose entry is missing. The trap's entry can also be
 requested alone.
 

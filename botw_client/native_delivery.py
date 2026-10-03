@@ -29,6 +29,8 @@ GUARD_HASH = zlib.crc32(b"SaveProhibition") & 0xFFFFFFFF
 # before GuardOFF and the event's own teardown; a request placed meanwhile was
 # accepted and never ran (a step requested one frame after the previous commit).
 SETTLE_FRAMES = 30
+# The longest wait for an accepted entry's commit, a window left open included.
+COMMIT_LIMIT = 600.0
 
 
 class NativeDeliveryCatalog:
@@ -178,6 +180,14 @@ class CemuNativeDeliveryBackend:
         if value is None:
             raise RuntimeError("native save guard not found")
         return bool(value)
+
+    def _busy(self) -> bool:
+        """An entry running (its save guard up), or Link out of the world (a
+        window, a menu, a dialogue); unreadable counts as busy."""
+        try:
+            return self._guard() or not self._link_in_world()
+        except Exception:  # noqa: BLE001 - a loading: not idle
+            return True
 
     def checkpoint(self) -> DeliveryCheckpoint:
         token, cursor, _ = self._state()
@@ -531,8 +541,19 @@ class CemuNativeDeliveryBackend:
                     return DeliveryResult(DeliveryStatus.UNCERTAIN, command.cursor,
                                           "unknown native acknowledgement")
 
-                deadline = time.monotonic() + self.commit_timeout
-                while time.monotonic() < deadline:
+                # The commit comes at the entry's end, after the game's window,
+                # which waits for the player: while the entry runs (its save
+                # guard up) or a window or menu is open, the wait goes on; only
+                # COMMIT_TIMEOUT of Link playing, nothing running, ends it.
+                started = idle_since = time.monotonic()
+                while True:
+                    now = time.monotonic()
+                    if now - started > COMMIT_LIMIT:
+                        break
+                    if self._busy():
+                        idle_since = now
+                    elif now - idle_since >= self.commit_timeout:
+                        break
                     token_now, cursor_now, rejected_now = self._state()
                     if token_now != self.token:
                         return DeliveryResult(

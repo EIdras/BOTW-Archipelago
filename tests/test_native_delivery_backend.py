@@ -250,6 +250,35 @@ class NativeDeliveryBackendTests(unittest.TestCase):
         self.assertEqual(result.status, DeliveryStatus.UNCERTAIN)
         self.assertEqual(calls, [1])
 
+    def test_a_window_left_open_or_a_running_entry_is_waited_for(self):
+        # 04/10: a rupee's get window, closed late, ended the client after 30 s.
+        # The wait counts only time with Link playing and no entry running.
+        import time
+        for busy in ("window", "guard"):
+            with self.subTest(busy=busy):
+                self.values[flag("APReceivedCursor")] = 7 << 8
+                opened = []
+
+                def closed():
+                    """The player closes the window 0.2 s after the request (4 timeouts)."""
+                    if opened and time.monotonic() - opened[0] > 0.2:
+                        self.values[flag("APReceivedCursor")] = 8 << 8
+                        self.values[flag("SaveProhibition")] = False
+                        return True
+                    return False
+
+                def request(*_args, **_kwargs):
+                    opened.append(time.monotonic())
+                    self.values[flag("SaveProhibition")] = busy == "guard"
+                    return {"native_return": 1}
+                backend = self.backend(request, in_world=lambda: busy != "window" or closed())
+                guard = backend._guard
+                backend._guard = lambda: closed() and False or guard()
+                backend.commit_timeout, backend.poll_seconds = 0.05, 0.005
+                result = backend.deliver(DeliveryCommand("seed", 2, 7, "Core"))
+                self.assertEqual(result.status, DeliveryStatus.APPLIED)
+        self.values[flag("SaveProhibition")] = False
+
     def test_foreign_or_zero_token_never_submits(self):
         calls = []
         backend = self.backend(lambda *_args, **_kwargs: calls.append(1))

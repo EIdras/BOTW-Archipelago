@@ -96,6 +96,11 @@ never played, because the commit comes before the previous event has ended.
   step names its flowchart in the catalog (`flow`, from `delivery_flow.host_of`). An Archipelago window names the item
   and its sender.
 
+The commit comes at the entry's end, after the window, which waits for the player. The client waits for it as long as
+the entry runs (its `SaveProhibition` guard up) or a window or menu is open; only 30 s of Link playing with nothing
+running end the wait as uncertain (`native_delivery.COMMIT_LIMIT` bounds the whole wait at 10 min). A get window left
+open used to stop the client after 30 s (04/10).
+
 ### Items given back after a reload
 
 Loading an older save moves the delivery cursor back. The client keeps the highest index ever delivered
