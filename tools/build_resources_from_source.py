@@ -30,7 +30,7 @@ from tools import build_plateau_sensor_candidate as sensor
 from tools import build_master_sword_candidate as sword
 from tools import build_ballad_condition_candidate as ballad
 from tools.build_ballad_upgrade_delivery import champion_entries, transform_for as upgrade_delivery
-from botw_patch import death_link, hud_layout, loading_icon, traps
+from botw_patch import death_link, gerudo_outfit, hud_layout, loading_icon, traps
 from botw_patch.status_item import INPUT_HASHES as STATUS_INPUTS
 
 TITLE = "Pack/TitleBG.pack"
@@ -57,6 +57,7 @@ UPDATE_HASHES = {
     **INPUT_HASHES, **REWARD_PACKS, sensor.PACK: sensor.EXPECTED_SOURCE_SHA,
     **DEATH_LINK_MESSAGES,
     **sword.PACKS,
+    **gerudo_outfit.PACKS,
     **{ballad.pack(name): spec[1] for name, spec in ballad.FLOWS.items()},
 }
 SOURCE_FILES = (
@@ -72,6 +73,7 @@ SOURCE_FILES = (
     "botw_client/items.py", "data/item_map.json", "assets/wiiu/Item_AP.sbitemico",
     "botw_patch/hud_layout.py", "tools/bitemico.py", "botw_patch/death_link.py",
     "botw_patch/loading_icon.py", "botw_patch/traps.py", "botw_patch/melee_weapons.py",
+    *gerudo_outfit.SOURCE_FILES,
 )
 
 
@@ -170,6 +172,9 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
 
     stages = [(sensor.PACK, {sensor.FLOW: sensor.transform})]
     stages += [(name, {sword.FLOW: sword.transform}) for name in sword.PACKS]
+    # The Gerudo outfit is an item (botw_patch/gerudo_outfit.py): Vilia no longer sells it.
+    stages += [(name, {member: gerudo_outfit.transform_for(member) for member in members})
+               for name, members in gerudo_outfit.STAGES.items()]
     stages += [(ballad.pack(name), {ballad.member(name): ballad.transform_for(name)})
                for name in ballad.FLOWS]
     for name, transforms in stages:

@@ -37,7 +37,7 @@ class FakeMemory:
 class ClientDataTests(unittest.TestCase):
     @NEEDS_TABLE
     def test_item_map_is_exact_and_all_flags_exist_with_expected_types(self):
-        self.assertEqual(validate_item_map(), (39, 1))
+        self.assertEqual(validate_item_map(), (40, 1))
         mapping = load_item_map()
         gamedata = gamedata_table.load()
         types = {name: kind for kind, name in gamedata.values()}

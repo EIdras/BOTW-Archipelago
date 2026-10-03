@@ -66,7 +66,7 @@ class TestEveryFillerATrap(BotwTestBase):
         pool = [item.name for item in self.multiworld.itempool]
         self.assertEqual(pool.count("Rupee Bundle"), 0)
         traps = [item for item in self.multiworld.itempool if item.trap]
-        self.assertEqual(len(traps), 56)
+        self.assertEqual(len(traps), 55)
         self.assertEqual({item.name for item in traps}, {
             "Weapon Shatter", "Blood Moon", "Rupoor", "Hearts Down", "Strip Down",
             "Cucco Swarm"})
@@ -79,9 +79,9 @@ class TestOneTrapOnly(BotwTestBase):
     def test_only_the_weighted_trap_comes_up(self) -> None:
         names = [item.name for item in self.multiworld.itempool if item.trap]
         self.assertEqual(set(names), {"Rupoor"})
-        self.assertEqual(len(names), round(56 * 50 / 100))
+        self.assertEqual(len(names), round(55 * 50 / 100))
         self.assertEqual([item.name for item in self.multiworld.itempool].count("Rupee Bundle"),
-                         56 - len(names))
+                         55 - len(names))
 
 
 class TestDivineBeastGoal(BotwTestBase):

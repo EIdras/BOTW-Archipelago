@@ -53,7 +53,7 @@ sys.path.insert(0, str(BUILD / "ap-runtime"))
 PLAY_SEEDS = DATA / "play-seeds"
 PACKS = DATA / "packs-from-source"
 SCOPE = "generated_ap_seed"
-CLIENT_SCHEMA = 3
+CLIENT_SCHEMAS = (3, 4)          # 4: the Gerudo Set
 GAME = "Breath of the Wild"
 _ROWS = json.loads((ROOT / "botw_world/data/locations.json").read_text(encoding="utf-8"))
 # Every location but the goal, shops apart: they depend on beedle_shop_items
@@ -94,7 +94,7 @@ def check_compatible(slot_data: dict) -> None:
     from botw_client.locations import SCHEMA_LOCATION_COUNTS
     from botw_client.version import VERSION
     if (slot_data.get("world_schema") not in SCHEMA_LOCATION_COUNTS
-            or slot_data.get("client_schema") != CLIENT_SCHEMA):
+            or slot_data.get("client_schema") not in CLIENT_SCHEMAS):
         made = slot_data.get("world_version", "an earlier version")
         raise ValueError(f"this seed was generated with the Breath of the Wild world {made}, which this "
                          f"version ({VERSION}) cannot play: use the BOTW Archipelago release of the seed's version")

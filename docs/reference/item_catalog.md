@@ -6,8 +6,8 @@ classification; [`data/item_map.json`](../../data/item_map.json) defines what ea
 
 ## Pool size
 
-111 items are declared, completed with `Rupee Bundle` up to the number of locations: 152 locations without the shop
-options (41 rupee bundles), up to 212 with two items per shop and per stall (101 bundles). `Defeat Calamity Ganon` is
+97 items are declared, completed with `Rupee Bundle` up to the number of locations: 152 locations without the shop
+options (55 rupee bundles), up to 212 with two items in every shop and all 28 stall items (115 bundles). `Defeat Calamity Ganon` is
 the victory location and holds no item.
 
 ## Progression and equipment
@@ -19,6 +19,7 @@ the victory location and holds no item.
 | Sheikah Sensor | 1 | the sensor's flags |
 | Warm Doublet | 1 | the doublet |
 | Snowquill, Flamebreaker, Desert Voe, Zora, Rubber Set | 1 each | the three pieces of the set |
+| Gerudo Set | 1 | the veil, top and sirwal that let Link into Gerudo Town; Vilia no longer sells them ([`botw_patch/gerudo_outfit.py`](../../botw_patch/gerudo_outfit.py)) |
 | Revali's Gale, Daruk's Protection, Urbosa's Fury, Mipha's Grace | 1 each | the champion's ability, with its get window |
 | Progressive Climbing Gear | 3 | body, head, legs, in that order |
 | Progressive Stealth Set | 3 | body, head, legs, in that order |
@@ -41,7 +42,7 @@ is taken by traps instead, drawn by `trap_weights` (0 by default: no trap). What
 | Spirit Orb | 20 | one Spirit Orb |
 | Ancient Core | 10 | one ancient core |
 | Star Fragment | 8 | one star fragment |
-| Korok Seed | 15 | one Korok seed |
+| Korok Seed | 0 | one Korok seed: none in the pool, the Koroks give theirs |
 | Fairy | 6 | one fairy |
 | Rupee Bundle | depends on the locations | 20 rupees |
 | Weapon Shatter, Blood Moon, Rupoor, Hearts Down, Strip Down, Cucco Swarm | none fixed | traps, see below |

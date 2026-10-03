@@ -15,14 +15,12 @@ TRAPS = tuple(row["name"] for row in ITEMS if row.get("trap"))
 # other item or event.
 LOGIC = {row["location"]: row for row in csv.DictReader(
     files(__package__).joinpath("data/logic.csv").read_text(encoding="utf-8").splitlines())}
-# The armour each climate asks for: every group must be met, by one of its items.
+# What a climate the game does not let the player through asks for: every group
+# must be met, by one of its items. Only the volcano's heart burns Link within
+# seconds; cold and desert heat are crossed with food and elixirs, found everywhere.
 CLIMATES = {
     "none": (),
-    "heat": (("Flamebreaker Set",),),                   # Death Mountain
-    "desert": (("Desert Voe Set",),),                   # the Gerudo Desert by day
-    "cold": (("Warm Doublet", "Snowquill Set"),),       # Gerudo Highlands, Mount Lanayru, Tabantha's peaks
-    "cold_extreme": (("Snowquill Set",),),              # Hebra
-    "?": (("Desert Voe Set",), ("Snowquill Set",)),     # not told yet: the strictest
+    "heat": (("Flamebreaker Set",),),                   # Death Mountain's burning zone
 }
 GOAL_LOCATION = "Defeat Calamity Ganon"
 PLATEAU_RUNES = {name: row["runes"] for name, row in LOGIC.items()

@@ -19,6 +19,7 @@
     {"name":"Desert Voe Set","delivery":{"kind":"actors","actors":["Armor_008_Head","Armor_008_Upper","Armor_008_Lower"]},"display_actor":"Armor_008_Upper"},
     {"name":"Zora Set","delivery":{"kind":"actors","actors":["Armor_006_Head","Armor_006_Upper","Armor_006_Lower"]},"display_actor":"Armor_006_Upper"},
     {"name":"Rubber Set","delivery":{"kind":"actors","actors":["Armor_046_Head","Armor_046_Upper","Armor_046_Lower"]},"display_actor":"Armor_046_Upper"},
+    {"name":"Gerudo Set","delivery":{"kind":"actors","actors":["Armor_053_Head","Armor_053_Upper","Armor_053_Lower"]},"display_actor":"Armor_053_Upper"},
 
     {"name":"Revali's Gale","delivery":{"kind":"champion_actor","actor":"Obj_HeroSoul_Rito"},"display_actor":"Obj_HeroSoul_Rito"},
     {"name":"Daruk's Protection","delivery":{"kind":"champion_actor","actor":"Obj_HeroSoul_Goron"},"display_actor":"Obj_HeroSoul_Goron"},

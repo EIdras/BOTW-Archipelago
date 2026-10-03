@@ -54,7 +54,7 @@
       "Climate",
       "Armour"
     ],
-    "progression": true,
+    "useful": true,
     "id": 7
   },
   {
@@ -63,7 +63,7 @@
       "Climate",
       "Armour"
     ],
-    "progression": true,
+    "useful": true,
     "id": 8
   },
   {
@@ -81,7 +81,7 @@
       "Climate",
       "Armour"
     ],
-    "progression": true,
+    "useful": true,
     "id": 10
   },
   {
@@ -101,6 +101,14 @@
     ],
     "useful": true,
     "id": 12
+  },
+  {
+    "name": "Gerudo Set",
+    "category": [
+      "Armour"
+    ],
+    "progression": true,
+    "id": 41
   },
   {
     "name": "Revali's Gale",

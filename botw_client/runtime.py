@@ -40,6 +40,8 @@ STATE_PATH = DATA / "client-state.json"
 GOAL_LOCATION = "Defeat Calamity Ganon"
 STATE_SCHEMA = 3
 CLIENT_SCHEMA = 2
+# The client schemas of BOTW seeds this client plays: 4 added the Gerudo Set.
+BOTW_CLIENT_SCHEMAS = (3, 4)
 TERMINAL_ITEMS = {
     "Magnesis Terminal": "Magnesis",
     "Remote Bombs Terminal": "Remote Bomb",
@@ -330,8 +332,9 @@ class BotwClientRuntime:
         world_schema = self._world_schema()
         target_names = [target.name for target in load_targets(world_schema=world_schema)]
         slot_schema = int(self.ap.slot_data.get("client_schema", 0))
-        expected_schema = 3 if self.ap.game == "Breath of the Wild" else CLIENT_SCHEMA
-        if slot_schema != expected_schema:
+        expected_schema = (BOTW_CLIENT_SCHEMAS if self.ap.game == "Breath of the Wild"
+                           else (CLIENT_SCHEMA,))
+        if slot_schema not in expected_schema:
             raise FatalClientError(
                 f"slot_data client_schema={slot_schema}; expected {expected_schema}. "
                 + self._versions_hint())

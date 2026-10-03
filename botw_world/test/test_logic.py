@@ -28,32 +28,38 @@ class TestShrinesOutsideThePlateau(BotwTestBase):
         self.assertAccessDependency(["Kam Urog Shrine"], [["Paraglider", *RUNES]], only_check_listed=True)
 
 
-class TestClimates(BotwTestBase):
+class TestWhatTheGameBlocks(BotwTestBase):
     def reach_with(self, location: str, *names: str) -> bool:
         self.collect_by_name(["Paraglider", *RUNES, *names])
         return self.can_reach_location(location)
 
-    def test_death_mountain_needs_the_flamebreaker_armour(self) -> None:
-        self.assertEqual(LOGIC["Tah Muhl Shrine"]["climate"], "heat")
-        self.assertFalse(self.reach_with("Tah Muhl Shrine"))
+    def test_the_volcanos_heart_needs_the_flamebreaker_armour(self) -> None:
+        self.assertEqual(LOGIC["Divine Beast Vah Rudania"]["climate"], "heat")
+        self.assertFalse(self.reach_with("Divine Beast Vah Rudania"))
         self.collect_by_name("Flamebreaker Set")
-        self.assertTrue(self.can_reach_location("Tah Muhl Shrine"))
+        self.assertTrue(self.can_reach_location("Divine Beast Vah Rudania"))
 
-    def test_the_desert_needs_the_desert_voe_set(self) -> None:
-        self.assertFalse(self.reach_with("Jee Noh Shrine", "Warm Doublet", "Snowquill Set"))
-        self.collect_by_name("Desert Voe Set")
+    def test_cold_and_desert_heat_ask_for_no_armour(self) -> None:
+        self.assertTrue(self.reach_with("Hebra Tower"))
         self.assertTrue(self.can_reach_location("Jee Noh Shrine"))
 
-    def test_hebra_needs_the_snowquill_set_and_a_milder_cold_either_armour(self) -> None:
-        self.assertFalse(self.reach_with("Hebra Tower", "Warm Doublet"))
-        self.assertTrue(self.can_reach_location("Gerudo Tower"))        # cold: the doublet is enough
-        self.collect_by_name("Snowquill Set")
-        self.assertTrue(self.can_reach_location("Hebra Tower"))
-
-    def test_vah_ruta_needs_the_zora_armour(self) -> None:
+    def test_vah_ruta_needs_the_zora_armour_up_the_waterfalls(self) -> None:
         self.assertFalse(self.reach_with("Divine Beast Vah Ruta"))
         self.collect_by_name("Zora Set")
         self.assertTrue(self.can_reach_location("Divine Beast Vah Ruta"))
+
+
+class TestGerudoTown(BotwTestBase):
+    options = {"stall_items": 28}
+
+    def test_the_guards_and_vah_naboris_need_the_gerudo_outfit(self) -> None:
+        self.collect_by_name(["Paraglider", *RUNES])
+        for location in ("Gerudo Town - Fruit Stall Item 1", "Divine Beast Vah Naboris"):
+            self.assertFalse(self.can_reach_location(location), location)
+        self.collect_by_name("Gerudo Set")
+        for location in ("Gerudo Town - Fruit Stall Item 1", "Divine Beast Vah Naboris"):
+            self.assertTrue(self.can_reach_location(location), location)
+        self.assertTrue(self.can_reach_location("Kara Kara Bazaar - Fruit Stall Item 1"))     # outside the walls
 
 
 class TestClassification(BotwTestBase):

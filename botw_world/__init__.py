@@ -158,7 +158,8 @@ class BotwWorld(World):
         self.multiworld.itempool.extend(pool)
 
     def fill_slot_data(self) -> dict[str, Any]:
-        return {"client_schema": 3, "world_schema": 4, "world_version": WORLD_VERSION,
+        # client_schema 4: the Gerudo Set, an item a client of schema 3 cannot deliver.
+        return {"client_schema": 4, "world_schema": 4, "world_version": WORLD_VERSION,
                 "death_link": bool(self.options.death_link.value),
                 **self.options.as_dict("goal_type", "shrines_required", "divine_beasts_required",
                                        "beedle_shop_items", "stall_items")}

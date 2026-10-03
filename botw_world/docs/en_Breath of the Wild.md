@@ -37,7 +37,8 @@ medallion on the village stalls, spread at random over 14 stalls (2 at most on o
 
 - The Paraglider, and the four runes: Magnesis, Remote Bomb, Stasis and Cryonis
 - The Sheikah Sensor
-- Climate armor: Warm Doublet, Snowquill Set, Flamebreaker Set, Desert Voe Set, Zora Set, Rubber Set
+- Armor: Warm Doublet, Snowquill Set, Flamebreaker Set, Desert Voe Set, Zora Set, Rubber Set
+- The Gerudo Set, the outfit Gerudo Town's guards let Link in with: Vilia no longer sells it
 - The four champions' abilities: Revali's Gale, Daruk's Protection, Urbosa's Fury, Mipha's Grace
 - Progressive Climbing Gear and Progressive Stealth Set (three pieces each)
 - 17 Heart Containers and 5 Stamina Vessels
@@ -55,18 +56,20 @@ Beasts, or a number of cleared shrines.
 ## How does the logic work?
 
 The Great Plateau is the only region reachable at first: its terminals need nothing, each of its four shrines needs
-its rune, and leaving it needs the Paraglider. Beyond, each location asks for what the game asks of the player there
+its rune, and leaving it needs the Paraglider. Beyond, the logic asks only for what the game itself blocks
 (`data/logic.csv` in the world):
 
-- **The climate's armour**: the Flamebreaker Set on Death Mountain, the Desert Voe Set in the Gerudo Desert, the
-  Snowquill Set in Hebra, the Warm Doublet or the Snowquill Set in a milder cold (Gerudo Highlands, Mount Lanayru).
-  Elixirs and food work too, but the logic does not count on them: the armour comes before its region.
 - **The runes a shrine cannot be done without**; all four where the shrine has not been studied yet.
-- **Divine Beasts and shrine quests**: the Zora Set for Vah Ruta, the freed Divine Beast for its heart container and
-  for the shrines of its quest; ten Heart Containers for the Master Sword.
+- **The Flamebreaker Set** in Death Mountain's burning heart: Vah Rudania, Goron City. Cold and desert heat are
+  crossed with food and elixirs, as in the game: no armor is required for them.
+- **The Zora Set** where the way goes up a waterfall: Vah Ruta.
+- **The Gerudo Set** for Gerudo Town, whose guards let Link in only wearing it, and for Vah Naboris, whose quest goes
+  through the town.
+- The freed Divine Beast for its heart container and for the shrines of its quest; ten Heart Containers for the
+  Master Sword.
 
-Only what these rules name is progression; the champions' abilities, the climbing gear and the stamina vessels help
-without being required, and come wherever the seed puts them.
+Only what these rules name is progression; the champions' abilities, the other armor, the climbing gear and the
+stamina vessels help without being required, and come wherever the seed puts them.
 
 ## What does DeathLink do?
 
