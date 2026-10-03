@@ -5,13 +5,24 @@ import time
 from tools.cemu import autonomous_eventflow, menu_diagnostic
 
 
+# The inactive states of the loading screens. Screen 78, the loading screen
+# itself, is in 0x01fc0000 until it is first shown: measured on 03/10 at the
+# start of a new game, before any loading (it then goes 0x01000100, 0x200,
+# 0x300 while active, and 0x01000000 once closed). Without that state, nothing
+# could be presented before the first loading of a new game.
+CLOSED_STATES = {78: (0x01000000, 0x01fc0000), 84: (0x01000000,)}
+
+
+def loading_closed(rows) -> bool:
+    return (all(rows[i]["pointer"] and rows[i]["activity"] == 255 and rows[i]["state_94"] in states
+                for i, states in CLOSED_STATES.items())
+            and not rows[85]["pointer"] and rows[85]["activity"] == 255)
+
+
 def gameplay_state(catalog):
     rows = catalog["screens"]
     hud = rows[42]
-    loading_closed = all(rows[i]["pointer"] and rows[i]["activity"] == 255
-                         and rows[i]["state_94"] == 0x01000000 for i in (78, 84))
-    loading_closed = loading_closed and not rows[85]["pointer"] and rows[85]["activity"] == 255
-    ready = (menu_diagnostic.menu_state(catalog, "map")["idle"] and loading_closed
+    ready = (menu_diagnostic.menu_state(catalog, "map")["idle"] and loading_closed(rows)
              and not rows[74]["pointer"] and rows[74]["activity"] == 255
              and bool(hud["pointer"]) and hud["activity"] == 0 and hud["state_94"] == 0x200)
     return dict(ready=bool(ready), loading_observed=rows[78]["activity"] == 1,

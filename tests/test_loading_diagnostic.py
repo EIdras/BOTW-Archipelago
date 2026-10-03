@@ -69,6 +69,18 @@ class LoadingDiagnosticTests(unittest.TestCase):
         self.assertEqual(
             presentation_ready.presentation_gameplay_state(state)["mode"], "blocked")
 
+    def test_a_new_game_before_its_first_loading_is_ready(self):
+        # Measured on 03/10: the loading screen (78) stays in 0x01fc0000 until first shown.
+        state = self.catalog()
+        state["screens"][78]["state_94"] = 0x01fc0000
+        self.assertTrue(loading.gameplay_state(state)["ready"])
+        self.assertTrue(presentation_ready.presentation_gameplay_state(state)["strict_ready"])
+        state["screens"][78]["activity"] = 1                 # while it shows: not ready
+        self.assertFalse(loading.gameplay_state(state)["ready"])
+        state = self.catalog()
+        state["screens"][84]["state_94"] = 0x01fc0000        # only the loading screen has that state
+        self.assertFalse(loading.gameplay_state(state)["ready"])
+
     def test_hud_does_not_override_loading_or_unknown_state(self):
         for index in (78, 84, 44):
             state = self.catalog()

@@ -26,19 +26,13 @@ def presentation_gameplay_state(catalog):
     stays allocated but inactive even though every menu/loading/dialogue screen
     is closed.
     """
-    from tools.cemu.loading_diagnostic import gameplay_state
+    from tools.cemu.loading_diagnostic import gameplay_state, loading_closed
     from tools.cemu.menu_diagnostic import menu_state
 
     strict = gameplay_state(catalog)
     rows = catalog["screens"]
     hud = rows[42]
-    loading_closed = all(
-        rows[index]["pointer"] and rows[index]["activity"] == 255
-        and rows[index]["state_94"] == 0x01000000
-        for index in (78, 84))
-    loading_closed = (loading_closed and not rows[85]["pointer"]
-                      and rows[85]["activity"] == 255)
-    hudless = (menu_state(catalog, "map")["idle"] and loading_closed
+    hudless = (menu_state(catalog, "map")["idle"] and loading_closed(rows)
                and not rows[74]["pointer"] and rows[74]["activity"] == 255
                and bool(hud["pointer"]) and hud["activity"] == 255
                # Both exact inactive HUD states were measured in playable
