@@ -8,7 +8,8 @@ the village stalls become locations of the multiworld. The paraglider, the runes
 heart containers and stamina vessels are shuffled into it, and arrive in your game while you play, presented by the
 game itself.
 
-**Status: version 1.0.** Solo seeds and multiworlds with other games, hosted on archipelago.gg or on your own server.
+**Status: version 0.1, in testing.** Solo seeds and multiworlds with other games, hosted on archipelago.gg or on
+your own server.
 
 ## Features
 
@@ -22,6 +23,10 @@ game itself.
 - **Archipelago journal**: the server's messages (items sent and received, hints) in the game's tip frame.
 - **Connection status**: an Archipelago logo in the HUD, in color when connected, and an "Archipelago" key item with
   the seed and slot.
+- **Sealed sanctum**: Hyrule Castle's sanctum opens only once the seed's requirements are met (Divine Beasts or
+  shrines, the Master Sword, the runes; Easy, Medium and Hard presets), and the journal says what is missing.
+- **Logic**: each shrine asks only for the runes its trial needs; the burning zones of Eldin, Gerudo Town and the
+  waterfalls of Vah Ruta ask for their armor.
 - **Checks never lost**: locations are the game's own saved flags, sent at the next connection when done offline.
 - **DeathLink** (option): when Link dies, the other DeathLink players die; when one of them dies, Link dies, as he
   would of a lethal blow (Mipha's Grace and fairies still save him).
@@ -71,6 +76,8 @@ What the world does, its locations, items, goal and logic: [game page](botw_worl
   [rstb](https://github.com/zeldamods/rstb) by leoetlino and the zeldamods community, for BOTW's file formats.
 - [botw-tools](https://github.com/MrCheeze/botw-tools) by MrCheeze, whose GameData flag list served to map the locations.
 - The [zeldaret/botw](https://github.com/zeldaret/botw) decompilation, as a reference for the engine.
+- [Zelda Wiki](https://zeldawiki.wiki/), whose shrine and quest walkthroughs served to check the logic of every
+  location.
 - [Switch Toolbox](https://github.com/KillzXGaming/Switch-Toolbox), used to author the Archipelago item's 3D model.
 
 ## License
