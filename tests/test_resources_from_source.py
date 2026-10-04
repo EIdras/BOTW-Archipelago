@@ -51,9 +51,9 @@ assert a.name == b.name and tree(a) == tree(b), 'non-reproducible component'
 manifest = json.loads((a / 'manifest.json').read_text())
 hashes = dict(manifest['files'])
 hashes['delivery_catalog.json'] = digest((a / 'delivery_catalog.json').read_bytes())
-# All 18 resources + the delivery catalog.
-assert len(manifest['files']) == 18
-assert digest(encode(hashes)) == 'acbd5ad37d0d87ac9c7dc64f5b79142942a618af95dc0fca03bac60bb894dfef', 'new pin: ' + digest(encode(hashes))
+# All 25 resources (7 message archives: Vilia's price) + the delivery catalog.
+assert len(manifest['files']) == 25
+assert digest(encode(hashes)) == 'b2972a0fbd135267a5d126f6815c237b8e06e82c9257d3a0ccc337c994ea009f', 'new pin: ' + digest(encode(hashes))
 assert manifest['gameplay_aids'] is False
 assert manifest['status'] == 'not_installable'
 (a / 'content/Pack/Bootup.pack').write_bytes(b'altered')

@@ -57,7 +57,7 @@ UPDATE_HASHES = {
     **INPUT_HASHES, **REWARD_PACKS, sensor.PACK: sensor.EXPECTED_SOURCE_SHA,
     **DEATH_LINK_MESSAGES,
     **sword.PACKS,
-    **gerudo_outfit.PACKS,
+    **gerudo_outfit.PACKS, **gerudo_outfit.text_inputs(),
     **{ballad.pack(name): spec[1] for name, spec in ballad.FLOWS.items()},
 }
 SOURCE_FILES = (
@@ -219,6 +219,9 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
         files, edits = status_item.generate(files, content, status)
         changes.extend(edits)
         catalog["status_item"] = {"entry": status_item.ENTRY, "actor": status_item.ACTOR}
+    # Vilia's lines at the price she now asks (botw_patch/gerudo_outfit.py).
+    files, edits = gerudo_outfit.generate_texts(files, content)
+    changes.extend(edits)
     table = rstb.ResourceSizeTable(unpack(files[TABLE]), True)
     for name, minimum in MINIMUM_ALLOCATIONS.items():
         table.set_size(name, max(table.get_size(name), minimum))

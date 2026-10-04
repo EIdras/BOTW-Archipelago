@@ -123,7 +123,9 @@ Loading an older save moves the delivery cursor back. The client keeps the highe
   the one of quest rewards (for example `Npc_Goron018` Event179, `Demo035_0` Event136), with the value of the bundle's
   `GetDemo` actor (`PutRupee_Red` = 20). `IsWaitFinish` is false, so the counter animation does not freeze the player.
   Writing the rupee counter directly does not work.
-- Heart containers and stamina vessels have no quiet twin: they are given back with their window.
+- Heart containers and stamina vessels: the Horned Statue's own actions (`Demo_IncreasePlayerMaxHeart`,
+  `Demo_IncreasePlayerMaxStamina`, `Value: 1`, as `Demo035_0` trades them), with `IsMoveCenter` off. A bare counter
+  write does not give them.
 
 **No pause, no HUD blink.** A quiet twin used to freeze the game for a fraction of a second and blink the HUD. The
 cause is the EventInfo key `is_pause_non_demo_member`: without it, an event pauses everything that does not take

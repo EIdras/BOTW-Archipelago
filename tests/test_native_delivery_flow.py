@@ -33,11 +33,16 @@ class NativeDeliveryCompilationTests(unittest.TestCase):
             self.assertEqual((twin.item_name, twin.step, twin.cursor_delta),
                              (step.item_name, step.step, step.cursor_delta))
             self.assertTrue(all(m.kind.value in ("grant_actor", "champion_actor",
-                                                 "increase_rupee", "set_bool", "set_s32",
-                                                 "trap_spent")
+                                                 "increase_rupee", "increase_max", "set_bool",
+                                                 "set_s32", "trap_spent")
                                 for m in twin.plan.mutations))
+        # Vessels: the Horned Statue's action (Demo035_0); horse gear has no window.
         self.assertEqual({e.item_name for e in quiet if e.item_name in (
-            "Heart Container", "Stamina Vessel", "Ancient Bridle")}, set())
+            "Heart Container", "Stamina Vessel", "Ancient Bridle")},
+            {"Heart Container", "Stamina Vessel"})
+        (heart,) = [e for e in quiet if e.item_name == "Heart Container"]
+        self.assertEqual([(m.kind.value, m.target, m.value) for m in heart.plan.mutations],
+                         [("increase_max", "Demo_IncreasePlayerMaxHeart", 1)])
         # A rune given back: its flag and selection, without the download screen.
         (rune,) = [e for e in quiet if e.item_name == "Magnesis"]
         self.assertEqual([(m.kind.value, m.target, m.value) for m in rune.plan.mutations],
@@ -48,7 +53,7 @@ class NativeDeliveryCompilationTests(unittest.TestCase):
                           catalog["items"]["Zora Set"]["variants"]["default"]],
                          [s["entry"] + "Q" for s in
                           catalog["items"]["Zora Set"]["variants"]["default"]])
-        self.assertIsNone(catalog["items"]["Heart Container"]["variants"]["default"][0]
+        self.assertIsNone(catalog["items"]["Ancient Bridle"]["variants"]["default"][0]
                           .get("quiet_entry"))
 
     def test_a_rupee_bundle_given_back_uses_the_games_rupee_action(self):
@@ -325,6 +330,13 @@ class NativeDeliveryGraphTests(unittest.TestCase):
         quiet = graph_snapshot(read_flow(self.quiet))["events"][stem + "Q_Mut0"]
         self.assertEqual((quiet["actor_action"], quiet["params"]), (
             "Demo_IncreaseRupee", {"Value": 20, "IsWaitFinish": False}))
+
+    def test_a_vessel_given_back_uses_the_horned_statues_action(self):
+        spec = self.spec("Stamina Vessel")
+        quiet = graph_snapshot(read_flow(self.quiet))["events"][spec.entry_name + "Q_Mut0"]
+        self.assertEqual((quiet["actor_action"], quiet["params"]), (
+            "Demo_IncreasePlayerMaxStamina",
+            {"IsWaitFinish": True, "Value": 1, "IsMoveCenter": False}))
 
     def test_event_info_adds_only_generated_entries(self):
         boot = oead.Sarc(unpack((SOURCE / "Pack/Bootup.pack").read_bytes()))

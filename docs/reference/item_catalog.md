@@ -19,7 +19,7 @@ the victory location and holds no item.
 | Sheikah Sensor | 1 | the sensor's flags |
 | Warm Doublet | 1 | the doublet |
 | Snowquill, Flamebreaker, Desert Voe, Zora, Rubber Set | 1 each | the three pieces of the set |
-| Gerudo Set | 1 | the veil, top and sirwal that let Link into Gerudo Town; Vilia no longer sells them ([`botw_patch/gerudo_outfit.py`](../../botw_patch/gerudo_outfit.py)) |
+| Gerudo Set | 1 | the veil, top and sirwal that let Link into Gerudo Town; Vilia no longer sells them: she asks 1,000,000 rupees, and her lines say so in every language ([`botw_patch/gerudo_outfit.py`](../../botw_patch/gerudo_outfit.py)) |
 | Revali's Gale, Daruk's Protection, Urbosa's Fury, Mipha's Grace | 1 each | the champion's ability, with its get window |
 | Progressive Climbing Gear | 3 | body, head, legs, in that order |
 | Progressive Stealth Set | 3 | body, head, legs, in that order |

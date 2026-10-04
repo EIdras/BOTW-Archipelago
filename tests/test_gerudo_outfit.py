@@ -78,6 +78,27 @@ class ViliaTests(unittest.TestCase):
                         self.assertEqual(after["events"][name]["params"]["Value"], go.UNPAYABLE)
                     self.assertEqual(len(edits), len(changed))
 
+    def test_her_lines_quote_the_price_she_asks_in_every_language(self):
+        # 04/10: she refused with 600 rupees in hand while her line said 600.
+        import oead
+        from botw_patch.resources import unpack
+        from botw_patch.shop_items import read_labels
+        for language, shown in go.SHOWN_PRICE.items():
+            boot = oead.Sarc(unpack((UPDATE / f"Pack/Bootup_{language}.pack").read_bytes()))
+            messages = oead.Sarc(unpack(bytes(boot.get_file(
+                f"Message/Msg_{language}.product.ssarc").data)))
+            for member, prices in go.PRICE_LINES.items():
+                with self.subTest(language=language, member=member):
+                    raw = bytes(messages.get_file(member).data)
+                    patched, detail = go.set_price(raw, prices, shown)
+                    before, after = read_labels(raw), read_labels(patched)
+                    self.assertEqual(set(before), set(after))
+                    self.assertEqual({k for k in before if before[k] != after[k]}, set(prices))
+                    for label, price in prices.items():
+                        self.assertEqual(after[label], before[label].replace(price, shown, 1))
+                        self.assertNotIn(price, after[label].replace(shown, ""))
+                    self.assertEqual(len(detail), len(prices))
+
 
 if __name__ == "__main__":
     unittest.main()

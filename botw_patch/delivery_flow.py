@@ -112,12 +112,19 @@ RUPEE_VALUES = {"PutRupee": 1, "PutRupee_Blue": 5, "PutRupee_Red": 20,
                 "PutRupee_Purple": 50, "PutRupee_Silver": 100, "PutRupee_Gold": 300}
 
 
+# The game's action that adds a vessel without its window, as the Horned Statue
+# (Demo035_0) trades them: Value 1, one container or vessel.
+VESSEL_ACTIONS = {"Obj_HeartUtuwa_A_01": "Demo_IncreasePlayerMaxHeart",
+                  "Obj_StaminaUtuwa_A_01": "Demo_IncreasePlayerMaxStamina"}
+
+
 def quiet_step(plan: DeliveryStep) -> DeliveryStep | None:
     """The same step without the game's get window, when there is one: pouch
     items granted directly, champion powers without their window (pouch,
     equipment, flag), rupees by the game's own Demo_IncreaseRupee (a bare
-    GameData counter write does not give them; quests use this action). Hearts and
-    stamina have no silent delivery. A rune's twin sets its flag only. A trap's
+    GameData counter write does not give them; quests use this action), heart
+    containers and stamina vessels by the Horned Statue's action (a bare counter
+    write does not give them either). A rune's twin sets its flag only. A trap's
     twin has no effect: given back after a reload, a trap is spent, not suffered
     again."""
     traps = [m for m in plan.mutations
@@ -135,6 +142,12 @@ def quiet_step(plan: DeliveryStep) -> DeliveryStep | None:
         return replace(plan, mutations=(replace(
             rupees[0], kind=MutationKind.INCREASE_RUPEE,
             value=RUPEE_VALUES[rupees[0].target]),))
+    vessels = [m for m in plan.mutations if m.kind is MutationKind.GET_DEMO_ACTOR
+               and m.target in VESSEL_ACTIONS]
+    if vessels and len(plan.mutations) == 1:
+        return replace(plan, mutations=(replace(
+            vessels[0], kind=MutationKind.INCREASE_MAX, target=VESSEL_ACTIONS[vessels[0].target],
+            value=1),))
     if not plan.capacity_actor and not any(
             m.kind is MutationKind.CHAMPION_ACTOR for m in plan.mutations):
         return None
@@ -486,6 +499,8 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
         action_names += ('Demo_CheckAndCreateEquip', 'Demo_SetGetFlagByActorName')
     if any(m.kind is MutationKind.INCREASE_RUPEE for spec in specs for m in spec.plan.mutations):
         action_names += ('Demo_IncreaseRupee',)
+    action_names += tuple(sorted({m.target for spec in specs for m in spec.plan.mutations
+                                  if m.kind is MutationKind.INCREASE_MAX}))
     runes = any(m.kind is MutationKind.RUNE_DOWNLOAD for spec in specs for m in spec.plan.mutations)
     if runes:
         action_names += ('Demo_OpenItemDownloadDemo', 'Demo_CloseItemMenu')
@@ -644,6 +659,11 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
                 # event instead of freezing the player.
                 nxt = action(stem + f"_Mut{index}", "Demo_IncreaseRupee", {
                     "Value": int(mutation.value), "IsWaitFinish": False}, nxt)
+            elif mutation.kind is MutationKind.INCREASE_MAX:
+                # As Demo035_0 (Event43, Event46), the gauge left where it is.
+                nxt = action(stem + f"_Mut{index}", mutation.target, {
+                    "IsWaitFinish": True, "Value": int(mutation.value),
+                    "IsMoveCenter": False}, nxt)
             elif mutation.kind is MutationKind.GRANT_ACTOR:
                 nxt = action(stem + f"_Mut{index}",
                              "Demo_SetItemDataToPouch", {

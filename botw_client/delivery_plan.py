@@ -13,6 +13,9 @@ class MutationKind(str, Enum):
     # Demo_IncreaseRupee, as quest rewards give rupees without a window
     # (Npc_Goron018, Demo035_0): the silent twin of a rupee bundle.
     INCREASE_RUPEE = "increase_rupee"
+    # Demo_IncreasePlayerMaxHeart / _Stamina (the action, as target), as the
+    # Horned Statue trades vessels (Demo035_0): the silent twin of a vessel.
+    INCREASE_MAX = "increase_max"
     CHAMPION_ACTOR = "champion_actor"
     # The rune terminal's own presentation (Demo003_0 Item01..04): the Sheikah
     # Slate download screen, "the module is activated" in the Slate's voice,
