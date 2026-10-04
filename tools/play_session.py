@@ -87,7 +87,18 @@ def find_seed(name: str | None, pack_path: Path | None = None) -> tuple[Path, di
         pack_path = pack_path.resolve()
         verify_pack(pack_path, seed_binding(folder))
         return folder, report, pack_path
-    from tools.play_pack import selected_pack
+    from tools.play_pack import outdated, selected_pack
+    try:
+        stale = outdated(selected_pack(folder))
+    except (OSError, ValueError, RuntimeError, KeyError):
+        stale = ["(no pack)"]
+    if stale:
+        # As the player's launcher does: a pack built from older sources would
+        # play without the change being tested (Vilia's price, 04/10).
+        from tools.play_seed import refresh
+        print(f"Pack out of date ({', '.join(stale[:3])}{'...' if len(stale) > 3 else ''}): "
+              "building it again (about a minute)...", flush=True)
+        refresh(folder)
     return folder, report, selected_pack(folder)
 
 
