@@ -50,8 +50,18 @@ medallion on the village stalls, spread at random over 14 stalls (2 at most on o
 
 ## What is the goal?
 
-Defeat Calamity Ganon. Two options can add a requirement before the final fight counts: a number of freed Divine
-Beasts, or a number of cleared shrines.
+Defeat Calamity Ganon. Hyrule Castle's sanctum stays sealed until the seed's requirements are met: entering it
+sends Link back to its doors, a monk's line says the seal holds, and the Archipelago journal says what is missing
+("Sanctum sealed: 2/4 Divine Beasts freed, 3/4 runes"). The requirements are options:
+
+- `goal_type`: `ganon` alone, or also a number of freed Divine Beasts (`divine_beasts_required`) or of cleared
+  shrines (`shrines_required`);
+- `ganon_master_sword`: the Master Sword received;
+- `ganon_runes`: the four runes received (on by default).
+
+Three presets set them on the options page: **Easy** (the 4 Divine Beasts, the Master Sword and the runes),
+**Medium** (2 Divine Beasts, the Master Sword and the runes) and **Hard** (nothing: Ganon whenever Link likes, as in
+the game).
 
 ## How does the logic work?
 
@@ -59,14 +69,19 @@ The Great Plateau is the only region reachable at first: its terminals need noth
 its rune, and leaving it needs the Paraglider. Beyond, the logic asks only for what the game itself blocks
 (`data/logic.csv` in the world):
 
-- **The runes a shrine cannot be done without**; all four where the shrine has not been studied yet.
-- **The Flamebreaker Set** in Death Mountain's burning heart: Vah Rudania, Goron City. Cold and desert heat are
-  crossed with food and elixirs, as in the game: no armor is required for them.
+- **The runes on the way to a shrine's monk** (its chests left out). Where the game offers two ways, either rune
+  is enough (Maka Rah: Magnesis or Stasis), unless one way is clearly the game's own. An entrance blocked by cracked
+  rocks asks for Remote Bomb, bomb arrows not being sure to be at hand.
+  The Divine Beasts keep all four runes.
+- **The Flamebreaker Set** where Link catches fire, the game's burning zones: Death Mountain, Goron City and the
+  canyon around it (Vah Rudania, Shae Mo'sah, Shora Hah...), and Tarrey Town's arrow stall, whose merchant comes in
+  a quest that goes through the Southern Mine. The foothills around Foothill Stable do not burn. Cold and desert
+  heat are crossed with food and elixirs, as in the game: no armor is required for them.
 - **The Zora Set** where the way goes up a waterfall: Vah Ruta.
-- **The Gerudo Set** for Gerudo Town, whose guards let Link in only wearing it, and for Vah Naboris, whose quest goes
-  through the town.
-- The freed Divine Beast for its heart container and for the shrines of its quest; ten Heart Containers for the
-  Master Sword.
+- **The Gerudo Set** for Gerudo Town, whose guards let Link in only wearing it, for Vah Naboris, whose quest goes
+  through the town, and for the shrine quests given in the town.
+- The freed Divine Beast for its heart container and for the shrines whose quest opens after it; ten Heart
+  Containers for the Master Sword.
 
 Only what these rules name is progression; the champions' abilities, the other armor, the climbing gear and the
 stamina vessels help without being required, and come wherever the seed puts them.

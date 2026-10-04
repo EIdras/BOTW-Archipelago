@@ -55,6 +55,7 @@ TERMINAL_ITEMS = {
     "Stasis Terminal": "Stasis",
     "Cryonis Terminal": "Cryonis",
 }
+RUNE_NAMES = tuple(TERMINAL_ITEMS.values())
 
 
 def event_settle_seconds(name: str) -> float:
@@ -244,6 +245,9 @@ class BotwClientRuntime:
         self._hud_next = 0.0
         self._hud_error = None
         self._status_item_retry_after = 0.0
+        # The sanctum's gate: checked every second; off for a pack without it.
+        self._gate_unavailable = False
+        self._gate_retry_after = 0.0
         self._session_identity = None
         self._session_locations = None
         self.lease_error = None
@@ -555,6 +559,15 @@ class BotwClientRuntime:
                 raise FatalClientError("native delivery backend missing")
             checkpoint = self.deliveries.backend.checkpoint()
             expected = (self._session_identity[0], self._session_identity[2])
+            if (checkpoint.seed, checkpoint.cursor) == ("token:0", 0):
+                # 04/10: Link died on a new game just after its binding, and
+                # the reload went back to the save from before it, untouched
+                # again: it is bound again, as a new game is.
+                if self._native_session_bound:
+                    self.log("BOTW save reloaded from before its binding: binding it again")
+                self._native_session_bound = False
+                self._status_item_done = False      # the key item is gone with it
+                return
             if (checkpoint.seed, checkpoint.slot) != expected:
                 raise FatalClientError(
                     "BOTW save not bound to this AP session: "
@@ -974,20 +987,65 @@ class BotwClientRuntime:
         await self._flush_checks()
         if (self.state.get("goal_observed") or GOAL_LOCATION in names
                 or GOAL_LOCATION in self.state["pending_checks"]):
-            known = set(self.state.get("observed_checks", []))
-            known.update(self.ap.location_name(i) for i in self.ap.checked_locations)
-            goal_type = int(self.ap.slot_data.get("goal_type", 0))
-            beasts = sum(bool(n and n.startswith("Divine Beast")) for n in known)
-            shrines = sum(bool(n and n.endswith(" Shrine")) for n in known)
-            if goal_type == 1 and beasts < int(self.ap.slot_data.get("divine_beasts_required", 4)):
-                return
-            if goal_type == 2 and shrines < int(self.ap.slot_data.get("shrines_required", 40)):
+            if any(have < need for _what, have, need in self._ganon_requirements()):
                 return
             if self.ap.connected and not self.state.get("goal_sent"):
                 await self.ap.send_goal()
                 self.state["goal_sent"] = True
                 self.state_store.save()
                 self.log("Archipelago goal sent")
+
+    def _ganon_requirements(self) -> list[tuple[str, int, int]]:
+        """What the seed asks before Ganon, met or not: (what, have, need).
+        The sanctum's gate opens on it and the goal counts on it."""
+        known = set(self.state.get("observed_checks", []))
+        known.update(self.ap.location_name(i) for i in self.ap.checked_locations)
+        slot_data = getattr(self.ap, "slot_data", None) or {}
+        goal_type = int(slot_data.get("goal_type", 0))
+        out = []
+        if goal_type == 1:
+            out.append(("Divine Beasts freed", sum(bool(n and n.startswith("Divine Beast")) for n in known),
+                        int(slot_data.get("divine_beasts_required", 4))))
+        if goal_type == 2:
+            out.append(("shrines cleared", sum(bool(n and n.endswith(" Shrine")) for n in known),
+                        int(slot_data.get("shrines_required", 40))))
+        # Seeds generated before these options ask for neither.
+        received = {self.ap.item_name(item) for item in
+                    (getattr(self.ap, "received_items", None) or {}).values()}
+        if slot_data.get("ganon_runes"):
+            out.append(("runes", len(received & set(RUNE_NAMES)), len(RUNE_NAMES)))
+        if slot_data.get("ganon_master_sword"):
+            out.append(("Master Sword", int("Master Sword" in received), 1))
+        return out
+
+    async def _ganon_gate_tick(self):
+        """The sanctum's gate (botw_patch/ganon_gate.py): opened once the seed's
+        requirements are met; a refusal is explained in the AP journal."""
+        if (self._gate_unavailable or time.monotonic() < self._gate_retry_after
+                or not getattr(self.ap, "slot_data", None)):
+            return
+        self._gate_retry_after = time.monotonic() + 1.0
+        gate = getattr(self.game, "ganon_gate", None)
+        try:
+            state = await asyncio.to_thread(gate) if gate is not None else None
+        except Exception as exc:  # noqa: BLE001 - the gate must not stop the session
+            self.log(f"sanctum gate unreadable: {exc}")
+            return
+        if state is None:
+            self._gate_unavailable = True
+            self.log("this pack has no sanctum gate: rebuild it with tools/play_seed.py")
+            return
+        is_open, refused = state
+        missing = [need for need in self._ganon_requirements() if need[1] < need[2]]
+        if not missing and not is_open:
+            await asyncio.to_thread(self.game.open_ganon_gate)
+            self.log("sanctum unsealed: the seed's requirements are met")
+        if refused:
+            from .ap_journal import ganon_sealed_line
+            self._journal_note(ganon_sealed_line(missing))
+            await asyncio.to_thread(self.game.clear_ganon_refusal)
+            self.log("sanctum refused: " + (", ".join(f"{h}/{n} {w}" for w, h, n in missing)
+                                           or "now open"))
 
     @staticmethod
     def _message_pages(text: str) -> list[str]:
@@ -1702,6 +1760,8 @@ class BotwClientRuntime:
                     await self._poll_shops()
                     self._discover_received()
                     self._collect_messages()
+                    # A reload back to an unbound save unbinds the session.
+                    session_bound = not self.native_delivery or self._native_session_bound
                 # A swarm playing has the invoker for its 10 s: the events
                 # (presentations, deliveries, the key item, a received
                 # DeathLink) wait for its end; the journal and the death of
@@ -1719,6 +1779,7 @@ class BotwClientRuntime:
                             await self._pickup_tick()
                             self._log_delivery_wait()
                             await self._status_item_tick()
+                        await self._ganon_gate_tick()
                         await self._native_trap_tick()
                         await self._deathlink_tick()
                 elif not self.native_presentations:

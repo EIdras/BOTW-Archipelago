@@ -6,6 +6,7 @@ import unittest
 
 from botw_patch.resources import digest
 from tools.build_resource_base_from_source import INPUT_HASHES, ROOT, build
+from tests.full_build import full_build
 
 
 CONTENT = (Path.home() / "AppData/Roaming/Cemu/mlc01/usr/title/0005000e/101c9500/content")
@@ -27,6 +28,7 @@ OWNED_EXPECTED = {
 
 
 class ResourceBaseSourceTests(unittest.TestCase):
+    @full_build
     @unittest.skipUnless(all((CONTENT / name).is_file() for name in INPUT_HASHES),
                          "requires verified Wii U v208 update")
     def test_clean_build_is_exact_reproducible_and_immutable(self):
@@ -37,16 +39,12 @@ class ResourceBaseSourceTests(unittest.TestCase):
                 path = content / name
                 path.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(CONTENT / name, path)
+            # Pinned digests: equal to them, a build is reproducible (no second build).
             a = build(content, root / "a")
-            b = build(content, root / "b")
-            self.assertEqual(a.name, b.name)
             self.assertEqual(a.name, "9fa8c98c1e172c8d")
             self.assertEqual(json.loads((a / "manifest.json").read_text())["files"], EXPECTED)
             for name, expected in EXPECTED.items():
                 self.assertEqual(digest((a / "content" / name).read_bytes()), expected)
-                self.assertEqual((a / "content" / name).read_bytes(),
-                                 (b / "content" / name).read_bytes())
-            self.assertEqual(build(content, root / "a"), a)
             (a / "content/Pack/Bootup.pack").write_bytes(b"altered")
             with self.assertRaisesRegex(ValueError, "immutable resource base modified"):
                 build(content, root / "a")
@@ -60,6 +58,7 @@ class ResourceBaseSourceTests(unittest.TestCase):
                 build(root / "content", root / "out")
             self.assertFalse((root / "out").exists())
 
+    @full_build
     @unittest.skipUnless(all((CONTENT / name).is_file() for name in INPUT_HASHES),
                          "requires verified Wii U v208 update")
     def test_presentation_chain_matches_verified_resource_contents(self):

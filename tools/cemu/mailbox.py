@@ -95,6 +95,11 @@ def cave_guest_candidates():
 
 PROBE_GUEST = 0x02EB53E4        # entry of PauseMenuDataMgr::itemGet
 PROBE_WORD = 0x9421FF98         # stwu r1, -0x68(r1), as it is in the RPX
+# The first 28 bytes of itemGet in the RPX (our hook takes the next word,
+# 0x02EB5400): a common prologue word alone can match a wrong base.
+PROBE_BYTES = bytes.fromhex("9421ff98be4100307c0802a67c781b787c9923787cba2b787cdb3378")
+CODECAVE_START = 0x01800000     # Cemu's first graphic-pack code cave
+CODECAVE_SPAN = 0x00100000
 
 
 def guest_base(p, cave_host):
@@ -105,10 +110,14 @@ def guest_base(p, cave_host):
     (FPS++ patches 0x031FA97C), and checking our hook would then fail the
     whole resolution although the base is right.
     """
-    for g in cave_guest_candidates():
+    # 04/10: the log read may be another profile's, and another pack's code
+    # cave (a test aid) moves ours: Cemu places them from CODECAVE_START, each
+    # aligned on 0x100, so every such address is tried after the log's.
+    scan = range(CODECAVE_START, CODECAVE_START + CODECAVE_SPAN, 0x100)
+    for g in [*cave_guest_candidates(), *scan]:
         base = cave_host - g
-        raw = p.read(base + PROBE_GUEST, 4)
-        if raw and len(raw) == 4 and be(raw) == PROBE_WORD:
+        raw = p.read(base + PROBE_GUEST, len(PROBE_BYTES))
+        if raw == PROBE_BYTES:
             return base, g, None
     return None, None, None
 

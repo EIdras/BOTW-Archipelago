@@ -5,6 +5,7 @@ import csv
 import json
 from pathlib import Path
 import unittest
+from tests.full_build import full_build
 
 import oead
 
@@ -113,6 +114,7 @@ class GameFileTests(unittest.TestCase):
             if hash_id not in {l.object_hash for l in located}:
                 self.assertEqual(oead.byml.to_text(objs[hash_id]), oead.byml.to_text(obj))
 
+    @full_build
     def test_a_seed_with_stalls_only_leaves_beedle_alone(self):
         import sys
         sys.path.insert(0, str(ROOT))

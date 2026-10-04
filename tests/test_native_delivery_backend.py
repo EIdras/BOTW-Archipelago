@@ -534,6 +534,18 @@ class NativeDeliveryRuntimeTests(unittest.IsolatedAsyncioTestCase):
         await self.runtime._apply_one_received_native()
         self.assertTrue(self.backend.commands[0].quiet)
 
+    async def test_a_reload_back_to_the_unbound_save_binds_it_again(self):
+        # 04/10: Link died on a new game just after its binding; the reload
+        # went back to the save from before it (token 0, cursor 0).
+        self.runtime._native_session_bound = True
+        self.backend.current = DeliveryCheckpoint("token:0", -1, 0)
+        self.runtime._discover_received()
+        self.assertFalse(self.runtime._native_session_bound)
+        # A save bound to another seed is still refused.
+        self.backend.current = DeliveryCheckpoint("token:77", -1, 0)
+        with self.assertRaises(FatalClientError):
+            self.runtime._discover_received()
+
     async def test_joined_delivery_waits_for_its_native_presentation(self):
         self.runtime.native_presentations = True
         self.runtime._discover_received()

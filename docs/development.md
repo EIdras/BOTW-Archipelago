@@ -52,13 +52,23 @@ The launcher's steps are tools of their own:
   `--content`/`--rpx`) and selects it.
 - `Play.cmd --seed <seed> [--connect <address> [--password <password>] | --host] [--speed <x>]` plays a prepared seed:
   in a room, or hosting the seed's zip on this computer, port 38281, with its state kept next to the seed (`--host`:
-  on the network too). `--speed` multiplies Link's run, sprint and climb speed, for tests.
+  on the network too). Test aids, never in a release: `--speed` multiplies Link's run, sprint and climb speed;
+  `--invincible` (hearts never drop), `--stamina` (endless), `--unbreakable` (weapons, bows, shields) and
+  `--damage <x>` (weapons and bows hit x times harder, enemies wielding them too) each enable a graphic pack of
+  their own next to the seed's (`tools/play_aids.py`); `--cheats` enables the four, with `--damage 10`. A received
+  DeathLink may leave a protected Link alive; the client goes on all the same.
 
 ## Tests
 
 ```bat
-venv\Scripts\python -m unittest discover -s tests
+run-tests.cmd
+run-tests.cmd full
 ```
+
+The first runs in about half a minute. `full` also runs the tests that build whole packs from the game's files
+(`tests/full_build.py`, about four minutes): run it before a commit that changes what a pack holds (`botw_patch/`,
+`tools/build_*`, `native/`, `data/item_map.json`), since their pins are what catches an unintended change. A pin
+equal to the build's digest also proves the build reproducible: no test builds the same thing twice.
 
 Some tests need local material and are skipped without it: the Archipelago runtime (`tools/prepare_ap_runtime.py`),
 the game's update installed in Cemu (`%APPDATA%\Cemu\mlc01\usr\title\0005000e\101c9500\content`), the RPX

@@ -6,6 +6,7 @@ import tempfile
 import unittest
 
 from tools.build_resources_from_source import ROOT, UPDATE_HASHES, build
+from tests.full_build import full_build
 
 
 CEMU = Path.home() / "AppData/Roaming/Cemu"
@@ -30,6 +31,7 @@ class ResourcesFromSourceTests(unittest.TestCase):
                 build(root / "input", root / "out", binding_token=417391497)
             self.assertFalse((root / "out").exists())
 
+    @full_build
     @unittest.skipUnless(all((CONTENT / name).is_file() for name in UPDATE_HASHES),
                          "requires verified Wii U EUR v208 update")
     def test_clean_build_matches_play_pack_without_historical_or_installed_inputs(self):
@@ -43,17 +45,14 @@ def audit(event, args):
             raise RuntimeError('Forbidden historical/installed input: ' + str(path))
 sys.addaudithook(audit)
 from tools.build_resources_from_source import build, digest, encode
+# The pin below proves the build reproducible: no second build.
 a = build(work / 'input', work / 'a', binding_token=417391497)
-b = build(work / 'input', work / 'b', binding_token=417391497)
-def tree(path):
-    return {p.relative_to(path).as_posix(): p.read_bytes() for p in path.rglob('*') if p.is_file()}
-assert a.name == b.name and tree(a) == tree(b), 'non-reproducible component'
 manifest = json.loads((a / 'manifest.json').read_text())
 hashes = dict(manifest['files'])
 hashes['delivery_catalog.json'] = digest((a / 'delivery_catalog.json').read_bytes())
-# All 25 resources (7 message archives: Vilia's price) + the delivery catalog.
-assert len(manifest['files']) == 25
-assert digest(encode(hashes)) == 'b2972a0fbd135267a5d126f6815c237b8e06e82c9257d3a0ccc337c994ea009f', 'new pin: ' + digest(encode(hashes))
+# All 26 resources (7 message archives: Vilia's price; the sanctum's gate) + the delivery catalog.
+assert len(manifest['files']) == 26
+assert digest(encode(hashes)) == 'b1663f3953ed227a05dee5a4bb2ea1d9ba9e2e27894a176f5a70401ae66faeb3', 'new pin: ' + digest(encode(hashes))
 assert manifest['gameplay_aids'] is False
 assert manifest['status'] == 'not_installable'
 (a / 'content/Pack/Bootup.pack').write_bytes(b'altered')

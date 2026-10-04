@@ -12,7 +12,7 @@ from Options import OptionError
 from worlds.generic.Rules import set_rule
 
 from .catalog import GAME, GOAL_LOCATION, ITEMS, LOCATIONS, TRAPS, WORLD_VERSION, categories, requirements
-from .options import OPTION_GROUPS, BotwOptions
+from .options import OPTION_GROUPS, PRESETS, BotwOptions
 from .slot_file import BotwSlotFile
 
 
@@ -35,6 +35,7 @@ class BotwWeb(WebWorld):
                  "Français", "setup_fr.md", "setup/fr", ["Simon"]),
     ]
     option_groups = OPTION_GROUPS
+    options_presets = PRESETS
 
 
 class BotwWorld(World):
@@ -111,8 +112,12 @@ class BotwWorld(World):
         goal = self.multiworld.get_location(GOAL_LOCATION, self.player)
         base = goal.access_rule
 
+        # The sanctum's requirements (botw_patch/ganon_gate.py seals it in game).
+        needed = (["Master Sword"] if self.options.ganon_master_sword else []) + (
+            sorted(self.item_name_groups["Runes"]) if self.options.ganon_runes else [])
+
         def can_finish(state: CollectionState) -> bool:
-            if not base(state):
+            if not base(state) or not state.has_all(needed, self.player):
                 return False
             if self.options.goal_type.value == 1:
                 return sum(state.has(f"Freed - {n}", self.player) for n in
@@ -125,7 +130,9 @@ class BotwWorld(World):
 
     def create_item(self, name: str) -> BotwItem:
         row = next(r for r in ITEMS if r["name"] == name)
-        classification = (ItemClassification.progression if row.get("progression") else
+        # A rule names the Master Sword only when the sanctum asks for it.
+        needed = name == "Master Sword" and self.options.ganon_master_sword
+        classification = (ItemClassification.progression if row.get("progression") or needed else
                           ItemClassification.useful if row.get("useful") else
                           ItemClassification.trap if row.get("trap") else ItemClassification.filler)
         return BotwItem(name, classification, row["id"], self.player)
@@ -162,6 +169,7 @@ class BotwWorld(World):
         return {"client_schema": 4, "world_schema": 4, "world_version": WORLD_VERSION,
                 "death_link": bool(self.options.death_link.value),
                 **self.options.as_dict("goal_type", "shrines_required", "divine_beasts_required",
+                                       "ganon_master_sword", "ganon_runes",
                                        "beedle_shop_items", "stall_items")}
 
     @classmethod

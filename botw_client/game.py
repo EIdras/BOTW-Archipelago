@@ -44,6 +44,11 @@ CUSTOM_FLAGS = {
     "APReceivedCursor": (zlib.crc32(b"APReceivedCursor"), "s32"),
     "APSeedToken": (zlib.crc32(b"APSeedToken"), "s32"),
 }
+# The sanctum's gate (botw_patch/ganon_gate.py); a pack built before has none.
+GANON_FLAGS = {
+    "APGanonOpen": (zlib.crc32(b"APGanonOpen"), "bool"),
+    "APGanonRefused": (zlib.crc32(b"APGanonRefused"), "bool"),
+}
 
 
 class GameNotReady(RuntimeError):
@@ -236,6 +241,19 @@ class BotwGame:
         if flag:
             self._write_flag(flag, False, "bool")
 
+    def ganon_gate(self) -> tuple[bool, bool] | None:
+        """(open, refused) of the sanctum's gate; None if the pack has no gate."""
+        if any(hash_u32 not in self.live.index[kind] for hash_u32, kind in GANON_FLAGS.values()):
+            return None
+        return (bool(self._read_flag("APGanonOpen", "bool")),
+                bool(self._read_flag("APGanonRefused", "bool")))
+
+    def open_ganon_gate(self):
+        self._write_flag("APGanonOpen", True, "bool")
+
+    def clear_ganon_refusal(self):
+        self._write_flag("APGanonRefused", False, "bool")
+
     def suppress_tower_sensor(self):
         """Restore the measured pre-sensor state after Plateau Tower."""
         for flag in TOWER_SENSOR_FLAGS:
@@ -244,6 +262,8 @@ class BotwGame:
     def _hash(self, name: str) -> tuple[int, str]:
         if name in CUSTOM_FLAGS:
             return CUSTOM_FLAGS[name]
+        if name in GANON_FLAGS:
+            return GANON_FLAGS[name]
         if self.flag_by_name is None:
             from .gamedata_table import load
             data = load()

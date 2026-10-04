@@ -36,17 +36,19 @@ def categories(row: dict) -> set[str]:
 def requirements(row: dict) -> tuple[tuple[tuple[str, ...], int], ...]:
     """What reaching a location takes: groups that must all be met, each by one
     of its items, `count` times. Outside the Great Plateau, the Paraglider; then
-    its row of data/logic.csv. A player may always do more than the logic asks
-    (elixirs instead of armour): the logic only promises what it can rely on."""
+    its row of data/logic.csv. In its runes and extra, "|" separates what is all
+    needed and "/" the ways of which one is enough ("Magnesis/Stasis"). A player
+    may always do more than the logic asks (elixirs instead of armour): the logic
+    only promises what it can rely on."""
     logic = LOGIC[row["name"]]
     groups = [] if row["region"] == "Great Plateau" else [(("Paraglider",), 1)]
     groups += [(names, 1) for names in CLIMATES[logic["climate"]]]
     runes = logic["runes"]
-    groups += [((rune,), 1) for rune in (RUNES if runes == "all" else () if runes in ("", "none")
-                                          else runes.split("|"))]
+    groups += [(tuple(group.split("/")), 1) for group in
+               (RUNES if runes == "all" else () if runes in ("", "none") else runes.split("|"))]
     for item in filter(None, logic["extra"].split("|")):
-        name, _, count = item.partition(":")
-        groups.append(((name,), int(count or 1)))
+        names, _, count = item.partition(":")
+        groups.append((tuple(names.split("/")), int(count or 1)))
     return tuple(groups)
 
 
@@ -68,7 +70,7 @@ def _check_logic() -> None:
         if logic["climate"] not in CLIMATES:
             raise ValueError(f"{row['name']}: unknown climate {logic['climate']!r}")
         runes = logic["runes"]
-        if runes not in ("", "none", "all") and not set(runes.split("|")) <= set(RUNES):
+        if runes not in ("", "none", "all") and not set(runes.replace("/", "|").split("|")) <= set(RUNES):
             raise ValueError(f"{row['name']}: unknown runes {runes!r}")
         unknown = required_items(row) - items - events
         if unknown:

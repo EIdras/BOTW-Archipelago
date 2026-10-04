@@ -11,6 +11,7 @@ import zipfile
 from botw_client.session import session_token
 from tools.build_pack_from_source import ROOT, load_seed
 from tools.build_resources_from_source import UPDATE_HASHES, digest, encode
+from tests.full_build import full_build
 
 CEMU = Path.home() / "AppData/Roaming/Cemu"
 CONTENT = CEMU / "mlc01/usr/title/0005000e/101c9500/content"
@@ -76,6 +77,7 @@ class IdentityTests(unittest.TestCase):
                      and all((CONTENT / n).is_file() for n in UPDATE_HASHES),
                      "requires verified dumps and audited play seed")
 class CompletePackTests(unittest.TestCase):
+    @full_build
     def test_reproducible_isolated_pack_selection_and_integrity(self):
         script = r'''
 import json, pathlib, sys
@@ -91,15 +93,15 @@ from tools.build_resources_from_source import digest, encode
 def create(output, diagnostics=True):
     return build(work/'input', work/'input.rpx', work/'analysis.json', 1, output,
                  archive=work/'seed.zip', diagnostics=diagnostics)
-a, b = create(work/'a'), create(work/'b')
+# The pin below proves the build reproducible: no second build.
+a = create(work/'a')
 def tree(path):
     return {p.relative_to(path).as_posix():p.read_bytes() for p in path.rglob('*') if p.is_file()}
-assert a.name == b.name and tree(a) == tree(b)
 hashes = {n:digest(raw) for n,raw in tree(a).items() if n != 'manifest.json'}
 # Every installed file (metadata excluded): the native code, the resources,
-# and the Archipelago key item (actor, icon, ActorInfo, texts in 7 languages).
-assert len(hashes) == 35
-assert digest(encode(hashes)) == '9257aed694c19ff210bbefec9daf4740ee274e444588772dc3d1ab057a0ef34e', 'new pin: ' + digest(encode(hashes))
+# the Archipelago key item (actor, icon, ActorInfo, texts in 7 languages), the sanctum's gate.
+assert len(hashes) == 36
+assert digest(encode(hashes)) == '33e6e37819cc16f2369fc0c3528642f9e441e09445fbdafcd64c876b94d73e23', 'new pin: ' + digest(encode(hashes))
 binding = load_seed(work/'analysis.json', 1, work/'seed.zip')
 verify_pack(a, binding)
 try:

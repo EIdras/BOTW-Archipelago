@@ -1,7 +1,8 @@
 """A play session: Cemu, the client and an AP server, together.
 
-    python tools/play_session.py [--seed <seed folder name>] [--speed <x>, source checkouts]
-                                 [--connect <address> [--password <p>] | --host]
+    python tools/play_session.py [--seed <seed folder name>] [--connect <address> [--password <p>] | --host]
+                                 [test aids of source checkouts: --speed <x> --invincible --stamina
+                                  --unbreakable --damage <x> --cheats]
 
   * the pack bound to the seed's BOTW slot (tools/play_seed.py), the only
     graphic pack enabled in the isolated Cemu profile (tools/cemu_profile.py);
@@ -296,6 +297,21 @@ def main(argv: list[str] | None = None) -> None:
     else:
         parser.add_argument("--speed", type=speed_argument, default=1.0,
                             help="run/sprint/climb speed multiplier (0.1 to 10, default 1), for tests")
+    try:
+        # Test aids of source checkouts too (tools/play_aids.py).
+        from tools.play_aids import damage_argument
+    except ImportError:
+        parser.set_defaults(invincible=False, stamina=False, unbreakable=False, damage=1, cheats=False)
+    else:
+        aids = parser.add_argument_group("test aids")
+        aids.add_argument("--invincible", action="store_true", help="Link's hearts never drop")
+        aids.add_argument("--stamina", action="store_true", help="endless stamina")
+        aids.add_argument("--unbreakable", action="store_true", help="weapons, bows and shields never break")
+        aids.add_argument("--damage", type=damage_argument, default=1,
+                          help="weapons and bows hit this many times harder (2 to 100); "
+                               "enemies wielding them too")
+        aids.add_argument("--cheats", action="store_true",
+                          help="all of them: --invincible --stamina --unbreakable --damage 10")
     server = parser.add_mutually_exclusive_group()
     server.add_argument("--connect", metavar="ADDRESS",
                         help="join the room hosting the seed (archipelago.gg:38281...) "
@@ -307,12 +323,18 @@ def main(argv: list[str] | None = None) -> None:
     arguments = parser.parse_args(argv)
     if arguments.password and not arguments.connect:
         parser.error("--password goes with --connect")
+    cheats = arguments.cheats
+    aids = [key for key, chosen in (("Invincible", arguments.invincible), ("Stamina", arguments.stamina),
+                                    ("Unbreakable", arguments.unbreakable)) if chosen or cheats]
+    damage = arguments.damage if arguments.damage > 1 or not cheats else 10
     run(arguments.seed, pack=arguments.pack, prepare_only=arguments.prepare_only, speed=arguments.speed,
-        connect=arguments.connect, password=arguments.password, host=arguments.host)
+        connect=arguments.connect, password=arguments.password, host=arguments.host,
+        aids=aids, damage=damage)
 
 
 def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = False, speed: float = 1.0,
-        connect: str | None = None, password: str | None = None, host: bool = False) -> None:
+        connect: str | None = None, password: str | None = None, host: bool = False,
+        aids: list[str] = (), damage: int = 1) -> None:
     """A session of the prepared seed `seed`, until Cemu closes."""
     folder, report, pack = find_seed(seed, pack)
     from tools.play_seed import hostable
@@ -329,13 +351,23 @@ def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = Fals
     source_saves_before = tree_hashes(source_saves)
     account = profile.ensure_play_account()
     portable = profile.prepare_play(pack)
+    aid_packs = []
+    if aids or damage > 1:
+        from tools import play_aids
+        aid_packs = play_aids.install(
+            portable / "graphicPacks", list(aids), damage, profile.update() / "content",
+            pack / "content/System/Resource/ResourceSizeTable.product.srsizetable")
+        play_aids.enable(portable, aid_packs)
     packs = enabled_packs(portable)
-    if packs != [f"graphicPacks/{profile.PACK_PREFIX}{pack.name}/rules.txt"]:
+    if packs != [f"graphicPacks/{profile.PACK_PREFIX}{pack.name}/rules.txt",
+                 *(entry["entry"] for entry in aid_packs)]:
         raise RuntimeError(f"the play profile loads something else: {packs}")
     game = profile.game()
     print(f"Play profile ready: seed {folder.name}, pack {pack.name}, account "
-          f"{account['account']}. Link's speed: x{speed:g}; one graphic pack enabled.",
+          f"{account['account']}. Link's speed: x{speed:g}; graphic packs enabled: {len(packs)}.",
           flush=True)
+    if aid_packs:
+        print("Test aids: " + ", ".join(entry["name"] for entry in aid_packs) + ".", flush=True)
     if journal:
         print("AP journal in the tip frame; try it: /ap-tip <text>.", flush=True)
     else:
@@ -349,6 +381,7 @@ def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = Fals
     play_saves = profile.SAVES / f"{profile.PLAY_ACCOUNT:08x}"
     result = {"schema": 1, "started_utc": stamp, "seed": folder.name, "pack": pack.name,
               "locomotion_speed_multiplier": speed,
+              "test_aids": [{k: v for k, v in entry.items() if k != "files"} for entry in aid_packs],
               "native_tip_channel": journal,
               "account": account, "graphic_packs": packs,
               "play_saves_before": tree_hashes(play_saves), "status": "running"}

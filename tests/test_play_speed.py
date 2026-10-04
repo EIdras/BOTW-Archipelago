@@ -4,6 +4,7 @@ import tempfile
 import subprocess
 import sys
 import unittest
+from tests.full_build import full_build
 
 import oead
 from botw_patch.resources import unpack, digest
@@ -17,6 +18,7 @@ STALLS = ROOT / '.build/packs-from-source/024441ae80c0c7bb'      # a seed with s
 
 class PlaySpeedTests(unittest.TestCase):
     @unittest.skipUnless(SOURCE.is_dir(), 'requires local source pack')
+    @full_build
     def test_x6_handles_float_pool_size_change_and_preserves_allocation(self):
         import rstb
         from tools.play_speed import TABLE
@@ -41,6 +43,7 @@ class PlaySpeedTests(unittest.TestCase):
                     self.assertAlmostEqual(edit['after'], edit['before'] * 6, places=5)
 
     @unittest.skipUnless(STALLS.is_dir(), 'requires a local pack with stalls')
+    @full_build
     def test_a_pack_with_dlc_files_keeps_them_at_its_root(self):
         # Seen in play: the variant of a seed with stalls failed on its aoc/ files.
         from tools.build_pack_from_source import verify_pack
@@ -73,6 +76,7 @@ assert pathlib.Path(rstb.__file__).resolve() != root / "tools/rstb.py"
         self.assertEqual(speed_argument('1.5'), 1.5)
 
     @unittest.skipUnless(SOURCE.is_dir(), 'requires local source pack')
+    @full_build
     def test_x3_matches_historical_actor_without_altering_base_or_other_members(self):
         before = {p.relative_to(SOURCE): digest(p.read_bytes()) for p in SOURCE.rglob('*') if p.is_file()}
         with tempfile.TemporaryDirectory() as directory:

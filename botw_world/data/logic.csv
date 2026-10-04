@@ -1,214 +1,214 @@
 location,region,category,climate,runes,extra,checked,notes
-Tah Muhl Shrine,Eldin,Shrine,heat,all,,no,
-Jee Noh Shrine,Wasteland,Shrine,none,all,,no,
-Sah Dahaj Shrine,Eldin,Shrine,heat,all,,no,
-Hawa Koth Shrine,Gerudo,Shrine,none,all,,no,
-Zalta Wa Shrine,Ridgeland,Shrine,none,all,,no,
-Ne'ez Yohma Shrine,Akkala,Shrine,none,all,,no,
-Yah Rin Shrine,Hateno,Shrine,none,all,,no,
-Bosh Kala Shrine,Dueling Peaks,Shrine,none,all,,no,
-Bareeda Naag Shrine,Tabantha,Shrine,none,all,Freed - Divine Beast Vah Medoh,no,shrine quest
+Tah Muhl Shrine,Eldin,Shrine,none,none,,yes,near Foothill Stable: the game's map puts it outside the burning zone
+Jee Noh Shrine,Wasteland,Shrine,none,Stasis,,yes,
+Sah Dahaj Shrine,Eldin,Shrine,none,none,,yes,north of Foothill Stable: the game's map puts it outside the burning zone
+Hawa Koth Shrine,Gerudo,Shrine,none,Magnesis,,yes,
+Zalta Wa Shrine,Ridgeland,Shrine,none,none,,yes,
+Ne'ez Yohma Shrine,Akkala,Shrine,none,Cryonis,,yes,
+Yah Rin Shrine,Hateno,Shrine,none,Magnesis,,yes,
+Bosh Kala Shrine,Dueling Peaks,Shrine,none,none,,yes,paraglider on the fans
+Bareeda Naag Shrine,Tabantha,Shrine,none,Remote Bomb,Freed - Divine Beast Vah Medoh,yes,shrine quest after Vah Medoh; bomb cannon
 Owa Daim Shrine,Great Plateau,Shrine|Plateau,none,Stasis,,yes,
-Kay Noh Shrine,Wasteland,Shrine,none,all,,no,
-Monya Toma Shrine,Ridgeland,Shrine,none,all,,no,
-Voo Lota Shrine,Tabantha,Shrine,none,all,Freed - Divine Beast Vah Medoh,no,shrine quest
-Katosa Aug Shrine,Akkala,Shrine,none,all,,no,
-Kam Urog Shrine,Hateno,Shrine,none,all,,no,
-Toto Sah Shrine,Faron,Shrine,none,all,,no,
-Rucco Maag Shrine,Lanayru,Shrine,none,all,,no,
-Shee Vaneer Shrine,Dueling Peaks,Shrine,none,all,,no,
-Rok Uwog Shrine,Hebra,Shrine,none,all,,no,
-Dow Na'eh Shrine,Hateno,Shrine,none,all,,no,
-Sheem Dagoze Shrine,Ridgeland,Shrine,none,all,,no,
-Toh Yahsa Shrine,Ridgeland,Shrine,none,all,,no,
-Keo Ruug Shrine,Woodland,Shrine,none,all,,no,
-Sheh Rata Shrine,Lanayru,Shrine,none,all,,no,
-Mezza Lo Shrine,Lanayru,Shrine,none,all,,no,
-Kayra Mah Shrine,Eldin,Shrine,heat,all,,no,
-Shae Mo'sah Shrine,Eldin,Shrine,heat,all,,no,
-Rota Ooh Shrine,Central,Shrine,none,all,,no,
-Shora Hah Shrine,Woodland,Shrine,none,all,,no,
-Hila Rao Shrine,Dueling Peaks,Shrine,none,all,,no,
-Joloo Nah Shrine,Wasteland,Shrine,none,all,,no,
-Mo'a Keet Shrine,Akkala,Shrine,none,all,,no,
-Dako Tah Shrine,Gerudo,Shrine,none,all,,no,
-Daka Tuss Shrine,Lanayru,Shrine,none,all,,no,
-Kah Yah Shrine,Hateno,Shrine,none,all,,no,
-Akh Va'quot Shrine,Tabantha,Shrine,none,all,,no,
-Sho Dantu Shrine,Gerudo,Shrine,none,all,,no,
-Shae Loya Shrine,Tabantha,Shrine,none,all,,no,
+Kay Noh Shrine,Wasteland,Shrine,none,Magnesis,,yes,
+Monya Toma Shrine,Ridgeland,Shrine,none,none,,yes,
+Voo Lota Shrine,Tabantha,Shrine,none,none,Freed - Divine Beast Vah Medoh,yes,shrine quest after Vah Medoh
+Katosa Aug Shrine,Akkala,Shrine,none,none,,yes,motion control
+Kam Urog Shrine,Hateno,Shrine,none,Stasis,,yes,
+Toto Sah Shrine,Faron,Shrine,none,Remote Bomb,,yes,bombable wall at the entrance: Remote Bomb
+Rucco Maag Shrine,Lanayru,Shrine,none,none,,yes,
+Shee Vaneer Shrine,Dueling Peaks,Shrine,none,none,,yes,
+Rok Uwog Shrine,Hebra,Shrine,none,Magnesis,,yes,barrels lifted through the bars
+Dow Na'eh Shrine,Hateno,Shrine,none,Magnesis,,yes,chests on the switch
+Sheem Dagoze Shrine,Ridgeland,Shrine,none,none,,yes,
+Toh Yahsa Shrine,Ridgeland,Shrine,none,Magnesis|Remote Bomb,,yes,
+Keo Ruug Shrine,Woodland,Shrine,none,none,,yes,orbs carried by hand
+Sheh Rata Shrine,Lanayru,Shrine,none,Magnesis/Cryonis,,yes,"the barrel on the switch, or the crystal shot from an ice pillar"
+Mezza Lo Shrine,Lanayru,Shrine,none,Magnesis|Remote Bomb|Stasis,,yes,
+Kayra Mah Shrine,Eldin,Shrine,heat,none,,yes,"Eldin Canyon, burning zone"
+Shae Mo'sah Shrine,Eldin,Shrine,heat,Magnesis,,yes,in Goron City
+Rota Ooh Shrine,Central,Shrine,none,Cryonis,,yes,
+Shora Hah Shrine,Woodland,Shrine,heat,Magnesis|Stasis,,yes,"Isle of Rabac, burning zone"
+Hila Rao Shrine,Dueling Peaks,Shrine,none,Remote Bomb,,yes,stone wall before the monk
+Joloo Nah Shrine,Wasteland,Shrine,none,Magnesis|Stasis,,yes,quest: heat endured with food or elixirs
+Mo'a Keet Shrine,Akkala,Shrine,none,Stasis,,yes,"east of Foothill Stable, not a burning zone"
+Dako Tah Shrine,Gerudo,Shrine,none,Magnesis,,yes,"quest giver at Kara Kara Bazaar, outside the town"
+Daka Tuss Shrine,Lanayru,Shrine,none,Magnesis,,yes,
+Kah Yah Shrine,Hateno,Shrine,none,none,,yes,barrels hold the floor switches
+Akh Va'quot Shrine,Tabantha,Shrine,none,none,,yes,wind switches
+Sho Dantu Shrine,Gerudo,Shrine,none,Remote Bomb,,yes,
+Shae Loya Shrine,Tabantha,Shrine,none,Stasis,,yes,
 Oman Au Shrine,Great Plateau,Shrine|Plateau,none,Magnesis,,yes,
-Myahm Agana Shrine,Hateno,Shrine,none,all,,no,
-Kaam Ya'tak Shrine,Central,Shrine,none,all,,no,
+Myahm Agana Shrine,Hateno,Shrine,none,none,,yes,motion control
+Kaam Ya'tak Shrine,Central,Shrine,none,Stasis,,yes,
 Ja Baij Shrine,Great Plateau,Shrine|Plateau,none,Remote Bomb,,yes,
-Rin Oyaa Shrine,Hebra,Shrine,none,all,,no,
-Kuh Takkar Shrine,Gerudo,Shrine,none,all,,no,
-Shee Venath Shrine,Dueling Peaks,Shrine,none,all,,no,
-Ha Dahamar Shrine,Dueling Peaks,Shrine,none,all,,no,
-Shada Naw Shrine,Hebra,Shrine,none,all,,no,
-Ree Dahee Shrine,Dueling Peaks,Shrine,none,all,,no,
-Ze Kasho Shrine,Akkala,Shrine,none,all,,no,
-Kaya Wan Shrine,Lanayru,Shrine,none,all,,no,
-Shai Utoh Shrine,Faron,Shrine,none,all,,no,
-Maka Rah Shrine,Tabantha,Shrine,none,all,,no,
-Gee Ha'rah Shrine,Hebra,Shrine,none,all,,no,
-Sha Warvo Shrine,Tabantha,Shrine,none,all,,no,
-Ka'o Makagh Shrine,Lake,Shrine,none,all,,no,
-Dunba Taag Shrine,Hebra,Shrine,none,all,,no,
-Mirro Shaz Shrine,Woodland,Shrine,none,all,,no,
-Wahgo Katta Shrine,Dueling Peaks,Shrine,none,all,,no,
-Mogg Latan Shrine,Ridgeland,Shrine,none,all,,no,
-Kah Okeo Shrine,Tabantha,Shrine,none,all,,no,
-Daqo Chisay Shrine,Gerudo,Shrine,none,all,,no,
-Shoda Sah Shrine,Faron,Shrine,none,all,,no,
-Sha Gehma Shrine,Hebra,Shrine,none,all,,no,
-Kema Zoos Shrine,Gerudo,Shrine,none,all,,no,
-Daqa Koh Shrine,Eldin,Shrine,heat,all,,no,
+Rin Oyaa Shrine,Hebra,Shrine,none,Magnesis,,yes,
+Kuh Takkar Shrine,Gerudo,Shrine,none,Magnesis,,yes,
+Shee Venath Shrine,Dueling Peaks,Shrine,none,none,,yes,
+Ha Dahamar Shrine,Dueling Peaks,Shrine,none,Cryonis,,yes,
+Shada Naw Shrine,Hebra,Shrine,none,Magnesis,,yes,
+Ree Dahee Shrine,Dueling Peaks,Shrine,none,none,,yes,
+Ze Kasho Shrine,Akkala,Shrine,none,none,,yes,motion control
+Kaya Wan Shrine,Lanayru,Shrine,none,Cryonis,,yes,up the waterfall
+Shai Utoh Shrine,Faron,Shrine,none,Remote Bomb|Stasis,,yes,cracked rocks block the entrance: Remote Bomb
+Maka Rah Shrine,Tabantha,Shrine,none,Magnesis/Stasis,,yes,the spiked balls: frozen or moved away
+Gee Ha'rah Shrine,Hebra,Shrine,none,Stasis,,yes,
+Sha Warvo Shrine,Tabantha,Shrine,none,none,,yes,paraglider on the fans
+Ka'o Makagh Shrine,Lake,Shrine,none,Magnesis|Remote Bomb,,yes,the door hangs on bombable blocks
+Dunba Taag Shrine,Hebra,Shrine,none,Stasis,,yes,
+Mirro Shaz Shrine,Woodland,Shrine,none,Stasis,,yes,
+Wahgo Katta Shrine,Dueling Peaks,Shrine,none,Magnesis,,yes,
+Mogg Latan Shrine,Ridgeland,Shrine,none,Magnesis,,yes,
+Kah Okeo Shrine,Tabantha,Shrine,none,Remote Bomb|Stasis,,yes,slab over the hole: Stasis; cracked wall for the updraft
+Daqo Chisay Shrine,Gerudo,Shrine,none,Magnesis,,yes,outside Gerudo Town
+Shoda Sah Shrine,Faron,Shrine,none,none,,yes,
+Sha Gehma Shrine,Hebra,Shrine,none,Magnesis,,yes,
+Kema Zoos Shrine,Gerudo,Shrine,none,Magnesis|Stasis,,yes,"quest giver at the town's gate, outside"
+Daqa Koh Shrine,Eldin,Shrine,heat,Stasis,,yes,past Goron City: burning zone
 Keh Namut Shrine,Great Plateau,Shrine|Plateau,none,Cryonis,,yes,Mount Hylia is cold: spicy peppers grow there (sphere 0)
-Kah Mael Shrine,Akkala,Shrine,none,all,,no,
-Qua Raym Shrine,Eldin,Shrine,heat,all,,no,
-Ya Naga Shrine,Lake,Shrine,none,all,,no,
-Ishto Soh Shrine,Lake,Shrine,none,all,,no,
-Soh Kofi Shrine,Lanayru,Shrine,none,all,,no,
-Pumaag Nitae Shrine,Lake,Shrine,none,all,,no,
-Dah Kaso Shrine,Wasteland,Shrine,none,all,,no,
-Katah Chuki Shrine,Central,Shrine,none,all,,no,
-Noya Neha Shrine,Ridgeland,Shrine,none,all,,no,
-Dah Hesho Shrine,Akkala,Shrine,none,all,,no,
-Sasa Kai Shrine,Gerudo,Shrine,none,all,,no,
-Ke'nai Shakah Shrine,Akkala,Shrine,none,all,,no,
-Mijah Rokee Shrine,Ridgeland,Shrine,none,all,,no,
-Namika Ozz Shrine,Woodland,Shrine,none,all,,no,
-Shoqa Tatone Shrine,Lake,Shrine,none,all,,no,
-Muwo Jeem Shrine,Hateno,Shrine,none,all,,no,
-Chaas Qeta Shrine,Hateno,Shrine,none,all,,no,
-Tena Ko'sah Shrine,Tabantha,Shrine,none,all,,no,
-Tutsuwa Nima Shrine,Akkala,Shrine,none,all,,no,
-Kema Kosassa Shrine,Gerudo,Shrine,none,all,,no,
-Goma Asaagh Shrine,Hebra,Shrine,none,all,,no,
-Mozo Shenno Shrine,Hebra,Shrine,none,all,,no,
-Hia Miu Shrine,Hebra,Shrine,none,all,,no,
-Saas Ko'sah Shrine,Woodland,Shrine,none,all,,no,
-Suma Sahma Shrine,Wasteland,Shrine,none,all,,no,
-Gorae Torr Shrine,Eldin,Shrine,heat,all,,no,
-Maag No'rah Shrine,Hebra,Shrine,none,all,,no,
-Raqa Zunzo Shrine,Gerudo,Shrine,none,all,Freed - Divine Beast Vah Naboris,no,
-Tho Kayu Shrine,Gerudo,Shrine,none,all,,no,
-Kuhn Sidajj Shrine,Woodland,Shrine,none,all,,no,
-Qukah Nata Shrine,Faron,Shrine,none,all,,no,
-Korgu Chideh Shrine,Hateno,Shrine,none,all,,no,
-Daag Chokah Shrine,Woodland,Shrine,none,all,,no,
-Ta'loh Naeg Shrine,Lanayru,Shrine,none,all,,no,
-Keeha Yoog Shrine,Gerudo,Shrine,none,all,,no,
-Dagah Keek Shrine,Lanayru,Shrine,none,all,,no,
-Zuna Kai Shrine,Akkala,Shrine,none,all,,no,
-Dila Maag Shrine,Wasteland,Shrine,none,all,,no,
-Lanno Kooh Shrine,Hebra,Shrine,none,all,,no,
-Tu Ka'loh Shrine,Akkala,Shrine,none,all,,no,
-Maag Halan Shrine,Woodland,Shrine,none,all,,no,
-Misae Suma Shrine,Wasteland,Shrine,none,all,,no,
-Ketoh Wawai Shrine,Woodland,Shrine,none,all,,no,
-Ritaag Zumo Shrine,Akkala,Shrine,none,all,,no,
-Korsh O'hu Shrine,Wasteland,Shrine,none,all,,no,
-Tawa Jinn Shrine,Hateno,Shrine,none,all,,no,
-Lakna Rokee Shrine,Lanayru,Shrine,none,all,,no,
-Shae Katha Shrine,Dueling Peaks,Shrine,none,all,,no,
-Shai Yota Shrine,Akkala,Shrine,none,all,,no,
-Rona Kachta Shrine,Hebra,Shrine,none,all,,no,
-Qaza Tokki Shrine,Hebra,Shrine,none,all,,no,
-Jitan Sa'mi Shrine,Hateno,Shrine,none,all,,no,
-To Quomo Shrine,Hebra,Shrine,none,all,,no,
-Tahno O'ah Shrine,Hateno,Shrine,none,all,,no,
-Hebra Tower,Hebra,Tower,none,,,no,
-Tabantha Tower,Tabantha,Tower,none,,,no,
-Gerudo Tower,Gerudo,Tower,none,,,no,
-Wasteland Tower,Wasteland,Tower,none,,,no,
-Woodland Tower,Woodland,Tower,none,,,no,
-Central Tower,Central,Tower,none,,,no,
-Great Plateau Tower,Great Plateau,Tower,none,,,no,
-Dueling Peaks Tower,Dueling Peaks,Tower,none,,,no,
-Lake Tower,Lake,Tower,none,,,no,
-Eldin Tower,Eldin,Tower,heat,,,no,
-Akkala Tower,Akkala,Tower,none,,,no,
-Lanayru Tower,Lanayru,Tower,none,,,no,
-Hateno Tower,Hateno,Tower,none,,,no,
-Faron Tower,Faron,Tower,none,,,no,
-Ridgeland Tower,Ridgeland,Tower,none,,,no,
-Great Fairy Cotera,Dueling Peaks,Great Fairy,none,,,no,
-Great Fairy Kaysa,Ridgeland,Great Fairy,none,,,no,
-Great Fairy Mija,Akkala,Great Fairy,none,,,no,
-Great Fairy Tera,Wasteland,Great Fairy,none,,,no,
-Divine Beast Vah Ruta,Lanayru,Divine Beast,none,all,Zora Set,no,swim up the waterfalls to East Reservoir Lake
-Divine Beast Vah Rudania,Eldin,Divine Beast,heat,all,,no,
-Divine Beast Vah Medoh,Tabantha,Divine Beast,none,all,,no,
-Divine Beast Vah Naboris,Wasteland,Divine Beast,none,all,Gerudo Set,no,"its quest goes through Riju, in Gerudo Town"
+Kah Mael Shrine,Akkala,Shrine,none,Magnesis|Stasis,,yes,slab over the hole: Stasis (or Octo Balloons)
+Qua Raym Shrine,Eldin,Shrine,heat,Magnesis|Remote Bomb,,yes,"Goronbi Lake, burning zone"
+Ya Naga Shrine,Lake,Shrine,none,Remote Bomb,,yes,
+Ishto Soh Shrine,Lake,Shrine,none,Stasis,,yes,
+Soh Kofi Shrine,Lanayru,Shrine,none,none,,yes,test of strength
+Pumaag Nitae Shrine,Lake,Shrine,none,none,,yes,test of strength
+Dah Kaso Shrine,Wasteland,Shrine,none,none,,yes,test of strength
+Katah Chuki Shrine,Central,Shrine,none,none,,yes,test of strength
+Noya Neha Shrine,Ridgeland,Shrine,none,none,,yes,test of strength
+Dah Hesho Shrine,Akkala,Shrine,none,none,,yes,test of strength
+Sasa Kai Shrine,Gerudo,Shrine,none,none,,yes,test of strength
+Ke'nai Shakah Shrine,Akkala,Shrine,none,Remote Bomb,,yes,cracked rocks block the entrance: Remote Bomb
+Mijah Rokee Shrine,Ridgeland,Shrine,none,none,,yes,test of strength
+Namika Ozz Shrine,Woodland,Shrine,none,none,,yes,test of strength
+Shoqa Tatone Shrine,Lake,Shrine,none,none,,yes,test of strength
+Muwo Jeem Shrine,Hateno,Shrine,none,none,,yes,test of strength
+Chaas Qeta Shrine,Hateno,Shrine,none,none,,yes,test of strength
+Tena Ko'sah Shrine,Tabantha,Shrine,none,none,,yes,test of strength
+Tutsuwa Nima Shrine,Akkala,Shrine,none,none,,yes,test of strength
+Kema Kosassa Shrine,Gerudo,Shrine,none,none,,yes,test of strength
+Goma Asaagh Shrine,Hebra,Shrine,none,none,,yes,test of strength
+Mozo Shenno Shrine,Hebra,Shrine,none,none,,yes,test of strength
+Hia Miu Shrine,Hebra,Shrine,none,none,,yes,test of strength
+Saas Ko'sah Shrine,Woodland,Shrine,none,none,,yes,test of strength
+Suma Sahma Shrine,Wasteland,Shrine,none,none,,yes,blessing; the cold shadow: a snowball held at the edge
+Gorae Torr Shrine,Eldin,Shrine,none,none,,yes,blessing; Gut Check Rock: the game's map puts it outside the burning zone
+Maag No'rah Shrine,Hebra,Shrine,none,Remote Bomb,,yes,blessing; cracked rocks block the entrance: Remote Bomb
+Raqa Zunzo Shrine,Gerudo,Shrine,none,none,Freed - Divine Beast Vah Naboris,yes,blessing; the sand-seal race reopens after Vah Naboris
+Tho Kayu Shrine,Gerudo,Shrine,none,none,,yes,blessing
+Kuhn Sidajj Shrine,Woodland,Shrine,none,Magnesis,,yes,blessing; the metal chest goes back to the Ogre Tree
+Qukah Nata Shrine,Faron,Shrine,none,none,,yes,blessing
+Korgu Chideh Shrine,Hateno,Shrine,none,Cryonis,,yes,blessing; Eventide: an orb crosses the water on Cryonis
+Daag Chokah Shrine,Woodland,Shrine,none,none,,yes,blessing
+Ta'loh Naeg Shrine,Lanayru,Shrine,none,none,,yes,test of strength
+Keeha Yoog Shrine,Gerudo,Shrine,none,none,,yes,blessing
+Dagah Keek Shrine,Lanayru,Shrine,none,Cryonis|Magnesis,,yes,"blessing; the ceremonial trident, fished out with Cryonis and Magnesis, works before Vah Ruta (the Lightscale Trident after it)"
+Zuna Kai Shrine,Akkala,Shrine,none,none,,yes,blessing
+Dila Maag Shrine,Wasteland,Shrine,none,none,,yes,blessing
+Lanno Kooh Shrine,Hebra,Shrine,none,none,,yes,blessing
+Tu Ka'loh Shrine,Akkala,Shrine,none,none,,yes,blessing
+Maag Halan Shrine,Woodland,Shrine,none,none,,yes,blessing
+Misae Suma Shrine,Wasteland,Shrine,none,none,Gerudo Set,yes,blessing; the drink comes from Gerudo Town
+Ketoh Wawai Shrine,Woodland,Shrine,none,none,,yes,blessing
+Ritaag Zumo Shrine,Akkala,Shrine,none,none,,yes,blessing
+Korsh O'hu Shrine,Wasteland,Shrine,none,Magnesis,,yes,blessing; the metal orbs work without Rotana's quest
+Tawa Jinn Shrine,Hateno,Shrine,none,none,,yes,blessing
+Lakna Rokee Shrine,Lanayru,Shrine,none,none,,yes,blessing
+Shae Katha Shrine,Dueling Peaks,Shrine,none,none,,yes,blessing
+Shai Yota Shrine,Akkala,Shrine,none,Remote Bomb,,yes,blessing; cracked rocks open the wind
+Rona Kachta Shrine,Hebra,Shrine,none,none,,yes,blessing
+Qaza Tokki Shrine,Hebra,Shrine,none,none,,yes,blessing
+Jitan Sa'mi Shrine,Hateno,Shrine,none,none,,yes,blessing
+To Quomo Shrine,Hebra,Shrine,none,none,,yes,blessing
+Tahno O'ah Shrine,Hateno,Shrine,none,Remote Bomb,,yes,blessing; cracked rocks block the entrance: Remote Bomb
+Hebra Tower,Hebra,Tower,none,,,yes,
+Tabantha Tower,Tabantha,Tower,none,,,yes,
+Gerudo Tower,Gerudo,Tower,none,,,yes,
+Wasteland Tower,Wasteland,Tower,none,,,yes,
+Woodland Tower,Woodland,Tower,none,,,yes,
+Central Tower,Central,Tower,none,,,yes,
+Great Plateau Tower,Great Plateau,Tower,none,,,yes,
+Dueling Peaks Tower,Dueling Peaks,Tower,none,,,yes,
+Lake Tower,Lake,Tower,none,,,yes,
+Eldin Tower,Eldin,Tower,none,,,yes,the game's map puts it outside the burning zone
+Akkala Tower,Akkala,Tower,none,,,yes,climbed and glided to over the Malice
+Lanayru Tower,Lanayru,Tower,none,,,yes,
+Hateno Tower,Hateno,Tower,none,,,yes,
+Faron Tower,Faron,Tower,none,,,yes,
+Ridgeland Tower,Ridgeland,Tower,none,,,yes,
+Great Fairy Cotera,Dueling Peaks,Great Fairy,none,,,yes,rupees only
+Great Fairy Kaysa,Ridgeland,Great Fairy,none,,,yes,rupees only
+Great Fairy Mija,Akkala,Great Fairy,none,,,yes,rupees only
+Great Fairy Tera,Wasteland,Great Fairy,none,,,yes,rupees only
+Divine Beast Vah Ruta,Lanayru,Divine Beast,none,all,Zora Set,yes,swim up the waterfalls to East Reservoir Lake
+Divine Beast Vah Rudania,Eldin,Divine Beast,heat,all,,yes,a dungeon: every rune kept
+Divine Beast Vah Medoh,Tabantha,Divine Beast,none,all,,yes,a dungeon: every rune kept
+Divine Beast Vah Naboris,Wasteland,Divine Beast,none,all,Gerudo Set,yes,"its quest goes through Riju, in Gerudo Town"
 Master Sword Pedestal,Woodland,Master Sword,none,,Heart Container:10,yes,"13 hearts in all, as in the game"
-Defeat Calamity Ganon,Hyrule Castle,Goal,none,all,,no,Hyrule Castle
-Magnesis Terminal,Great Plateau,Rune Terminal,none,,,no,
-Remote Bombs Terminal,Great Plateau,Rune Terminal,none,,,no,
-Stasis Terminal,Great Plateau,Rune Terminal,none,,,no,
-Cryonis Terminal,Great Plateau,Rune Terminal,none,,,no,
-Vah Ruta Heart Container,Lanayru,Divine Beast Heart,none,all,Zora Set|Freed - Divine Beast Vah Ruta,no,
-Vah Rudania Heart Container,Eldin,Divine Beast Heart,heat,all,Freed - Divine Beast Vah Rudania,no,
-Vah Medoh Heart Container,Tabantha,Divine Beast Heart,none,all,Freed - Divine Beast Vah Medoh,no,
-Vah Naboris Heart Container,Wasteland,Divine Beast Heart,none,all,Gerudo Set|Freed - Divine Beast Vah Naboris,no,"its quest goes through Riju, in Gerudo Town"
-Dueling Peaks Stable - Beedle Item 1,Dueling Peaks,Shop,none,,,no,
-Dueling Peaks Stable - Beedle Item 2,Dueling Peaks,Shop,none,,,no,
-Foothill Stable - Beedle Item 1,Eldin,Shop,none,,,no,
-Foothill Stable - Beedle Item 2,Eldin,Shop,none,,,no,
-Gerudo Canyon Stable - Beedle Item 1,Wasteland,Shop,none,,,no,
-Gerudo Canyon Stable - Beedle Item 2,Wasteland,Shop,none,,,no,
-East Akkala Stable - Beedle Item 1,Akkala,Shop,none,,,no,
-East Akkala Stable - Beedle Item 2,Akkala,Shop,none,,,no,
-Tabantha Bridge Stable - Beedle Item 1,Tabantha,Shop,none,,,no,
-Tabantha Bridge Stable - Beedle Item 2,Tabantha,Shop,none,,,no,
-Serenne Stable - Beedle Item 1,Ridgeland,Shop,none,,,no,
-Serenne Stable - Beedle Item 2,Ridgeland,Shop,none,,,no,
-South Akkala Stable - Beedle Item 1,Akkala,Shop,none,,,no,
-South Akkala Stable - Beedle Item 2,Akkala,Shop,none,,,no,
-Rito Stable - Beedle Item 1,Tabantha,Shop,none,,,no,
-Rito Stable - Beedle Item 2,Tabantha,Shop,none,,,no,
-Riverside Stable - Beedle Item 1,Dueling Peaks,Shop,none,,,no,
-Riverside Stable - Beedle Item 2,Dueling Peaks,Shop,none,,,no,
-Lakeside Stable - Beedle Item 1,Faron,Shop,none,,,no,
-Lakeside Stable - Beedle Item 2,Faron,Shop,none,,,no,
-Outskirt Stable - Beedle Item 1,Central,Shop,none,,,no,
-Outskirt Stable - Beedle Item 2,Central,Shop,none,,,no,
-Woodland Stable - Beedle Item 1,Woodland,Shop,none,,,no,
-Woodland Stable - Beedle Item 2,Woodland,Shop,none,,,no,
-Wetland Stable - Beedle Item 1,Lanayru,Shop,none,,,no,
-Wetland Stable - Beedle Item 2,Lanayru,Shop,none,,,no,
-Snowfield Stable - Beedle Item 1,Hebra,Shop,none,,,no,
-Snowfield Stable - Beedle Item 2,Hebra,Shop,none,,,no,
-Highland Stable - Beedle Item 1,Lake,Shop,none,,,no,
-Highland Stable - Beedle Item 2,Lake,Shop,none,,,no,
-Kara Kara Bazaar - Beedle Item 1,Gerudo,Shop,none,,,no,
-Kara Kara Bazaar - Beedle Item 2,Gerudo,Shop,none,,,no,
-Rito Village - General Stall Item 1,Tabantha,Stall,none,,,no,
-Rito Village - General Stall Item 2,Tabantha,Stall,none,,,no,
-Gerudo Town - Fruit Stall Item 1,Gerudo,Stall,none,,Gerudo Set,no,the guards let in Link wearing the Gerudo outfit
-Gerudo Town - Fruit Stall Item 2,Gerudo,Stall,none,,Gerudo Set,no,the guards let in Link wearing the Gerudo outfit
-Gerudo Town - Arrow Stall Item 1,Gerudo,Stall,none,,Gerudo Set,no,the guards let in Link wearing the Gerudo outfit
-Gerudo Town - Arrow Stall Item 2,Gerudo,Stall,none,,Gerudo Set,no,the guards let in Link wearing the Gerudo outfit
-Kara Kara Bazaar - Fruit Stall Item 1,Gerudo,Stall,none,,,no,
-Kara Kara Bazaar - Fruit Stall Item 2,Gerudo,Stall,none,,,no,
-Gerudo Town - Materials Stall Item 1,Gerudo,Stall,none,,Gerudo Set,no,the guards let in Link wearing the Gerudo outfit
-Gerudo Town - Materials Stall Item 2,Gerudo,Stall,none,,Gerudo Set,no,the guards let in Link wearing the Gerudo outfit
-Korok Forest - Mushroom Stall Item 1,Woodland,Stall,none,,,no,
-Korok Forest - Mushroom Stall Item 2,Woodland,Stall,none,,,no,
-Korok Forest - General Stall Item 1,Woodland,Stall,none,,,no,
-Korok Forest - General Stall Item 2,Woodland,Stall,none,,,no,
-Goron City - General Stall Item 1,Eldin,Stall,heat,,,no,
-Goron City - General Stall Item 2,Eldin,Stall,heat,,,no,
-Kakariko Village - Arrow Stall Item 1,Dueling Peaks,Stall,none,,,no,
-Kakariko Village - Arrow Stall Item 2,Dueling Peaks,Stall,none,,,no,
-Kakariko Village - General Stall Item 1,Dueling Peaks,Stall,none,,,no,
-Kakariko Village - General Stall Item 2,Dueling Peaks,Stall,none,,,no,
-Lurelin Village - General Stall Item 1,Hateno,Stall,none,,,no,
-Lurelin Village - General Stall Item 2,Hateno,Stall,none,,,no,
-Tarrey Town - Arrow Stall Item 1,Akkala,Stall,none,,,no,
-Tarrey Town - Arrow Stall Item 2,Akkala,Stall,none,,,no,
-Zora's Domain - General Stall Item 1,Akkala,Stall,none,,,no,
-Zora's Domain - General Stall Item 2,Akkala,Stall,none,,,no,
-Hateno Village - General Stall Item 1,Hateno,Stall,none,,,no,
-Hateno Village - General Stall Item 2,Hateno,Stall,none,,,no,
+Defeat Calamity Ganon,Hyrule Castle,Goal,none,none,,yes,the sanctum's options decide (Master Sword and Runes Before Ganon)
+Magnesis Terminal,Great Plateau,Rune Terminal,none,,,yes,"inside its plateau shrine, before the rune"
+Remote Bombs Terminal,Great Plateau,Rune Terminal,none,,,yes,"inside its plateau shrine, before the rune"
+Stasis Terminal,Great Plateau,Rune Terminal,none,,,yes,"inside its plateau shrine, before the rune"
+Cryonis Terminal,Great Plateau,Rune Terminal,none,,,yes,"inside its plateau shrine, before the rune"
+Vah Ruta Heart Container,Lanayru,Divine Beast Heart,none,all,Zora Set|Freed - Divine Beast Vah Ruta,yes,
+Vah Rudania Heart Container,Eldin,Divine Beast Heart,heat,all,Freed - Divine Beast Vah Rudania,yes,
+Vah Medoh Heart Container,Tabantha,Divine Beast Heart,none,all,Freed - Divine Beast Vah Medoh,yes,
+Vah Naboris Heart Container,Wasteland,Divine Beast Heart,none,all,Gerudo Set|Freed - Divine Beast Vah Naboris,yes,"its quest goes through Riju, in Gerudo Town"
+Dueling Peaks Stable - Beedle Item 1,Dueling Peaks,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Dueling Peaks Stable - Beedle Item 2,Dueling Peaks,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Foothill Stable - Beedle Item 1,Eldin,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Foothill Stable - Beedle Item 2,Eldin,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Gerudo Canyon Stable - Beedle Item 1,Wasteland,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Gerudo Canyon Stable - Beedle Item 2,Wasteland,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+East Akkala Stable - Beedle Item 1,Akkala,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+East Akkala Stable - Beedle Item 2,Akkala,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Tabantha Bridge Stable - Beedle Item 1,Tabantha,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Tabantha Bridge Stable - Beedle Item 2,Tabantha,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Serenne Stable - Beedle Item 1,Ridgeland,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Serenne Stable - Beedle Item 2,Ridgeland,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+South Akkala Stable - Beedle Item 1,Akkala,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+South Akkala Stable - Beedle Item 2,Akkala,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Rito Stable - Beedle Item 1,Tabantha,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Rito Stable - Beedle Item 2,Tabantha,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Riverside Stable - Beedle Item 1,Dueling Peaks,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Riverside Stable - Beedle Item 2,Dueling Peaks,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Lakeside Stable - Beedle Item 1,Faron,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Lakeside Stable - Beedle Item 2,Faron,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Outskirt Stable - Beedle Item 1,Central,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Outskirt Stable - Beedle Item 2,Central,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Woodland Stable - Beedle Item 1,Woodland,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Woodland Stable - Beedle Item 2,Woodland,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Wetland Stable - Beedle Item 1,Lanayru,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Wetland Stable - Beedle Item 2,Lanayru,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Snowfield Stable - Beedle Item 1,Hebra,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Snowfield Stable - Beedle Item 2,Hebra,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Highland Stable - Beedle Item 1,Lake,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Highland Stable - Beedle Item 2,Lake,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Kara Kara Bazaar - Beedle Item 1,Gerudo,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Kara Kara Bazaar - Beedle Item 2,Gerudo,Shop,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Rito Village - General Stall Item 1,Tabantha,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Rito Village - General Stall Item 2,Tabantha,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Gerudo Town - Fruit Stall Item 1,Gerudo,Stall,none,,Gerudo Set,yes,the guards let in Link wearing the Gerudo outfit
+Gerudo Town - Fruit Stall Item 2,Gerudo,Stall,none,,Gerudo Set,yes,the guards let in Link wearing the Gerudo outfit
+Gerudo Town - Arrow Stall Item 1,Gerudo,Stall,none,,Gerudo Set,yes,the guards let in Link wearing the Gerudo outfit
+Gerudo Town - Arrow Stall Item 2,Gerudo,Stall,none,,Gerudo Set,yes,the guards let in Link wearing the Gerudo outfit
+Kara Kara Bazaar - Fruit Stall Item 1,Gerudo,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Kara Kara Bazaar - Fruit Stall Item 2,Gerudo,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Gerudo Town - Materials Stall Item 1,Gerudo,Stall,none,,Gerudo Set,yes,the guards let in Link wearing the Gerudo outfit
+Gerudo Town - Materials Stall Item 2,Gerudo,Stall,none,,Gerudo Set,yes,the guards let in Link wearing the Gerudo outfit
+Korok Forest - Mushroom Stall Item 1,Woodland,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Korok Forest - Mushroom Stall Item 2,Woodland,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Korok Forest - General Stall Item 1,Woodland,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Korok Forest - General Stall Item 2,Woodland,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Goron City - General Stall Item 1,Eldin,Stall,heat,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Goron City - General Stall Item 2,Eldin,Stall,heat,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Kakariko Village - Arrow Stall Item 1,Dueling Peaks,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Kakariko Village - Arrow Stall Item 2,Dueling Peaks,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Kakariko Village - General Stall Item 1,Dueling Peaks,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Kakariko Village - General Stall Item 2,Dueling Peaks,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Lurelin Village - General Stall Item 1,Hateno,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Lurelin Village - General Stall Item 2,Hateno,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Tarrey Town - Arrow Stall Item 1,Akkala,Stall,heat,,,yes,"Fyson's stall opens in From the Ground Up, whose Goron is recruited at the Southern Mine (burning zone)"
+Tarrey Town - Arrow Stall Item 2,Akkala,Stall,heat,,,yes,"Fyson's stall opens in From the Ground Up, whose Goron is recruited at the Southern Mine (burning zone)"
+Zora's Domain - General Stall Item 1,Akkala,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Zora's Domain - General Stall Item 2,Akkala,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Hateno Village - General Stall Item 1,Hateno,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
+Hateno Village - General Stall Item 2,Hateno,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)

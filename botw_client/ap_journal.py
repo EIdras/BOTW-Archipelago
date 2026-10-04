@@ -52,6 +52,14 @@ def trap_line(item: str, text: str) -> str:
     return "{0}" + _plain(item) + "{/}: " + _plain(text)
 
 
+def ganon_sealed_line(missing: list[tuple[str, int, int]]) -> str:
+    """Why the sanctum sent Link back: what the seed still asks, (what, have, need)."""
+    if not missing:
+        return "{0}Sanctum{/}: the seal is lifted, go back in"
+    return "{0}Sanctum sealed{/}: " + ", ".join(
+        f"{have}/{need} {_plain(what)}" for what, have, need in missing)
+
+
 def is_received_item(entry: dict, me: int) -> bool:
     """A server line announcing an item for this slot (shown with its item)."""
     return (isinstance(entry, dict) and entry.get("kind") == "ItemSend"

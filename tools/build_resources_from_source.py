@@ -30,7 +30,7 @@ from tools import build_plateau_sensor_candidate as sensor
 from tools import build_master_sword_candidate as sword
 from tools import build_ballad_condition_candidate as ballad
 from tools.build_ballad_upgrade_delivery import champion_entries, transform_for as upgrade_delivery
-from botw_patch import death_link, gerudo_outfit, hud_layout, loading_icon, traps
+from botw_patch import death_link, ganon_gate, gerudo_outfit, hud_layout, loading_icon, traps
 from botw_patch.status_item import INPUT_HASHES as STATUS_INPUTS
 
 TITLE = "Pack/TitleBG.pack"
@@ -58,6 +58,7 @@ UPDATE_HASHES = {
     **DEATH_LINK_MESSAGES,
     **sword.PACKS,
     **gerudo_outfit.PACKS, **gerudo_outfit.text_inputs(),
+    **ganon_gate.PACKS,
     **{ballad.pack(name): spec[1] for name, spec in ballad.FLOWS.items()},
 }
 SOURCE_FILES = (
@@ -73,7 +74,7 @@ SOURCE_FILES = (
     "botw_client/items.py", "data/item_map.json", "assets/wiiu/Item_AP.sbitemico",
     "botw_patch/hud_layout.py", "tools/bitemico.py", "botw_patch/death_link.py",
     "botw_patch/loading_icon.py", "botw_patch/traps.py", "botw_patch/melee_weapons.py",
-    *gerudo_outfit.SOURCE_FILES,
+    *gerudo_outfit.SOURCE_FILES, *ganon_gate.SOURCE_FILES,
 )
 
 
@@ -177,6 +178,8 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
                for name, members in gerudo_outfit.STAGES.items()]
     stages += [(ballad.pack(name), {ballad.member(name): ballad.transform_for(name)})
                for name in ballad.FLOWS]
+    # The sanctum stays sealed until the seed's requirements are met (botw_patch/ganon_gate.py).
+    stages += [(ganon_gate.PACK, {ganon_gate.FLOW: ganon_gate.transform})]
     for name, transforms in stages:
         files[name] = inputs[name]
         files, edits = patch_stage(files, name, transforms)
@@ -195,6 +198,9 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
                                extra_archive=(BOOTUP, {death_link.EVENT_INFO: death_link.add_event_info,
                                                        death_link.GAMEDATA: death_link.add_flag}))
     changes.extend(edits)
+    files, edits = patch_stage(files, BOOTUP, {ganon_gate.GAMEDATA: ganon_gate.add_flags})
+    changes.extend(edits)
+    catalog["ganon_gate"] = {"open": ganon_gate.OPEN, "refused": ganon_gate.REFUSED}
     catalog["death_link"] = {"entry": death_link.ENTRY, "flow": death_link.FLOW_NAME,
                              "flag": death_link.FLAG,
                              "attackers": death_link.attacker_names(inputs[death_link.MESSAGES])}
@@ -221,6 +227,9 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
         catalog["status_item"] = {"entry": status_item.ENTRY, "actor": status_item.ACTOR}
     # Vilia's lines at the price she now asks (botw_patch/gerudo_outfit.py).
     files, edits = gerudo_outfit.generate_texts(files, content)
+    changes.extend(edits)
+    # The sealed sanctum's line (botw_patch/ganon_gate.py).
+    files, edits = ganon_gate.generate_texts(files, content)
     changes.extend(edits)
     table = rstb.ResourceSizeTable(unpack(files[TABLE]), True)
     for name, minimum in MINIMUM_ALLOCATIONS.items():

@@ -2,15 +2,17 @@
 from dataclasses import dataclass
 
 from Options import (Choice, DeathLink, OptionCounter, OptionGroup, PerGameCommonOptions, Range,
-                     StartInventoryPool)
+                     StartInventoryPool, Toggle)
 
 from .catalog import TRAPS
 
 
 class Goal(Choice):
     """What finishes the game. Calamity Ganon must always be defeated; the shrines and
-    Divine Beasts goals also require a number of cleared shrines or freed Divine Beasts
-    before the final fight counts."""
+    Divine Beasts goals also require a number of cleared shrines or freed Divine Beasts.
+    The sanctum of Hyrule Castle stays sealed until every requirement of the seed is
+    met (with Master Sword Before Ganon and Runes Before Ganon): entering it sends Link
+    back, and the Archipelago journal says what is missing."""
     display_name = "Goal"
     option_ganon = 0
     option_divine_beasts = 1
@@ -32,6 +34,19 @@ class BeastsRequired(Range):
     range_start = 1
     range_end = 4
     default = 4
+
+
+class MasterSwordBeforeGanon(Toggle):
+    """The sanctum opens only once the Master Sword has been received."""
+    display_name = "Master Sword Before Ganon"
+    default = 0
+
+
+class RunesBeforeGanon(Toggle):
+    """The sanctum opens only once the four runes (Magnesis, Remote Bomb, Stasis,
+    Cryonis) have been received."""
+    display_name = "Runes Before Ganon"
+    default = 1
 
 
 class BeedleShopItems(Range):
@@ -87,6 +102,8 @@ class BotwOptions(PerGameCommonOptions):
     goal_type: Goal
     shrines_required: ShrinesRequired
     divine_beasts_required: BeastsRequired
+    ganon_master_sword: MasterSwordBeforeGanon
+    ganon_runes: RunesBeforeGanon
     beedle_shop_items: BeedleShopItems
     stall_items: StallItems
     death_link: DeathLink
@@ -95,7 +112,18 @@ class BotwOptions(PerGameCommonOptions):
 
 
 OPTION_GROUPS = [
-    OptionGroup("Goal", [Goal, ShrinesRequired, BeastsRequired]),
+    OptionGroup("Goal", [Goal, ShrinesRequired, BeastsRequired, MasterSwordBeforeGanon, RunesBeforeGanon]),
     OptionGroup("Shops", [BeedleShopItems, StallItems]),
     OptionGroup("Traps", [TrapPercentage, TrapWeights]),
 ]
+
+# What the sanctum asks before Ganon, ready made (the options page's presets; a
+# YAML sets the same options by hand). Easy: everything the game offers first;
+# Hard: Ganon whenever Link likes, as in the game.
+PRESETS = {
+    "Easy": {"goal_type": "divine_beasts", "divine_beasts_required": 4,
+             "ganon_master_sword": True, "ganon_runes": True},
+    "Medium": {"goal_type": "divine_beasts", "divine_beasts_required": 2,
+               "ganon_master_sword": True, "ganon_runes": True},
+    "Hard": {"goal_type": "ganon", "ganon_master_sword": False, "ganon_runes": False},
+}
