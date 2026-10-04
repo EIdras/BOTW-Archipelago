@@ -134,6 +134,34 @@ class ClientGateTests(unittest.IsolatedAsyncioTestCase):
         await self.runtime(game, {"goal_type": 0})._ganon_gate_tick()
         self.assertTrue(game.flags["open"])
 
+    async def test_the_sanctum_options_are_read_from_a_schema_5_seed(self):
+        game = _Game(refused=True)
+        medium = {"goal": 0, "sanctum_divine_beasts": 2, "sanctum_shrines": 3,
+                  "sanctum_master_sword": True, "sanctum_runes": False}
+        runtime = self.runtime(game, medium, ["Divine Beast Vah Ruta", "Oman Au Shrine"], ["Master Sword"])
+        await runtime._ganon_gate_tick()
+        self.assertEqual(runtime._journal_notes, [(
+            "{0}Sanctum sealed{/}: 1/2 Divine Beasts freed, 1/3 shrines cleared", None)])
+
+    def test_each_goal_is_reached_by_its_own_rule(self):
+        game = _Game()
+        beasts = [f"Divine Beast Vah {name}" for name in ("Ruta", "Rudania", "Medoh", "Naboris")]
+        goal = self.runtime(game, {"goal": 1}, beasts[:3])
+        self.assertFalse(goal._goal_reached())
+        self.assertTrue(self.runtime(game, {"goal": 1}, beasts)._goal_reached())
+        shrines = {"goal": 2, "goal_shrines": 2}
+        self.assertFalse(self.runtime(game, shrines, ["Oman Au Shrine"])._goal_reached())
+        self.assertTrue(self.runtime(game, shrines, ["Oman Au Shrine", "Ja Baij Shrine"])._goal_reached())
+        # Ganon's goal: his defeat, once the sanctum's requirements are met.
+        ganon = self.runtime(game, {"goal": 0, "sanctum_runes": True})
+        ganon.state["goal_observed"] = True
+        self.assertFalse(ganon._goal_reached())
+        ganon = self.runtime(game, {"goal": 0, "sanctum_runes": True},
+                             received=["Magnesis", "Remote Bomb", "Stasis", "Cryonis"])
+        self.assertFalse(ganon._goal_reached())     # not defeated yet
+        ganon.state["goal_observed"] = True
+        self.assertTrue(ganon._goal_reached())
+
     async def test_a_pack_without_the_gate_is_left_alone(self):
         game = _Game()
         game.ganon_gate = lambda: None

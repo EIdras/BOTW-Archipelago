@@ -65,7 +65,7 @@ class NativeWorldTests(unittest.TestCase):
         self.assertTrue(mw.get_location("Master Sword Pedestal", 1).can_reach(mw.state))
 
     def test_beast_heart_needs_its_beast_freed_and_is_not_a_beast(self):
-        mw = self.make_world(goal_type=1, divine_beasts_required=4)
+        mw = self.make_world(goal=1, sanctum_divine_beasts=4)
         world = mw.worlds[1]
         self.assertNotIn("Vah Ruta Heart Container", world.location_name_groups["Divine Beasts"])
         self.assertEqual(len(world.location_name_groups["Divine Beast Hearts"]), 4)
@@ -86,7 +86,7 @@ class NativeWorldTests(unittest.TestCase):
 
     def test_full_item_state_reaches_every_location(self):
         for goal in range(3):
-            mw = self.make_world(goal_type=goal, shrines_required=120)
+            mw = self.make_world(goal=goal, goal_shrines=120)
             state = mw.get_all_state(False)
             self.assertEqual(len(mw.get_unfilled_locations(1)), 152)
             self.assertTrue(all(loc.can_reach(state) for loc in mw.get_locations()))
@@ -163,8 +163,8 @@ class NativeWorldTests(unittest.TestCase):
         from Fill import distribute_items_restrictive
         for players in (1, 2):
             for seed in range(20):
-                mw = self.make_world(seed=seed, players=players, goal_type=seed % 3,
-                                     shrines_required=120, divine_beasts_required=4)
+                mw = self.make_world(seed=seed, players=players, goal=seed % 3, goal_shrines=120,
+                                     sanctum_divine_beasts=seed % 5, sanctum_shrines=seed * 6)
                 distribute_items_restrictive(mw)
                 self.assertFalse(mw.get_unfilled_locations())
                 self.assertTrue(mw.can_beat_game(), (players, seed))

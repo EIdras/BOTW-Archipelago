@@ -23,8 +23,9 @@ your own server.
 - **Archipelago journal**: the server's messages (items sent and received, hints) in the game's tip frame.
 - **Connection status**: an Archipelago logo in the HUD, in color when connected, and an "Archipelago" key item with
   the seed and slot.
-- **Sealed sanctum**: Hyrule Castle's sanctum opens only once the seed's requirements are met (Divine Beasts or
-  shrines, the Master Sword, the runes; Easy, Medium and Hard presets), and the journal says what is missing.
+- **Goals**: defeat Ganon, free the four Divine Beasts, or clear a number of shrines.
+- **Sealed sanctum**: Ganon's sanctum opens only once the seed's requirements are met (Divine Beasts, shrines,
+  the Master Sword, the runes; Easy, Medium and Hard presets), and the journal says what is missing.
 - **Logic**: each shrine asks only for the runes its trial needs; the burning zones of Eldin, Gerudo Town and the
   waterfalls of Vah Ruta ask for their armor.
 - **Checks never lost**: locations are the game's own saved flags, sent at the next connection when done offline.

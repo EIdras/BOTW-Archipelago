@@ -59,15 +59,21 @@ INPUT_HASHES = _input_hashes()
 
 GOALS = {0: "defeat Ganon", 1: "free {beasts} Divine Beasts",
          2: "complete {shrines} shrines"}
+GOALS_5 = {0: "defeat Ganon", 1: "free the 4 Divine Beasts", 2: "complete {shrines} shrines"}
 
 
 def texts(manifest: dict) -> tuple[str, str]:
     """(name, description): the seed's fixed facts, in English in every language."""
     data = manifest.get("slot_data", {})
-    goal = int(data.get("goal_type", 0))
-    values = {"beasts": data.get("divine_beasts_required", 4),
-              "shrines": data.get("shrines_required", 40)}
-    goals = GOALS
+    if "goal" in data:                  # client schema 5 (botw_world/options.py)
+        goal = int(data["goal"])
+        values = {"shrines": data.get("goal_shrines", 60)}
+        goals = GOALS_5
+    else:
+        goal = int(data.get("goal_type", 0))
+        values = {"beasts": data.get("divine_beasts_required", 4),
+                  "shrines": data.get("shrines_required", 40)}
+        goals = GOALS
     if goal not in goals:
         raise ValueError(f"unknown goal: {goal}")
     slot = f"{manifest['slot_name']} (slot {manifest['slot']})"

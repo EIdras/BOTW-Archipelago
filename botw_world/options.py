@@ -8,11 +8,10 @@ from .catalog import TRAPS
 
 
 class Goal(Choice):
-    """What finishes the game. Calamity Ganon must always be defeated; the shrines and
-    Divine Beasts goals also require a number of cleared shrines or freed Divine Beasts.
-    The sanctum of Hyrule Castle stays sealed until every requirement of the seed is
-    met (with Master Sword Before Ganon and Runes Before Ganon): entering it sends Link
-    back, and the Archipelago journal says what is missing."""
+    """What finishes your game.
+    ganon: defeat Calamity Ganon, in Hyrule Castle's sanctum (see the Sanctum options).
+    divine_beasts: free the four Divine Beasts.
+    shrines: clear the number of shrines of Goal Shrines."""
     display_name = "Goal"
     option_ganon = 0
     option_divine_beasts = 1
@@ -20,32 +19,42 @@ class Goal(Choice):
     default = 0
 
 
-class ShrinesRequired(Range):
-    """Shrines to clear before Ganon, with the shrines goal."""
-    display_name = "Required Shrines"
+class GoalShrines(Range):
+    """The shrines to clear, with the shrines goal."""
+    display_name = "Goal Shrines"
     range_start = 1
     range_end = 120
-    default = 40
+    default = 60
 
 
-class BeastsRequired(Range):
-    """Divine Beasts to free before Ganon, with the Divine Beasts goal."""
-    display_name = "Required Divine Beasts"
-    range_start = 1
+class SanctumDivineBeasts(Range):
+    """Hyrule Castle's sanctum, where Ganon waits, stays sealed until this many
+    Divine Beasts are freed (entering it sends Link back; the Archipelago journal
+    says what is missing). 0: not asked."""
+    display_name = "Sanctum: Divine Beasts"
+    range_start = 0
     range_end = 4
-    default = 4
+    default = 2
 
 
-class MasterSwordBeforeGanon(Toggle):
-    """The sanctum opens only once the Master Sword has been received."""
-    display_name = "Master Sword Before Ganon"
+class SanctumShrines(Range):
+    """The sanctum stays sealed until this many shrines are cleared. 0: not asked."""
+    display_name = "Sanctum: Shrines"
+    range_start = 0
+    range_end = 120
     default = 0
 
 
-class RunesBeforeGanon(Toggle):
-    """The sanctum opens only once the four runes (Magnesis, Remote Bomb, Stasis,
-    Cryonis) have been received."""
-    display_name = "Runes Before Ganon"
+class SanctumMasterSword(Toggle):
+    """The sanctum stays sealed until the Master Sword is received."""
+    display_name = "Sanctum: Master Sword"
+    default = 1
+
+
+class SanctumRunes(Toggle):
+    """The sanctum stays sealed until the four runes (Magnesis, Remote Bomb, Stasis,
+    Cryonis) are received."""
+    display_name = "Sanctum: Runes"
     default = 1
 
 
@@ -99,11 +108,12 @@ class TrapWeights(OptionCounter):
 @dataclass
 class BotwOptions(PerGameCommonOptions):
     start_inventory_from_pool: StartInventoryPool
-    goal_type: Goal
-    shrines_required: ShrinesRequired
-    divine_beasts_required: BeastsRequired
-    ganon_master_sword: MasterSwordBeforeGanon
-    ganon_runes: RunesBeforeGanon
+    goal: Goal
+    goal_shrines: GoalShrines
+    sanctum_divine_beasts: SanctumDivineBeasts
+    sanctum_shrines: SanctumShrines
+    sanctum_master_sword: SanctumMasterSword
+    sanctum_runes: SanctumRunes
     beedle_shop_items: BeedleShopItems
     stall_items: StallItems
     death_link: DeathLink
@@ -112,18 +122,20 @@ class BotwOptions(PerGameCommonOptions):
 
 
 OPTION_GROUPS = [
-    OptionGroup("Goal", [Goal, ShrinesRequired, BeastsRequired, MasterSwordBeforeGanon, RunesBeforeGanon]),
+    OptionGroup("Goal", [Goal, GoalShrines]),
+    OptionGroup("Hyrule Castle's Sanctum",
+                [SanctumDivineBeasts, SanctumShrines, SanctumMasterSword, SanctumRunes]),
     OptionGroup("Shops", [BeedleShopItems, StallItems]),
     OptionGroup("Traps", [TrapPercentage, TrapWeights]),
 ]
 
 # What the sanctum asks before Ganon, ready made (the options page's presets; a
-# YAML sets the same options by hand). Easy: everything the game offers first;
-# Hard: Ganon whenever Link likes, as in the game.
+# YAML sets the same options by hand). The defaults are Medium.
 PRESETS = {
-    "Easy": {"goal_type": "divine_beasts", "divine_beasts_required": 4,
-             "ganon_master_sword": True, "ganon_runes": True},
-    "Medium": {"goal_type": "divine_beasts", "divine_beasts_required": 2,
-               "ganon_master_sword": True, "ganon_runes": True},
-    "Hard": {"goal_type": "ganon", "ganon_master_sword": False, "ganon_runes": False},
+    "Easy": {"sanctum_divine_beasts": 4, "sanctum_shrines": 0,
+             "sanctum_master_sword": True, "sanctum_runes": True},
+    "Medium": {"sanctum_divine_beasts": 2, "sanctum_shrines": 0,
+               "sanctum_master_sword": True, "sanctum_runes": True},
+    "Hard": {"sanctum_divine_beasts": 0, "sanctum_shrines": 0,
+             "sanctum_master_sword": False, "sanctum_runes": False},
 }

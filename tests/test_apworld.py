@@ -119,7 +119,7 @@ class RuntimeTests(unittest.TestCase):
             players.mkdir()
             for name in ("Alice", "Bob"):
                 (players / f"{name}.yaml").write_text(
-                    f"name: {name}\ngame: Breath of the Wild\nBreath of the Wild:\n  goal_type: ganon\n",
+                    f"name: {name}\ngame: Breath of the Wild\nBreath of the Wild:\n  goal: ganon\n",
                     encoding="utf-8")
             archive = package(folder / "botw.apworld")
             copy, aside = RUNTIME / "worlds/botw", RUNTIME / "worlds/_botw_folder"

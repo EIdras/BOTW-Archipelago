@@ -47,8 +47,9 @@ STATE_PATH = DATA / "client-state.json"
 GOAL_LOCATION = "Defeat Calamity Ganon"
 STATE_SCHEMA = 3
 CLIENT_SCHEMA = 2
-# The client schemas of BOTW seeds this client plays: 4 added the Gerudo Set.
-BOTW_CLIENT_SCHEMAS = (3, 4)
+# The client schemas of BOTW seeds this client plays: 4 added the Gerudo Set, 5 the
+# goal and the sanctum's requirements.
+BOTW_CLIENT_SCHEMAS = (3, 4, 5)
 TERMINAL_ITEMS = {
     "Magnesis Terminal": "Magnesis",
     "Remote Bombs Terminal": "Remote Bomb",
@@ -985,36 +986,59 @@ class BotwClientRuntime:
                                        for name in names))
             self.state_store.save()
         await self._flush_checks()
-        if (self.state.get("goal_observed") or GOAL_LOCATION in names
-                or GOAL_LOCATION in self.state["pending_checks"]):
-            if any(have < need for _what, have, need in self._ganon_requirements()):
-                return
-            if self.ap.connected and not self.state.get("goal_sent"):
-                await self.ap.send_goal()
-                self.state["goal_sent"] = True
-                self.state_store.save()
-                self.log("Archipelago goal sent")
+        if self._goal_reached() and self.ap.connected and not self.state.get("goal_sent"):
+            await self.ap.send_goal()
+            self.state["goal_sent"] = True
+            self.state_store.save()
+            self.log("Archipelago goal sent")
 
-    def _ganon_requirements(self) -> list[tuple[str, int, int]]:
-        """What the seed asks before Ganon, met or not: (what, have, need).
-        The sanctum's gate opens on it and the goal counts on it."""
+    def _known_checks(self) -> set[str]:
         known = set(self.state.get("observed_checks", []))
         known.update(self.ap.location_name(i) for i in self.ap.checked_locations)
+        return known
+
+    def _goal_reached(self) -> bool:
+        """The seed's goal (botw_world/options.py): Ganon defeated, the four
+        Divine Beasts freed, or the goal's shrines cleared."""
         slot_data = getattr(self.ap, "slot_data", None) or {}
-        goal_type = int(slot_data.get("goal_type", 0))
-        out = []
-        if goal_type == 1:
-            out.append(("Divine Beasts freed", sum(bool(n and n.startswith("Divine Beast")) for n in known),
-                        int(slot_data.get("divine_beasts_required", 4))))
-        if goal_type == 2:
-            out.append(("shrines cleared", sum(bool(n and n.endswith(" Shrine")) for n in known),
-                        int(slot_data.get("shrines_required", 40))))
-        # Seeds generated before these options ask for neither.
+        if "goal" in slot_data:                     # client schema 5
+            goal, known = int(slot_data["goal"]), self._known_checks()
+            if goal == 1:
+                return sum(bool(n and n.startswith("Divine Beast")) for n in known) >= 4
+            if goal == 2:
+                return (sum(bool(n and n.endswith(" Shrine")) for n in known)
+                        >= int(slot_data.get("goal_shrines", 60)))
+        ganon = (self.state.get("goal_observed")
+                 or GOAL_LOCATION in self.state["pending_checks"])
+        return bool(ganon) and all(have >= need for _w, have, need in self._sanctum_requirements())
+
+    def _sanctum_requirements(self) -> list[tuple[str, int, int]]:
+        """What the seed asks before Ganon's sanctum opens, met or not: (what,
+        have, need). Seeds of client schema 4 asked it through goal_type."""
+        slot_data = getattr(self.ap, "slot_data", None) or {}
+        if "goal" in slot_data:
+            beasts = int(slot_data.get("sanctum_divine_beasts", 0))
+            shrines = int(slot_data.get("sanctum_shrines", 0))
+            sword = bool(slot_data.get("sanctum_master_sword"))
+            runes = bool(slot_data.get("sanctum_runes"))
+        else:
+            goal_type = int(slot_data.get("goal_type", 0))
+            beasts = int(slot_data.get("divine_beasts_required", 4)) if goal_type == 1 else 0
+            shrines = int(slot_data.get("shrines_required", 40)) if goal_type == 2 else 0
+            sword = bool(slot_data.get("ganon_master_sword"))
+            runes = bool(slot_data.get("ganon_runes"))
+        known = self._known_checks()
         received = {self.ap.item_name(item) for item in
                     (getattr(self.ap, "received_items", None) or {}).values()}
-        if slot_data.get("ganon_runes"):
+        out = []
+        if beasts:
+            out.append(("Divine Beasts freed",
+                        sum(bool(n and n.startswith("Divine Beast")) for n in known), beasts))
+        if shrines:
+            out.append(("shrines cleared", sum(bool(n and n.endswith(" Shrine")) for n in known), shrines))
+        if runes:
             out.append(("runes", len(received & set(RUNE_NAMES)), len(RUNE_NAMES)))
-        if slot_data.get("ganon_master_sword"):
+        if sword:
             out.append(("Master Sword", int("Master Sword" in received), 1))
         return out
 
@@ -1036,7 +1060,7 @@ class BotwClientRuntime:
             self.log("this pack has no sanctum gate: rebuild it with tools/play_seed.py")
             return
         is_open, refused = state
-        missing = [need for need in self._ganon_requirements() if need[1] < need[2]]
+        missing = [need for need in self._sanctum_requirements() if need[1] < need[2]]
         if not missing and not is_open:
             await asyncio.to_thread(self.game.open_ganon_gate)
             self.log("sanctum unsealed: the seed's requirements are met")

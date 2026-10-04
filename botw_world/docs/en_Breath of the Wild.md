@@ -50,18 +50,27 @@ medallion on the village stalls, spread at random over 14 stalls (2 at most on o
 
 ## What is the goal?
 
-Defeat Calamity Ganon. Hyrule Castle's sanctum stays sealed until the seed's requirements are met: entering it
-sends Link back to its doors, a monk's line says the seal holds, and the Archipelago journal says what is missing
-("Sanctum sealed: 2/4 Divine Beasts freed, 3/4 runes"). The requirements are options:
+The `goal` option says what finishes your game:
 
-- `goal_type`: `ganon` alone, or also a number of freed Divine Beasts (`divine_beasts_required`) or of cleared
-  shrines (`shrines_required`);
-- `ganon_master_sword`: the Master Sword received;
-- `ganon_runes`: the four runes received (on by default).
+- `ganon` (the default): defeat Calamity Ganon;
+- `divine_beasts`: free the four Divine Beasts;
+- `shrines`: clear the number of shrines of `goal_shrines`.
+
+## When can Link face Ganon?
+
+Hyrule Castle's sanctum, where Ganon waits, stays sealed until what the `sanctum_` options ask is met, whatever the
+goal: entering it sends Link back to its doors, a monk's line says the seal holds, and the Archipelago journal says
+what is missing ("Sanctum sealed: 1/2 Divine Beasts freed, 3/4 runes"). Each option asks for one thing, and 0 or
+`false` asks for nothing:
+
+- `sanctum_divine_beasts`: Divine Beasts freed (0 to 4);
+- `sanctum_shrines`: shrines cleared (0 to 120);
+- `sanctum_master_sword`: the Master Sword received;
+- `sanctum_runes`: the four runes received.
 
 Three presets set them on the options page: **Easy** (the 4 Divine Beasts, the Master Sword and the runes),
-**Medium** (2 Divine Beasts, the Master Sword and the runes) and **Hard** (nothing: Ganon whenever Link likes, as in
-the game).
+**Medium** (2 Divine Beasts, the Master Sword and the runes: the defaults) and **Hard** (nothing: Ganon whenever Link
+likes, as in the game).
 
 ## How does the logic work?
 

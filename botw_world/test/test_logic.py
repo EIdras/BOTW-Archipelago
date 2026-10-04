@@ -117,31 +117,56 @@ class TestMasterSword(BotwTestBase):
         self.assertTrue(self.can_reach_location("Master Sword Pedestal"))
 
 
+HARD = {"sanctum_divine_beasts": 0, "sanctum_shrines": 0,
+        "sanctum_master_sword": False, "sanctum_runes": False}
+
+
 class TestSanctumByDefault(BotwTestBase):
-    def test_ganon_waits_for_the_four_runes(self) -> None:
-        self.collect_by_name("Paraglider")
-        self.assertFalse(self.can_reach_location("Defeat Calamity Ganon"))
-        self.collect_by_name(list(RUNES))
-        self.assertTrue(self.can_reach_location("Defeat Calamity Ganon"))
-        self.assertFalse(self.get_item_by_name("Master Sword").advancement)
+    def test_the_defaults_are_the_medium_preset(self) -> None:
+        from ..options import PRESETS
+        for option, value in PRESETS["Medium"].items():
+            self.assertEqual(getattr(self.world.options, option).value, int(value), option)
+        self.assertTrue(self.get_item_by_name("Master Sword").advancement)
 
 
 class TestSanctumOpen(BotwTestBase):
-    options = {"ganon_runes": False}
+    options = HARD
 
     def test_ganon_is_there_as_soon_as_link_leaves_the_plateau(self) -> None:
+        self.assertFalse(self.get_item_by_name("Master Sword").advancement)
         self.collect_by_name("Paraglider")
         self.assertTrue(self.can_reach_location("Defeat Calamity Ganon"))
 
 
 class TestSanctumMasterSword(BotwTestBase):
-    options = {"ganon_master_sword": True, "ganon_runes": False}
+    options = {**HARD, "sanctum_master_sword": True}
 
-    def test_the_master_sword_becomes_a_key_item(self) -> None:
+    def test_the_master_sword_is_asked_and_becomes_a_key_item(self) -> None:
         self.assertTrue(self.get_item_by_name("Master Sword").advancement)
         self.collect_by_name("Paraglider")
         self.assertFalse(self.can_reach_location("Defeat Calamity Ganon"))
         self.collect_by_name("Master Sword")
+        self.assertTrue(self.can_reach_location("Defeat Calamity Ganon"))
+
+
+class TestSanctumRunes(BotwTestBase):
+    options = {**HARD, "sanctum_runes": True}
+
+    def test_the_four_runes_are_asked(self) -> None:
+        self.collect_by_name(["Paraglider", "Magnesis", "Stasis", "Cryonis"])
+        self.assertFalse(self.can_reach_location("Defeat Calamity Ganon"))
+        self.collect_by_name("Remote Bomb")
+        self.assertTrue(self.can_reach_location("Defeat Calamity Ganon"))
+
+
+class TestSanctumDivineBeast(BotwTestBase):
+    options = {**HARD, "sanctum_divine_beasts": 1}
+
+    def test_one_divine_beast_then_ganon(self) -> None:
+        # Vah Medoh: the paraglider and the runes free it.
+        self.collect_by_name(["Paraglider"])
+        self.assertFalse(self.can_reach_location("Defeat Calamity Ganon"))
+        self.collect_by_name(list(RUNES))
         self.assertTrue(self.can_reach_location("Defeat Calamity Ganon"))
 
 

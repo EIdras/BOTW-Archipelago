@@ -6,18 +6,18 @@ description: Breath of the Wild, Wii U EUR v208 in Cemu.
 Breath of the Wild:
   progression_balancing: 50
   accessibility: full
-  # Hyrule Castle's sanctum stays sealed until what follows is met (the AP journal says
-  # what is missing). The presets of the options page set them:
-  #   Easy:   goal_type divine_beasts, divine_beasts_required 4, Master Sword, runes
-  #   Medium: goal_type divine_beasts, divine_beasts_required 2, Master Sword, runes
-  #   Hard:   goal_type ganon, neither Master Sword nor runes
-  # ganon, divine_beasts or shrines
-  goal_type: ganon
-  shrines_required: 40
-  divine_beasts_required: 4
-  # The Master Sword received, then the four runes received
-  ganon_master_sword: false
-  ganon_runes: true
+  # What finishes your game: ganon, divine_beasts (the four) or shrines (goal_shrines of them)
+  goal: ganon
+  goal_shrines: 60
+  # Hyrule Castle's sanctum, where Ganon waits, stays sealed until all of this is met
+  # (0 or false: not asked); the AP journal says what is missing. Presets of the options page:
+  #   Easy:   4 Divine Beasts, Master Sword, runes
+  #   Medium: 2 Divine Beasts, Master Sword, runes (the values below)
+  #   Hard:   nothing, Ganon whenever you like
+  sanctum_divine_beasts: 2
+  sanctum_shrines: 0
+  sanctum_master_sword: true
+  sanctum_runes: true
   # 0 to 2 Archipelago items at each of Beedle's 16 shops
   beedle_shop_items: 2
   # 0 to 28 Archipelago items on the 14 village stalls, at random (2 at most on one stall)

@@ -25,6 +25,9 @@ class TextTests(unittest.TestCase):
         shrines = {**MANIFEST, "slot_data": {**MANIFEST["slot_data"], "goal_type": 2}}
         self.assertEqual(texts(shrines)[1].split("\n")[2],
                          "Goal: complete 40 shrines")
+        for slot_data, goal in (({"goal": 0}, "defeat Ganon"), ({"goal": 1}, "free the 4 Divine Beasts"),
+                                ({"goal": 2, "goal_shrines": 70}, "complete 70 shrines")):
+            self.assertEqual(texts({**MANIFEST, "slot_data": slot_data})[1].split("\n")[2], f"Goal: {goal}")
 
     def test_a_description_too_long_is_refused(self):
         long = {**MANIFEST, "slot_name": "X" * 40}

@@ -109,29 +109,33 @@ class BotwWorld(World):
                                  for names, count in groups)
 
     def set_rules(self) -> None:
-        goal = self.multiworld.get_location(GOAL_LOCATION, self.player)
-        base = goal.access_rule
+        player, options = self.player, self.options
+        beasts = sorted(f"Freed - {name}" for name in self.location_name_groups["Divine Beasts"])
+        shrines = sorted(f"Cleared - {name}" for name in self.location_name_groups["Shrines"])
+        # Ganon's sanctum, sealed in game until these are met (botw_patch/ganon_gate.py).
+        ganon = self.multiworld.get_location(GOAL_LOCATION, player)
+        base = ganon.access_rule
+        needed = (["Master Sword"] if options.sanctum_master_sword else []) + (
+            sorted(self.item_name_groups["Runes"]) if options.sanctum_runes else [])
 
-        # The sanctum's requirements (botw_patch/ganon_gate.py seals it in game).
-        needed = (["Master Sword"] if self.options.ganon_master_sword else []) + (
-            sorted(self.item_name_groups["Runes"]) if self.options.ganon_runes else [])
-
-        def can_finish(state: CollectionState) -> bool:
-            if not base(state) or not state.has_all(needed, self.player):
-                return False
-            if self.options.goal_type.value == 1:
-                return sum(state.has(f"Freed - {n}", self.player) for n in
-                           self.location_name_groups["Divine Beasts"]) >= self.options.divine_beasts_required.value
-            if self.options.goal_type.value == 2:
-                return sum(state.has(f"Cleared - {n}", self.player) for n in
-                           self.location_name_groups["Shrines"]) >= self.options.shrines_required.value
-            return True
-        set_rule(goal, can_finish)
+        def sanctum(state: CollectionState) -> bool:
+            return (base(state) and state.has_all(needed, player)
+                    and state.has_from_list(beasts, player, options.sanctum_divine_beasts.value)
+                    and state.has_from_list(shrines, player, options.sanctum_shrines.value))
+        set_rule(ganon, sanctum)
+        # What finishes the game.
+        if options.goal == options.goal.option_divine_beasts:
+            done = lambda state: state.has_all(beasts, player)
+        elif options.goal == options.goal.option_shrines:
+            done = lambda state: state.has_from_list(shrines, player, options.goal_shrines.value)
+        else:
+            done = lambda state: state.has("Victory", player)
+        self.multiworld.completion_condition[player] = done
 
     def create_item(self, name: str) -> BotwItem:
         row = next(r for r in ITEMS if r["name"] == name)
         # A rule names the Master Sword only when the sanctum asks for it.
-        needed = name == "Master Sword" and self.options.ganon_master_sword
+        needed = name == "Master Sword" and self.options.sanctum_master_sword
         classification = (ItemClassification.progression if row.get("progression") or needed else
                           ItemClassification.useful if row.get("useful") else
                           ItemClassification.trap if row.get("trap") else ItemClassification.filler)
@@ -166,10 +170,11 @@ class BotwWorld(World):
 
     def fill_slot_data(self) -> dict[str, Any]:
         # client_schema 4: the Gerudo Set, an item a client of schema 3 cannot deliver.
-        return {"client_schema": 4, "world_schema": 4, "world_version": WORLD_VERSION,
+        # 5: the goal and the sanctum's requirements, which a client of schema 4 cannot read.
+        return {"client_schema": 5, "world_schema": 4, "world_version": WORLD_VERSION,
                 "death_link": bool(self.options.death_link.value),
-                **self.options.as_dict("goal_type", "shrines_required", "divine_beasts_required",
-                                       "ganon_master_sword", "ganon_runes",
+                **self.options.as_dict("goal", "goal_shrines", "sanctum_divine_beasts", "sanctum_shrines",
+                                       "sanctum_master_sword", "sanctum_runes",
                                        "beedle_shop_items", "stall_items")}
 
     @classmethod

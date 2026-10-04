@@ -85,8 +85,8 @@ class TestOneTrapOnly(BotwTestBase):
 
 
 class TestDivineBeastGoal(BotwTestBase):
-    options = {"goal_type": "divine_beasts", "divine_beasts_required": 4}
+    options = {"goal": "divine_beasts"}
 
 
 class TestShrineGoal(BotwTestBase):
-    options = {"goal_type": "shrines", "shrines_required": 120}
+    options = {"goal": "shrines", "goal_shrines": 120}
