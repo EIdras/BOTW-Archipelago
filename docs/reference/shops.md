@@ -42,6 +42,10 @@ is done in the game's resources, built for each seed; the client only reads.
   (mushrooms, general store), Goron City, Kakariko Village (arrows, general store), Lurelin Village, Tarrey Town
   (arrows), Zora's Domain and Hateno Village. Left out: armor (mannequins, another mechanism), stalls whose items are
   all single, and four merchants without `DisplayShop` in their flow (Kakariko 006/012/013, the Gerudo Town canal).
+- **Armor shops**: a mannequin (`Mannequin_*`, `EquipArmorName1`, linked to its merchant by `ForSale`) is bought
+  through the merchant's entry `ClerkAsk`, then `DisplayShop:Armor`. Goron City's (`Npc_goron004`) sells the
+  Flamebreaker set, an item of the logic: its `ClerkAsk` says his sold-out line instead
+  ([`botw_patch/goron_armor.py`](../../botw_patch/goron_armor.py)). The other armor shops are unchanged.
 - **Objects replaced**: among the items sold in several copies, the most repeated first, never the last copy. The
   stall keeps everything it sold (in Kakariko, for example, 1 arrow out of 10 and 1 fire arrow out of 10).
 - **Places and regions**: the nearest `LocationTag`, named from `LocationMarker.msbt`. Region: the nearest tower, the

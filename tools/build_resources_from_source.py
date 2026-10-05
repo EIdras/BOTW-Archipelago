@@ -30,8 +30,8 @@ from tools import build_plateau_sensor_candidate as sensor
 from tools import build_master_sword_candidate as sword
 from tools import build_ballad_condition_candidate as ballad
 from tools.build_ballad_upgrade_delivery import champion_entries, transform_for as upgrade_delivery
-from botw_patch import (beast_heart, death_link, ganon_gate, gerudo_outfit, hud_layout,
-                        loading_icon, traps)
+from botw_patch import (beast_heart, death_link, ganon_gate, gerudo_outfit, goron_armor,
+                        hud_layout, loading_icon, traps)
 from botw_patch.status_item import INPUT_HASHES as STATUS_INPUTS
 
 TITLE = "Pack/TitleBG.pack"
@@ -62,6 +62,7 @@ UPDATE_HASHES = {
     **DEATH_LINK_MESSAGES,
     **sword.PACKS,
     **gerudo_outfit.PACKS, **gerudo_outfit.text_inputs(),
+    **goron_armor.PACKS,
     **ganon_gate.PACKS,
     **{ballad.pack(name): spec[1] for name, spec in ballad.FLOWS.items()},
 }
@@ -79,6 +80,7 @@ SOURCE_FILES = (
     "botw_patch/hud_layout.py", "tools/bitemico.py", "botw_patch/death_link.py",
     "botw_patch/loading_icon.py", "botw_patch/traps.py", "botw_patch/melee_weapons.py",
     *gerudo_outfit.SOURCE_FILES, *ganon_gate.SOURCE_FILES, *beast_heart.SOURCE_FILES,
+    *goron_armor.SOURCE_FILES,
 )
 
 
@@ -180,6 +182,8 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
     # The Gerudo outfit is an item (botw_patch/gerudo_outfit.py): Vilia no longer sells it.
     stages += [(name, {member: gerudo_outfit.transform_for(member) for member in members})
                for name, members in gerudo_outfit.STAGES.items()]
+    # So is the Flamebreaker set (botw_patch/goron_armor.py): Goron City's armor shop is sold out.
+    stages += [(goron_armor.PACK, {goron_armor.FLOW: goron_armor.transform})]
     stages += [(ballad.pack(name), {ballad.member(name): ballad.transform_for(name)})
                for name in ballad.FLOWS]
     # The sanctum stays sealed until the seed's requirements are met (botw_patch/ganon_gate.py).

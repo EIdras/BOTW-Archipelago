@@ -37,7 +37,8 @@ medallion on the village stalls, spread at random over 14 stalls (2 at most on o
 
 - The Paraglider, and the four runes: Magnesis, Remote Bomb, Stasis and Cryonis
 - The Sheikah Sensor
-- Armor: Warm Doublet, Snowquill Set, Flamebreaker Set, Desert Voe Set, Zora Set, Rubber Set
+- Armor: Warm Doublet, Snowquill Set, Flamebreaker Set (Goron City's armor shop no longer sells it), Desert Voe Set,
+  Zora Set, Rubber Set
 - The Gerudo Set, the outfit Gerudo Town's guards let Link in with: Vilia no longer sells it
 - The four champions' abilities: Revali's Gale, Daruk's Protection, Urbosa's Fury, Mipha's Grace
 - Progressive Climbing Gear and Progressive Stealth Set (three pieces each)
