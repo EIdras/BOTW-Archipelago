@@ -53,6 +53,10 @@ class PackTests(unittest.TestCase):
         for path in sections.values():
             place, section = path[1:].split("/", 1)
             self.assertIn(section, places[place])
+        # The goal, no AP location, is cleared by the slot's goal status.
+        place, section = re.search(r'GOAL_SECTION = "@([^"]+)"', data).group(1).split("/", 1)
+        self.assertEqual(section, self.cat.GOAL_LOCATION)
+        self.assertIn(section, places[place])
 
     def test_every_code_the_logic_names_is_an_item_of_the_pack(self):
         codes = set()

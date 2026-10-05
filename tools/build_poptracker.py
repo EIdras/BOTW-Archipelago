@@ -500,6 +500,7 @@ def data_lua(cat, item_ids: dict, sections: dict, requirements: dict) -> str:
         return [[[code(name) for name in names], count] for names, count in value]
 
     goal = next(row for row in cat.LOCATIONS if row["name"] == cat.GOAL_LOCATION)
+    goal_section = f"@{place_of(goal)}/{goal['name']}"
     by_name = {row["name"]: row["id"] for row in cat.LOCATIONS}
     beasts = {by_name[name[len("Freed - "):]]: code(name) for name, _ in BEAST_ROW}
     shrines = [row["id"] for row in cat.LOCATIONS if "Shrine" in row["category"]]
@@ -511,6 +512,8 @@ def data_lua(cat, item_ids: dict, sections: dict, requirements: dict) -> str:
               for location_id, value in sorted(requirements.items())]
     lines += ["}",
               f"GOAL_REQUIREMENTS = {lua_value(groups(cat.requirements(goal)))}",
+              # Not an AP location: cleared by the slot's goal status.
+              f"GOAL_SECTION = {lua_value(goal_section)}",
               f"RUNES = {lua_value([code(name) for name in cat.RUNES])}",
               f"BEAST_EVENTS = {lua_value(beasts)}",
               f"SHRINES = {lua_value(shrines)}", ""]

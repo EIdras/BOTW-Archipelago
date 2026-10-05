@@ -2,6 +2,20 @@
 -- locations checked, from the multiworld server.
 
 local current_index = -1
+local GOAL_STATUS = 30
+
+local function set_goal(reached)
+    local section = Tracker:FindObjectForCode(GOAL_SECTION)
+    if section then
+        section.AvailableChestCount = reached and 0 or section.ChestCount
+    end
+end
+
+local function on_status(key, value)
+    if key == STATUS_KEY then
+        set_goal(value == GOAL_STATUS)
+    end
+end
 
 local function reset_item(item)
     if item.Type == "toggle" then
@@ -29,6 +43,12 @@ local function on_clear(slot_data)
             section.AvailableChestCount = section.ChestCount
         end
     end
+    set_goal(false)
+    -- The goal is no AP location: the server keeps the slot's status, 30 once
+    -- the goal is reached.
+    STATUS_KEY = "_read_client_status_" .. (Archipelago.TeamNumber or 0) .. "_" .. Archipelago.PlayerNumber
+    Archipelago:SetNotify({STATUS_KEY})
+    Archipelago:Get({STATUS_KEY})
     -- The seed's own locations: shops and stalls exist only by its options.
     local seed = {}
     local any = false
@@ -87,3 +107,5 @@ end
 Archipelago:AddClearHandler("botw clear", on_clear)
 Archipelago:AddItemHandler("botw item", on_item)
 Archipelago:AddLocationHandler("botw location", on_location)
+Archipelago:AddRetrievedHandler("botw goal", on_status)
+Archipelago:AddSetReplyHandler("botw goal", on_status)

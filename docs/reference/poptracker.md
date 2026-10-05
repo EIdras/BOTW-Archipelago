@@ -33,7 +33,10 @@ game, so that no file of the game is in the repository.
   reachable when each of its groups is met by one of its items. An event "Freed - Divine Beast X" counts as the world
   counts it, the beast reachable (its own groups), not checked: a heart container is picked up before the beast's
   control unit. Ganon's square follows the sanctum's requirements of the slot data, which count, as the game's gate
-  does, the Divine Beasts freed and the shrines cleared: their squares, checked by Archipelago or by hand.
+  does, the Divine Beasts freed and the shrines cleared: their squares, checked by Archipelago or by hand. Ganon is no
+  AP location: his square is checked when the server's status of the slot (`_read_client_status_<team>_<slot>`, read
+  and watched) says the goal is reached. Once a slot is released (on its goal, with the room's default), every
+  location is checked: the whole map is grey.
 - **Items**: the items that matter for the logic or the player. The game draws no icon of most of them (the
   inventory renders them from their models), so each image comes from the first of:
   1. the player's own icons, PNG, in `<data>/poptracker/icons` (`--icons`, subfolders too), found by name
