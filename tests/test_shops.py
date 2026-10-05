@@ -118,6 +118,13 @@ class ShopWatchTests(unittest.TestCase):
     def test_an_open_list_on_an_ap_item_names_its_merchant(self):
         self.assertEqual(self.watch(1, "AP_Shop_157").seen(), [156, 157])
 
+    def test_a_stall_medallion_looked_at_names_its_own_location(self):
+        # Measured: looking at an object of a stall sets screen 7 and its actor.
+        self.assertEqual(self.watch(7, "AP_Shop_203").seen(), [203])
+        self.assertEqual(self.watch(7, "FireArrow").seen(), [])
+        self.assertEqual(self.watch(7, "AP_Shop_157").seen(), [])     # a Beedle item is no stall
+        self.assertEqual(self.watch(1, "AP_Shop_203").seen(), [])     # nor a stall a list
+
     def test_a_closed_list_a_vanilla_item_or_a_torn_read_name_nothing(self):
         self.assertEqual(self.watch(0, "AP_Shop_157").seen(), [])
         self.assertEqual(self.watch(1, "Obj_ArrowNormal_A_01").seen(), [])

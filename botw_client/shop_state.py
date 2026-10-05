@@ -1,10 +1,13 @@
-"""What Beedle's buy list shows, read from the game's own shop GameData.
+"""What Beedle's buy list and the stalls show, read from the game's own shop GameData.
 
 Measured in the game (docs/reference/shops.md): while the buy list is
 open, Shop_ScreenType is 1 and the string64 Shop_SelectItemName holds the actor
 of the selected entry (the first one when the list opens). The shops built by
 botw_patch/shops.py list their AP items first, so opening the list selects
-AP_Shop_<id>, which names the shop location and so the merchant.
+AP_Shop_<id>, which names the shop location and so the merchant. At a 3D
+stall, Link looking at an object on sale, before any purchase, sets
+Shop_ScreenType to 7 and Shop_SelectItemName to that object's actor: the AP
+medallion names its own location.
 
 String flags are not in the scalar index (LiveGdt): their object is found once
 by its hash in the TriggerParam arrays; the text lies 0x40 bytes before the
@@ -18,10 +21,13 @@ import struct
 import zlib
 
 from .shop_catalog import BY_ACTOR, same_merchant
+from .stall_catalog import LOCATIONS as STALLS
 
 SELECTED = "Shop_SelectItemName"
 SCREEN = "Shop_ScreenType"
 LIST_OPEN = 1
+STALL_LOOKED_AT = 7
+STALL_BY_ACTOR = {location.actor: location for location in STALLS}
 TEXT_BEFORE_HASH = 0x40
 TEXT_BYTES = 64
 # The hash of a string64 flag sits at +0x138: read the whole object.
@@ -90,8 +96,13 @@ class ShopWatch:
         return first.split(b"\0", 1)[0].decode("ascii", "replace")
 
     def seen(self) -> list[int]:
-        """Shop location IDs of the merchant whose list is open, else []."""
-        if self.live.get(crc(SCREEN), "s32") != LIST_OPEN:
-            return []
-        location = BY_ACTOR.get(self.selected() or "")
-        return same_merchant(location.id) if location else []
+        """Shop location IDs seen: every AP item of the merchant whose list is
+        open, or the stall's AP medallion Link looks at; else []."""
+        screen = self.live.get(crc(SCREEN), "s32")
+        if screen == LIST_OPEN:
+            location = BY_ACTOR.get(self.selected() or "")
+            return same_merchant(location.id) if location else []
+        if screen == STALL_LOOKED_AT:
+            location = STALL_BY_ACTOR.get(self.selected() or "")
+            return [location.id] if location else []
+        return []

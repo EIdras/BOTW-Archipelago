@@ -957,7 +957,8 @@ class BotwClientRuntime:
                        world_schema=schema)} <= known)
 
     async def _poll_shops(self):
-        """Seeing a Beedle's list hints the AP items he sells (once per location)."""
+        """Seeing a Beedle's list hints the AP items he sells, looking at a
+        stall's AP medallion hints its item (once per location)."""
         seed = getattr(self.ap, "seed_locations", set())
         poll = getattr(self.game, "poll_shop", None)
         if not seed or poll is None:

@@ -62,7 +62,10 @@ is done in the game's resources, built for each seed; the client only reads.
 - **Purchase**: recorded as at Beedle's, after the merchant's `DisplayShop` event (checked on the 14 flows).
 - **Pack**: the maps are written under `aoc/0010/…` at the root of the pack, with their size counted under
   `Aoc/0010/…` (`tools/build_resources_from_source.pack_path`). Cemu reads the `aoc/` folder of a graphic pack.
-- **Not done**: hints on sight for stalls. Beedle's come from his open list; a stall has no list.
+- **Hints on sight**: Link looking at a stall's AP medallion hints its item (`create_as_hint=2`), once per
+  location. Measured: looking at an object on sale, before any purchase, sets `Shop_ScreenType` to 7 and
+  `Shop_SelectItemName` to its actor (`NormalArrow`, `FireArrow`, `AP_Shop_203`), which stay set after
+  ([`botw_client/shop_state.py`](../../botw_client/shop_state.py)).
 
 ## What the game does (measured)
 

@@ -32,6 +32,7 @@ given back quietly, then listed in a single Archipelago window.
 
 With the shop options, Archipelago items are sold by Beedle at his 16 shops (listed first in his stock) and placed as a
 medallion on the village stalls, spread at random over 14 stalls (2 at most on one); buying one checks its location.
+Opening Beedle's list, or looking at a stall's medallion, hints the items for sale there.
 
 ## Which items can be received?
 
