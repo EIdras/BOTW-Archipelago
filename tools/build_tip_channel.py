@@ -16,7 +16,7 @@ The channel, all on the game thread:
     while a tip of ours is active or any tip is queued or shown (forced over
     the game's heat warning, which the game asks for again at once, ours
     evicted it and was evicted in turn: the warning came back in a loop,
-    measured on 03/10);
+    measured);
     reads the tip's flag with the game's getter, clears its live value bit
     (object checked by its hash), publishes the request, calls the game's
     request with force, and checks it was queued; otherwise the flag is given

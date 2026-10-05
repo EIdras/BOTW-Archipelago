@@ -31,7 +31,7 @@ used for the journal: it blocks the game while it is open.
 - `apTipSubmit` runs on the game's thread, from the per-frame invoker, under the common lock. It refuses when an
   Archipelago tip is active or when any tip is queued or on screen, the game's included: forced over the heat warning,
   which the game asks for again at once, ours evicted it and was evicted in turn, and the warning came back in a loop
-  (measured on 03/10). It reads the flag through the game's own reader
+  (measured). It reads the flag through the game's own reader
   (as `0x02fd4730` does), sets its value bit to 0 (the flag object is checked by its hash), publishes a generation,
   and makes the official request `0x02fd4730(widget, 21, 1)`. When the game did not queue it, the flag is restored at
   once.
@@ -82,7 +82,7 @@ Every item is delivered by requesting an EventFlow entry built for it
 `APReceivedCursor`. A delivery is requested only in a safe state (no menu, event, cutscene or loading), and at least
 `SETTLE_FRAMES` = 90 frames after the previous commit: an entry requested right after a commit can be accepted and
 never played, because the commit comes before the previous event has ended (a Fairy requested 38 frames after a
-Heart Container's commit, 04/10). Such an entry never raises its save guard, which every mutation follows: once 30
+Heart Container's commit). Such an entry never raises its save guard, which every mutation follows: once 30
 seconds of play pass with no guard, commit or rejection seen, it is asked again. An entry that raised its guard
 without committing stops the client (possible mutation).
 
@@ -103,9 +103,9 @@ without committing stops the client (possible mutation).
   quiet twin; once the entry has closed and Link is back in the world, the client asks for the notification with the
   game's own function, the one a real pickup goes through: `0x03073C2C(SafeString* actor)`, which opens the
   `PickUpWin` screen and adds the line (`CemuNativeDeliveryBackend.show_pickup`, from the per-frame invoker). Measured
-  on 04/10: `Demo_OpenPickup` (`IsAddPorch`), the action the Rito brothers hand over materials with
+  in game: `Demo_OpenPickup` (`IsAddPorch`), the action the Rito brothers hand over materials with
   (`Rito_BrosRock`), calls that same function but showed nothing from our entry; called from the invoker, it shows
-  (`lab/tools/cemu/pickup_probe.py`). The item map opts in with `"pickup": true` (Spirit Orb, Ancient Core, Star
+  (measured). The item map opts in with `"pickup": true` (Spirit Orb, Ancient Core, Star
   Fragment, Korok Seed, Fairy; `validate_item_map` refuses it on a useful or progression item). A notification not
   shown is only logged. Rupee bundles: their silent twin, `Demo_IncreaseRupee`, whose counter shows them. A unique,
   useful or progression item, or the first of a kind, keeps its window.
@@ -113,7 +113,7 @@ without committing stops the client (possible mutation).
 The commit comes at the entry's end, after the window, which waits for the player. The client waits for it as long as
 the entry runs (its `SaveProhibition` guard up) or a window or menu is open; only 30 s of Link playing with nothing
 running end the wait as uncertain (`native_delivery.COMMIT_LIMIT` bounds the whole wait at 10 min). A get window left
-open used to stop the client after 30 s (04/10).
+open used to stop the client after 30 s.
 
 ### Items given back after a reload
 

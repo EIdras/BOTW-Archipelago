@@ -85,8 +85,8 @@ time from the player's own game files (the `_Name` texts of `ActorType/Enemy.msb
 `BotwClientRuntime._deathlink_tick` ([`botw_client/runtime.py`](../../botw_client/runtime.py)), when the seed has
 the `death_link` option (slot data):
 
-- **Sending**: on the edge from alive to dead, once, with what killed Link: "Simon was slain by a Bokoblin", "Simon
-  burned to death", "Simon fell to their death", "Simon was caught in their own bomb blast"... or "Simon died in
+- **Sending**: on the edge from alive to dead, once, with what killed Link: "Zelda was slain by a Bokoblin", "Zelda
+  burned to death", "Zelda fell to their death", "Zelda was caught in their own bomb blast"... or "Zelda died in
   Hyrule" when the game says nothing more. A death while disconnected is sent at the reconnection. Being dead when the
   client starts is not a death.
 - **Receiving**: the latest received death waits for a safe moment (the delivery gate: no menu, event, cutscene or

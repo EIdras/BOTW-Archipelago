@@ -43,7 +43,7 @@ class Folder(unittest.TestCase):
             patcher.start()
             self.addCleanup(patcher.stop)
 
-    def seed(self, name, slot="Simon", archive="AP_x.zip", sessions=()):
+    def seed(self, name, slot="Zelda", archive="AP_x.zip", sessions=()):
         folder = self.seeds / name
         folder.mkdir(parents=True)
         (folder / "analysis.json").write_text(json.dumps({
@@ -90,7 +90,7 @@ class SeedTests(Folder):
         self.seed("333")
         (self.seeds / "generate").mkdir()
         self.assertEqual([(seed.seed, seed.slot) for seed in launcher.prepared_seeds()],
-                         [("222", "Ami"), ("111", "Simon"), ("333", "Simon")])
+                         [("222", "Ami"), ("111", "Zelda"), ("333", "Zelda")])
 
     def test_a_prepared_seed_is_played_as_it_is(self):
         self.seed("111", sessions=["20260901T100000Z"])
@@ -123,14 +123,14 @@ class SeedTests(Folder):
 
     def test_another_seed_is_chosen_then_prepared(self):
         self.seed("111")
-        path = slot_file(self.root, name="Simon")
+        path = slot_file(self.root, name="Zelda")
         ui = Answers(answers=["2"], files=[path])
         with mock.patch.object(launcher.play_seed, "prepare") as prepare:
             self.assertEqual(launcher.choose_seed(ui, None), "test-seed")
         prepare.assert_called_once_with(path.resolve(), slot_name=None)
 
     def test_a_dropped_file_already_prepared_is_not_built_again(self):
-        path = slot_file(self.root, name="Simon")
+        path = slot_file(self.root, name="Zelda")
         folder = self.seed("test-seed", archive=path.name)
         (folder / path.name).write_bytes(path.read_bytes())
         with mock.patch("tools.play_pack.selected_pack"), mock.patch("tools.play_pack.outdated", return_value=[]), \
@@ -159,16 +159,16 @@ class SeedTests(Folder):
 
 class RoomTests(Folder):
     def test_the_room_is_remembered_and_the_password_asked(self):
-        self.seed("111", archive="AP_111_P1_Simon.apbotw.json")
+        self.seed("111", archive="AP_111_P1_Zelda.apbotw.json")
         ui = Answers(answers=["", "archipelago.gg:38281"], secrets=["secret"])
         self.assertEqual(launcher.choose_room(ui, "111"), ("archipelago.gg:38281", "secret"))
         self.assertIn("Type the room's address", ui.text())     # nothing typed: asked again
         self.assertEqual(launcher.choose_room(Answers(), "111"), ("archipelago.gg:38281", None))
 
     def test_the_address_of_the_room_comes_from_its_slot_file(self):
-        folder = self.seed("111", archive="AP_111_P1_Simon.apbotw")
-        path = slot_file(folder, name="Simon", container=True, server="archipelago.gg:50212")
-        path.rename(folder / "AP_111_P1_Simon.apbotw")
+        folder = self.seed("111", archive="AP_111_P1_Zelda.apbotw")
+        path = slot_file(folder, name="Zelda", container=True, server="archipelago.gg:50212")
+        path.rename(folder / "AP_111_P1_Zelda.apbotw")
         ui = Answers(answers=[""])
         self.assertEqual(launcher.choose_room(ui, "111"), ("archipelago.gg:50212", None))
 

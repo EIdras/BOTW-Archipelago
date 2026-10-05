@@ -79,7 +79,7 @@ class ViliaTests(unittest.TestCase):
                     self.assertEqual(len(edits), len(changed))
 
     def test_her_lines_quote_the_price_she_asks_in_every_language(self):
-        # 04/10: she refused with 600 rupees in hand while her line said 600.
+        # Seen in play: she refused with 600 rupees in hand while her line said 600.
         import oead
         from botw_patch.resources import unpack
         from botw_patch.shop_items import read_labels

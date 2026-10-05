@@ -12,7 +12,7 @@ This stage puts a check before that entry's first event:
     met): the fight as in the game;
   * otherwise: APGanonRefused on (volatile: the client names in the AP journal
     what is still missing), a fade, Link back before the doors (measured in
-    game on 04/10, 36 m from the Area's edge) facing away, the fade back, and
+    game, 36 m from the Area's edge) facing away, the fade back, and
     the shrines' blue text (Demo_OpenDungeonMessage, as a shrine's monk
     speaks) saying that a seal still guards the sanctum.
 Nothing of the fight runs nor any of its flags is set.

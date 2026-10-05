@@ -4,8 +4,7 @@ harder. A release never ships them (tools/build_release.py).
 
 Each aid is a graphic pack of its own, enabled next to the seed's pack (which stays
 as it was verified):
-  * the first three are the Cemu community cheats the laboratory already used
-    (lab/tools/plateau_test_aids.py), for the Wii U v208 module only;
+  * the first three are Cemu community cheats, for the Wii U v208 module only;
   * the damage aid ships a copy of every sword, spear, two-handed weapon and bow
     whose Attack.Power is multiplied. Each still fits its size in the seed pack's
     resource size table, which stays as it is (checked at every build).

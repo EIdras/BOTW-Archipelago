@@ -76,7 +76,7 @@ def load_targets(path: Path = MASTER_CSV,
 
 # Another flag of the game that also checks a location. The Master Sword's
 # pedestal: its sword can be taken as a dropped weapon, without the pull nor
-# Get_MasterSword_Finish, once the game counts the sword as owned (05/10; what
+# Get_MasterSword_Finish, once the game counts the sword as owned (seen in play; what
 # picks that mode beyond IsGet_Weapon_Sword_070 is not known). The flag of its
 # map actor (F-2, HashId 2427157272) says it left the pedestal, either way.
 ALTERNATE_FLAGS = {"Master Sword Pedestal": "MainField_Weapon_Sword_070_2427157272"}

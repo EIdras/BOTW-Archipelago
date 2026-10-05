@@ -27,12 +27,12 @@ REJECT_HASH = zlib.crc32(b"APDeliveryRejectCounter") & 0xFFFFFFFF
 GUARD_HASH = zlib.crc32(b"SaveProhibition") & 0xFFFFFFFF
 # Frames left to the event that just committed to close. Its commit comes
 # before GuardOFF and the event's own teardown; a request placed meanwhile was
-# accepted and never ran (a step requested one frame after the previous commit;
-# 04/10, a Fairy requested 38 frames after a Heart Container's commit).
+# accepted and never ran (a step requested one frame after the previous commit,
+# a Fairy requested 38 frames after a Heart Container's commit).
 SETTLE_FRAMES = 90
 # After a silent twin, the next step can come sooner: its entry neither pauses
 # nor opens a window, and is over a few frames after its commit (see
-# PICKUP_SETTLE_FRAMES). Many of them in a row: the items of a release (05/10).
+# PICKUP_SETTLE_FRAMES). Many of them in a row: the items of a release.
 QUIET_SETTLE_FRAMES = 20
 # The longest wait for an accepted entry's commit, a window left open included.
 COMMIT_LIMIT = 600.0
@@ -40,10 +40,10 @@ COMMIT_LIMIT = 600.0
 WAIT_REPORT_SECONDS = 60.0
 # The game's pickup notification (the list on the right), as a real pickup asks
 # for it: 0x03073C2C(SafeString* actor name) opens the PickUpWin screen and adds
-# the line, with the game's duration (lab/journal/archive/notification_handoff.md).
+# the line, with the game's duration.
 # Demo_OpenPickup calls it too (its action, 0x02354048), but from our event it
 # showed nothing; from the per-frame invoker, with Link in the world, it shows
-# (lab/tools/cemu/pickup_probe.py, 04/10). r3 = 1 once the screen took it.
+# (measured). r3 = 1 once the screen took it.
 SHOW_PICKUP = 0x03073C2C
 SAFESTRING_VTABLE = 0x10263910     # {const char*, vtable}, as itemGet takes a name
 PICKUP_NAME_ROOM = 0x38            # the name, then the SafeString, in the cave's 64-byte name buffer

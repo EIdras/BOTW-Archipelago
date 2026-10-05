@@ -269,7 +269,7 @@ class ReceivedAnnouncementTests(unittest.TestCase):
                          "Rupee Bundle sent to Player by the server")
 
     def test_a_frame_that_stays_taken_does_not_hold_the_item(self):
-        # 03/10: in the heat, the warning kept the tip frame; the item waited.
+        # Seen in play: in the heat, the warning kept the tip frame; the item waited.
         r = self.runtime("grant_actor")
         r.state["message_queue"] = [item_send(ALICE, ME, item=5, location=77)]
         self.assertEqual(r._received_announcement(0), "pending")
@@ -281,7 +281,7 @@ class ReceivedAnnouncementTests(unittest.TestCase):
         self.assertEqual(len(r._journal_pages) + len(r._journal_notes), 1)  # its line still comes
 
     def test_a_filler_received_again_has_its_journal_line_only(self):
-        # 04/10: twenty rupee bundles, each with its window. Simon's rule: a filler
+        # Twenty rupee bundles came, each with its window. The rule: a filler
         # (AP flags 0) already received comes with its line alone, quietly.
         from botw_client.runtime import BotwClientRuntime
         r = self.runtime("grant_actor")

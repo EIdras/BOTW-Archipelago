@@ -70,7 +70,7 @@ class LoadingDiagnosticTests(unittest.TestCase):
             presentation_ready.presentation_gameplay_state(state)["mode"], "blocked")
 
     def test_a_new_game_before_its_first_loading_is_ready(self):
-        # Measured on 03/10: the loading screen (78) stays in 0x01fc0000 until first shown.
+        # Measured: the loading screen (78) stays in 0x01fc0000 until first shown.
         state = self.catalog()
         state["screens"][78]["state_94"] = 0x01fc0000
         self.assertTrue(loading.gameplay_state(state)["ready"])

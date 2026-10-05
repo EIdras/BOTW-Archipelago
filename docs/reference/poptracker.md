@@ -66,5 +66,5 @@ game, so that no file of the game is in the repository.
 - **Shops and stalls**: shown only when the connected seed has them (its missing and checked locations).
 - **Static parts**: `tools/poptracker/scripts/` (`init.lua`, `logic.lua`, `autotracking/archipelago.lua`).
 
-`lab/tools/poptracker_lua_check.py` runs the pack's Lua against a fake PopTracker (needs `lupa`): an Archipelago
-session, then what the logic answers.
+`tests/test_poptracker.py` checks the pack's files; its Lua was also run against a fake PopTracker (an Archipelago
+session, then what the logic answers).

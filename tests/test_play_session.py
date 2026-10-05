@@ -227,10 +227,10 @@ class ShutdownTests(unittest.IsolatedAsyncioTestCase):
         with patch.dict("sys.modules", modules), \
                 patch("tools.play_session.console", new_callable=AsyncMock) as console:
             summary = await play(self.folder, {"archive": "slot.apbotw.json", "botw_slot": 3,
-                                               "audit": {"slots": {"3": "Simon"}}},
+                                               "audit": {"slots": {"3": "Zelda"}}},
                                  self.folder, self.folder, Mock(poll=Mock(return_value=0)), Mock(),
                                  journal=False, connect="archipelago.gg:38281", password="secret")
-        self.assertEqual(factory.call_args.args, ("archipelago.gg:38281", "Simon", "secret"))
+        self.assertEqual(factory.call_args.args, ("archipelago.gg:38281", "Zelda", "secret"))
         self.assertIsNone(console.call_args.args[1])       # commands go to the room as chat
         self.assertEqual(summary["server"], "archipelago.gg:38281")
         self.assertEqual(summary["received_items"], ["Paraglider", "Remote Bomb"])

@@ -165,7 +165,7 @@ class NativeDeliveryBackendTests(unittest.TestCase):
                                  ("Demo007_1", "APD_CORE_00")])
 
     def test_after_a_silent_twin_the_next_step_comes_sooner(self):
-        # A release's items, silent one after the other (05/10).
+        # A release's items, silent one after the other.
         from botw_client.native_delivery import QUIET_SETTLE_FRAMES, SETTLE_FRAMES
         data = json.loads(self.path.read_text(encoding="utf-8"))
         data["items"]["Core"]["variants"]["default"][0].update(
@@ -210,7 +210,7 @@ class NativeDeliveryBackendTests(unittest.TestCase):
         self.assertEqual(calls, [("OperationGuide", "APD_CORE_00Q")])
 
     def test_the_pickup_notification_is_asked_once_link_plays_again(self):
-        # 04/10: from our entry, Demo_OpenPickup showed nothing; the game's
+        # Measured: from our entry, Demo_OpenPickup showed nothing; the game's
         # function, from the invoker with Link in the world, shows it.
         from botw_client.native_delivery import PICKUP_SETTLE_FRAMES, SAFESTRING_VTABLE, SHOW_PICKUP
         memory = {}
@@ -327,7 +327,7 @@ class NativeDeliveryBackendTests(unittest.TestCase):
                          DeliveryStatus.DEFERRED)
 
     def test_an_accepted_entry_that_never_started_is_asked_again(self):
-        # 04/10: a Fairy requested 38 frames after a Heart Container's commit
+        # Seen in play: a Fairy requested 38 frames after a Heart Container's commit
         # was accepted and never ran: its guard never rose, nothing changed.
         calls = []
         def request(*_args, **_kwargs):
@@ -340,7 +340,7 @@ class NativeDeliveryBackendTests(unittest.TestCase):
         self.assertEqual(calls, [1])
 
     def test_a_loading_during_the_wait_is_waited_for(self):
-        # 05/10: a loading came while the Master Sword's entry waited; the
+        # Seen in play: a loading came while the Master Sword's entry waited; the
         # unreadable flags ended the client instead of being waited for.
         loading = []
 
@@ -363,7 +363,7 @@ class NativeDeliveryBackendTests(unittest.TestCase):
         self.assertIn("never started", result.detail)
 
     def test_a_long_wait_says_what_holds_it(self):
-        # 05/10: the Master Sword waited 2 min 30 without a word in the log.
+        # Seen in play: the Master Sword waited 2 min 30 without a word in the log.
         import botw_client.native_delivery as native
         reports, reads = [], []
 
@@ -406,7 +406,7 @@ class NativeDeliveryBackendTests(unittest.TestCase):
         self.assertEqual(result.status, DeliveryStatus.UNCERTAIN)
 
     def test_a_window_left_open_or_a_running_entry_is_waited_for(self):
-        # 04/10: a rupee's get window, closed late, ended the client after 30 s.
+        # Seen in play: a rupee's get window, closed late, ended the client after 30 s.
         # The wait counts only time with Link playing and no entry running.
         import time
         for busy in ("window", "guard"):
@@ -632,7 +632,7 @@ class NativeDeliveryRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(self.backend.commands[0].quiet)
 
     async def test_a_reload_back_to_the_unbound_save_binds_it_again(self):
-        # 04/10: Link died on a new game just after its binding; the reload
+        # Seen in play: Link died on a new game just after its binding; the reload
         # went back to the save from before it (token 0, cursor 0).
         self.runtime._native_session_bound = True
         self.backend.current = DeliveryCheckpoint("token:0", -1, 0)

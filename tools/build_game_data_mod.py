@@ -88,9 +88,9 @@ def modify_gamedata_flags(raw: bytes, flags, is_save: bool, kind: str = "s32",
             collision = hashes.get(signed_crc(flag))
             if collision:
                 raise RuntimeError(
-                    f"collision CRC32: {flag} et {collision} ({signed_crc(flag)})")
+                    f"collision CRC32: {flag} and {collision} ({signed_crc(flag)})")
             objects[-1][f"{kind}_data"].append(definition(flag, is_save, kind, init))
-    # In-game isolation on 2026-08-25 proved that round-tripping the stock
+    # In-game isolation proved that round-tripping the stock
     # table works and appending one definition works, while globally sorting
     # the same definitions crashes TriggerParam construction. Preserve every
     # existing entry and its order; only append to the final non-full page.

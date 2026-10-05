@@ -6,7 +6,7 @@ from tools.cemu import autonomous_eventflow, menu_diagnostic
 
 
 # The inactive states of the loading screens. Screen 78, the loading screen
-# itself, is in 0x01fc0000 until it is first shown: measured on 03/10 at the
+# itself, is in 0x01fc0000 until it is first shown: measured at the
 # start of a new game, before any loading (it then goes 0x01000100, 0x200,
 # 0x300 while active, and 0x01000000 once closed). Without that state, nothing
 # could be presented before the first loading of a new game.

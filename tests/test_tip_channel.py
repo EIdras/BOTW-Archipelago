@@ -253,7 +253,7 @@ class TipChannelTests(unittest.TestCase):
         self.assertEqual(g.submit(), tp.BUSY)               # ours active
 
     def test_busy_while_a_game_tip_is_queued_or_on_screen(self):
-        # Measured on 03/10: forced over the heat warning (6), which the game asks
+        # Measured: forced over the heat warning (6), which the game asks
         # for again at once, ours was evicted and the warning came back in a loop.
         for slot in (tp.QUEUED, tp.SHOWN):
             with self.subTest(slot=hex(slot)):

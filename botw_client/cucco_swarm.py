@@ -31,7 +31,7 @@ The swarm lives in game time: while Link is not in the world (a menu, the
 inventory, a dialogue, a loading), it creates nothing and its time stands
 still. The per-frame invoker goes on in the menus: an attacker requested
 there was born frozen and the whole swarm fell on Link at once when the menu
-closed (seen in play, 02/10). It gives up after PAUSE_LIMIT of waiting.
+closed (seen in play). It gives up after PAUSE_LIMIT of waiting.
 
 Each attacker is made in one turn of the invoker (`turn`, the client's
 botw_client/invoker_turn.py): the client's other users of the invoker wait

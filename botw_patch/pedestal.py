@@ -8,7 +8,7 @@ pull, "Retirer", for a sword it no longer holds: the map unit F-2 gates the
 pull with tags whose state is saved in IsPlayed_Demo104_0 (the first try,
 set as the pull starts) and IsPlayed_Demo109_0 (the pull done: the pull's
 EventTag, its observer and area deleted, the base signalled). Measured on
-Simon's saves (06/10): a closed pedestal differs from that open one, among the
+saves of a real game: a closed pedestal differs from an open one, among the
 pedestal's flags, by Get_MasterSword_Finish and IsPlayed_Demo109_0/_1/_2,
 which Get_MasterSword<NukiGameFinish> sets as the pull ends.
 

@@ -43,22 +43,22 @@ class SlotFileTests(unittest.TestCase):
 
     def test_the_slot_file_gives_the_servers_identity(self):
         with tempfile.TemporaryDirectory() as temp:
-            audit, identity = self.read(slot_file(Path(temp), slot=3, name="Simon"))
+            audit, identity = self.read(slot_file(Path(temp), slot=3, name="Zelda"))
         self.assertEqual(identity, {"seed": "test-seed", "team": 0, "slot": 3,
                                     "data_package_checksum": "checksum",
                                     "token": session_token(("test-seed", 0, 3, "checksum"))})
-        self.assertEqual((audit["slots"], audit["hostable"]), ({"3": "Simon"}, False))
+        self.assertEqual((audit["slots"], audit["hostable"]), ({"3": "Zelda"}, False))
 
     def test_the_slot_file_a_room_serves_gives_the_same_identity_and_its_address(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            plain = self.read(slot_file(root, slot=3, name="Simon"))
-            served = slot_file(root, slot=3, name="Simon", container=True, server="archipelago.gg:50212")
+            plain = self.read(slot_file(root, slot=3, name="Zelda"))
+            served = slot_file(root, slot=3, name="Zelda", container=True, server="archipelago.gg:50212")
             self.assertEqual(self.read(served), plain)
             self.assertEqual(build_pack_from_source.slot_server(served), "archipelago.gg:50212")
             generated = slot_file(root, slot=4, name="Ami", container=True)     # not from a room
             self.assertIsNone(build_pack_from_source.slot_server(generated))
-            self.assertIsNone(build_pack_from_source.slot_server(root / "AP_test-seed_P3_Simon.apbotw.json"))
+            self.assertIsNone(build_pack_from_source.slot_server(root / "AP_test-seed_P3_Zelda.apbotw.json"))
 
     def test_a_seed_zip_holds_slot_files_of_either_kind(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -99,7 +99,7 @@ class SlotFileTests(unittest.TestCase):
     def test_a_slot_file_seed_is_prepared_for_its_slot(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            source = slot_file(root, slot=4, name="Simon")
+            source = slot_file(root, slot=4, name="Zelda")
             with patch.object(play_seed, "PLAY_SEEDS", root / "play"), \
                     patch.object(play_seed, "expected_placements", return_value=0), \
                     patch("tools.build_pack_from_source.build", return_value=root / "pack") as build, \
@@ -110,13 +110,13 @@ class SlotFileTests(unittest.TestCase):
             table.assert_called_once_with(root / "dump")     # the flag table, from the same game
             self.assertEqual(build_pack_from_source.seed_slot(report), 4)
             binding = play_pack.load_seed(report, 4)
-            self.assertEqual((binding["slot"], binding["slot_name"]), (4, "Simon"))
+            self.assertEqual((binding["slot"], binding["slot_name"]), (4, "Zelda"))
 
 
     def test_without_archipelago_a_zip_is_read_as_its_slot_file(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            path = slot_file(root, slot=2, name="Simon")
+            path = slot_file(root, slot=2, name="Zelda")
             archive = root / "AP_test-seed.zip"
             with zipfile.ZipFile(archive, "w") as zipped:
                 zipped.writestr(path.name, path.read_bytes())
@@ -252,7 +252,7 @@ class VersionTests(unittest.TestCase):
             folder = seeds / "seed"
             folder.mkdir(parents=True)
             (folder / "analysis.json").write_text(json.dumps({
-                "botw_slot": 2, "archive": str(folder / "AP.zip"), "audit": {"slots": {"2": "Simon"}}}))
+                "botw_slot": 2, "archive": str(folder / "AP.zip"), "audit": {"slots": {"2": "Zelda"}}}))
             for used in (set(), {old}):
                 old.mkdir(exist_ok=True)
                 with self.subTest(used=used), patch.object(play_seed, "PACKS", packs), \
@@ -261,7 +261,7 @@ class VersionTests(unittest.TestCase):
                         patch("tools.play_pack.selections", return_value=used), \
                         patch.object(play_seed, "prepare", return_value=(None, new)) as prepare:
                     self.assertEqual(play_seed.refresh(folder), new)
-                    prepare.assert_called_once_with(folder / "AP.zip", slot_name="Simon")
+                    prepare.assert_called_once_with(folder / "AP.zip", slot_name="Zelda")
                     self.assertEqual(old.exists(), bool(used))
 
 

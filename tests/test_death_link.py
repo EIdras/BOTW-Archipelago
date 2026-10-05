@@ -143,23 +143,23 @@ class CauseTests(unittest.TestCase):
              "Enemy_Lynel_Senior": "White-Maned Lynel"}
 
     def text(self, cause, raw=None, killer=None):
-        return death_cause.death_text("Simon", cause, raw, killer, self.NAMES)
+        return death_cause.death_text("Zelda", cause, raw, killer, self.NAMES)
 
     def test_texts(self):
-        self.assertEqual(self.text(0, 0, "Enemy_Bokoblin_Junior"), "Simon was slain by a Bokoblin")
-        self.assertEqual(self.text(0, 0, "Enemy_Octarock"), "Simon was slain by an Octorok")
-        self.assertEqual(self.text(0, 0, None), "Simon died in Hyrule")
-        self.assertEqual(self.text(0, 0, "Unknown_Actor"), "Simon died in Hyrule")
-        self.assertEqual(self.text(0, 1, None), "Simon died of the heat")
-        self.assertEqual(self.text(4, 5), "Simon burned to death")
-        self.assertEqual(self.text(1, 2), "Simon froze to death")
-        self.assertEqual(self.text(8, 9), "Simon fell to their death")
-        self.assertEqual(self.text(7, 0x10008), "Simon drowned")
-        self.assertEqual(self.text(9, 0x20000, "RemoteBomb"), "Simon was caught in their own bomb blast")
+        self.assertEqual(self.text(0, 0, "Enemy_Bokoblin_Junior"), "Zelda was slain by a Bokoblin")
+        self.assertEqual(self.text(0, 0, "Enemy_Octarock"), "Zelda was slain by an Octorok")
+        self.assertEqual(self.text(0, 0, None), "Zelda died in Hyrule")
+        self.assertEqual(self.text(0, 0, "Unknown_Actor"), "Zelda died in Hyrule")
+        self.assertEqual(self.text(0, 1, None), "Zelda died of the heat")
+        self.assertEqual(self.text(4, 5), "Zelda burned to death")
+        self.assertEqual(self.text(1, 2), "Zelda froze to death")
+        self.assertEqual(self.text(8, 9), "Zelda fell to their death")
+        self.assertEqual(self.text(7, 0x10008), "Zelda drowned")
+        self.assertEqual(self.text(9, 0x20000, "RemoteBomb"), "Zelda was caught in their own bomb blast")
         self.assertEqual(self.text(9, 0x20000, "Enemy_Bokoblin_Junior"),
-                         "Simon was blown up by a Bokoblin")
-        self.assertEqual(self.text(9, 0x20000, None), "Simon was blown up")
-        self.assertEqual(self.text(None), "Simon died in Hyrule")
+                         "Zelda was blown up by a Bokoblin")
+        self.assertEqual(self.text(9, 0x20000, None), "Zelda was blown up")
+        self.assertEqual(self.text(None), "Zelda died in Hyrule")
 
     def test_the_attacker_is_read_through_player_info(self):
         memory = {0x10463F38: (0x20000000).to_bytes(4, "big"),

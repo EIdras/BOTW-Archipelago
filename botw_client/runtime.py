@@ -571,7 +571,7 @@ class BotwClientRuntime:
             checkpoint = self.deliveries.backend.checkpoint()
             expected = (self._session_identity[0], self._session_identity[2])
             if (checkpoint.seed, checkpoint.cursor) == ("token:0", 0):
-                # 04/10: Link died on a new game just after its binding, and
+                # Seen in play: Link died on a new game just after its binding, and
                 # the reload went back to the save from before it, untouched
                 # again: it is bound again, as a new game is.
                 if self._native_session_bound:
@@ -1644,7 +1644,7 @@ class BotwClientRuntime:
         """A filler item (AP flags 0: rupees, materials) received before: its
         journal line alone, delivered without a window nor a pause (its quiet
         entry). A unique, useful or progression item, or a first one, keeps its
-        window (Simon's rule, 03/10)."""
+        window."""
         item = self.ap.received_items.get(index)
         if item is None or getattr(item, "flags", None) != 0:
             return False
@@ -1796,7 +1796,7 @@ class BotwClientRuntime:
         notice, they come within BULK_WINDOW_SECONDS of it (a release: those
         of the released world). Given quietly, as items given back after a
         reload, and named by one AP window; a trap still strikes and a rune
-        keeps its download screen (Simon's rule, 05/10). Items sent again by
+        keeps its download screen. Items sent again by
         a connection have no arrival time: never taken for a release."""
         notices = getattr(self.ap, "bulk_notices", None)
         arrived = getattr(self.ap, "received_at", None)
