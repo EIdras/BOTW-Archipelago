@@ -28,7 +28,10 @@ after the hash of its content), reproducible, and verified before every use (`ve
 
 - **Resources** (`tools/build_resources_from_source.py`, library `botw_patch/`): edits of the game's own files.
   - The rewards of the checked locations are taken out where the game gives them (rune terminals, pedestals, Divine
-    Beasts...): the check still happens, the vanilla reward does not.
+    Beasts...): the check still happens, the vanilla reward does not. A Divine Beast's heart container is picked up
+    without the game's get window, its check's message is enough (`botw_patch/beast_heart.py`). An item the logic
+    counts on comes from the multiworld only: King Dorephan keeps his Zora armor, Kima her Flamebreaker armor
+    (`botw_patch/build.py`, `suppress_gift`).
   - EventFlow entries appended to resident flowcharts (`Demo007_1`, `OperationGuide`): one guarded entry per delivery
     step of each item, which the client requests (`botw_patch/delivery_flow.py`).
   - GameData flags of the integration: the session token of the save, the delivery cursor, shop records.

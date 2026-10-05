@@ -405,7 +405,33 @@ def suppress_reward(data: bytes, actor_name: str, expected_count: int = 1) -> tu
             changed.append(event.name)
     if len(changed) != expected_count:
         raise ValueError(f"{flow.flowchart.name}: {len(changed)} grants, expected {expected_count}")
+    # The HUD counter a grant may announce ("+1" Spirit Orb, Demo033_0): set up
+    # for a get window that no longer comes, it would show at a later one.
+    for event in flow.flowchart.events:
+        action = event.data
+        if (isinstance(action, ActionEvent)
+                and str(action.actor_action.v) == "Demo_SetupGetDemoModeNumUi"
+                and action.nxt.v is not None and action.nxt.v.name in changed):
+            wait_instead(flow, event)
+            changed.append(event.name)
     return write_flow(flow), changed
+
+
+def suppress_gift(data: bytes, actor_name: str) -> tuple[bytes, list[str]]:
+    """An NPC's gift of an AP item: its grant becomes a wait, and the pouch test
+    in front of it always finds room (a full pouch would have the NPC wait for
+    an item he no longer gives)."""
+    from evfl.event import SwitchEvent
+    data, changed = suppress_reward(data, actor_name)
+    flow = read_flow(data)
+    tests = [event for event in flow.flowchart.events
+             if isinstance(event.data, SwitchEvent)
+             and str(event.data.actor_query.v) == "CheckAddPorchItem"
+             and event.data.params.data.get("PorchItemName") == actor_name]
+    if len(tests) != 1 or set(tests[0].data.cases) != {0, 1}:
+        raise ValueError(f"{flow.flowchart.name}: unexpected pouch test of {actor_name}")
+    tests[0].data.cases[0] = tests[0].data.cases[1]
+    return write_flow(flow), changed + [tests[0].name]
 
 
 def suppress_champion_rewards(data: bytes) -> tuple[bytes, list[str]]:

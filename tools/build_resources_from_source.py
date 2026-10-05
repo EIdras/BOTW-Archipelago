@@ -30,7 +30,8 @@ from tools import build_plateau_sensor_candidate as sensor
 from tools import build_master_sword_candidate as sword
 from tools import build_ballad_condition_candidate as ballad
 from tools.build_ballad_upgrade_delivery import champion_entries, transform_for as upgrade_delivery
-from botw_patch import death_link, ganon_gate, gerudo_outfit, hud_layout, loading_icon, traps
+from botw_patch import (beast_heart, death_link, ganon_gate, gerudo_outfit, hud_layout,
+                        loading_icon, traps)
 from botw_patch.status_item import INPUT_HASHES as STATUS_INPUTS
 
 TITLE = "Pack/TitleBG.pack"
@@ -49,6 +50,9 @@ REWARD_PACKS = {
     "Event/Demo033_0.sbeventpack": "a7812b878782907322e9860f5d2f5a01af49e44957b236070492e1cdc8927c7e",
     "Event/FindDungeon.sbeventpack": "7a29348697eb73e8c17c2e2b9152afd9f271d608655658371cc79c2938ef06ab",
     "Event/Npc_DungeonPriest001.sbeventpack": "0d3015c2a8b23b2a1c6668cf4c534632d32bc20eb1af5f0dd15006594553bf75",
+    "Event/Demo344_0.sbeventpack": "95269f3867b4d3b85826d188958069f1ffee453a5a9850446c75fc971b5bf841",
+    "Event/Water_Relic.sbeventpack": "1175e0ec31235025dc8734cfb9a51b9a99da33dad9af1f516bf7873fcf392eb4",
+    "Event/SanrokuMini_Lizard.sbeventpack": "9f0348baa67d638ae3a542d82fb22054cacf3d0cf2ad4e95383d269d203bddcf",
 }
 # The English texts, for the names of what can kill Link (DeathLink); the
 # same version as the Archipelago key item's.
@@ -74,7 +78,7 @@ SOURCE_FILES = (
     "botw_client/items.py", "data/item_map.json", "assets/wiiu/Item_AP.sbitemico",
     "botw_patch/hud_layout.py", "tools/bitemico.py", "botw_patch/death_link.py",
     "botw_patch/loading_icon.py", "botw_patch/traps.py", "botw_patch/melee_weapons.py",
-    *gerudo_outfit.SOURCE_FILES, *ganon_gate.SOURCE_FILES,
+    *gerudo_outfit.SOURCE_FILES, *ganon_gate.SOURCE_FILES, *beast_heart.SOURCE_FILES,
 )
 
 
@@ -184,6 +188,10 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
         files[name] = inputs[name]
         files, edits = patch_stage(files, name, transforms)
         changes.extend(edits)
+    # The Divine Beasts' hearts, picked up without the game's get window
+    # (botw_patch/beast_heart.py).
+    files, edits = patch_stage(files, TITLE, {beast_heart.FLOW: beast_heart.transform})
+    changes.extend(edits)
     champions = champion_entries(catalog)
     files, edits = patch_stage(files, TITLE, {
         MEMBER: upgrade_delivery({item: entry for item, entry in champions.items()

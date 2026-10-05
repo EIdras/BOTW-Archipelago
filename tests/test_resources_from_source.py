@@ -50,9 +50,9 @@ a = build(work / 'input', work / 'a', binding_token=417391497)
 manifest = json.loads((a / 'manifest.json').read_text())
 hashes = dict(manifest['files'])
 hashes['delivery_catalog.json'] = digest((a / 'delivery_catalog.json').read_bytes())
-# All 26 resources (7 message archives: Vilia's price; the sanctum's gate) + the delivery catalog.
-assert len(manifest['files']) == 26
-assert digest(encode(hashes)) == 'b1663f3953ed227a05dee5a4bb2ea1d9ba9e2e27894a176f5a70401ae66faeb3', 'new pin: ' + digest(encode(hashes))
+# All 29 resources (7 message archives: Vilia's price; the sanctum's gate; the gifts of the Zora King and Kima) + the delivery catalog.
+assert len(manifest['files']) == 29
+assert digest(encode(hashes)) == 'ee0a7ff333682ea3f386ddf482269f5fcaf60fa14b9297151090d159464e0582', 'new pin: ' + digest(encode(hashes))
 assert manifest['gameplay_aids'] is False
 assert manifest['status'] == 'not_installable'
 (a / 'content/Pack/Bootup.pack').write_bytes(b'altered')

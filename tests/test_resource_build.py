@@ -35,6 +35,11 @@ class ResourceBuildTests(unittest.TestCase):
             for event_name, event in before["events"].items():
                 if event_name not in changed:
                     self.assertEqual(event, after["events"][event_name], (name, event_name))
+                elif event["type"] == "SwitchEvent":
+                    # An NPC's gift (suppress_gift): its pouch test always finds room.
+                    replacement = after["events"][event_name]
+                    self.assertEqual(replacement["actor_query"], "CheckAddPorchItem")
+                    self.assertEqual(replacement["cases"], {0: event["cases"][1], 1: event["cases"][1]})
                 else:
                     replacement = after["events"][event_name]
                     self.assertEqual(event["nxt"], replacement["nxt"])

@@ -99,9 +99,9 @@ def tree(path):
     return {p.relative_to(path).as_posix():p.read_bytes() for p in path.rglob('*') if p.is_file()}
 hashes = {n:digest(raw) for n,raw in tree(a).items() if n != 'manifest.json'}
 # Every installed file (metadata excluded): the native code, the resources,
-# the Archipelago key item (actor, icon, ActorInfo, texts in 7 languages), the sanctum's gate.
-assert len(hashes) == 36
-assert digest(encode(hashes)) == '33e6e37819cc16f2369fc0c3528642f9e441e09445fbdafcd64c876b94d73e23', 'new pin: ' + digest(encode(hashes))
+# the Archipelago key item (actor, icon, ActorInfo, texts in 7 languages), the sanctum's gate, the gifts of the Zora King and Kima.
+assert len(hashes) == 39
+assert digest(encode(hashes)) == '69674735acfc3e1796397441201a1fbfb4363cffa09fe2e69ddc94cb64b56ff2', 'new pin: ' + digest(encode(hashes))
 binding = load_seed(work/'analysis.json', 1, work/'seed.zip')
 verify_pack(a, binding)
 try:

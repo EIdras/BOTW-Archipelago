@@ -18,7 +18,7 @@ the victory location and holds no item.
 | Magnesis, Remote Bomb, Stasis, Cryonis | 1 each | the rune, presented by the Sheikah Slate's download screen, and selected |
 | Sheikah Sensor | 1 | the sensor's flags |
 | Warm Doublet | 1 | the doublet |
-| Snowquill, Flamebreaker, Desert Voe, Zora, Rubber Set | 1 each | the three pieces of the set |
+| Snowquill, Flamebreaker, Desert Voe, Zora, Rubber Set | 1 each | the three pieces of the set; King Dorephan no longer gives the Zora armor, which Vah Ruta asks for, nor Kima the Flamebreaker armor, which the burning zones ask for |
 | Gerudo Set | 1 | the veil, top and sirwal that let Link into Gerudo Town; Vilia no longer sells them: she asks 1,000,000 rupees, and her lines say so in every language ([`botw_patch/gerudo_outfit.py`](../../botw_patch/gerudo_outfit.py)) |
 | Revali's Gale, Daruk's Protection, Urbosa's Fury, Mipha's Grace | 1 each | the champion's ability, with its get window |
 | Progressive Climbing Gear | 3 | body, head, legs, in that order |

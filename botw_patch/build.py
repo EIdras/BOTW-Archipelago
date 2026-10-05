@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import oead
-from .events import suppress_terminal_rewards, suppress_reward, suppress_champion_rewards
+from .events import suppress_terminal_rewards, suppress_reward, suppress_champion_rewards, suppress_gift
 from .resources import ResourceBuilder, digest, unpack
 
 RECIPES = {
@@ -13,6 +13,14 @@ RECIPES = {
     "FindDungeon": lambda data: suppress_reward(data, "PlayerStole2"),
     "Npc_DungeonPriest001": lambda data: suppress_reward(data, "Obj_DungeonClearSeal"),
     "ClearRemains": suppress_champion_rewards,
+    # King Dorephan's Zora armor, in his throne-room cutscene and in his talk
+    # afterwards (the item "Zora Set", which Vah Ruta asks for).
+    "Demo344_0": lambda data: suppress_gift(data, "Armor_006_Upper"),
+    "Water_Relic": lambda data: suppress_gift(data, "Armor_006_Upper"),
+    # Kima's Flamebreaker armor, outside the burning zone it protects from
+    # (the item "Flamebreaker Set"). Goron City's shop stays: the logic puts
+    # the city itself behind the set.
+    "SanrokuMini_Lizard": lambda data: suppress_gift(data, "Armor_011_Upper"),
 }
 # Unmodified Wii U EUR v208 resources, measured from the mounted update.
 # Do not silently apply a recipe to a different revision or a merged mod.
@@ -22,6 +30,9 @@ SOURCE_HASHES = {
     "FindDungeon": "ee33828c07bafe18cd913b4188d11a8ba2c3d377a9e26c1d08bc342200f95c92",
     "Npc_DungeonPriest001": "28e5a3d85eb82852131cc55c9c2efc37ff016dc40a6b3d7c2805d149637b44fd",
     "ClearRemains": "c822f04a33335f3d01cb698f93eeade36e9f349108e701efbe766fa809ac023e",
+    "Demo344_0": "e306237e3aded5e5f844e38d1aaa930af1e8e3aa89d759d66b634b3309072597",
+    "Water_Relic": "49fed6eab6dc32488aabbcdd13590709fdf3aad9a23a9c48593732c6da256533",
+    "SanrokuMini_Lizard": "32f65d0b6c584f5c476beec4c115faa19b42467c7feb75441e23487f14235f11",
 }
 
 

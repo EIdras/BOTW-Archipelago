@@ -5,6 +5,10 @@ Demo004_0 archive. Once MapTower_DemoFirst is set, *any* tower activated while
 IsGet_Obj_SheikSensor is false grants the sensor, so the neutralisation
 belongs to every build. Seed builds start from a base that carries this stage
 (tools/build_seed_bound_candidate.py).
+
+A tower activated without the sensor takes the path of a tower activated with
+it ("Regional map extracted."), instead of announcing the new function and the
+sensor tutorial at every tower.
 """
 from __future__ import annotations
 
@@ -21,6 +25,7 @@ import oead  # noqa: E402
 
 from botw_patch.events import graph_snapshot, read_flow, wait_instead, write_flow  # noqa: E402
 from botw_patch.resources import ResourceBuilder, digest, unpack  # noqa: E402
+from evfl.util import make_rindex  # noqa: E402
 from tools.build_seed_bound_candidate import verified_files  # noqa: E402
 
 SOURCE = ROOT / ".build/seed-bound-candidates/c21e751b27597559"
@@ -37,6 +42,11 @@ SENSOR_ACTIONS = {
     "Event678": ("Demo_StartShiekSensorGaugeDemo", None),
     "Event669": ("Demo_FlagON", "IsStart_Obj_SheikSensor"),
 }
+# Switch: (flag, the case taken with the flag, the case taken without it, now).
+SENSOR_BRANCHES = {
+    "Event594": ("IsGet_Obj_SheikSensor", "Event672", "Event663"),
+    "Event667": ("IsStart_Obj_SheikSensor", "Event681", "Event661"),
+}
 
 
 def transform(raw: bytes) -> tuple[bytes, list[str]]:
@@ -51,6 +61,12 @@ def transform(raw: bytes) -> tuple[bytes, list[str]]:
                 or (flag is not None and node.get("params", {}).get("FlagName") != flag)):
             raise ValueError(f"tower sensor source changed: {name}")
         wait_instead(flow, events[name])
+    for name, (flag, owned, missing) in SENSOR_BRANCHES.items():
+        node = before["events"][name]
+        if (node.get("actor_query") != "CheckFlag" or node["params"].get("FlagName") != flag
+                or node["cases"] != {1: owned, 0: missing}):
+            raise ValueError(f"tower sensor source changed: {name}")
+        events[name].data.cases[0] = make_rindex(events[owned])
     after = graph_snapshot(flow)
     if (before["entry_points"] != after["entry_points"]
             or before["name"] != after["name"]
@@ -58,12 +74,15 @@ def transform(raw: bytes) -> tuple[bytes, list[str]]:
         raise ValueError("tower graph structure changed")
     changed = {name for name in before["events"]
                if before["events"][name] != after["events"][name]}
-    if changed != set(SENSOR_ACTIONS):
+    if changed != set(SENSOR_ACTIONS) | set(SENSOR_BRANCHES):
         raise ValueError(f"unexpected tower actions changed: {changed}")
-    for name in changed:
+    for name in SENSOR_ACTIONS:
         if before["events"][name].get("nxt") != after["events"][name].get("nxt"):
             raise ValueError(f"tower edge changed: {name}")
-    for name in ("Event275", "Event284", "Event594", "Event667"):
+    for name, (_, owned, _) in SENSOR_BRANCHES.items():
+        if after["events"][name]["cases"] != {1: owned, 0: owned}:
+            raise ValueError(f"tower sensor branch not redirected: {name}")
+    for name in ("Event275", "Event284"):
         if before["events"][name] != after["events"][name]:
             raise ValueError(f"tower progression changed: {name}")
     return write_flow(flow), sorted(changed)
