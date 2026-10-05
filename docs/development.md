@@ -56,7 +56,8 @@ The launcher's steps are tools of their own:
   `--invincible` (hearts never drop), `--stamina` (endless), `--unbreakable` (weapons, bows, shields) and
   `--damage <x>` (weapons and bows hit x times harder, enemies wielding them too) each enable a graphic pack of
   their own next to the seed's (`tools/play_aids.py`); `--cheats` enables the four, with `--damage 10`. A received
-  DeathLink may leave a protected Link alive; the client goes on all the same.
+  DeathLink may leave a protected Link alive; the client goes on all the same. `BOTW Archipelago.cmd` takes the same
+  aids in a source checkout (`"BOTW Archipelago.cmd" --cheats --speed 3`); a release refuses them.
 
 ## Tests
 

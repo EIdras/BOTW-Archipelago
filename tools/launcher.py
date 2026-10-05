@@ -240,10 +240,36 @@ def choose_room(ui, seed: str) -> tuple[str | None, str | None]:
     return address, ui.secret("Room password (Enter if none)") or None
 
 
+def test_aids(argv: list[str]) -> tuple[list[str], dict]:
+    """The test aids of a source checkout, as Play.cmd takes them (--speed, --cheats,
+    --invincible, --stamina, --unbreakable, --damage); the other arguments. A release
+    ships none of their modules (tools/build_release.py): there, they are refused."""
+    names = ("--speed", "--damage", "--cheats", "--invincible", "--stamina", "--unbreakable")
+    if not any(arg.split("=")[0] in names for arg in argv):
+        return argv, {}
+    try:
+        from tools.play_aids import damage_argument
+        from tools.play_speed import speed_argument
+    except ImportError:
+        raise ValueError("test aids are not part of a release: play from a source checkout") from None
+    import argparse
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--speed", type=speed_argument, default=1.0)
+    parser.add_argument("--damage", type=damage_argument, default=1)
+    for flag in ("--cheats", "--invincible", "--stamina", "--unbreakable"):
+        parser.add_argument(flag, action="store_true")
+    known, rest = parser.parse_known_args(argv)
+    aids = [key for key, chosen in (("Invincible", known.invincible), ("Stamina", known.stamina),
+                                    ("Unbreakable", known.unbreakable)) if chosen or known.cheats]
+    damage = known.damage if known.damage > 1 or not known.cheats else 10
+    return rest, {"speed": known.speed, "aids": aids, "damage": damage}
+
+
 def main(argv: list[str], ui=None) -> int:
     ui = ui or Console()
     ui.say("Breath of the Wild Archipelago")
     try:
+        argv, aids = test_aids(argv)
         ensure_profile(ui)
         seed = choose_seed(ui, argv[0] if argv else None)
         address, password = choose_room(ui, seed)
@@ -253,8 +279,9 @@ def main(argv: list[str], ui=None) -> int:
     except (cemu_install.CemuInstallError, ValueError, OSError, RuntimeError) as exc:
         ui.say(f"Error: {exc}")
         return 1
-    from tools import play_session
-    play_session.run(seed, connect=address, password=password)
+    from tools import build_poptracker, play_session
+    build_poptracker.ensure_installed(ui.say)
+    play_session.run(seed, connect=address, password=password, **aids)
     return 0
 
 

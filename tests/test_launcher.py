@@ -205,5 +205,19 @@ class MainTests(Folder):
         run.assert_not_called()
 
 
+
+class TestAidTests(unittest.TestCase):
+    def test_a_source_checkout_takes_the_aids_of_play_cmd(self):
+        self.assertEqual(launcher.test_aids(["seed.zip"]), (["seed.zip"], {}))
+        rest, aids = launcher.test_aids(["seed.zip", "--cheats", "--speed", "3"])
+        self.assertEqual(rest, ["seed.zip"])
+        self.assertEqual(aids, {"speed": 3.0, "aids": ["Invincible", "Stamina", "Unbreakable"], "damage": 10})
+
+    def test_a_release_refuses_them(self):
+        with mock.patch.dict("sys.modules", {"tools.play_aids": None}):
+            with self.assertRaisesRegex(ValueError, "not part of a release"):
+                launcher.test_aids(["--cheats"])
+
+
 if __name__ == "__main__":
     unittest.main()
