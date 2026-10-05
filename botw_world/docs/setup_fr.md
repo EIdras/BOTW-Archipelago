@@ -60,6 +60,12 @@ permettent, et les coche au fil de la partie. La carte et une partie des icônes
 pour les autres (armures, runes...), vous pouvez déposer les icônes du jeu, en PNG nommés comme les objets, dans
 `%LOCALAPPDATA%\BOTW Archipelago\poptracker\icons` : elles servent dès la session suivante.
 
+**Universal Tracker** : avec [Universal Tracker](https://github.com/FarisTheAncient/Archipelago/releases) et
+`botw.apworld` dans votre installation d'Archipelago, connectez-le à la salle avec votre nom de slot : il liste ce
+que vos objets permettent d'atteindre, et `/explain <lieu>` dit ce qu'un lieu demande encore. Il n'a pas besoin de
+YAML : il lit les options de la seed depuis la salle. Une seed générée avant la version 0.2.0 avec des objets
+d'étals ne dit pas quels étals elle a tirés : le tracker peut alors lister d'autres étals que ceux de la seed.
+
 Les lignes tapées dans la fenêtre du lanceur partent à la salle comme chat, ou comme commandes : `/hint <objet>`,
 `/players`, `/status`... (envoyées à la salle sous la forme `!hint`, `!players`...). Le client en ajoute quelques-unes,
 pour les tests et les signalements de bugs :

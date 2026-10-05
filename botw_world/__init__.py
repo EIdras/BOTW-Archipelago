@@ -6,10 +6,10 @@ import json
 from pathlib import Path
 from typing import Any
 
-from BaseClasses import CollectionState, Item, ItemClassification, Location, Region, Tutorial
+from BaseClasses import Item, ItemClassification, Location, Region, Tutorial
 from worlds.AutoWorld import WebWorld, World
 from Options import OptionError
-from worlds.generic.Rules import set_rule
+from rule_builder.rules import And, Has, HasAll, HasAny, HasFromList, Or, Rule, True_
 
 from .catalog import GAME, GOAL_LOCATION, ITEMS, LOCATIONS, TRAPS, WORLD_VERSION, categories, requirements
 from .options import OPTION_GROUPS, PRESETS, BotwOptions
@@ -52,6 +52,7 @@ class BotwWorld(World):
     item_name_to_id = {row["name"]: row["id"] for row in ITEMS}
     location_name_to_id = {row["name"]: row["id"] for row in LOCATIONS if row["name"] != GOAL_LOCATION}
     item_name_groups = {"Runes": {"Magnesis", "Remote Bomb", "Stasis", "Cryonis"}}
+    STALL_IDS = frozenset(r["id"] for r in LOCATIONS if "Stall" in categories(r))
     location_name_groups = {
         "Shrines": {r["name"] for r in LOCATIONS if "Shrine" in categories(r)},
         "Divine Beasts": {r["name"] for r in LOCATIONS if "Divine Beast" in categories(r)},
@@ -63,6 +64,31 @@ class BotwWorld(World):
     # Shop prices drawn by the seed, in rupees: SHOP_PRICE_STEPS * 5.
     SHOP_PRICE_STEPS = (4, 40)
     shop_prices: dict[int, int]
+    # Universal Tracker regenerates the world from the slot data alone
+    # (interpret_slot_data, generate_early).
+    ut_can_gen_without_yaml = True
+    # The options that shape the world, given back by the slot data.
+    SLOT_OPTIONS = ("goal", "goal_shrines", "sanctum_divine_beasts", "sanctum_shrines",
+                    "sanctum_master_sword", "sanctum_runes", "beedle_shop_items", "stall_items")
+    # The stall locations of the slot data, when Universal Tracker regenerates.
+    passed_stalls: set[int] | None = None
+
+    @staticmethod
+    def interpret_slot_data(slot_data: dict[str, Any]) -> dict[str, Any]:
+        """Universal Tracker: the slot data, given back to generate_early."""
+        return slot_data
+
+    def generate_early(self) -> None:
+        passed = getattr(self.multiworld, "re_gen_passthrough", {}).get(self.game)
+        if not passed:
+            return
+        for name in self.SLOT_OPTIONS:
+            if name in passed:
+                getattr(self.options, name).value = passed[name]
+        # A seed generated before world 0.2.0 does not name its stalls: they are
+        # drawn again, and may differ from the seed's.
+        if "stall_locations" in passed:
+            self.passed_stalls = set(passed["stall_locations"])
 
     def create_regions(self) -> None:
         menu = Region("Menu", self.player, self.multiworld)
@@ -72,13 +98,12 @@ class BotwWorld(World):
         menu.connect(regions["Great Plateau"])
         for name, region in regions.items():
             if name != "Great Plateau":
-                regions["Great Plateau"].connect(
-                    region, rule=lambda state: state.has("Paraglider", self.player))
+                self.create_entrance(regions["Great Plateau"], region, Has("Paraglider"))
         self.shop_prices = {}
         # Stall Items of the 28 stall locations, at random: a stall has 2 of
         # them, so it ends up with none, one or two.
-        stalls = set(self.random.sample(sorted(r["id"] for r in LOCATIONS if "Stall" in categories(r)),
-                                        self.options.stall_items.value))
+        stalls = self.passed_stalls if self.passed_stalls is not None else set(self.random.sample(
+            sorted(r["id"] for r in LOCATIONS if "Stall" in categories(r)), self.options.stall_items.value))
         for row in LOCATIONS:
             shop = categories(row) & {"Shop", "Stall"}
             if shop:
@@ -90,23 +115,28 @@ class BotwWorld(World):
             loc = BotwLocation(self.player, row["name"],
                                None if row["name"] == GOAL_LOCATION else row["id"], region)
             region.locations.append(loc)
-            set_rule(loc, self.rule(requirements(row)))
+            self.set_rule(loc, self.rule(requirements(row)))
             if categories(row) & {"Shrine", "Divine Beast"}:
-                # Events counted by the shrine and Divine Beast goals.
+                # Events counted by the shrine and Divine Beast goals: in the
+                # location's region, with its rule.
                 prefix = "Cleared" if "Shrine" in categories(row) else "Freed"
                 event = BotwLocation(self.player, f"{prefix} - {row['name']}", None, region)
                 event.place_locked_item(BotwItem(event.name, ItemClassification.progression, None, self.player))
-                set_rule(event, lambda state, loc=loc: loc.can_reach(state))
+                self.set_rule(event, self.rule(requirements(row)))
                 region.locations.append(event)
-        self.multiworld.completion_condition[self.player] = lambda state: state.has("Victory", self.player)
         goal = self.multiworld.get_location(GOAL_LOCATION, self.player)
         goal.place_locked_item(BotwItem("Victory", ItemClassification.progression, None, self.player))
 
-    def rule(self, groups):
-        """An access rule from requirements(): every group met by one of its items."""
-        player = self.player
-        return lambda state: all(any(state.has(name, player, count) for name in names)
-                                 for names, count in groups)
+    @staticmethod
+    def rule(groups) -> Rule:
+        """An access rule from requirements(): every group met by one of its
+        names, that one name `count` times. Built from Archipelago's rule
+        builder, which can say what is missing (Universal Tracker's /explain)."""
+        parts = [Has(names[0], count) if len(names) == 1 else
+                 HasAny(*names) if count == 1 else
+                 Or(*(Has(name, count) for name in names))
+                 for names, count in groups]
+        return And(*parts) if len(parts) > 1 else parts[0] if parts else True_()
 
     def set_rules(self) -> None:
         player, options = self.player, self.options
@@ -114,23 +144,24 @@ class BotwWorld(World):
         shrines = sorted(f"Cleared - {name}" for name in self.location_name_groups["Shrines"])
         # Ganon's sanctum, sealed in game until these are met (botw_patch/ganon_gate.py).
         ganon = self.multiworld.get_location(GOAL_LOCATION, player)
-        base = ganon.access_rule
         needed = (["Master Sword"] if options.sanctum_master_sword else []) + (
             sorted(self.item_name_groups["Runes"]) if options.sanctum_runes else [])
-
-        def sanctum(state: CollectionState) -> bool:
-            return (base(state) and state.has_all(needed, player)
-                    and state.has_from_list(beasts, player, options.sanctum_divine_beasts.value)
-                    and state.has_from_list(shrines, player, options.sanctum_shrines.value))
-        set_rule(ganon, sanctum)
+        parts = [self.rule(requirements(next(r for r in LOCATIONS if r["name"] == GOAL_LOCATION)))]
+        if needed:
+            parts.append(HasAll(*needed))
+        if options.sanctum_divine_beasts.value:
+            parts.append(HasFromList(*beasts, count=options.sanctum_divine_beasts.value))
+        if options.sanctum_shrines.value:
+            parts.append(HasFromList(*shrines, count=options.sanctum_shrines.value))
+        self.set_rule(ganon, And(*parts) if len(parts) > 1 else parts[0])
         # What finishes the game.
         if options.goal == options.goal.option_divine_beasts:
-            done = lambda state: state.has_all(beasts, player)
+            done = HasAll(*beasts)
         elif options.goal == options.goal.option_shrines:
-            done = lambda state: state.has_from_list(shrines, player, options.goal_shrines.value)
+            done = HasFromList(*shrines, count=options.goal_shrines.value)
         else:
-            done = lambda state: state.has("Victory", player)
-        self.multiworld.completion_condition[player] = done
+            done = Has("Victory")
+        self.set_completion_rule(done)
 
     def create_item(self, name: str) -> BotwItem:
         row = next(r for r in ITEMS if r["name"] == name)
@@ -171,11 +202,12 @@ class BotwWorld(World):
     def fill_slot_data(self) -> dict[str, Any]:
         # client_schema 4: the Gerudo Set, an item a client of schema 3 cannot deliver.
         # 5: the goal and the sanctum's requirements, which a client of schema 4 cannot read.
+        # stall_locations: the stalls drawn by the seed, for Universal Tracker.
         return {"client_schema": 5, "world_schema": 4, "world_version": WORLD_VERSION,
                 "death_link": bool(self.options.death_link.value),
-                **self.options.as_dict("goal", "goal_shrines", "sanctum_divine_beasts", "sanctum_shrines",
-                                       "sanctum_master_sword", "sanctum_runes",
-                                       "beedle_shop_items", "stall_items")}
+                **self.options.as_dict(*self.SLOT_OPTIONS),
+                "stall_locations": sorted(location_id for location_id in self.shop_prices
+                                          if location_id in self.STALL_IDS)}
 
     @classmethod
     def data_package_checksum(cls) -> str:

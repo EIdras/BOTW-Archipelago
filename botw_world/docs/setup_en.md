@@ -53,6 +53,12 @@ the icons come from your own game; for the others (armor, runes...), you may put
 named after the items, in `%LOCALAPPDATA%\BOTW Archipelago\poptracker\icons`: they are used at the next
 session.
 
+**Universal Tracker**: with [Universal Tracker](https://github.com/FarisTheAncient/Archipelago/releases) and
+`botw.apworld` in your Archipelago installation, connect it to the room with your slot name: it lists what your
+items let you reach, and `/explain <location>` says what a location still asks for. It needs no YAML: it reads the
+seed's options from the room. A seed generated before version 0.2.0 with stall items does not say which stalls it
+drew: the tracker may then list other stalls than the seed's.
+
 Lines typed in the launcher's window go to the room as chat, or as commands: `/hint <item>`, `/players`, `/status`...
 (sent to the room as `!hint`, `!players`...). The client adds a few, for tests and bug reports:
 
