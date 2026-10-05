@@ -74,6 +74,23 @@ def load_targets(path: Path = MASTER_CSV,
     return targets
 
 
+# Another flag of the game that also checks a location. The Master Sword's
+# pedestal: its sword can be taken as a dropped weapon, without the pull nor
+# Get_MasterSword_Finish, once the game counts the sword as owned (05/10; what
+# picks that mode beyond IsGet_Weapon_Sword_070 is not known). The flag of its
+# map actor (F-2, HashId 2427157272) says it left the pedestal, either way.
+ALTERNATE_FLAGS = {"Master Sword Pedestal": "MainField_Weapon_Sword_070_2427157272"}
+
+
+def alternate_targets(targets: list[LocationTarget]) -> list[LocationTarget]:
+    """The ALTERNATE_FLAGS of the locations among `targets`, for the tracker."""
+    names = {target.name for target in targets}
+    hashes = {flag_name: int(hash_value) & 0xFFFFFFFF
+              for hash_value, (_, flag_name) in gamedata_table.load().items()}
+    return [LocationTarget(name, flag, hashes[flag])
+            for name, flag in ALTERNATE_FLAGS.items() if name in names]
+
+
 def known_hashes() -> np.ndarray:
     raw = gamedata_table.load()
     return np.array(sorted(int(key) & 0xFFFFFFFF for key in raw), dtype=np.uint32)
@@ -148,4 +165,4 @@ class LocationTracker:
             changed = [self.by_hash[h].name for h, value in current.items()
                        if value and not self.previous.get(h, 0)]
         self.previous = current
-        return changed
+        return list(dict.fromkeys(changed))     # a location seen by two of its flags

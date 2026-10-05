@@ -9,7 +9,7 @@ import textwrap
 import zlib
 
 from .items import load_item_map
-from .locations import LocationTracker, known_hashes, load_targets
+from .locations import LocationTracker, alternate_targets, known_hashes, load_targets
 from .paths import DATA
 from .rune_selection import EQUIP_HASH, RuneSelectionSync, SyncOutcome
 
@@ -136,8 +136,9 @@ class BotwGame:
             progress("BOTW save ledger: " +
                      ("available" if self.save_ledger_available
                       else "unavailable (external state fallback)"))
+        targets = load_targets()
         self.locations = LocationTracker(
-            process, index, load_targets(), live=self.live)
+            process, index, targets + alternate_targets(targets), live=self.live)
         if self.locations.live_addresses:
             progress(f"locations: {len(self.locations.addresses)} in the fast range, "
                      f"{len(self.locations.live_addresses)} through the live GameData")
@@ -250,6 +251,15 @@ class BotwGame:
 
     def open_ganon_gate(self):
         self._write_flag("APGanonOpen", True, "bool")
+
+    def close_master_sword_pedestal(self) -> bool:
+        """The pedestal's sword taken as a dropped weapon: its pull marked done
+        (Get_MasterSword_Finish, as the pull sets it), so that the pedestal no
+        longer offers to pull a sword it no longer holds. True if it was open."""
+        if self._read_flag("Get_MasterSword_Finish", "bool"):
+            return False
+        self._write_flag("Get_MasterSword_Finish", True, "bool")
+        return True
 
     def clear_ganon_refusal(self):
         self._write_flag("APGanonRefused", False, "bool")

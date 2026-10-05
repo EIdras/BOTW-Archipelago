@@ -80,8 +80,11 @@ console command `/ap-tip <text>` shows a line in the journal.
 Every item is delivered by requesting an EventFlow entry built for it
 ([`botw_patch/delivery_flow.py`](../../botw_patch/delivery_flow.py)), under the guard of the save's delivery cursor
 `APReceivedCursor`. A delivery is requested only in a safe state (no menu, event, cutscene or loading), and at least
-`SETTLE_FRAMES` = 30 frames after the previous commit: an entry requested right after a commit can be accepted and
-never played, because the commit comes before the previous event has ended.
+`SETTLE_FRAMES` = 90 frames after the previous commit: an entry requested right after a commit can be accepted and
+never played, because the commit comes before the previous event has ended (a Fairy requested 38 frames after a
+Heart Container's commit, 04/10). Such an entry never raises its save guard, which every mutation follows: once 30
+seconds of play pass with no guard, commit or rejection seen, it is asked again. An entry that raised its guard
+without committing stops the client (possible mutation).
 
 - **The game's get window** (`GetDemo<GetItemByName>`, `pouch_kind` in `botw_client/delivery_plan.py`) for every item
   that goes into the pouch: armor (one window per piece), weapons, shield, paraglider, Korok seeds, Spirit Orbs,
@@ -118,6 +121,16 @@ Loading an older save moves the delivery cursor back. The client keeps the highe
 (`delivered_high`): below it, an item is given back, not new. It is then delivered by the step's **quiet twin**
 (`quiet_entry` in the catalog), which puts it straight into the inventory, without its window. Once they are all back,
 **one Archipelago window, "Items restored"**, names them (4 lines of 40 characters, "and N more" when they do not fit).
+
+The items a **release or a collect** sends at once come the same way, named by one window **"Items received"**,
+without their journal lines. Archipelago marks no item as released: the server's notice tells it (PrintJSON `Release`
+with the released slot, `Collect` with this slot), and the items it sends arrive within seconds of it
+(`BULK_WINDOW_SECONDS`, 15). Items of a live packet (not the ones a connection sends again) arrived that close to a
+notice, and for a release those of the released world, are given quietly (`BotwClientRuntime._mark_bulk`). A trap
+still strikes and a rune keeps its download screen. A release that happened while the client was away cannot be told
+apart: its items come one by one, as usual. The journal says once that they are coming ("N items of a release on their
+way"). A step after a silent twin waits `QUIET_SETTLE_FRAMES` (20) instead of `SETTLE_FRAMES`: a silent twin neither
+pauses nor opens a window, and is over a few frames after its commit.
 
 - **Rupees**: the quiet twin of a rupee bundle is the game's own action `Demo_IncreaseRupee {Value, IsWaitFinish}`,
   the one of quest rewards (for example `Npc_Goron018` Event179, `Demo035_0` Event136), with the value of the bundle's

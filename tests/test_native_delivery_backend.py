@@ -3,6 +3,7 @@ from pathlib import Path
 import tempfile
 from types import SimpleNamespace
 import unittest
+from unittest import mock
 from unittest.mock import Mock
 import zlib
 
@@ -163,6 +164,33 @@ class NativeDeliveryBackendTests(unittest.TestCase):
         self.assertEqual(calls, [("OperationGuide", "APD_CORE_00Q"),
                                  ("Demo007_1", "APD_CORE_00")])
 
+    def test_after_a_silent_twin_the_next_step_comes_sooner(self):
+        # A release's items, silent one after the other (05/10).
+        from botw_client.native_delivery import QUIET_SETTLE_FRAMES, SETTLE_FRAMES
+        data = json.loads(self.path.read_text(encoding="utf-8"))
+        data["items"]["Core"]["variants"]["default"][0].update(
+            quiet_entry="APD_CORE_00Q", quiet_flow="OperationGuide")
+        self.path.write_text(json.dumps(data), encoding="utf-8")
+        frame = [1000]
+        self.game.frame_tick = lambda: frame[0]
+
+        def request(_process, _cave, _number, checkpoint, **kwargs):
+            checkpoint({"status": "prepared"})
+            self.values[flag("APReceivedCursor")] += 256
+            return {"native_return": 1}
+
+        backend = self.backend(request)
+        self.assertEqual(backend.deliver(DeliveryCommand("seed", 2, 7, "Core", quiet=True)).status,
+                         DeliveryStatus.APPLIED)
+        frame[0] += QUIET_SETTLE_FRAMES
+        self.assertEqual(backend.deliver(DeliveryCommand("seed", 2, 8, "Core")).status,
+                         DeliveryStatus.APPLIED)
+        # After its windowed entry, the full wait again.
+        frame[0] += QUIET_SETTLE_FRAMES
+        result = backend.deliver(DeliveryCommand("seed", 2, 9, "Core", quiet=True))
+        self.assertEqual(result.status, DeliveryStatus.DEFERRED)
+        self.assertIn(f"/{SETTLE_FRAMES} frames", result.detail)
+
     def test_a_filler_received_again_takes_its_silent_twin(self):
         data = json.loads(self.path.read_text(encoding="utf-8"))
         data["items"]["Core"]["variants"]["default"][0].update(
@@ -298,15 +326,84 @@ class NativeDeliveryBackendTests(unittest.TestCase):
         self.assertEqual(DeliveryCoordinator(backend).deliver(command).status,
                          DeliveryStatus.DEFERRED)
 
-    def test_accepted_timeout_is_quarantined_without_second_call(self):
+    def test_an_accepted_entry_that_never_started_is_asked_again(self):
+        # 04/10: a Fairy requested 38 frames after a Heart Container's commit
+        # was accepted and never ran: its guard never rose, nothing changed.
         calls = []
         def request(*_args, **_kwargs):
             calls.append(1)
             return {"native_return": 1}
         result = DeliveryCoordinator(self.backend(request)).deliver(
             DeliveryCommand("seed", 2, 7, "Core"))
-        self.assertEqual(result.status, DeliveryStatus.UNCERTAIN)
+        self.assertEqual(result.status, DeliveryStatus.DEFERRED)
+        self.assertIn("never started", result.detail)
         self.assertEqual(calls, [1])
+
+    def test_a_loading_during_the_wait_is_waited_for(self):
+        # 05/10: a loading came while the Master Sword's entry waited; the
+        # unreadable flags ended the client instead of being waited for.
+        loading = []
+
+        class Live(FakeLive):
+            def get(self, hash_u32, kind):
+                if loading and len(loading) < 20:
+                    loading.append(1)
+                    return None
+                return super().get(hash_u32, kind)
+
+        def request(*_args, **_kwargs):
+            loading.append(1)
+            return {"native_return": 1}
+
+        self.game.live = Live(self.values)
+        result = DeliveryCoordinator(self.backend(request)).deliver(
+            DeliveryCommand("seed", 2, 7, "Core"))
+        self.assertEqual(len(loading), 20)
+        self.assertEqual(result.status, DeliveryStatus.DEFERRED)    # never started: asked again
+        self.assertIn("never started", result.detail)
+
+    def test_a_long_wait_says_what_holds_it(self):
+        # 05/10: the Master Sword waited 2 min 30 without a word in the log.
+        import botw_client.native_delivery as native
+        reports, reads = [], []
+
+        def request(*_args, **_kwargs):
+            self.values[flag("SaveProhibition")] = True
+            return {"native_return": 1}
+
+        class Live(FakeLive):
+            def get(self, hash_u32, kind):
+                if hash_u32 == flag("SaveProhibition") and self.values[hash_u32]:
+                    reads.append(1)
+                    if len(reads) > 3:      # the entry commits after a few reads
+                        self.values[flag("APReceivedCursor")] = 8 << 8
+                return super().get(hash_u32, kind)
+
+        self.game.live = Live(self.values)
+        with mock.patch.object(native, "WAIT_REPORT_SECONDS", 0):
+            result = self.backend(request, report=reports.append).deliver(
+                DeliveryCommand("seed", 2, 7, "Core"))
+        self.values[flag("SaveProhibition")] = False
+        self.assertEqual(result.status, DeliveryStatus.APPLIED)
+        self.assertTrue(reports)
+        self.assertIn("#7/0 waiting", reports[0])
+        self.assertIn("the entry is running", reports[0])
+
+    def test_an_entry_that_started_without_its_commit_is_quarantined(self):
+        guard = flag("SaveProhibition")
+        seen = []
+
+        class Live(FakeLive):
+            def get(self, hash_u32, kind):
+                if hash_u32 == guard:
+                    seen.append(1)
+                    return len(seen) < 3      # up for its first reads, then down
+                return super().get(hash_u32, kind)
+
+        self.game.live = Live(self.values)
+        result = DeliveryCoordinator(self.backend(lambda *_a, **_k: {"native_return": 1})).deliver(
+            DeliveryCommand("seed", 2, 7, "Core"))
+        self.assertEqual(result.status, DeliveryStatus.UNCERTAIN)
 
     def test_a_window_left_open_or_a_running_entry_is_waited_for(self):
         # 04/10: a rupee's get window, closed late, ended the client after 30 s.

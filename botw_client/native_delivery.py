@@ -27,10 +27,17 @@ REJECT_HASH = zlib.crc32(b"APDeliveryRejectCounter") & 0xFFFFFFFF
 GUARD_HASH = zlib.crc32(b"SaveProhibition") & 0xFFFFFFFF
 # Frames left to the event that just committed to close. Its commit comes
 # before GuardOFF and the event's own teardown; a request placed meanwhile was
-# accepted and never ran (a step requested one frame after the previous commit).
-SETTLE_FRAMES = 30
+# accepted and never ran (a step requested one frame after the previous commit;
+# 04/10, a Fairy requested 38 frames after a Heart Container's commit).
+SETTLE_FRAMES = 90
+# After a silent twin, the next step can come sooner: its entry neither pauses
+# nor opens a window, and is over a few frames after its commit (see
+# PICKUP_SETTLE_FRAMES). Many of them in a row: the items of a release (05/10).
+QUIET_SETTLE_FRAMES = 20
 # The longest wait for an accepted entry's commit, a window left open included.
 COMMIT_LIMIT = 600.0
+# A wait for a commit says in the client's log, this often, what holds it.
+WAIT_REPORT_SECONDS = 60.0
 # The game's pickup notification (the list on the right), as a real pickup asks
 # for it: 0x03073C2C(SafeString* actor name) opens the PickUpWin screen and adds
 # the line, with the game's duration (lab/journal/archive/notification_handoff.md).
@@ -141,7 +148,7 @@ class CemuNativeDeliveryBackend:
     def __init__(self, game, seed: str, slot: int, token: int, *,
                  catalog=DEFAULT_CATALOG, request=None, lock_factory=None,
                  commit_timeout: float = 30.0, poll_seconds: float = 0.05,
-                 safe=None, in_world=None):
+                 safe=None, in_world=None, report=None):
         if not seed or not isinstance(slot, int) or not 0 < token <= 0x7FFFFFFF:
             raise ValueError("invalid native AP identity")
         self.game = game
@@ -156,7 +163,10 @@ class CemuNativeDeliveryBackend:
         self.poll_seconds = poll_seconds
         self._safe = safe
         self._in_world = in_world
+        self._report = report
         self._committed_at = None
+        # Frames the event that committed last needs to close (SETTLE_FRAMES).
+        self._settle = SETTLE_FRAMES
 
     def _frame(self):
         tick = getattr(self.game, "frame_tick", None)
@@ -253,6 +263,21 @@ class CemuNativeDeliveryBackend:
             return bool((self._in_world or self.playing)())
         except Exception:  # noqa: BLE001 - unreadable: not yet
             return False
+
+    def _wait_reason(self, guard) -> str:
+        """What holds a wait for a commit, for the client's log."""
+        if guard is None:
+            return "save guard unreadable (a loading?)"
+        if guard:
+            return "the entry is running (save guard up)"
+        if self._in_world is None:
+            try:
+                from tools.cemu.presentation_ready import diagnose, summary
+                return "Link not playing: " + summary(diagnose(
+                    self.game.process, self.game.cave, self._playing_flags, allow_hudless=True))
+            except Exception as exc:  # noqa: BLE001 - a diagnosis only
+                return f"Link not playing (undiagnosed: {exc})"
+        return "Link not playing"
 
     def _dependencies(self):
         request = self._request
@@ -506,6 +531,7 @@ class CemuNativeDeliveryBackend:
             return False
         # The next delivery lets this event run and close first.
         self._committed_at = self._frame()
+        self._settle = SETTLE_FRAMES
         return True if result.get("native_return") == 1 else None
 
     def deliver(self, command: DeliveryCommand) -> DeliveryResult:
@@ -528,9 +554,9 @@ class CemuNativeDeliveryBackend:
             return DeliveryResult(DeliveryStatus.DEFERRED, cursor,
                                   getattr(self.game, "delivery_block_reason", "game busy"))
         since = self._frames_since_commit()
-        if since is not None and since < SETTLE_FRAMES:
+        if since is not None and since < self._settle:
             return DeliveryResult(DeliveryStatus.DEFERRED, cursor,
-                                  f"previous event closing ({since}/{SETTLE_FRAMES} frames)")
+                                  f"previous event closing ({since}/{self._settle} frames)")
         if not (command.quiet and step.get("quiet_entry")) and any(
                 m.get("kind") == "rune_download" for m in step.get("mutations", ())):
             # The download screen needs the pause menu built at once, or the
@@ -587,21 +613,44 @@ class CemuNativeDeliveryBackend:
                 # guard up) or a window or menu is open, the wait goes on; only
                 # COMMIT_TIMEOUT of Link playing, nothing running, ends it.
                 started = idle_since = time.monotonic()
+                # Every mutation of an entry comes after its save guard goes up
+                # (botw_patch/delivery_flow.py), the reject counter apart: an
+                # entry never seen raising it, nothing committed nor rejected,
+                # never started, and is asked again rather than suspected.
+                ran = False
+                reported = started
                 while True:
                     now = time.monotonic()
                     if now - started > COMMIT_LIMIT:
                         break
-                    if self._busy():
+                    try:
+                        guard = self._guard()
+                    except Exception:  # noqa: BLE001 - unreadable: a loading, busy
+                        guard = None
+                    try:
+                        token_now, cursor_now, rejected_now = self._state()
+                    except Exception:  # noqa: BLE001 - a loading: the table comes back after it
                         idle_since = now
+                        time.sleep(self.poll_seconds)
+                        continue
+                    ran = ran or bool(guard)
+                    if guard is not False or not self._link_in_world():
+                        idle_since = now
+                        if self._report and now - reported >= WAIT_REPORT_SECONDS:
+                            reported = now
+                            self._report(f"native step #{command.index}/{command.step} waiting "
+                                         f"{now - started:.0f} s for its commit: "
+                                         f"{self._wait_reason(guard)}")
                     elif now - idle_since >= self.commit_timeout:
                         break
-                    token_now, cursor_now, rejected_now = self._state()
                     if token_now != self.token:
                         return DeliveryResult(
                             DeliveryStatus.UNCERTAIN, cursor_now,
                             "save token changed during the delivery")
                     if cursor_now == command.next_cursor:
                         self._committed_at = self._frame()
+                        # A trap's twin is spent without its strike: silent too.
+                        self._settle = QUIET_SETTLE_FRAMES if twin else SETTLE_FRAMES
                         return DeliveryResult(DeliveryStatus.APPLIED, cursor_now,
                                               self._sync_selection(equip))
                     if cursor_now != command.cursor:
@@ -611,6 +660,7 @@ class CemuNativeDeliveryBackend:
                     if rejected_now != rejected:
                         if rejected_now == rejected + 1:
                             self._committed_at = self._frame()
+                            self._settle = SETTLE_FRAMES
                             return DeliveryResult(
                                 DeliveryStatus.INVENTORY_FULL, cursor_now,
                                 f"inventory full for {step.get('capacity_actor')}")
@@ -621,6 +671,13 @@ class CemuNativeDeliveryBackend:
             raise
         except Exception:
             raise
+        self._settle = SETTLE_FRAMES
+        if not ran:
+            self._committed_at = self._frame()
+            return DeliveryResult(DeliveryStatus.DEFERRED, command.cursor,
+                                  "entry accepted but never started: asked again"
+                                  + (f" (requested {since} frames after the previous commit)"
+                                     if since is not None else ""))
         return DeliveryResult(DeliveryStatus.UNCERTAIN, command.cursor,
                               "entry accepted without an observed commit"
                               + (f" (requested {since} frames after the previous commit)"

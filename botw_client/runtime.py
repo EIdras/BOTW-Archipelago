@@ -32,6 +32,9 @@ JOURNAL_SERVER_WAIT_SECONDS = 3.0
 # frame can stay taken (the heat warning, as long as Link is in the heat); the
 # item then comes without it, and its line follows once the frame is free.
 JOURNAL_BLOCK_SECONDS = 8.0
+# A release or a collect: the server's notice (PrintJSON Release, Collect) and
+# the items it sends come within this many seconds of each other.
+BULK_WINDOW_SECONDS = 15.0
 # A received DeathLink: its journal line is read before Link dies. The entry
 # leaves its flag set on the death it causes (botw_patch/death_link.py): such a
 # death is never sent back. The flag counts for DEATHLINK_FLAG_SECONDS after
@@ -412,6 +415,8 @@ class BotwClientRuntime:
                     factory = self.delivery_factory or CemuNativeDeliveryBackend
                     kwargs = ({"catalog": self.delivery_catalog_path}
                               if self.delivery_catalog_path is not None else {})
+                    if factory is CemuNativeDeliveryBackend:
+                        kwargs["report"] = self.log
                     backend = factory(
                         self.game, self._session_identity[0],
                         self._session_identity[2], token, **kwargs)
@@ -772,8 +777,20 @@ class BotwClientRuntime:
         if step >= len(steps):
             raise FatalClientError(
                 f"AP cursor #{index}: invalid step {step}/{len(steps)}")
-        quiet = index < int(self.state.get("delivered_high", 0))
-        silent = quiet and bool(steps[step].get("quiet_entry"))
+        restored = index < int(self.state.get("delivered_high", 0))
+        quiet = restored or self._bulk(index)
+        # A step hosted in the quiet flowchart has no window of its own
+        # (Sheikah Sensor, horse gear): given quietly, it is named by the summary.
+        catalog_flow = getattr(self.deliveries.backend.catalog, "data", {}).get("flow")
+        windowless = steps[step].get("flow") not in (None, catalog_flow)
+        silent = quiet and (bool(steps[step].get("quiet_entry")) or windowless)
+        if (not restored and self._bulk(index) and not self.state.get("bulk_batch")
+                and not getattr(self, "_bulk_told", False)):
+            # Their lines are not shown: the journal says they are coming.
+            count = sum(1 for value in self.state["apply_queue"] if self._bulk(int(value)))
+            self._journal_note(f"{{1}}{count} items{{/}} of a release on their way, "
+                               "listed once all are given")
+            self._bulk_told = True
         command = DeliveryCommand(
             self._session_identity[0], self._session_identity[2], index, name,
             step, len(steps), before, quiet=quiet, pickup=self._repeat_filler(index))
@@ -792,8 +809,10 @@ class BotwClientRuntime:
                         # Committed: the client plays it (_native_trap_tick).
                         self._native_traps.append(trap["target"])
             elif silent and step == 0:
-                # Given back without its window: named in one AP summary.
-                self.state.setdefault("replay_batch", []).append(name)
+                # Given back, or sent by a release, without its window: named
+                # in one AP summary.
+                batch = "replay_batch" if restored else "bulk_batch"
+                self.state.setdefault(batch, []).append(name)
                 self.state_store.save()
             elif command.pickup:
                 actor = self._pickup_actor(name)
@@ -980,6 +999,8 @@ class BotwClientRuntime:
                     self.state["pending_checks"].append(name)
                     self._queue_location_display(name)
                     self.log(f"check detected: {name}")
+                if name == "Master Sword Pedestal":
+                    await self._close_pedestal()
             self.safe_after = max(
                 self.safe_after,
                 time.monotonic() + max(event_settle_seconds(name)
@@ -1041,6 +1062,18 @@ class BotwClientRuntime:
         if sword:
             out.append(("Master Sword", int("Master Sword" in received), 1))
         return out
+
+    async def _close_pedestal(self):
+        """Its sword taken without the pull (botw_client/locations.ALTERNATE_FLAGS):
+        the pull is marked done, as it would have been."""
+        close = getattr(self.game, "close_master_sword_pedestal", None)
+        if close is None:
+            return
+        try:
+            if await asyncio.to_thread(close):
+                self.log("Master Sword pedestal: its sword taken without the pull, pull marked done")
+        except Exception as exc:  # noqa: BLE001 - the check is sent anyway
+            self.log(f"Master Sword pedestal not closed: {exc}")
 
     async def _ganon_gate_tick(self):
         """The sanctum's gate (botw_patch/ganon_gate.py): opened once the seed's
@@ -1451,7 +1484,11 @@ class BotwClientRuntime:
             fresh = (type(received) in (int, float) and received >= self._journal_started
                      and time.time() - received <= 300)
             if fresh and is_received_item(entry, self.ap.slot):
-                position += 1               # waits for its item's presentation
+                if not self._bulk_line(entry):
+                    position += 1           # waits for its item's presentation
+                    continue
+                queue.pop(position)         # a release's item: the summary names it
+                self.state_store.save()
                 continue
             queue.pop(position)
             self.state_store.save()
@@ -1509,6 +1546,10 @@ class BotwClientRuntime:
         item = self.ap.received_items.get(index)
         if item is None:
             return 'present'
+        if self._bulk(index):
+            # Named by the summary window once given: its line is dropped.
+            self._drop_received_line(item)
+            return 'skip'
         if self.tips is None:
             return 'pending'
         if index not in self.state.setdefault("journal_announced", []):
@@ -1686,19 +1727,82 @@ class BotwClientRuntime:
         names them (in the presentation session's FIFO)."""
         if not self.state:
             return
-        batch = self.state.get("replay_batch") or []
         queue = self.state["apply_queue"]
         high = int(self.state.get("delivered_high", 0))
-        if not batch or (queue and int(queue[0]) < high):
+        for batch_name, title, done, log in (
+                ("replay_batch", "Items restored", not (queue and int(queue[0]) < high),
+                 "items restored after a load"),
+                # Once none is left: a trap of the release strikes in between.
+                ("bulk_batch", "Items received", not any(self._bulk(int(i)) for i in queue),
+                 "items received at once (release, collect)")):
+            batch = self.state.get(batch_name) or []
+            if not batch or not done:
+                continue
+            number = int(self.state.get("summary_count", 0)) + 1
+            self.state["summary_count"] = number
+            self.state.setdefault("summary_queue", []).append({
+                "key": f"summary/{number}", "title": title,
+                "lines": replay_summary_lines(batch)})
+            self.state[batch_name] = []
+            self.state_store.save()
+            self.log(f"{log}: {len(batch)}")
+            if batch_name == "bulk_batch":
+                self._bulk_told = False
+
+    def _mark_bulk(self):
+        """The items a release or a collect sends at once: told by the server's
+        notice, they come within BULK_WINDOW_SECONDS of it (a release: those
+        of the released world). Given quietly, as items given back after a
+        reload, and named by one AP window; a trap still strikes and a rune
+        keeps its download screen (Simon's rule, 05/10). Items sent again by
+        a connection have no arrival time: never taken for a release."""
+        notices = getattr(self.ap, "bulk_notices", None)
+        arrived = getattr(self.ap, "received_at", None)
+        if not notices or not arrived or self.state is None:
             return
-        number = int(self.state.get("summary_count", 0)) + 1
-        self.state["summary_count"] = number
-        self.state.setdefault("summary_queue", []).append({
-            "key": f"summary/{number}", "title": "Items restored",
-            "lines": replay_summary_lines(batch)})
-        self.state["replay_batch"] = []
-        self.state_store.save()
-        self.log(f"items restored after a load: {len(batch)}")
+        bulk = set(self.state.get("bulk", []))
+        added = False
+        for at, world in notices:
+            for index, when in arrived.items():
+                item = self.ap.received_items.get(index)
+                if (index in bulk or item is None or abs(when - at) > BULK_WINDOW_SECONDS
+                        or (world is not None and item.player != world)):
+                    continue
+                bulk.add(index)
+                added = True
+        now = time.monotonic()
+        notices[:] = [n for n in notices if now - n[0] <= 2 * BULK_WINDOW_SECONDS]
+        if added:
+            self.state["bulk"] = sorted(bulk)
+            self.state_store.save()
+            self.log(f"items of a release or a collect, given quietly: {len(bulk)}")
+
+    def _keeps_presentation(self, item) -> bool:
+        """A trap or a rune: never given quietly with a release."""
+        name = self.ap.item_name(item)
+        delivery = (getattr(self.game, "item_map", None) or {}).get(name, {}).get("delivery", {})
+        return delivery.get("kind") in ("trap", "native_trap", "rune")
+
+    def _bulk(self, index: int) -> bool:
+        """Sent by a release or a collect, and given quietly (not a trap nor a rune)."""
+        if not self.state or index not in self.state.get("bulk", ()):
+            return False
+        item = self.ap.received_items.get(index)
+        return item is not None and not self._keeps_presentation(item)
+
+    def _drop_received_line(self, item) -> None:
+        from .ap_journal import matches_item
+        queue = self.state["message_queue"]
+        for position, entry in enumerate(queue):
+            if matches_item(entry, self.ap.slot, item):
+                queue.pop(position)
+                self.state_store.save()
+                return
+
+    def _bulk_line(self, entry) -> bool:
+        from .ap_journal import matches_item
+        return any(matches_item(entry, self.ap.slot, self.ap.received_items[index])
+                   for index in self.state.get("bulk", ()) if self._bulk(index))
 
     async def _native_presentation_tick(self):
         if self.presentations is None:
@@ -1784,6 +1888,7 @@ class BotwClientRuntime:
                     await self._poll_shops()
                     self._discover_received()
                     self._collect_messages()
+                    self._mark_bulk()
                     # A reload back to an unbound save unbinds the session.
                     session_bound = not self.native_delivery or self._native_session_bound
                 # A swarm playing has the invoker for its 10 s: the events

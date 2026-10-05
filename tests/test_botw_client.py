@@ -110,6 +110,32 @@ class ClientDataTests(unittest.TestCase):
         process.data[7] = 1
         self.assertEqual(tracker.poll(), ["A"])
 
+    def test_a_location_seen_by_its_second_flag_is_reported_once(self):
+        data = (bytes.fromhex("0000000a00000000")
+                + bytes.fromhex("0000001400000000"))
+        process = FakeMemory(100, data)
+        # The pedestal's sword taken as a dropped weapon: only its actor's flag.
+        targets = [LocationTarget("Master Sword Pedestal", "Get_MasterSword_Finish", 10),
+                   LocationTarget("Master Sword Pedestal", "MainField_Weapon_Sword_070", 20)]
+        tracker = LocationTracker(process, {10: 100, 20: 108}, targets)
+        self.assertEqual(tracker.poll(), [])
+        process.data[15] = 1
+        self.assertEqual(tracker.poll(), ["Master Sword Pedestal"])
+        process.data[7] = 1                 # then the pull: already reported
+        self.assertEqual(tracker.poll(), ["Master Sword Pedestal"])
+        tracker.previous = None             # a new session sees both at once
+        self.assertEqual(tracker.poll(), ["Master Sword Pedestal"])
+
+    @NEEDS_TABLE
+    def test_the_pedestal_is_also_checked_by_its_actor(self):
+        from botw_client.locations import alternate_targets
+        targets = load_targets()
+        extra = alternate_targets(targets)
+        self.assertEqual([(t.name, t.flag) for t in extra],
+                         [("Master Sword Pedestal", "MainField_Weapon_Sword_070_2427157272")])
+        self.assertEqual(extra[0].hash_u32, zlib.crc32(extra[0].flag.encode()))
+        self.assertNotIn(extra[0].hash_u32, {t.hash_u32 for t in targets})
+
     def test_location_tracker_reports_missing_before_indexing_it(self):
         target = LocationTarget("A", "FlagA", 10)
         with self.assertRaisesRegex(RuntimeError, "FlagA"):

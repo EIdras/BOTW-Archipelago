@@ -111,6 +111,12 @@ class ArchipelagoClient:
         # the locations that exist in the seed (options may leave some out).
         self.missing_locations: set[int] | None = None     # None: not sent by the server
         self.received_items: dict[int, NetworkItem] = {}
+        # When each item came in a live packet (monotonic; not the items a
+        # connection sends again), and the server's notices that a slot
+        # released its world or collected its items: (when, the slot whose
+        # world gives them, None for a collect: every world).
+        self.received_at: dict[int, float] = {}
+        self.bulk_notices: list[tuple[float, int | None]] = []
         self.scouted_locations: dict[int, LocationInfo] = {}
         self.players = {}
         self.slot_info = {}
@@ -132,6 +138,8 @@ class ArchipelagoClient:
         self.seed_name = self.slot = self.team = None
         self.slot_data.clear()
         self.received_items.clear()
+        self.received_at.clear()
+        self.bulk_notices.clear()
         self.scouted_locations.clear()
         self.items_synchronized = False
         self._initial_received_items_seen = False
@@ -298,6 +306,8 @@ class ArchipelagoClient:
                 return
             for offset, item in enumerate(incoming):
                 self.received_items[start + offset] = item
+                if start:
+                    self.received_at.setdefault(start + offset, time.monotonic())
         elif command == "LocationInfo":
             for raw in packet.get("locations", []):
                 info = decode_location_info(raw)
@@ -323,6 +333,11 @@ class ArchipelagoClient:
                                     _slot(packet.get("slot")))
                 await self.messages.put(message)
                 self.log(text)
+            kind, slot = packet.get("type"), _slot(packet.get("slot"))
+            if kind == "Release" and slot is not None:
+                self.bulk_notices.append((time.monotonic(), slot))
+            elif kind == "Collect" and slot is not None and slot == self.slot:
+                self.bulk_notices.append((time.monotonic(), None))
         elif command == "Bounced" and "DeathLink" in packet.get("tags", []):
             data = packet.get("data") or {}
             timestamp = float(data.get("time", 0.0))
