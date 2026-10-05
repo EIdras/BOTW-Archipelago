@@ -31,7 +31,7 @@ from tools import build_master_sword_candidate as sword
 from tools import build_ballad_condition_candidate as ballad
 from tools.build_ballad_upgrade_delivery import champion_entries, transform_for as upgrade_delivery
 from botw_patch import (beast_heart, death_link, ganon_gate, gerudo_outfit, goron_armor,
-                        hud_layout, loading_icon, traps)
+                        hud_layout, loading_icon, pedestal, traps)
 from botw_patch.status_item import INPUT_HASHES as STATUS_INPUTS
 
 TITLE = "Pack/TitleBG.pack"
@@ -80,7 +80,7 @@ SOURCE_FILES = (
     "botw_patch/hud_layout.py", "tools/bitemico.py", "botw_patch/death_link.py",
     "botw_patch/loading_icon.py", "botw_patch/traps.py", "botw_patch/melee_weapons.py",
     *gerudo_outfit.SOURCE_FILES, *ganon_gate.SOURCE_FILES, *beast_heart.SOURCE_FILES,
-    *goron_armor.SOURCE_FILES,
+    *goron_armor.SOURCE_FILES, *pedestal.SOURCE_FILES,
 )
 
 
@@ -210,9 +210,15 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
                                extra_archive=(BOOTUP, {death_link.EVENT_INFO: death_link.add_event_info,
                                                        death_link.GAMEDATA: death_link.add_flag}))
     changes.extend(edits)
+    # The Master Sword's pedestal closed when its sword was taken without the
+    # pull (botw_patch/pedestal.py): requested by the client.
+    files, edits = patch_stage(files, TITLE, {QUIET_MEMBER: pedestal.add_entry},
+                               extra_archive=(BOOTUP, {pedestal.EVENT_INFO: pedestal.add_event_info}))
+    changes.extend(edits)
     files, edits = patch_stage(files, BOOTUP, {ganon_gate.GAMEDATA: ganon_gate.add_flags})
     changes.extend(edits)
     catalog["ganon_gate"] = {"open": ganon_gate.OPEN, "refused": ganon_gate.REFUSED}
+    catalog["pedestal"] = {"entry": pedestal.ENTRY, "flow": pedestal.FLOW_NAME, "flags": list(pedestal.FLAGS)}
     catalog["death_link"] = {"entry": death_link.ENTRY, "flow": death_link.FLOW_NAME,
                              "flag": death_link.FLAG,
                              "attackers": death_link.attacker_names(inputs[death_link.MESSAGES])}

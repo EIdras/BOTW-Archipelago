@@ -91,6 +91,14 @@ class NativeDeliveryCatalog:
             return None
         return str(value["flow"]), str(value["entry"])
 
+    def pedestal_entry(self) -> tuple[str, str, tuple[str, ...]] | None:
+        """(flow, entry, flags) of the pack's entry closing the Master Sword's
+        pedestal (botw_patch/pedestal.py); None for a pack built before it."""
+        value = self.data.get("pedestal")
+        if not isinstance(value, dict) or not value.get("entry") or not value.get("flow"):
+            return None
+        return str(value["flow"]), str(value["entry"]), tuple(str(f) for f in value.get("flags", ()))
+
     def death_link_flag(self) -> str | None:
         """The volatile flag the DeathLink entry leaves set on the deaths it causes."""
         value = self.data.get("death_link")
@@ -407,6 +415,15 @@ class CemuNativeDeliveryBackend:
             return None
         # Accepted or unknown: the entry is harmless twice.
         return self._request_once(self.catalog.data["flow"], entry) is not False
+
+    def request_pedestal_close(self) -> bool | None:
+        """Ask the pack's entry closing the pedestal: True once the game took
+        the request, False when it is to be asked again later, None when the
+        pack has no such entry. Setting its flags twice is harmless."""
+        found = self.catalog.pedestal_entry()
+        if found is None:
+            return None
+        return self._request_once(found[0], found[1]) is not False
 
     def request_death(self) -> bool | None:
         """Kill Link through the pack's DeathLink entry: True once the game took

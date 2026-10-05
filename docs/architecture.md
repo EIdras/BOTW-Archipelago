@@ -31,7 +31,7 @@ after the hash of its content), reproducible, and verified before every use (`ve
     Beasts...): the check still happens, the vanilla reward does not. A Divine Beast's heart container is picked up
     without the game's get window, its check's message is enough (`botw_patch/beast_heart.py`). An item the logic
     counts on comes from the multiworld only: King Dorephan keeps his Zora armor, Kima her Flamebreaker armor
-    (`botw_patch/build.py`, `suppress_gift`).
+    (`botw_patch/build.py`, `suppress_gift`), Goron City's armor shop is sold out (`botw_patch/goron_armor.py`).
   - EventFlow entries appended to resident flowcharts (`Demo007_1`, `OperationGuide`): one guarded entry per delivery
     step of each item, which the client requests (`botw_patch/delivery_flow.py`).
   - GameData flags of the integration: the session token of the save, the delivery cursor, shop records.
@@ -40,6 +40,8 @@ after the hash of its content), reproducible, and verified before every use (`ve
   - The Archipelago logo in the HUD (`botw_patch/hud_layout.py`) and on the loading screen
     (`botw_patch/loading_icon.py`), and the "Archipelago" key item (`botw_patch/status_item.py`).
   - The DeathLink entry (`botw_patch/death_link.py`), and the traps' (`botw_patch/traps.py`).
+  - The entry closing the Master Sword's pedestal as the pull does, when its sword was taken without the pull
+    (`botw_patch/pedestal.py`): the client requests it once it sees the check.
   - The resource size table, updated for every changed file.
 - **Native code** (`tools/build_native_from_source.py`): Cemu patches (`patch_apInject.asm` and companions) assembled
   from `native/cemu/` and a chain of transformations (`tools/build_*.py`). They install a code cave with a mailbox the

@@ -252,14 +252,18 @@ class BotwGame:
     def open_ganon_gate(self):
         self._write_flag("APGanonOpen", True, "bool")
 
-    def close_master_sword_pedestal(self) -> bool:
-        """The pedestal's sword taken as a dropped weapon: its pull marked done
-        (Get_MasterSword_Finish, as the pull sets it), so that the pedestal no
-        longer offers to pull a sword it no longer holds. True if it was open."""
-        if self._read_flag("Get_MasterSword_Finish", "bool"):
-            return False
-        self._write_flag("Get_MasterSword_Finish", True, "bool")
-        return True
+    def master_sword_pedestal_open(self, flags) -> bool:
+        """One of the pull's flags (botw_patch/pedestal.FLAGS) still unset."""
+        return not all(self._read_flag(flag, "bool") for flag in flags)
+
+    def close_master_sword_pedestal(self, flags=("Get_MasterSword_Finish",)) -> bool:
+        """For a pack without the pedestal's entry: the pull's flags written
+        live. Volatile (tools/cemu/livegdt.py): the save does not keep them.
+        True if one was unset."""
+        unset = [flag for flag in flags if not self._read_flag(flag, "bool")]
+        for flag in unset:
+            self._write_flag(flag, True, "bool")
+        return bool(unset)
 
     def clear_ganon_refusal(self):
         self._write_flag("APGanonRefused", False, "bool")

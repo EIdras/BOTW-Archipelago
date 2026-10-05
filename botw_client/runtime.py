@@ -249,6 +249,11 @@ class BotwClientRuntime:
         self._hud_next = 0.0
         self._hud_error = None
         self._status_item_retry_after = 0.0
+        # The Master Sword's pedestal to close (botw_patch/pedestal.py): its
+        # flags while it is to be checked, the request made, the next try.
+        self._pedestal_flags = None
+        self._pedestal_requested = False
+        self._pedestal_retry_after = 0.0
         # The sanctum's gate: checked every second; off for a pack without it.
         self._gate_unavailable = False
         self._gate_retry_after = 0.0
@@ -1064,8 +1069,17 @@ class BotwClientRuntime:
         return out
 
     async def _close_pedestal(self):
-        """Its sword taken without the pull (botw_client/locations.ALTERNATE_FLAGS):
-        the pull is marked done, as it would have been."""
+        """Its sword maybe taken without the pull (botw_client/locations.ALTERNATE_FLAGS):
+        the pedestal is closed as the pull closes it, by the pack's entry
+        (botw_patch/pedestal.py), asked by _pedestal_tick when the game is
+        ready. A pack built before it: the flag written live, for this session."""
+        backend = getattr(self.deliveries, "backend", None) if self.deliveries else None
+        catalog = getattr(backend, "catalog", None)
+        found = catalog.pedestal_entry() if catalog is not None and hasattr(catalog, "pedestal_entry") else None
+        if found is not None:
+            if self._pedestal_flags is None:
+                self._pedestal_flags, self._pedestal_requested = found[2], False
+            return
         close = getattr(self.game, "close_master_sword_pedestal", None)
         if close is None:
             return
@@ -1074,6 +1088,34 @@ class BotwClientRuntime:
                 self.log("Master Sword pedestal: its sword taken without the pull, pull marked done")
         except Exception as exc:  # noqa: BLE001 - the check is sent anyway
             self.log(f"Master Sword pedestal not closed: {exc}")
+
+    async def _pedestal_tick(self):
+        """The pedestal's entry asked while one of the pull's flags is unset,
+        after the deliveries; checked again until the flags are all set."""
+        flags = self._pedestal_flags
+        if (not flags or self.deliveries is None or self.state is None or self.state["apply_queue"]
+                or time.monotonic() < self._pedestal_retry_after):
+            return
+        try:
+            still_open = await asyncio.to_thread(self.game.master_sword_pedestal_open, flags)
+        except Exception as exc:  # noqa: BLE001 - asked again later
+            self.log(f"Master Sword pedestal not read: {exc}")
+            self._pedestal_retry_after = time.monotonic() + 5.0
+            return
+        if not still_open:
+            if self._pedestal_requested:
+                self.log("Master Sword pedestal closed: no pull from the next load of its area on")
+            self._pedestal_flags = None
+            return
+        result = await asyncio.to_thread(self.deliveries.backend.request_pedestal_close)
+        if result is False:
+            self._pedestal_retry_after = time.monotonic() + 2.0
+            return
+        if not self._pedestal_requested:
+            self.log("Master Sword pedestal: its sword taken without the pull, closing it as the pull does")
+        self._pedestal_requested = True
+        # Read again once the entry has run; asked again if it did not.
+        self._pedestal_retry_after = time.monotonic() + 10.0
 
     async def _ganon_gate_tick(self):
         """The sanctum's gate (botw_patch/ganon_gate.py): opened once the seed's
@@ -1908,6 +1950,7 @@ class BotwClientRuntime:
                             await self._pickup_tick()
                             self._log_delivery_wait()
                             await self._status_item_tick()
+                            await self._pedestal_tick()
                         await self._ganon_gate_tick()
                         await self._native_trap_tick()
                         await self._deathlink_tick()
