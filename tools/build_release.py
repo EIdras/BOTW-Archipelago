@@ -41,6 +41,7 @@ NAME = "BOTW-Archipelago"
 PACKAGES = ("oead", "evfl", "rstb", "aiohttp", "numpy")
 PINS = ROOT / "requirements-player.txt"
 PROJECT = ("botw_client", "botw_patch", "tools", "native", "data", "botw_world/data", "botw_world/docs",
+           "botw_world/catalog.py",
            "botw_world/archipelago.json", "assets/wiiu",
            "assets/models/ap_item/wiiu", "players/BOTW.yaml", "BOTW Archipelago.cmd", "README.md", "LICENSE")
 # Test aids of source checkouts, never in a release: the speed multiplier, the play aids.

@@ -11,5 +11,6 @@ v208 executable.
 | [death_link.md](death_link.md) | DeathLink: how Link is killed, and how a real death is recognized |
 | [traps.md](traps.md) | The six traps: what each does in the game, how the items are delivered, how to add one |
 | [item_catalog.md](item_catalog.md) | The item pool and what each item does in the game |
+| [poptracker.md](poptracker.md) | The PopTracker pack: the game's map, the logic, auto-tracking |
 
 The 3D model of the Archipelago item has its own notes: [assets/models/ap_item](../../assets/models/ap_item/README.md).

@@ -31,6 +31,8 @@ your own server.
 - **Checks never lost**: locations are the game's own saved flags, sent at the next connection when done offline.
 - **DeathLink** (option): when Link dies, the other DeathLink players die; when one of them dies, Link dies, as he
   would of a lethal blow (Mipha's Grace and fairies still save him).
+- **PopTracker**: a map tracker with the world's logic, which follows the room by itself; the launcher builds it
+  from your game and installs it when PopTracker is there.
 - **Traps** (option): a share of the filler turns into Weapon Shatter, Blood Moon, Rupoor, Hearts Down, Strip
   Down and Cucco Swarm, which strike when received. Only the cuccos can kill, and a trap given back by a reload is
   spent, not suffered twice.
@@ -56,6 +58,7 @@ Download the [latest release](https://github.com/EIdras/BOTW-Archipelago/release
    asks for the room's address and plays. Nothing else to install: the release brings its own Python.
 
 What the world does, its locations, items, goal and logic: [game page](botw_world/docs/en_Breath%20of%20the%20Wild.md).
+The French names of every location and item, as the French game shows them: [noms en français](botw_world/docs/names_fr.md).
 
 ## Limitations
 
@@ -87,4 +90,6 @@ This project is free software, under the [GNU General Public License, version 3 
 share and modify it, and any version you distribute stays under the same license, with its source.
 
 The license covers the project's own work. The Legend of Zelda: Breath of the Wild and its assets are © Nintendo; this
-project is not affiliated with or endorsed by Nintendo.
+project is not affiliated with or endorsed by Nintendo. The icons attached to the `tracker-icons` release, which
+the launcher downloads for the PopTracker pack, are Nintendo's images: they are not part of the repository and
+not under its license.

@@ -48,6 +48,18 @@ Jouer normalement : vos objets arrivent dans le jeu, le journal Archipelago (en 
 est envoyé et reçu, et le logo Archipelago du HUD est en couleur tant que vous êtes connecté. Fermer Cemu termine la
 session ; laisser la fenêtre du lanceur ouverte jusque-là. Le client et les textes ajoutés au jeu sont en anglais.
 
+Archipelago nomme les lieux et les objets en anglais, et le jeu en français les nomme souvent autrement (Tah Muhl
+Shrine est le sanctuaire de Ta'Mur) : la [table des noms en français](names_fr.md) donne la correspondance, pour
+chaque lieu et chaque objet.
+
+**Tracker avec carte** : si [PopTracker](https://github.com/black-sliver/PopTracker) est installé (lancé une
+fois, pour que son dossier `PopTracker/packs` existe), le lanceur installe le pack « Breath of the Wild
+Archipelago » avant la session. Dans PopTracker, charger le pack, cliquer sur « AP » et saisir l'adresse de la
+salle, votre nom de slot et le mot de passe : la carte montre chaque lieu, coloré selon ce que vos objets
+permettent, et les coche au fil de la partie. La carte et une partie des icônes viennent de votre propre jeu ;
+pour les autres (armures, runes...), vous pouvez déposer les icônes du jeu, en PNG nommés comme les objets, dans
+`%LOCALAPPDATA%\BOTW Archipelago\poptracker\icons` : elles servent dès la session suivante.
+
 Les lignes tapées dans la fenêtre du lanceur partent à la salle comme chat, ou comme commandes : `/hint <objet>`,
 `/players`, `/status`... (envoyées à la salle sous la forme `!hint`, `!players`...). Le client en ajoute quelques-unes,
 pour les tests et les signalements de bugs :

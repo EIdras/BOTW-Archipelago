@@ -50,9 +50,14 @@ M_GROUP_BITS = 8          # pipeInterleaveBytes = 256
 
 
 def pixel_index_micro_tile(x, y, bpp):
-    """Position of the pixel in its 8x8 micro tile. bpp=32 only."""
+    """Position of the pixel (or BC block) in its 8x8 micro tile: 32 or 64 bpp.
+    Works on numpy arrays as well as on ints."""
+    if bpp == 64:
+        # BC1 blocks (tools/maptex.py): x0 y0 x1 x2 y1 y2, checked on the map.
+        return ((x & 1) | ((y & 1) << 1) | (((x & 2) >> 1) << 2) | (((x & 4) >> 2) << 3)
+                | (((y & 2) >> 1) << 4) | (((y & 4) >> 2) << 5))
     if bpp != 32:
-        raise NotImplementedError("only RGBA8 (32 bpp) is supported")
+        raise NotImplementedError("only 32 and 64 bpp are supported")
     b0 = x & 1
     b1 = (x & 2) >> 1
     b2 = y & 1
