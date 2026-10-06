@@ -19,7 +19,8 @@ edge. The companions: _Nrm grooves the engraving, _Spm makes the gems and the
 crystal shine, _Emm makes them glow a little in their colour.
 
 Outputs, in <folder>: ap_item.blend, ap_item.fbx, ap_item_albedo.png (256 px),
-ap_item_{Bright_Alb,Nrm,Spm,Emm}.png at the template's sizes, preview.png.
+ap_item_{Bright_Alb,Nrm,Spm,Emm}.png at the template's sizes, preview.png, and
+ap_item_icon.png (512 px, transparent), the shops' icon.
 The FBX is written in metres, standing on its origin, ready for Switch Toolbox.
 """
 import colorsys
@@ -45,6 +46,7 @@ MATERIAL = "Mt_Body"        # the template material (amber), so Switch Toolbox m
 GEM_POINTS = 12
 RIM, CROWN, CROWN_Z, TABLE, TABLE_Z = 0.005, 0.87, 0.022, 0.66, 0.032
 RING_SEGMENTS = 24
+SCALE = 1.5                 # the whole jewel, measured on a stall: smaller, it was lost among the goods
 SPIKES = ((0.034, 0.0085), (0.027, 0.0075))      # (length, half width), long and short in turn
 
 # The atlas: a band of BAND rows below (gold, crystal), then
@@ -52,11 +54,13 @@ SPIKES = ((0.034, 0.0085), (0.027, 0.0075))      # (length, half width), long an
 BAND, CELL, MARGIN, SUPERSAMPLE = 16, (85, 120), 2, 4
 GOLD, CRYSTAL = (0.98, 0.74, 0.22), (0.82, 0.93, 1.0)
 ENGRAVING = (1.0, 0.94, 0.74)
+GLOW = 0.12                 # emission, of the gems' and the engraving's colour (0.3 was too much in the game)
 GOLD_UV, CRYSTAL_UV = (8 / TEXTURE, 8 / TEXTURE), (24 / TEXTURE, 8 / TEXTURE)
 # The engraving's colour in the reference, and how far from it a pixel may be.
 LINE_COLOUR, LINE_DISTANCE = (0.88, 0.745, 0.46), 0.16
 # The template's other textures: name suffix -> size in px.
 COMPANIONS = {"Bright_Alb": 128, "Nrm": 128, "Spm": 64, "Emm": 128}
+ICON = 512                  # px, the size of the project's icon file
 
 
 def load_reference():
@@ -209,7 +213,7 @@ def is_yellow(hue):
 
 def gem_colour(hue, value):
     """A clean, saturated colour of the piece's hue; yellow, a lemon-gold."""
-    base = np.array((1.0, 0.86, 0.12)) if is_yellow(hue) else np.array(colorsys.hsv_to_rgb(hue, 0.88, 1.0))
+    base = np.array((1.0, 0.86, 0.15)) if is_yellow(hue) else np.array(colorsys.hsv_to_rgb(hue, 0.82, 1.0))
     return base * value
 
 
@@ -276,10 +280,10 @@ def paint(rgb, polys):
         a = cover[..., None]
         albedo[y0:y0 + ch, x0:x0 + cw] = colour * (1 - a) + np.array(ENGRAVING) * a
         shine[y0:y0 + ch, x0:x0 + cw] = 0.95 * (1 - a) + 0.55 * a
-        glow[y0:y0 + ch, x0:x0 + cw] = colour * 0.3 * (1 - a) + np.array(ENGRAVING) * 0.3 * a
+        glow[y0:y0 + ch, x0:x0 + cw] = colour * GLOW * (1 - a) + np.array(ENGRAVING) * GLOW * a
         depth[y0:y0 + ch, x0:x0 + cw] = -cover
     albedo[:BAND, :16], shine[:BAND, :16] = GOLD, 0.65
-    albedo[:BAND, 16:32], shine[:BAND, 16:32], glow[:BAND, 16:32] = CRYSTAL, 1.0, np.array(CRYSTAL) * 0.5
+    albedo[:BAND, 16:32], shine[:BAND, 16:32], glow[:BAND, 16:32] = CRYSTAL, 1.0, np.array(CRYSTAL) * 2 * GLOW
     # the grooves: a soft depth, then its slopes (tangent space, +Z out)
     for _ in range(2):
         depth = (depth + np.roll(depth, 1, 0) + np.roll(depth, -1, 0) + np.roll(depth, 1, 1) + np.roll(depth, -1, 1)) / 5
@@ -399,7 +403,7 @@ def stand(bm):
     """Upright, faces along Y, resting on the origin (a BOTW item sits at y >= 0)."""
     for v in bm.verts:
         x, y, z = v.co
-        v.co = (x, -z, y)
+        v.co = (x * SCALE, -z * SCALE, y * SCALE)
     low = min(v.co.z for v in bm.verts)
     for v in bm.verts:
         v.co.z -= low
@@ -433,11 +437,47 @@ def material(tex):
     return mat
 
 
+def icon(obj):
+    """The shops' icon: the jewel from the front, on nothing (ICON px, as
+    assets/wiiu/Item_AP.sbitemico; tools/bitemico.py --replace makes the icon file)."""
+    scene = bpy.context.scene
+    cam = bpy.data.objects.new("icon_camera", bpy.data.cameras.new("icon_camera"))
+    scene.collection.objects.link(cam)
+    cam.data.type = "ORTHO"
+    cam.data.ortho_scale = max(obj.dimensions.x, obj.dimensions.z) * 1.04
+    cam.location = (0.0, -1.0, obj.dimensions.z / 2)
+    cam.rotation_euler = (math.radians(90), 0.0, 0.0)
+    scene.camera = cam
+    # lit from the front and evenly, as the game's icons are
+    fill = bpy.data.objects.new("icon_light", bpy.data.lights.new("icon_light", "SUN"))
+    fill.data.energy = 2.5
+    fill.rotation_euler = (math.radians(70), 0.0, math.radians(-15))
+    scene.collection.objects.link(fill)
+    scene.world.color = (0.75, 0.75, 0.78)
+    scene.render.film_transparent = True
+    scene.render.resolution_x = scene.render.resolution_y = 2 * ICON
+    scene.render.filepath = os.path.join(FOLDER, "ap_item_icon_big.png")
+    bpy.ops.render.render(write_still=True)
+    big = bpy.data.images.load(scene.render.filepath)
+    px = np.array(big.pixels[:], dtype=np.float32).reshape(2 * ICON, 2 * ICON, 4)
+    small = px.reshape(ICON, 2, ICON, 2, 4).mean(axis=(1, 3))
+    rgb = np.where(small[..., 3:] > 0, small[..., :3] / np.maximum(small[..., 3:], 1e-6), 0)   # unpremultiplied edges
+    out = bpy.data.images.new("ap_item_icon", ICON, ICON, alpha=True)
+    out.pixels[:] = np.concatenate([rgb, small[..., 3:]], -1).astype(np.float32).ravel()
+    out.filepath_raw = os.path.join(FOLDER, "ap_item_icon.png")
+    out.file_format = "PNG"
+    out.save()
+    os.remove(scene.render.filepath)
+    bpy.data.objects.remove(fill)
+    scene.world.color = (0.35, 0.37, 0.4)
+    scene.render.film_transparent = False
+
+
 def preview(obj):
     scene = bpy.context.scene
     cam = bpy.data.objects.new("camera", bpy.data.cameras.new("camera"))
     scene.collection.objects.link(cam)
-    cam.location = (0.22, -0.66, 0.19)
+    cam.location = (0.33, -0.99, 0.28)
     cam.rotation_euler = (math.radians(90), 0.0, math.radians(18))
     scene.camera = cam
     sun = bpy.data.objects.new("sun", bpy.data.lights.new("sun", "SUN"))
@@ -475,6 +515,7 @@ def main():
     save("ap_item_Emm", textures["Emm"], COMPANIONS["Emm"])
     mesh.materials.append(material(albedo))
     preview(obj)
+    icon(obj)
     bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj

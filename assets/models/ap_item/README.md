@@ -4,7 +4,7 @@ The model of the Archipelago item is built on amber's (`Item_Ore_F`): its skelet
 its mesh and textures are replaced. It becomes the file `Model/AP_Item` of the pack; the game's amber keeps its own.
 It is shown in Beedle's shops and on the village stalls.
 
-It is a jewel made of the logo (`game/preview.png`, about 1,200 triangles, 40 cm wide and 34 cm high): the six
+It is a jewel made of the logo (`game/preview.png`, about 1,200 triangles, 59 cm wide and 52 cm high): the six
 pieces as cut gems, engraved on both faces, set in gold and held by bent arms between a crystal and a spiked ring. It
 stands on its origin, so that it reads from a stall's counter as from the ground.
 
@@ -23,8 +23,8 @@ digests (`MODEL_REFERENCE`, in `botw_patch/shops.py`).
 ## The three rules
 
 1. **Meters, Y up, standing on the origin.** Blender writes its FBX files in centimeters: exported with the defaults,
-   the 40 cm jewel becomes 40 m wide in the game. `game/ap_item.fbx` is already right (scale 0.01, axes converted
-   in the vertices, y from 0 to 0.344). By hand in Blender: *Export → FBX*, "Selected Objects", **Scale 0.01**,
+   the 59 cm jewel becomes 59 m wide in the game. `game/ap_item.fbx` is already right (scale 0.01, axes converted
+   in the vertices, y from 0 to 0.516). By hand in Blender: *Export → FBX*, "Selected Objects", **Scale 0.01**,
    **Apply Transform** checked, and the bottom of the object at z = 0.
 2. **Textures at the original's dimensions.** A 512 px texture in place of a 256 px one keeps the original's mipmap
    sizes: the game shows garbage (orange rings, grey stains) and Switch Toolbox crashes when displaying it. Amber's
@@ -50,11 +50,18 @@ digests (`MODEL_REFERENCE`, in `botw_patch/shops.py`).
      `_Emm` ← `ap_item_Emm.png`, `_Spm` ← `ap_item_Spm.png`; the suggested format, generated mipmaps;
    - save into `wiiu/` as `AP_Item.sbfres`, `AP_Item.Tex1.sbfres`, `AP_Item.Tex2.sbfres`. Do not rename the textures
      or the model **inside** the files: the material looks them up by these names.
-3. **Check without starting the game**: building the resources checks the model (`botw_patch.shop_items.check_model`),
+3. **The shops' icon**, the jewel's render (`game/ap_item_icon.png`, 512 px) in the project's icon format; the HUD and
+   the "Archipelago" key item keep the logo (`assets/wiiu/Item_AP.sbitemico`):
+
+   ```
+   venv\Scripts\python tools\bitemico.py --replace assets\wiiu\Item_AP.sbitemico assets\models\ap_item\game\ap_item_icon.png assets\wiiu\Item_AP_Jewel.sbitemico --pitch 512
+   ```
+
+4. **Check without starting the game**: building the resources checks the model (`botw_patch.shop_items.check_model`),
    for example with `venv\Scripts\python -m unittest tests.test_resources_from_source`. It refuses, with the reason: a
    format or model name different from amber's, a texture whose layout (dimensions, mipmaps, data sizes) is not the
    original's, Tex1 and Tex2 that disagree, a model outside 10 cm – 1 m, or one that goes below its origin.
-4. **Test** in a seed with shops or stalls.
+5. **Test** in a seed with shops or stalls.
 
 ## Internal names: renamed automatically
 

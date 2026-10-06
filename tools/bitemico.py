@@ -3,6 +3,11 @@
     python tools/bitemico.py --extract Item_SkyviewEgg.sbitemico egg.png
     python tools/bitemico.py --replace template.sbitemico logo.png Item_AP.sbitemico
     python tools/bitemico.py --info template.sbitemico
+    python tools/bitemico.py --replace ... --pitch 512   # a header whose pitch is wrong
+
+The project's 512 px icons (assets/wiiu/Item_AP*.sbitemico) carry a pitch of
+96 in their header, a leftover of their template, though their pixels are
+tiled on 512, as the game reads them: --pitch 512 reads and writes them so.
 
 WHY THIS FILE MATTERS
 
@@ -260,19 +265,30 @@ def load(path):
 
 
 def main(argv):
+    if "--pitch" in argv:
+        k = argv.index("--pitch")
+        pitch, argv = int(argv[k + 1]), argv[:k] + argv[k + 2:]
+    else:
+        pitch = None
     if len(argv) < 2:
         sys.exit(__doc__)
     mode = argv[1]
+
+    def opened(path):
+        icon = load(path)
+        if pitch is not None:
+            icon.pitch = pitch
+        return icon
     if mode == "--info":
         print(load(argv[2]).info())
     elif mode == "--extract":
-        icon = load(argv[2])
+        icon = opened(argv[2])
         print(icon.info())
         write_png(argv[3], icon.width, icon.height, icon.read_rgba())
         print("written:", argv[3])
     elif mode == "--replace":
         oead = _oead()
-        icon = load(argv[2])
+        icon = opened(argv[2])
         w, h, rgba = read_png(argv[3])
         if (w, h) != (icon.width, icon.height):
             sys.exit(f"the PNG is {w}x{h}, the template expects "

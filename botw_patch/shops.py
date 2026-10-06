@@ -71,7 +71,9 @@ MODEL_REFERENCE = {
               "unpacked_size": 49408,
               "summary": {"version": 67436547, "models": [], "textures": _AMBER_TEXTURES}},
 }
-ICON = ROOT / "assets/wiiu/Item_AP.sbitemico"
+# The shops' and stalls' items: the jewel, as their model shows it (its render,
+# assets/models/ap_item/build_ap_item.py). The HUD and the key item keep the logo.
+ICON = ROOT / "assets/wiiu/Item_AP_Jewel.sbitemico"
 ICON_TABLE_MARGIN = 8192
 STOCK = 1                                   # one of each AP item
 BUY_EVENT = "Event18"                       # Yorozuya_Kaiwa:Zucchi_Konyu, then Event150
@@ -124,7 +126,7 @@ INPUT_HASHES = {
 TITLE_SHA256 = "12f9925add7d855bad95fbd85cbfbdf760b932e2361c8b306943a6fa0b8e3234"
 SOURCE_FILES = ("botw_patch/shops.py", "botw_patch/shop_items.py", "botw_client/shop_catalog.py",
                 *(f"assets/models/ap_item/wiiu/{MODEL_SOURCE_NAME}{part}.sbfres"
-                  for part in MODEL_PARTS), "assets/wiiu/Item_AP.sbitemico")
+                  for part in MODEL_PARTS), "assets/wiiu/Item_AP_Jewel.sbitemico")
 
 # AP classification bits (NetworkItem.flags).
 PROGRESSION, USEFUL, TRAP = 1, 2, 4

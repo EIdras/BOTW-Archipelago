@@ -39,7 +39,7 @@ class ContentTests(unittest.TestCase):
     def test_the_player_gets_the_launcher_and_the_data_not_the_lab_or_the_tests(self):
         files = build_release.project_files()
         for name in ("BOTW Archipelago.cmd", "tools/launcher.py", "botw_client/paths.py", "tools/cemu/mailbox.py",
-                     "botw_world/data/locations.json", "data/item_map.json", "assets/wiiu/Item_AP.sbitemico",
+                     "botw_world/data/locations.json", "data/item_map.json", "assets/wiiu/Item_AP.sbitemico", "assets/wiiu/Item_AP_Jewel.sbitemico",
                      "native/cemu/legacy/patch_apInject.asm", "players/BOTW.yaml", "LICENSE",
                      "botw_world/docs/setup_en.md", "botw_world/docs/setup_fr.md"):
             self.assertIn(name, files)
