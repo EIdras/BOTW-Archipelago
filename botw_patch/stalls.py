@@ -6,10 +6,11 @@ What is proper to a stall (botw_client/stall_catalog.py):
   * in the DLC map unit, the stall object turns into the AP actor: same
     HashId and links (ForSale to its merchant, DeadUp to the stall's sold-out
     tag). The jewel (assets/models/ap_item) stands on its origin, its faces
-    along Z: here it lies on its back, face up (Rotate [-pi/2, yaw, 0]: the
-    pitch first, then the merchant's yaw, so its top points to the merchant
-    and its logo is upright for the customer), centred on the object it
-    replaces and resting on its level (half its thickness up);
+    along Z. Its pose and yaw are the location's, chosen in the game
+    (botw_client/stall_catalog.py): lying on its back, face up (Rotate
+    [-pi/2, yaw, 0], the pitch first), centred on the object it replaces and
+    resting on its level (half its thickness up); or standing on the object,
+    facing the customer (Rotate [0, yaw, 0]);
   * a new LinkTagAnd reading the saved bool IsGet_AP_Shop_<id> creates the
     object: true until bought, so a bought one is never created again, blood
     moon included. It is the vanilla pattern of 956 tags of these maps (no
@@ -127,13 +128,19 @@ def patch_map(raw: bytes, locations: list[StallLocation],
             raise ValueError(f"object not for sale by {merchant.actor}: {location.name}")
         # Its links (ForSale, sold-out tags) stay as they are.
         obj["UnitConfigName"] = location.actor
-        yaw = merchant.yaw
-        obj["Rotate"] = oead.byml.Array([oead.F32(-math.pi / 2), oead.F32(yaw), oead.F32(0.0)])
-        # Lying, its middle is height/2 from its origin, towards the merchant.
+        yaw = location.yaw
         x, y, z = (float(v) for v in obj["Translate"])
-        obj["Translate"] = oead.byml.Array([oead.F32(x + height / 2 * math.sin(yaw)),
-                                            oead.F32(y + thickness / 2),
-                                            oead.F32(z + height / 2 * math.cos(yaw))])
+        if location.pose == "standing":
+            obj["Rotate"] = oead.byml.Array([oead.F32(0.0), oead.F32(yaw), oead.F32(0.0)])
+            obj["Translate"] = oead.byml.Array([oead.F32(x), oead.F32(y + location.lift), oead.F32(z)])
+        elif location.pose == "lying":
+            obj["Rotate"] = oead.byml.Array([oead.F32(-math.pi / 2), oead.F32(yaw), oead.F32(0.0)])
+            # Lying, its middle is height/2 from its origin, towards its top.
+            obj["Translate"] = oead.byml.Array([oead.F32(x + height / 2 * math.sin(yaw)),
+                                                oead.F32(y + thickness / 2 + location.lift),
+                                                oead.F32(z + height / 2 * math.cos(yaw))])
+        else:
+            raise ValueError(f"unknown pose for {location.name}: {location.pose}")
 
         tag = clone(model)
         new_hash = tag_hash(location)
@@ -155,7 +162,7 @@ def patch_map(raw: bytes, locations: list[StallLocation],
         by_hash[new_hash] = tag
         detail[location.id] = {"object": location.object_hash, "from": location.vanilla_actor,
                                "to": location.actor, "tag": new_hash,
-                               "flag": location.shown_flag, "yaw": merchant.yaw}
+                               "flag": location.shown_flag, "pose": location.pose, "yaw": location.yaw}
     objects.sort(key=lambda o: int(o["HashId"]))
     new = oead.byml.Hash()
     for key in doc.keys():

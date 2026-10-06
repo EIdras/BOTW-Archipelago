@@ -1920,7 +1920,7 @@
     "requires": "",
     "gamedata_flag": "APShop_186",
     "flag_hash": "-306030776",
-    "notes": "Npc_HighMountain021 object 2045856764 (Item_Material_07); custom saved s32",
+    "notes": "Npc_HighMountain021 object 1287359318 (Item_Material_01); custom saved s32",
     "id": 186,
     "merchant": 0,
     "slot": 1
@@ -1932,7 +1932,7 @@
     "requires": "",
     "gamedata_flag": "APShop_187",
     "flag_hash": "-1698338850",
-    "notes": "Npc_HighMountain021 object 1260425555 (Item_Mushroom_C); custom saved s32",
+    "notes": "Npc_HighMountain021 object 2529727570 (Item_Material_06); custom saved s32",
     "id": 187,
     "merchant": 0,
     "slot": 2
@@ -1956,7 +1956,7 @@
     "requires": "",
     "gamedata_flag": "APShop_189",
     "flag_hash": "2105363161",
-    "notes": "Npc_oasis045 object 4235145977 (Item_Fruit_D); custom saved s32",
+    "notes": "Npc_oasis045 object 2048757940 (Item_Fruit_F); custom saved s32",
     "id": 189,
     "merchant": 1,
     "slot": 2
@@ -1980,7 +1980,7 @@
     "requires": "",
     "gamedata_flag": "APShop_191",
     "flag_hash": "1790833578",
-    "notes": "Npc_oasis002 object 2199728615 (Obj_BombArrow_A_04); custom saved s32",
+    "notes": "Npc_oasis002 object 3521419955 (Obj_ElectricArrow_A_02); custom saved s32",
     "id": 191,
     "merchant": 2,
     "slot": 2
@@ -1992,7 +1992,7 @@
     "requires": "",
     "gamedata_flag": "APShop_192",
     "flag_hash": "-206265840",
-    "notes": "Npc_SmallOasis010 object 509375341 (Item_Fruit_F); custom saved s32",
+    "notes": "Npc_SmallOasis010 object 3418843795 (Item_Fruit_F); custom saved s32",
     "id": 192,
     "merchant": 3,
     "slot": 1
@@ -2004,7 +2004,7 @@
     "requires": "",
     "gamedata_flag": "APShop_193",
     "flag_hash": "-2068606330",
-    "notes": "Npc_SmallOasis010 object 4031761654 (Item_Fruit_F); custom saved s32",
+    "notes": "Npc_SmallOasis010 object 769942167 (Item_Fruit_F); custom saved s32",
     "id": 193,
     "merchant": 3,
     "slot": 2
@@ -2016,7 +2016,7 @@
     "requires": "",
     "gamedata_flag": "APShop_194",
     "flag_hash": "450299685",
-    "notes": "Npc_oasis044 object 1497053731 (Item_Material_03); custom saved s32",
+    "notes": "Npc_oasis044 object 1256391030 (Item_Material_07); custom saved s32",
     "id": 194,
     "merchant": 4,
     "slot": 1
@@ -2028,7 +2028,7 @@
     "requires": "",
     "gamedata_flag": "APShop_195",
     "flag_hash": "1842362291",
-    "notes": "Npc_oasis044 object 1171458777 (Item_Material_07); custom saved s32",
+    "notes": "Npc_oasis044 object 1497053731 (Item_Material_03); custom saved s32",
     "id": 195,
     "merchant": 4,
     "slot": 2
@@ -2040,7 +2040,7 @@
     "requires": "",
     "gamedata_flag": "APShop_196",
     "flag_hash": "-187079159",
-    "notes": "Npc_kokiri004 object 525736165 (Item_Mushroom_A); custom saved s32",
+    "notes": "Npc_kokiri004 object 3793699955 (Item_MushroomGet_D); custom saved s32",
     "id": 196,
     "merchant": 5,
     "slot": 1
@@ -2052,7 +2052,7 @@
     "requires": "",
     "gamedata_flag": "APShop_197",
     "flag_hash": "-2082580833",
-    "notes": "Npc_kokiri004 object 1902174028 (Item_Mushroom_A); custom saved s32",
+    "notes": "Npc_kokiri004 object 525736165 (Item_Mushroom_A); custom saved s32",
     "id": 197,
     "merchant": 5,
     "slot": 2
@@ -2064,7 +2064,7 @@
     "requires": "",
     "gamedata_flag": "APShop_198",
     "flag_hash": "325143310",
-    "notes": "Npc_kokiri003 object 837449055 (Item_Material_03); custom saved s32",
+    "notes": "Npc_kokiri003 object 3559016972 (Item_Material_01); custom saved s32",
     "id": 198,
     "merchant": 6,
     "slot": 1
@@ -2088,7 +2088,7 @@
     "requires": "",
     "gamedata_flag": "APShop_200",
     "flag_hash": "-834746836",
-    "notes": "Npc_goron002 object 1456518560 (Item_Material_01); custom saved s32",
+    "notes": "Npc_goron002 object 3043415669 (Item_Material_01); custom saved s32",
     "id": 200,
     "merchant": 7,
     "slot": 1
@@ -2100,7 +2100,7 @@
     "requires": "",
     "gamedata_flag": "APShop_201",
     "flag_hash": "-1187383622",
-    "notes": "Npc_goron002 object 3043415669 (Item_Material_01); custom saved s32",
+    "notes": "Npc_goron002 object 2699587822 (Item_Ore_H); custom saved s32",
     "id": 201,
     "merchant": 7,
     "slot": 2
@@ -2112,7 +2112,7 @@
     "requires": "",
     "gamedata_flag": "APShop_202",
     "flag_hash": "540059392",
-    "notes": "Npc_Kakariko010 object 2059197917 (Obj_ArrowBundle_A_01); custom saved s32",
+    "notes": "Npc_Kakariko010 object 3820325991 (Obj_ArrowNormal_A_01); custom saved s32",
     "id": 202,
     "merchant": 8,
     "slot": 1
@@ -2136,7 +2136,7 @@
     "requires": "",
     "gamedata_flag": "APShop_204",
     "flag_hash": "-917306827",
-    "notes": "Npc_Kakariko014 object 1798493424 (Item_Material_06); custom saved s32",
+    "notes": "Npc_Kakariko014 object 3640152823 (Item_PlantGet_M); custom saved s32",
     "id": 204,
     "merchant": 9,
     "slot": 1
@@ -2148,7 +2148,7 @@
     "requires": "",
     "gamedata_flag": "APShop_205",
     "flag_hash": "-1101778269",
-    "notes": "Npc_Kakariko014 object 516954329 (Item_Material_04); custom saved s32",
+    "notes": "Npc_Kakariko014 object 3058983883 (Item_Material_06); custom saved s32",
     "id": 205,
     "merchant": 9,
     "slot": 2
@@ -2160,7 +2160,7 @@
     "requires": "",
     "gamedata_flag": "APShop_206",
     "flag_hash": "660431641",
-    "notes": "Npc_SouthernVillage005 object 316323603 (Item_Enemy_Put_57); custom saved s32",
+    "notes": "Npc_SouthernVillage005 object 4103452247 (Item_InsectGet_O); custom saved s32",
     "id": 206,
     "merchant": 10,
     "slot": 1
@@ -2172,7 +2172,7 @@
     "requires": "",
     "gamedata_flag": "APShop_207",
     "flag_hash": "1348096911",
-    "notes": "Npc_SouthernVillage005 object 852333563 (Item_FishGet_F); custom saved s32",
+    "notes": "Npc_SouthernVillage005 object 2335650137 (Obj_ArrowBundle_A_01); custom saved s32",
     "id": 207,
     "merchant": 10,
     "slot": 2
@@ -2208,7 +2208,7 @@
     "requires": "",
     "gamedata_flag": "APShop_210",
     "flag_hash": "-685377683",
-    "notes": "Npc_Zora002 object 882863430 (Item_Material_03); custom saved s32",
+    "notes": "Npc_Zora002 object 2425727025 (Item_Ore_H); custom saved s32",
     "id": 210,
     "merchant": 12,
     "slot": 1
@@ -2232,7 +2232,7 @@
     "requires": "",
     "gamedata_flag": "APShop_212",
     "flag_hash": "959157825",
-    "notes": "Npc_HatenoVillage002 object 1551305830 (Item_Mushroom_O); custom saved s32",
+    "notes": "Npc_HatenoVillage002 object 4020751443 (Item_Material_05); custom saved s32",
     "id": 212,
     "merchant": 13,
     "slot": 1
@@ -2244,7 +2244,7 @@
     "requires": "",
     "gamedata_flag": "APShop_213",
     "flag_hash": "1311549143",
-    "notes": "Npc_HatenoVillage002 object 611564340 (Item_Material_04); custom saved s32",
+    "notes": "Npc_HatenoVillage002 object 2366597095 (Obj_ArrowBundle_A_01); custom saved s32",
     "id": 213,
     "merchant": 13,
     "slot": 2

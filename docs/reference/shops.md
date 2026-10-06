@@ -46,16 +46,12 @@ is done in the game's resources, built for each seed; the client only reads.
   through the merchant's entry `ClerkAsk`, then `DisplayShop:Armor`. Goron City's (`Npc_goron004`) sells the
   Flamebreaker set, an item of the logic: its `ClerkAsk` says his sold-out line instead
   ([`botw_patch/goron_armor.py`](../../botw_patch/goron_armor.py)). The other armor shops are unchanged.
-- **Objects replaced**: among the items sold in several copies, the lowest first, at the counter's or the ground's
-  level: an object of a rack or a shelf lifted the jewel out of place (seen in the game, an arrow standing in a
-  Kakariko rack). The second at least 0.6 m from the first (`SPACING`), as the jewels are about that wide; never the
-  last copy: the stall keeps everything it sold.
+- **Objects replaced**: chosen by hand in the game; per slot, the catalogue keeps the object, the pose, the yaw and a
+  height. Never the last copy of an item; the two slots at least 0.6 m apart.
 - **Places and regions**: the nearest `LocationTag`, named from `LocationMarker.msbt`. Region: the nearest tower, the
   rule used for shrines.
 - **Map**: the object becomes `AP_Shop_<id>`. Its HashId and links (`ForSale`, sold-out tags) stay the same. The
-  jewel (`assets/models/ap_item`) stands on its origin; here it lies on its back, face up: `Rotate` is
-  `[-π/2, yaw, 0]` (the pitch, then the merchant's yaw: its top points to the merchant, its logo upright for the
-  customer), centred on the object it replaces and raised by half its thickness, both read from the model.
+  jewel lies face up (`Rotate` `[-π/2, yaw, 0]`) or stands (`[0, yaw, 0]`, Kakariko's arrow stall only).
 - **Respawn**: a new `LinkTagAnd` without inputs, `SaveFlag = IsGet_AP_Shop_<id>`, creates the object through a
   `Create` link. It is the vanilla pattern of 956 tags of these maps (for example `BalladOfHeroGerudo_Activated` →
   `Create` → `Area`). The flag is true until the purchase, so a bought object is never created again, blood moon

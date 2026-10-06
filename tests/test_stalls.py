@@ -69,33 +69,23 @@ class GameFileTests(unittest.TestCase):
             counts = {}
             for o in sold:
                 counts[str(o["UnitConfigName"])] = counts.get(str(o["UnitConfigName"]), 0) + 1
-            for hash_id, actor in merchant.objects:
+            for hash_id, actor, _pose, _yaw, _lift in merchant.objects:
                 self.assertEqual(str(objs[hash_id]["UnitConfigName"]), actor)
                 self.assertIn(objs[hash_id], sold)
                 counts[actor] -= 1
             self.assertTrue(all(n >= 1 for n in counts.values()), merchant.actor)
 
-    def test_the_objects_are_the_lowest_spaced_and_never_the_last_copy(self):
+    def test_a_stalls_two_jewels_are_apart_with_a_pose_and_a_yaw(self):
+        # Chosen in the game (lab/tools/cemu/stall_marks.py): the rules kept.
         for merchant in MERCHANTS:
             objs = objects(merchant.map_unit)
-            sold = [o for o in objs.values() if ("ForSale", merchant.hash_id) in links(o)]
-            left = {}
-            for o in sold:
-                left[str(o["UnitConfigName"])] = left.get(str(o["UnitConfigName"]), 0) + 1
-            base = min(float(o["Translate"][1]) for o in sold)
-            place = lambda o: (float(o["Translate"][0]), float(o["Translate"][2]))
-            picks = []
-            for o in sorted(sold, key=lambda o: (round(float(o["Translate"][1]) - base, 2),
-                                                 str(o["UnitConfigName"]), int(o["HashId"]))):
-                name = str(o["UnitConfigName"])
-                if left[name] < 2 or picks and math.dist(place(o), place(picks[0])) < SPACING:
-                    continue
-                picks.append(o)
-                left[name] -= 1
-                if len(picks) == SLOTS_PER_MERCHANT:
-                    break
-            self.assertEqual(tuple((int(o["HashId"]), str(o["UnitConfigName"])) for o in picks),
-                             merchant.objects, merchant.actor)
+            places = [(float(objs[h]["Translate"][0]), float(objs[h]["Translate"][2]))
+                      for h, *_ in merchant.objects]
+            self.assertGreaterEqual(math.dist(*places), SPACING, merchant.actor)
+            for _hash, _actor, pose, yaw, lift in merchant.objects:
+                self.assertIn(pose, ("lying", "standing"))
+                self.assertLessEqual(abs(yaw), math.pi)
+                self.assertLess(abs(lift), 1.0)
 
     def test_the_buy_event_is_the_merchants_display_shop(self):
         from botw_patch.events import graph_snapshot, read_flow
@@ -120,17 +110,23 @@ class GameFileTests(unittest.TestCase):
         hashes = [int(o["HashId"]) for o in after["Objs"]]
         self.assertEqual(hashes, sorted(hashes))
         olds = {int(o["HashId"]): o for o in before["Objs"]}
+        self.assertEqual({l.pose for l in located}, {"lying", "standing"})     # Kakariko has both
         for location in located:
             obj = objs[location.object_hash]
             self.assertEqual(str(obj["UnitConfigName"]), location.actor)
-            # Lying on its back, its top towards the merchant, centred on the object.
-            yaw = location.merchant.yaw
-            self.assertEqual([round(float(v), 5) for v in obj["Rotate"]],
-                             [round(-math.pi / 2, 5), round(yaw, 5), 0.0])
+            yaw = location.yaw
             x, y, z = (float(v) for v in olds[location.object_hash]["Translate"])
-            for got, want in zip(obj["Translate"], (x + 0.25 * math.sin(yaw), y + 0.05,
-                                                    z + 0.25 * math.cos(yaw))):
-                self.assertAlmostEqual(float(got), want, places=3)
+            if location.pose == "lying":
+                # On its back, centred on the object, half its thickness up.
+                self.assertEqual([round(float(v), 5) for v in obj["Rotate"]],
+                                 [round(-math.pi / 2, 5), round(yaw, 5), 0.0])
+                want = (x + 0.25 * math.sin(yaw), y + 0.05 + location.lift, z + 0.25 * math.cos(yaw))
+            else:
+                # Standing on the object, facing the customer.
+                self.assertEqual([round(float(v), 5) for v in obj["Rotate"]], [0.0, round(yaw, 5), 0.0])
+                want = (x, y + location.lift, z)
+            for got, value in zip(obj["Translate"], want):
+                self.assertAlmostEqual(float(got), value, places=3)
             self.assertIn(("ForSale", location.merchant.hash_id), links(obj))
             tag = objs[tag_hash(location)]
             self.assertEqual(str(tag["UnitConfigName"]), "LinkTagAnd")

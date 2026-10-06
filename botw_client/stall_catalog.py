@@ -17,15 +17,16 @@ records the purchase in APShop_<id> as Beedle's does.
 Merchants: the 14 stalls selling consumables through DisplayShop:Multiple in
 their own flow that have an item on sale in several copies (armour stalls,
 mannequins, are another mechanism; stalls whose items are all single are
-left whole). Objects: among the items on sale in several copies, the lowest
-first, at the counter's or the ground's level (then by actor name, then
-HashId): the jewel lies where the object lay, and an object of a rack or a
-shelf lifted it out of place (seen in the game); the second at least
-SPACING from the first, as the jewels are about 0.6 m wide; never the last
-copy of an item: the stall keeps everything it sold. Places: nearest
-LocationTag, named from LocationMarker.msbt. Regions: nearest tower, the rule
-used for the shrines. Yaw: the merchant's, so the jewel's top points to the
-merchant, its logo upright for the customer.
+left whole). Objects: chosen in the game, stall by stall, where the jewel
+reads best (lab/tools/cemu/stall_marks.py: the article looked at, and where
+Link stood), with the jewel's pose there: lying on its back or standing, and
+its yaw, its logo upright for a customer standing where Link stood. Rules
+kept: an item sold in several copies, never its last one (the stall keeps
+everything it sold), the two at least SPACING apart (the jewels are about
+0.6 m wide). Tarrey Town's stall, built by a quest, keeps the automatic
+choice (the lowest objects, lying, its top towards the merchant). Places:
+nearest LocationTag, named from LocationMarker.msbt. Regions: nearest tower,
+the rule used for the shrines.
 """
 from __future__ import annotations
 
@@ -50,8 +51,11 @@ class StallMerchant:
     region: str
     buy_event: str      # SubFlowEvent DisplayShop:Multiple of the merchant's flow
     yaw: float          # the merchant's Y rotation (radians)
-    # (HashId, vanilla actor) of the objects that become locations, in slot order.
-    objects: tuple[tuple[int, str], ...]
+    # (HashId, vanilla actor, pose, yaw, lift) of the objects that become
+    # locations, in slot order: the jewel "lying" or "standing" there, turned by
+    # yaw (radians), lift metres above the object (below when negative: a
+    # standing jewel down on the counter, from a rack's article).
+    objects: tuple[tuple[int, str, str, float, float], ...]
 
     @property
     def map_unit(self) -> str:
@@ -61,46 +65,60 @@ class StallMerchant:
 MERCHANTS = (
     StallMerchant(0, "Npc_HighMountain021", "B-3", 4095316960, "Rito Village", "General Stall",
                   "Tabantha", "Event79", 1.0801347494125366,
-                  ((2045856764, "Item_Material_07"), (1260425555, "Item_Mushroom_C"))),
+                  ((1287359318, "Item_Material_01", "lying", 2.2861, 0.0),
+                   (2529727570, "Item_Material_06", "lying", 1.8793, 0.0))),
     StallMerchant(1, "Npc_oasis045", "B-7", 2770706636, "Gerudo Town", "Fruit Stall",
                   "Gerudo", "Event27", 0.8168146014213562,
-                  ((1621577614, "Item_Fruit_C"), (4235145977, "Item_Fruit_D"))),
+                  ((1621577614, "Item_Fruit_C", "lying", 0.7794, 0.0),
+                   (2048757940, "Item_Fruit_F", "lying", 0.8325, 0.0))),
     StallMerchant(2, "Npc_oasis002", "B-7", 2768665121, "Gerudo Town", "Arrow Stall",
                   "Gerudo", "Event31", 0.8799998760223389,
-                  ((1250568235, "Obj_ArrowBundle_A_01"), (2199728615, "Obj_BombArrow_A_04"))),
+                  ((1250568235, "Obj_ArrowBundle_A_01", "lying", 0.7243, 0.0),
+                   (3521419955, "Obj_ElectricArrow_A_02", "lying", 0.8701, 0.0))),
     StallMerchant(3, "Npc_SmallOasis010", "B-7", 262592810, "Kara Kara Bazaar", "Fruit Stall",
                   "Gerudo", "Event34", 1.5399999618530273,
-                  ((509375341, "Item_Fruit_F"), (4031761654, "Item_Fruit_F"))),
+                  ((3418843795, "Item_Fruit_F", "lying", 1.9764, 0.0),
+                   (769942167, "Item_Fruit_F", "lying", 0.9912, 0.0))),
     StallMerchant(4, "Npc_oasis044", "B-7", 3321817496, "Gerudo Town", "Materials Stall",
                   "Gerudo", "Event29", -0.6200000643730164,
-                  ((1497053731, "Item_Material_03"), (1171458777, "Item_Material_07"))),
+                  ((1256391030, "Item_Material_07", "lying", -0.9542, 0.0),
+                   (1497053731, "Item_Material_03", "lying", -1.0515, 0.0))),
     StallMerchant(5, "Npc_kokiri004", "F-2", 2323688611, "Korok Forest", "Mushroom Stall",
                   "Woodland", "Event49", 0.0,
-                  ((525736165, "Item_Mushroom_A"), (1902174028, "Item_Mushroom_A"))),
+                  ((3793699955, "Item_MushroomGet_D", "lying", 0.4982, 0.0),
+                   (525736165, "Item_Mushroom_A", "lying", -0.8959, 0.0))),
     StallMerchant(6, "Npc_kokiri003", "F-2", 7154937, "Korok Forest", "General Stall",
                   "Woodland", "Event68", -1.0199999809265137,
-                  ((837449055, "Item_Material_03"), (2136474935, "Item_Material_03"))),
+                  ((3559016972, "Item_Material_01", "lying", -1.5017, 0.0),
+                   (2136474935, "Item_Material_03", "lying", -0.168, 0.0))),
     StallMerchant(7, "Npc_goron002", "G-2", 3812339821, "Goron City", "General Stall",
                   "Eldin", "Event44", -1.9017302989959717,
-                  ((1456518560, "Item_Material_01"), (3043415669, "Item_Material_01"))),
+                  ((3043415669, "Item_Material_01", "lying", -1.5939, 0.0),
+                   (2699587822, "Item_Ore_H", "lying", 0.7496, 0.0))),
     StallMerchant(8, "Npc_Kakariko010", "G-6", 17212261, "Kakariko Village", "Arrow Stall",
                   "Dueling Peaks", "Event175", -1.919862151145935,
-                  ((2059197917, "Obj_ArrowBundle_A_01"), (2376699312, "Obj_FireArrow_A_03"))),
+                  ((3820325991, "Obj_ArrowNormal_A_01", "standing", 2.8769, -0.433),
+                   (2376699312, "Obj_FireArrow_A_03", "standing", -0.3752, -0.093))),
     StallMerchant(9, "Npc_Kakariko014", "G-6", 185877349, "Kakariko Village", "General Stall",
                   "Dueling Peaks", "Event87", 0.3490658402442932,
-                  ((1798493424, "Item_Material_06"), (516954329, "Item_Material_04"))),
+                  ((3640152823, "Item_PlantGet_M", "lying", -2.4887, 0.0),
+                   (3058983883, "Item_Material_06", "lying", -2.6858, 0.0))),
     StallMerchant(10, "Npc_SouthernVillage005", "H-8", 3292211395, "Lurelin Village",
                   "General Stall", "Hateno", "Event49", 2.9399991035461426,
-                  ((316323603, "Item_Enemy_Put_57"), (852333563, "Item_FishGet_F"))),
+                  ((4103452247, "Item_InsectGet_O", "lying", -1.6142, 0.0),
+                   (2335650137, "Obj_ArrowBundle_A_01", "lying", 2.4697, 0.0))),
     StallMerchant(11, "Npc_HighMountain010", "I-3", 2045298369, "Tarrey Town", "Arrow Stall",
                   "Akkala", "Event249", 2.2831859588623047,
-                  ((781734643, "Obj_ArrowBundle_A_02"), (225064014, "Obj_BombArrow_A_03"))),
+                  ((781734643, "Obj_ArrowBundle_A_02", "lying", 2.2832, 0.0),
+                   (225064014, "Obj_BombArrow_A_03", "lying", 2.2832, 0.0))),
     StallMerchant(12, "Npc_Zora002", "I-4", 2771744683, "Zora's Domain", "General Stall",
                   "Akkala", "Event103", -0.33999988436698914,
-                  ((882863430, "Item_Material_03"), (2178080993, "Item_Material_03"))),
+                  ((2425727025, "Item_Ore_H", "lying", 1.2063, 0.0),
+                   (2178080993, "Item_Material_03", "lying", -1.8332, 0.0))),
     StallMerchant(13, "Npc_HatenoVillage002", "I-7", 330593372, "Hateno Village",
                   "General Stall", "Hateno", "Event65", -2.880000114440918,
-                  ((1551305830, "Item_Mushroom_O"), (611564340, "Item_Material_04"))),
+                  ((4020751443, "Item_Material_05", "lying", 3.1235, 0.0),
+                   (2366597095, "Obj_ArrowBundle_A_01", "lying", 1.7538, 0.0))),
 )
 
 
@@ -124,6 +142,19 @@ class StallLocation:
     @property
     def vanilla_actor(self) -> str:
         return self.merchant.objects[self.slot - 1][1]
+
+    @property
+    def pose(self) -> str:
+        """The jewel lying on its back or standing (botw_patch/stalls.py)."""
+        return self.merchant.objects[self.slot - 1][2]
+
+    @property
+    def yaw(self) -> float:
+        return self.merchant.objects[self.slot - 1][3]
+
+    @property
+    def lift(self) -> float:
+        return self.merchant.objects[self.slot - 1][4]
 
     # Same actor and flags scheme as Beedle's items (botw_client/shop_catalog.py).
     @property
