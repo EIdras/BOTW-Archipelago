@@ -54,7 +54,7 @@ SPIKES = ((0.034, 0.0085), (0.027, 0.0075))      # (length, half width), long an
 BAND, CELL, MARGIN, SUPERSAMPLE = 16, (85, 120), 2, 4
 GOLD, CRYSTAL = (0.98, 0.74, 0.22), (0.82, 0.93, 1.0)
 ENGRAVING = (1.0, 0.94, 0.74)
-GLOW = 0.12                 # emission, of the gems' and the engraving's colour (0.3 was too much in the game)
+GLOW = 0.0                  # emission: none (0.3, then 0.12, made the gems flat and fluorescent in the game)
 GOLD_UV, CRYSTAL_UV = (8 / TEXTURE, 8 / TEXTURE), (24 / TEXTURE, 8 / TEXTURE)
 # The engraving's colour in the reference, and how far from it a pixel may be.
 LINE_COLOUR, LINE_DISTANCE = (0.88, 0.745, 0.46), 0.16
