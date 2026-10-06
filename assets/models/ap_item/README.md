@@ -4,6 +4,10 @@ The model of the Archipelago item is built on amber's (`Item_Ore_F`): its skelet
 its mesh and textures are replaced. It becomes the file `Model/AP_Item` of the pack; the game's amber keeps its own.
 It is shown in Beedle's shops and on the village stalls.
 
+It is a jewel made of the logo (`game/preview.png`, about 1,200 triangles, 40 cm wide and 34 cm high): the six
+pieces as cut gems, engraved on both faces, set in gold and held by bent arms between a crystal and a spiked ring. It
+stands on its origin, so that it reads from a stall's counter as from the ground.
+
 ## Folders (`assets/models/ap_item/`)
 
 | Folder | Content | Rule |
@@ -19,14 +23,15 @@ digests (`MODEL_REFERENCE`, in `botw_patch/shops.py`).
 ## The three rules
 
 1. **Meters, Y up, standing on the origin.** Blender writes its FBX files in centimeters: exported with the defaults,
-   the 28 cm medallion becomes 28 m wide in the game. `game/ap_item.fbx` is already right (scale 0.01, axes converted
-   in the vertices, y from 0 to 0.025). By hand in Blender: *Export → FBX*, "Selected Objects", **Scale 0.01**,
+   the 40 cm jewel becomes 40 m wide in the game. `game/ap_item.fbx` is already right (scale 0.01, axes converted
+   in the vertices, y from 0 to 0.344). By hand in Blender: *Export → FBX*, "Selected Objects", **Scale 0.01**,
    **Apply Transform** checked, and the bottom of the object at z = 0.
 2. **Textures at the original's dimensions.** A 512 px texture in place of a 256 px one keeps the original's mipmap
    sizes: the game shows garbage (orange rings, grey stains) and Switch Toolbox crashes when displaying it. Amber's
    sizes: `_Alb` 256, `_Bright_Alb` 128, `_Nrm` 128, `_Emm` 128, `_Spm` 64.
 3. **Replace all 5 textures, in Tex1 and in Tex2.** Otherwise amber's relief, reflections and glow apply to the
-   medallion. `game/` provides neutral versions (flat relief, no reflection, no glow).
+   jewel. `game/` provides its own: `_Nrm` grooves the engravings, `_Spm` makes the gems and the crystal shine, `_Emm`
+   makes them glow a little in their colour (how strongly the game's shader shows each is checked in the game).
 
 ## Rebuilding the model
 
