@@ -307,4 +307,32 @@ Archipelago affiche les noms anglais du jeu. Voici leurs équivalents dans le je
 | Hearts Down | Cœurs en moins (piège) |
 | Cucco Swarm | Nuée de cocottes (piège) |
 | Strip Down | Déshabillage (piège) |
-| Rupee Bundle | Rubis |
+| Red Rupee | Rubis rouge |
+| 10 Arrows | 10 flèches en bois |
+| 10 Fire Arrows | 10 flèches de feu |
+| 10 Ice Arrows | 10 flèches de glace |
+| 10 Shock Arrows | 10 flèches électriques |
+| 10 Bomb Arrows | 10 flèches explosives |
+| 5 Ancient Arrows | 5 flèches archéoniques |
+| Diamond | Diamant brut |
+| Ruby | Rubis brut |
+| Sapphire | Saphir brut |
+| Topaz | Topaze brute |
+| Opal | Opale brute |
+| Amber | Ambre brut |
+| Hasty Elixir | Remède tempo |
+| Electro Elixir | Remède électro |
+| Tough Elixir | Remède protecto |
+| Hearty Elixir | Remède max |
+| Fireproof Elixir | Remède ignifus |
+| Chilly Elixir | Remède glagla |
+| Spicy Elixir | Remède pikpik |
+| Mighty Elixir | Remède robusto |
+| Sneaky Elixir | Remède silencio |
+| Energizing Elixir | Remède enduro |
+| Enduring Elixir | Remède vitalis |
+| Fairy Tonic | Élixir féérique |
+| Blue Rupee | Rubis bleu |
+| Purple Rupee | Rubis violet |
+| Silver Rupee | Rubis argenté |
+| Gold Rupee | Rubis doré |

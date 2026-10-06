@@ -19,7 +19,8 @@ from evfl.event import ActionEvent, Event, SubFlowEvent, SwitchEvent
 from evfl.util import Index, make_rindex
 
 from botw_client.delivery_plan import (
-    DeliveryMutation, DeliveryStep, ItemDeliveryPlan, MutationKind, compile_delivery_plan, droppable)
+    COOK_SLOTS, DeliveryMutation, DeliveryStep, ItemDeliveryPlan, MutationKind,
+    compile_delivery_plan, droppable)
 from botw_client.items import load_item_map
 from .events import graph_snapshot, read_flow, write_flow
 from .resources import unpack
@@ -135,6 +136,13 @@ def quiet_step(plan: DeliveryStep) -> DeliveryStep | None:
     if traps and len(plan.mutations) == 1:
         return replace(plan, host=None, mutations=(replace(
             traps[0], kind=MutationKind.TRAP_SPENT, value=None),))
+    bundles = [m for m in plan.mutations if m.kind is MutationKind.GET_DEMO_BUNDLE]
+    if bundles and len(plan.mutations) == 1:
+        return replace(plan, mutations=(replace(
+            bundles[0], kind=MutationKind.INCREASE_PORCH, value=1),))
+    if any(m.kind is MutationKind.COOK for m in plan.mutations):
+        # The same dish, cooked without its window (the builder reads `quiet`).
+        return plan
     if any(m.kind is MutationKind.RUNE_DOWNLOAD for m in plan.mutations):
         return replace(plan, mutations=tuple(
             DeliveryMutation(MutationKind.SET_BOOL, m.target, True, value_type="bool")
@@ -175,7 +183,8 @@ def shows_window(plan: DeliveryStep) -> bool:
     """The step opens the game's window (GetDemo, champion powers, the rune
     download screen)."""
     return any(m.kind in (MutationKind.GET_DEMO_ACTOR, MutationKind.CHAMPION_ACTOR,
-                          MutationKind.RUNE_DOWNLOAD)
+                          MutationKind.RUNE_DOWNLOAD, MutationKind.GET_DEMO_BUNDLE,
+                          MutationKind.COOK)
                for m in plan.mutations)
 
 
@@ -525,6 +534,11 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
     runes = any(m.kind is MutationKind.RUNE_DOWNLOAD for spec in specs for m in spec.plan.mutations)
     if runes:
         action_names += ('Demo_OpenItemDownloadDemo', 'Demo_CloseItemMenu')
+    kinds = {m.kind for spec in specs for m in spec.plan.mutations}
+    if MutationKind.INCREASE_PORCH in kinds:
+        action_names += ('Demo_IncreasePorchItem',)
+    if MutationKind.COOK in kinds:
+        action_names += ('Demo_SetCookItem', 'Demo_WaitFrame')
     actions = {name: holder(system.actions, name) for name in action_names}
     queries = {"CheckAddPorchItem": holder(
         system.queries, "CheckAddPorchItem")}
@@ -676,6 +690,29 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
                 # played by the client once it has seen the commit; DROPPED:
                 # created by the client before the commit.
                 continue
+            elif mutation.kind is MutationKind.GET_DEMO_BUNDLE:
+                nxt = subflow(stem + f"_Mut{index}", "GetDemo", "GetItemByName", {
+                    "CheckTargetActorName": mutation.target,
+                    "IsInvalidOpenPouch": True}, nxt)
+            elif mutation.kind is MutationKind.INCREASE_PORCH:
+                nxt = action(stem + f"_Mut{index}", "Demo_IncreasePorchItem", {
+                    "PorchItemName": mutation.target, "Value": int(mutation.value),
+                    "IsWaitFinish": True}, nxt)
+            elif mutation.kind is MutationKind.COOK:
+                if not spec.quiet:
+                    # As the cooking pot ends (Demo001_0 Event114, Event113, Event101).
+                    nxt = subflow(stem + f"_Mut{index}_Show", "GetDemo", "ShowGetDemoCookResult", {
+                        "IsInvalidOpenPouch": True, "EnableMultiGet": True}, nxt)
+                    nxt = action(stem + f"_Mut{index}_Wait", "Demo_WaitFrame", {
+                        "Frame": 1, "IsWaitFinish": True}, nxt)
+                    nxt = action(stem + f"_Mut{index}_Number", "Demo_SetGameDataInt", {
+                        "GameDataIntName": "GiveItemNumber", "Value": 1,
+                        "IsWaitFinish": True}, nxt)
+                ingredients = (list(mutation.value) + [""] * COOK_SLOTS)[:COOK_SLOTS]
+                nxt = action(stem + f"_Mut{index}", "Demo_SetCookItem", {
+                    "IsWaitFinish": True, "SetNum": 1,
+                    **{f"PorchItemName{slot + 1:02d}": name
+                       for slot, name in enumerate(ingredients)}}, nxt)
             elif mutation.kind is MutationKind.INCREASE_RUPEE:
                 # Not waited for: the counter's animation then runs after the
                 # event instead of freezing the player.
@@ -782,7 +819,8 @@ def patch_delivery_event_info(data: bytes,
         metadata = oead.byml.Hash({field: copy.deepcopy(donor[field])
                                    for field in fields})
         if (spec is not None and not spec.quiet and any(
-                mutation.kind in (MutationKind.GET_DEMO_ACTOR, MutationKind.CHAMPION_ACTOR)
+                mutation.kind in (MutationKind.GET_DEMO_ACTOR, MutationKind.CHAMPION_ACTOR,
+                                  MutationKind.GET_DEMO_BUNDLE, MutationKind.COOK)
                 for mutation in spec.plan.mutations)):
             metadata["subfile"] = oead.byml.Array([
                 oead.byml.Hash({"file": "GetDemo.bfevfl"})])

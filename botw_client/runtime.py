@@ -52,7 +52,10 @@ STATE_SCHEMA = 3
 CLIENT_SCHEMA = 2
 # The client schemas of BOTW seeds this client plays: 4 added the Gerudo Set, 5 the
 # goal and the sanctum's requirements.
-BOTW_CLIENT_SCHEMAS = (3, 4, 5)
+BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6)
+# The mutations that present the item themselves: no AP window before them.
+VANILLA_WINDOWS = ("get_demo_actor", "champion_actor", "rune_download", "trap", "native_trap",
+                   "get_demo_bundle", "cook")
 TERMINAL_ITEMS = {
     "Magnesis Terminal": "Magnesis",
     "Remote Bombs Terminal": "Remote Bomb",
@@ -1673,12 +1676,17 @@ class BotwClientRuntime:
         if item is None or getattr(item, "flags", None) != 0:
             return False
         name = self.ap.item_name(item)
+        # An elixir keeps the cooking's window every time ("window": "always").
+        entry = getattr(getattr(self, "game", None), "item_map", {}).get(name) or {}
+        if entry.get("window") == "always":
+            return False
         return bool(name) and self._received_before(index, name) > 0
 
     def _vanilla_window(self, index: int) -> bool:
         """Its native delivery has a presentation of its own: the game's get
-        window (GetDemo), the rune terminal's download screen, or, for a trap,
-        the journal line that says what it did."""
+        window (GetDemo, an arrow bundle's or a cooked dish's too), the rune
+        terminal's download screen, or, for a trap, the journal line that says
+        what it did."""
         item = self.ap.received_items[index]
         name = self.ap.item_name(item)
         try:
@@ -1686,8 +1694,7 @@ class BotwClientRuntime:
                 name, self._received_before(index, name))
         except (AttributeError, KeyError, ValueError):
             return False
-        return any(m.get("kind") in ("get_demo_actor", "champion_actor", "rune_download", "trap",
-                                     "native_trap")
+        return any(m.get("kind") in VANILLA_WINDOWS
                    for step in steps for m in step.get("mutations", ()))
 
     def _close_presentations(self):

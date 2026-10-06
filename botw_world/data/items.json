@@ -270,7 +270,7 @@
     "id": 35
   },
   {
-    "name": "Rupee Bundle",
+    "name": "Red Rupee",
     "filler": true,
     "count": 0,
     "id": 36
@@ -294,5 +294,173 @@
     "name": "Cucco Swarm",
     "trap": true,
     "id": 40
+  },
+  {
+    "name": "10 Arrows",
+    "filler": true,
+    "count": 0,
+    "id": 42
+  },
+  {
+    "name": "10 Fire Arrows",
+    "filler": true,
+    "count": 0,
+    "id": 43
+  },
+  {
+    "name": "10 Ice Arrows",
+    "filler": true,
+    "count": 0,
+    "id": 44
+  },
+  {
+    "name": "10 Shock Arrows",
+    "filler": true,
+    "count": 0,
+    "id": 45
+  },
+  {
+    "name": "10 Bomb Arrows",
+    "filler": true,
+    "count": 0,
+    "id": 46
+  },
+  {
+    "name": "5 Ancient Arrows",
+    "filler": true,
+    "count": 0,
+    "id": 47
+  },
+  {
+    "name": "Diamond",
+    "filler": true,
+    "count": 0,
+    "id": 48
+  },
+  {
+    "name": "Ruby",
+    "filler": true,
+    "count": 0,
+    "id": 49
+  },
+  {
+    "name": "Sapphire",
+    "filler": true,
+    "count": 0,
+    "id": 50
+  },
+  {
+    "name": "Topaz",
+    "filler": true,
+    "count": 0,
+    "id": 51
+  },
+  {
+    "name": "Opal",
+    "filler": true,
+    "count": 0,
+    "id": 52
+  },
+  {
+    "name": "Amber",
+    "filler": true,
+    "count": 0,
+    "id": 53
+  },
+  {
+    "name": "Hasty Elixir",
+    "filler": true,
+    "count": 0,
+    "id": 54
+  },
+  {
+    "name": "Electro Elixir",
+    "filler": true,
+    "count": 0,
+    "id": 55
+  },
+  {
+    "name": "Tough Elixir",
+    "filler": true,
+    "count": 0,
+    "id": 56
+  },
+  {
+    "name": "Hearty Elixir",
+    "filler": true,
+    "count": 0,
+    "id": 57
+  },
+  {
+    "name": "Fireproof Elixir",
+    "filler": true,
+    "count": 0,
+    "id": 58
+  },
+  {
+    "name": "Chilly Elixir",
+    "filler": true,
+    "count": 0,
+    "id": 59
+  },
+  {
+    "name": "Spicy Elixir",
+    "filler": true,
+    "count": 0,
+    "id": 60
+  },
+  {
+    "name": "Mighty Elixir",
+    "filler": true,
+    "count": 0,
+    "id": 61
+  },
+  {
+    "name": "Sneaky Elixir",
+    "filler": true,
+    "count": 0,
+    "id": 62
+  },
+  {
+    "name": "Energizing Elixir",
+    "filler": true,
+    "count": 0,
+    "id": 63
+  },
+  {
+    "name": "Enduring Elixir",
+    "filler": true,
+    "count": 0,
+    "id": 64
+  },
+  {
+    "name": "Fairy Tonic",
+    "filler": true,
+    "count": 0,
+    "id": 65
+  },
+  {
+    "name": "Blue Rupee",
+    "filler": true,
+    "count": 0,
+    "id": 66
+  },
+  {
+    "name": "Purple Rupee",
+    "filler": true,
+    "count": 0,
+    "id": 67
+  },
+  {
+    "name": "Silver Rupee",
+    "filler": true,
+    "count": 0,
+    "id": 68
+  },
+  {
+    "name": "Gold Rupee",
+    "filler": true,
+    "count": 0,
+    "id": 69
   }
 ]

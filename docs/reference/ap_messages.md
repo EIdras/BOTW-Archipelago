@@ -110,7 +110,7 @@ without committing stops the client (possible mutation).
   shown is only logged. Rupee bundles: their silent twin, `Demo_IncreaseRupee`, whose counter shows them. A unique,
   useful or progression item, or the first of a kind, keeps its window.
 - **A full pouch**: the entry checks for room first (`CheckAddPorchItem`), shows the game's "pouch full" message and
-  gives nothing. A two-handed sword, a bow, a shield or an arrow bundle then falls at Link's feet, created by the
+  gives nothing. A two-handed sword, a bow, a shield, an arrow bundle or a gem then falls at Link's feet, created by the
   game's actor creation, and the step's drop entry only commits it: the queue goes on
   ([`botw_client/item_drop.py`](../../botw_client/item_drop.py)). An item left on the ground is lost with the area.
   Other items wait for room.

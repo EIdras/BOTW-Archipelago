@@ -82,7 +82,7 @@ class StallItems(Range):
 
 
 class TrapPercentage(Range):
-    """Share of the filler, the items that would be Rupee Bundles, that become traps,
+    """Share of the filler (arrows, elixirs, gems and rupees) that becomes traps,
     chosen among the traps of Trap Weights. 0: no trap. A trap strikes when it is
     received: Weapon Shatter breaks the weapon in Link's hand, Blood Moon calls a
     Blood Moon at once, Rupoor takes up to 100 rupees, Hearts Down takes up

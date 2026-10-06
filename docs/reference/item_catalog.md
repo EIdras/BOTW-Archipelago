@@ -6,7 +6,7 @@ classification; [`data/item_map.json`](../../data/item_map.json) defines what ea
 
 ## Pool size
 
-97 items are declared, completed with `Rupee Bundle` up to the number of locations: 152 locations without the shop
+97 items are declared, completed with drawn filler up to the number of locations: 152 locations without the shop
 options (55 rupee bundles), up to 212 with two items in every shop and all 28 stall items (115 bundles). `Defeat Calamity Ganon` is
 the victory location and holds no item.
 
@@ -33,9 +33,10 @@ The sets are deliberately strong: they are not filler items.
 
 ## Filler and traps
 
-The filler is generated to fill the pool. With the `trap_percentage` option, that share of the `Rupee Bundle` slots
-is taken by traps instead, drawn by `trap_weights` (0 by default: no trap). What each trap does, and how:
-[traps.md](traps.md).
+The filler is generated to fill the pool, one draw per slot left (`FILLER` in `botw_world/catalog.py`): arrows 35 %,
+elixirs 35 %, gems 15 %, rupees 15 %, then one item of the family (rupees: smaller sums more often). With the
+`trap_percentage` option, that share of the filler slots is taken by traps instead, drawn by `trap_weights` (0 by
+default: no trap). What each trap does, and how: [traps.md](traps.md).
 
 | Archipelago item | Count | In the game |
 |---|---:|---|
@@ -44,7 +45,10 @@ is taken by traps instead, drawn by `trap_weights` (0 by default: no trap). What
 | Star Fragment | 8 | one star fragment |
 | Korok Seed | 0 | one Korok seed: none in the pool, the Koroks give theirs |
 | Fairy | 6 | one fairy |
-| Rupee Bundle | depends on the locations | 20 rupees |
+| 10 Arrows, 10 Fire / Ice / Shock / Bomb Arrows, 5 Ancient Arrows | drawn | the arrows, by the game's get window as Riju gives her bomb arrows (`IsInvalidOpenPouch` on: off, the window says 0 arrows); received again, quietly (`Demo_IncreasePorchItem`, one bundle) |
+| Diamond, Ruby, Sapphire, Topaz, Opal, Amber | drawn | one gem |
+| Hasty, Electro, Tough, Hearty, Fireproof, Chilly, Spicy, Mighty, Sneaky, Energizing, Enduring Elixir, Fairy Tonic | drawn | the elixir, cooked by the game from its ingredients (`Demo_SetCookItem`, the Champions' Ballad's recipes or two critters and a Bokoblin Horn), then the cooking pot's own window (`GetDemo<ShowGetDemoCookResult>`), every time |
+| Blue Rupee (5), Red Rupee (20, `Rupee Bundle` in seeds generated before), Purple Rupee (50), Silver Rupee (100), Gold Rupee (300) | drawn | the rupees |
 | Weapon Shatter, Blood Moon, Rupoor, Hearts Down, Strip Down, Cucco Swarm | none fixed | traps, see below |
 
 A received item is delivered by the game itself: its get window when it has one, the download screen for a rune,

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "notes": "AP item -> what it does in BOTW. Rupee Bundle is the generated filler (generated_filler). pickup: a filler received again comes with the game's pickup notification, not its window (runtime._repeat_filler).",
+  "notes": "AP item -> what it does in BOTW. generated_filler: drawn to fill the pool (botw_world/catalog.py FILLER), not counted in items.json. former_names: the names seeds generated before gave the item, still delivered. pickup: a filler received again comes with the game's pickup notification, not its window (runtime._repeat_filler).",
   "sources": {
     "gamedata_names_and_types": "data/gamedata.json",
     "actor_names": "https://github.com/MrCheeze/botw-tools/blob/master/botw_names.json"
@@ -52,6 +52,35 @@
     {"name":"Cucco Swarm","delivery":{"kind":"native_trap","effect":"cucco_swarm","text":"The cuccos want revenge!"},"display_actor":"Item_AP"},
     {"name":"Strip Down","delivery":{"kind":"trap","entry":"APTrapStripDown","text":"Your gear falls off."},"display_actor":"Item_AP"},
 
-    {"name":"Rupee Bundle","generated_filler":true,"delivery":{"kind":"getdemo_actor","actor":"PutRupee_Red"},"display_actor":"PutRupee_Red"}
+    {"name":"Red Rupee","former_names":["Rupee Bundle"],"generated_filler":true,"delivery":{"kind":"getdemo_actor","actor":"PutRupee_Red"},"display_actor":"PutRupee_Red"},
+
+    {"name":"10 Arrows","generated_filler":true,"delivery":{"kind":"arrows","actor":"Obj_ArrowBundle_A_02"},"display_actor":"Obj_ArrowBundle_A_02","pickup":true},
+    {"name":"10 Fire Arrows","generated_filler":true,"delivery":{"kind":"arrows","actor":"Obj_FireArrow_A_02"},"display_actor":"Obj_FireArrow_A_02","pickup":true},
+    {"name":"10 Ice Arrows","generated_filler":true,"delivery":{"kind":"arrows","actor":"Obj_IceArrow_A_02"},"display_actor":"Obj_IceArrow_A_02","pickup":true},
+    {"name":"10 Shock Arrows","generated_filler":true,"delivery":{"kind":"arrows","actor":"Obj_ElectricArrow_A_02"},"display_actor":"Obj_ElectricArrow_A_02","pickup":true},
+    {"name":"10 Bomb Arrows","generated_filler":true,"delivery":{"kind":"arrows","actor":"Obj_BombArrow_A_03"},"display_actor":"Obj_BombArrow_A_03","pickup":true},
+    {"name":"5 Ancient Arrows","generated_filler":true,"delivery":{"kind":"arrows","actor":"Obj_AncientArrow_B_01"},"display_actor":"Obj_AncientArrow_B_01","pickup":true},
+    {"name":"Diamond","generated_filler":true,"delivery":{"kind":"actors","actors":["Item_Ore_A"]},"display_actor":"Item_Ore_A","pickup":true},
+    {"name":"Ruby","generated_filler":true,"delivery":{"kind":"actors","actors":["Item_Ore_B"]},"display_actor":"Item_Ore_B","pickup":true},
+    {"name":"Sapphire","generated_filler":true,"delivery":{"kind":"actors","actors":["Item_Ore_C"]},"display_actor":"Item_Ore_C","pickup":true},
+    {"name":"Topaz","generated_filler":true,"delivery":{"kind":"actors","actors":["Item_Ore_D"]},"display_actor":"Item_Ore_D","pickup":true},
+    {"name":"Opal","generated_filler":true,"delivery":{"kind":"actors","actors":["Item_Ore_E"]},"display_actor":"Item_Ore_E","pickup":true},
+    {"name":"Amber","generated_filler":true,"delivery":{"kind":"actors","actors":["Item_Ore_F"]},"display_actor":"Item_Ore_F","pickup":true},
+    {"name":"Hasty Elixir","generated_filler":true,"delivery":{"kind":"cook","ingredients":["Animal_Insect_S","Item_Enemy_00","Animal_Insect_A","Item_Enemy_01"]},"display_actor":"Item_Cook_C_17","window":"always"},
+    {"name":"Electro Elixir","generated_filler":true,"delivery":{"kind":"cook","ingredients":["Animal_Insect_I","Item_Enemy_03","Animal_Insect_R"]},"display_actor":"Item_Cook_C_17","window":"always"},
+    {"name":"Tough Elixir","generated_filler":true,"delivery":{"kind":"cook","ingredients":["Animal_Insect_P","Item_Enemy_08","Item_Mushroom_M","Item_PlantGet_H","Item_FishGet_G"]},"display_actor":"Item_Cook_C_17","window":"always"},
+    {"name":"Hearty Elixir","generated_filler":true,"delivery":{"kind":"cook","ingredients":["Animal_Insect_M","Animal_Insect_M","Item_Enemy_00"]},"display_actor":"Item_Cook_C_17","window":"always"},
+    {"name":"Fireproof Elixir","generated_filler":true,"delivery":{"kind":"cook","ingredients":["Animal_Insect_X","Animal_Insect_X","Item_Enemy_00"]},"display_actor":"Item_Cook_C_17","window":"always"},
+    {"name":"Chilly Elixir","generated_filler":true,"delivery":{"kind":"cook","ingredients":["Animal_Insect_C","Animal_Insect_C","Item_Enemy_00"]},"display_actor":"Item_Cook_C_17","window":"always"},
+    {"name":"Spicy Elixir","generated_filler":true,"delivery":{"kind":"cook","ingredients":["Animal_Insect_T","Animal_Insect_T","Item_Enemy_00"]},"display_actor":"Item_Cook_C_17","window":"always"},
+    {"name":"Mighty Elixir","generated_filler":true,"delivery":{"kind":"cook","ingredients":["Animal_Insect_G","Animal_Insect_G","Item_Enemy_00"]},"display_actor":"Item_Cook_C_17","window":"always"},
+    {"name":"Sneaky Elixir","generated_filler":true,"delivery":{"kind":"cook","ingredients":["Animal_Insect_E","Animal_Insect_E","Item_Enemy_00"]},"display_actor":"Item_Cook_C_17","window":"always"},
+    {"name":"Energizing Elixir","generated_filler":true,"delivery":{"kind":"cook","ingredients":["Animal_Insect_H","Animal_Insect_H","Item_Enemy_00"]},"display_actor":"Item_Cook_C_17","window":"always"},
+    {"name":"Enduring Elixir","generated_filler":true,"delivery":{"kind":"cook","ingredients":["Animal_Insect_B","Animal_Insect_B","Item_Enemy_00"]},"display_actor":"Item_Cook_C_17","window":"always"},
+    {"name":"Fairy Tonic","generated_filler":true,"delivery":{"kind":"cook","ingredients":["Animal_Insect_F"]},"display_actor":"Item_Cook_C_17","window":"always"},
+    {"name":"Blue Rupee","generated_filler":true,"delivery":{"kind":"getdemo_actor","actor":"PutRupee_Blue"},"display_actor":"PutRupee_Blue"},
+    {"name":"Purple Rupee","generated_filler":true,"delivery":{"kind":"getdemo_actor","actor":"PutRupee_Purple"},"display_actor":"PutRupee_Purple"},
+    {"name":"Silver Rupee","generated_filler":true,"delivery":{"kind":"getdemo_actor","actor":"PutRupee_Silver"},"display_actor":"PutRupee_Silver"},
+    {"name":"Gold Rupee","generated_filler":true,"delivery":{"kind":"getdemo_actor","actor":"PutRupee_Gold"},"display_actor":"PutRupee_Gold"}
   ]
 }

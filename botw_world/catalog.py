@@ -23,6 +23,19 @@ CLIMATES = {
     "heat": (("Flamebreaker Set",),),                   # Death Mountain's burning zone
 }
 GOAL_LOCATION = "Defeat Calamity Ganon"
+# The generated filler, one draw per slot the other items leave: a family by
+# its weight, then one of its items by theirs (smaller sums of rupees more often).
+FILLER = {
+    "arrows": (35, {"10 Arrows": 1, "10 Fire Arrows": 1, "10 Ice Arrows": 1, "10 Shock Arrows": 1,
+                    "10 Bomb Arrows": 1, "5 Ancient Arrows": 1}),
+    "elixirs": (35, {name: 1 for name in (
+        "Hasty Elixir", "Electro Elixir", "Tough Elixir", "Hearty Elixir", "Fireproof Elixir",
+        "Chilly Elixir", "Spicy Elixir", "Mighty Elixir", "Sneaky Elixir", "Energizing Elixir",
+        "Enduring Elixir", "Fairy Tonic")}),
+    "gems": (15, {name: 1 for name in ("Diamond", "Ruby", "Sapphire", "Topaz", "Opal", "Amber")}),
+    "rupees": (15, {"Blue Rupee": 30, "Red Rupee": 35, "Purple Rupee": 20, "Silver Rupee": 10,
+                    "Gold Rupee": 5}),
+}
 PLATEAU_RUNES = {name: row["runes"] for name, row in LOGIC.items()
                  if name in ("Oman Au Shrine", "Ja Baij Shrine", "Owa Daim Shrine", "Keh Namut Shrine")}
 

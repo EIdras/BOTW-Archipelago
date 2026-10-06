@@ -25,7 +25,7 @@ Breath of the Wild:
   # When you die, everyone with DeathLink dies; when they die, so do you
   # (Mipha's Grace and fairies still save Link)
   death_link: true
-  # Share of the filler (the rupees) that becomes traps, 0 to 100, and how likely each is
+  # Share of the filler (arrows, elixirs, gems, rupees) that becomes traps, 0 to 100, and how likely each is
   # compared with the others (a trap left out never comes up): Weapon Shatter, Blood Moon,
   # Rupoor, Hearts Down, Strip Down, Cucco Swarm. Only the cuccos can kill Link.
   trap_percentage: 0

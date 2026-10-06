@@ -19,6 +19,10 @@ class ItemMapError(RuntimeError):
 def load_item_map(path: Path = MAP_JSON) -> dict[str, dict]:
     raw = json.loads(path.read_text(encoding="utf-8"))
     entries = raw.get("items", [])
+    # A renamed item keeps its former names: a seed generated before still
+    # names it so (the names come from the seed's DataPackage).
+    entries = entries + [{**entry, "name": former} for entry in entries
+                         for former in entry.get("former_names", ())]
     names = [entry.get("name") for entry in entries]
     duplicates = [name for name, count in Counter(names).items() if count > 1]
     if duplicates:
@@ -49,7 +53,7 @@ def validate_item_map(items_path: Path = ITEMS_JSON,
 
     allowed = {"actors", "progressive_actors", "flags", "rune", "counter",
                "counter_at_least", "getdemo_actor", "champion_actor", "manual_prompt", "trap",
-               "native_trap"}
+               "native_trap", "arrows", "cook"}
     from .gamedata_table import load
     gamedata = load()
     flag_types = {flag_name: kind for kind, flag_name in gamedata.values()}
@@ -61,11 +65,15 @@ def validate_item_map(items_path: Path = ITEMS_JSON,
         if not entry.get("display_actor"):
             raise ItemMapError(f"{name}: display_actor missing")
         actors = delivery.get("actors", [])
-        if kind in ("getdemo_actor", "champion_actor"):
+        if kind in ("getdemo_actor", "champion_actor", "arrows"):
             actors = [delivery.get("actor")]
+        if kind == "cook":
+            actors = list(delivery.get("ingredients", []))
+            if not 1 <= len(actors) <= 5 or not all(actors):
+                raise ItemMapError(f"{name}: a dish takes 1 to 5 ingredients")
         if kind in ("actors", "progressive_actors") and not actors:
             raise ItemMapError(f"{name}: no actor")
-        if kind in ("getdemo_actor", "champion_actor") and not actors[0]:
+        if kind in ("getdemo_actor", "champion_actor", "arrows") and not actors[0]:
             raise ItemMapError(f"{name}: GetDemo actor missing")
         if kind == "champion_actor" and actors[0] not in {
                 'Obj_HeroSoul_Rito', 'Obj_HeroSoul_Goron',

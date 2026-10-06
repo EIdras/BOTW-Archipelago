@@ -19,10 +19,20 @@ SOURCE = ROOT / ".build/ledger-validation/4e60affc56def09f/content"
 class NativeDeliveryCompilationTests(unittest.TestCase):
     def test_catalog_covers_verified_action_families_only(self):
         entries, unsupported = compile_native_entries()
-        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 63)
+        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 92)
         self.assertEqual(set(unsupported), set())
         self.assertEqual(len({entry.entry_name for entry in entries}), len(entries))
         self.assertTrue(all(entry.plan.mutations for entry in entries))
+
+    def test_the_client_knows_every_step_that_shows_the_game_window(self):
+        # Before it, the client showed an AP window too (seen with arrows and elixirs).
+        from botw_client.runtime import VANILLA_WINDOWS
+        from botw_patch.delivery_flow import shows_window
+        entries, _ = compile_native_entries()
+        for entry in entries:
+            if shows_window(entry.plan) and not entry.quiet:
+                self.assertTrue(any(m.kind.value in VANILLA_WINDOWS for m in entry.plan.mutations),
+                                entry.item_name)
 
     def test_steps_with_a_get_window_have_a_silent_twin(self):
         entries, _ = compile_native_entries()
@@ -34,7 +44,7 @@ class NativeDeliveryCompilationTests(unittest.TestCase):
                              (step.item_name, step.step, step.cursor_delta))
             self.assertTrue(all(m.kind.value in ("grant_actor", "champion_actor",
                                                  "increase_rupee", "increase_max", "set_bool",
-                                                 "set_s32", "trap_spent")
+                                                 "set_s32", "trap_spent", "increase_porch", "cook")
                                 for m in twin.plan.mutations))
         # Vessels: the Horned Statue's action (Demo035_0); horse gear has no window.
         self.assertEqual({e.item_name for e in quiet if e.item_name in (
@@ -58,7 +68,10 @@ class NativeDeliveryCompilationTests(unittest.TestCase):
 
     def test_a_rupee_bundle_given_back_uses_the_games_rupee_action(self):
         entries, _ = compile_native_entries()
-        (twin,) = [e for e in entries if e.item_name == "Rupee Bundle" and e.quiet]
+        (twin,) = [e for e in entries if e.item_name == "Red Rupee" and e.quiet]
+        # Its former name, from seeds generated before, delivers the same.
+        (former,) = [e for e in entries if e.item_name == "Rupee Bundle" and e.quiet]
+        self.assertEqual(former.plan, twin.plan)
         self.assertEqual([(m.kind.value, m.value) for m in twin.plan.mutations],
                          [("increase_rupee", 20)])
 
@@ -175,8 +188,9 @@ class NativeDeliveryGraphTests(unittest.TestCase):
         # The pouch full, the client drops the item at Link's feet; this entry
         # only commits. Only the kinds measured on the ground have one.
         drops = [s for s in self.specs if s.drop]
-        self.assertEqual({s.item_name for s in drops}, {"Hylian Shield"})
-        (drop,) = drops
+        self.assertEqual({s.item_name for s in drops}, {
+            "Hylian Shield", "Star Fragment", "Diamond", "Ruby", "Sapphire", "Topaz", "Opal", "Amber"})
+        (drop,) = [s for s in drops if s.item_name == "Hylian Shield"]
         main = self.spec("Hylian Shield")
         self.assertEqual((drop.entry_name, drop.cursor_delta, host_of(drop)),
                          (main.entry_name + "D", main.cursor_delta, QUIET_FLOW))
@@ -196,6 +210,52 @@ class NativeDeliveryGraphTests(unittest.TestCase):
                          (main.entry_name, drop.entry_name, QUIET_FLOW))
         self.assertNotIn("drop_entry", delivery_catalog()["items"]["Master Sword"]
                          ["variants"]["default"][0])
+
+    def path(self, graph, first):
+        events, out, name = graph["events"], [], first
+        while name is not None:
+            out.append(name)
+            name = events[name]["nxt"]
+        return out
+
+    def test_arrows_come_with_their_count_and_quietly_by_bundle(self):
+        # Measured: GetDemo gives a bundle's arrows only with IsInvalidOpenPouch on
+        # (as Riju); Demo_IncreasePorchItem 1 gives one bundle, all its arrows.
+        main = self.spec("10 Fire Arrows")
+        quiet = next(s for s in self.specs if s.entry_name == main.entry_name + "Q")
+        graph = graph_snapshot(read_flow(self.patched))
+        get = graph["events"][main.entry_name + "_Mut0"]
+        self.assertEqual((get["res_flowchart_name"], get["entry_point_name"], get["params"]),
+                         ("GetDemo", "GetItemByName", {"CheckTargetActorName": "Obj_FireArrow_A_02",
+                                                       "IsInvalidOpenPouch": True}))
+        quiet_graph = graph_snapshot(read_flow(self.quiet))
+        give = quiet_graph["events"][quiet.entry_name + "_Mut0"]
+        self.assertEqual((give["actor_action"], give["params"]), ("Demo_IncreasePorchItem", {
+            "PorchItemName": "Obj_FireArrow_A_02", "Value": 1, "IsWaitFinish": True}))
+        self.assertEqual(self.path(quiet_graph, dict(quiet_graph["entry_points"])[quiet.entry_name])[-3:],
+                         [quiet.entry_name + s for s in ("_Mut0", "_Commit", "_GuardOFF")])
+
+    def test_an_elixir_is_cooked_then_shown_as_the_pot_shows_it(self):
+        main = self.spec("Hasty Elixir")
+        quiet = next(s for s in self.specs if s.entry_name == main.entry_name + "Q")
+        graph = graph_snapshot(read_flow(self.patched))
+        stem = main.entry_name
+        self.assertEqual(self.path(graph, dict(graph["entry_points"])[stem]), [
+            stem + s for s in ("_GuardON", "_Mut0", "_Mut0_Number", "_Mut0_Wait", "_Mut0_Show",
+                               "_Commit", "_GuardOFF")])
+        events = graph["events"]
+        self.assertEqual(events[stem + "_Mut0"]["params"], {
+            "IsWaitFinish": True, "SetNum": 1, "PorchItemName01": "Animal_Insect_S",
+            "PorchItemName02": "Item_Enemy_00", "PorchItemName03": "Animal_Insect_A",
+            "PorchItemName04": "Item_Enemy_01", "PorchItemName05": ""})
+        self.assertEqual(events[stem + "_Mut0_Number"]["params"]["GameDataIntName"], "GiveItemNumber")
+        self.assertEqual((events[stem + "_Mut0_Show"]["entry_point_name"],
+                          events[stem + "_Mut0_Show"]["params"]),
+                         ("ShowGetDemoCookResult", {"IsInvalidOpenPouch": True, "EnableMultiGet": True}))
+        # Quiet: cooked, no window.
+        quiet_graph = graph_snapshot(read_flow(self.quiet))
+        self.assertEqual(self.path(quiet_graph, dict(quiet_graph["entry_points"])[quiet.entry_name]), [
+            quiet.entry_name + s for s in ("_GuardON", "_Mut0", "_Commit", "_GuardOFF")])
 
     def test_actor_entry_refuses_before_guard_and_commits_before_release(self):
         spec = self.spec("Warm Doublet")
@@ -343,7 +403,7 @@ class NativeDeliveryGraphTests(unittest.TestCase):
             "CheckTargetActorName": "Obj_KorokNuts", "IsInvalidOpenPouch": False})
 
     def test_rupee_bundle_uses_vanilla_red_rupee_getdemo(self):
-        spec = self.spec("Rupee Bundle")
+        spec = self.spec("Red Rupee")
         events = graph_snapshot(read_flow(self.patched))["events"]
         stem = spec.entry_name
         self.assertIsNone(spec.plan.capacity_actor)
@@ -390,7 +450,8 @@ class NativeDeliveryGraphTests(unittest.TestCase):
                 self.assertEqual(oead.byml.to_text(metadata),
                                  oead.byml.to_text(before["Demo007_1<Demo007_1_Sub>"]))
                 continue
-            if not spec.quiet and any(m.kind.value in ("get_demo_actor", "champion_actor")
+            if not spec.quiet and any(m.kind.value in ("get_demo_actor", "champion_actor",
+                                                       "get_demo_bundle", "cook")
                                       for m in spec.plan.mutations):
                 self.assertEqual([value["file"] for value in metadata["subfile"]],
                                  ["GetDemo.bfevfl"])

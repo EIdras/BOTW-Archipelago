@@ -32,6 +32,16 @@ class MutationKind(str, Enum):
     # The pouch was full: the client created the item at Link's feet
     # (botw_client/item_drop.py); the entry only commits.
     DROPPED = "dropped"
+    # A bundle of arrows by the game's get window with IsInvalidOpenPouch on,
+    # as Riju gives her bomb arrows (Electric_Relic): off, the window says
+    # "0 arrows" and gives none (measured). Its silent twin: INCREASE_PORCH.
+    GET_DEMO_BUNDLE = "get_demo_bundle"
+    # Demo_IncreasePorchItem, Value 1: one bundle, all its arrows (measured).
+    INCREASE_PORCH = "increase_porch"
+    # A dish cooked by the game from its ingredients (the value), as the
+    # Champions' Ballad gives its elixirs (Demo_SetCookItem), then the cooking's
+    # own get window (GetDemo<ShowGetDemoCookResult>); its silent twin cooks only.
+    COOK = "cook"
     SET_BOOL = "set_bool"
     SET_S32 = "set_s32"
     INCREMENT = "increment"
@@ -73,7 +83,14 @@ SILENT_ACTOR_PREFIXES = ("GameRomHorse",)
 
 # The items that fall at Link's feet when the pouch is full: the kinds
 # measured on the ground (botw_client/item_drop.py). The others wait for room.
-DROPPABLE_PREFIXES = ("Weapon_Lsword_", "Weapon_Bow_", "Weapon_Shield_", "Obj_ArrowBundle_")
+DROPPABLE_PREFIXES = ("Weapon_Lsword_", "Weapon_Bow_", "Weapon_Shield_", "Obj_ArrowBundle_", "Item_Ore_")
+
+
+# What a cooked dish is to the pouch: the game's elixir (its effect comes from
+# the cooking, Demo_SetCookItem; given by its name, it is an empty "Elixir").
+COOKED = "Item_Cook_C_17"
+# Ingredients of a dish: Demo_SetCookItem takes up to five.
+COOK_SLOTS = 5
 
 
 def droppable(actor: str | None) -> bool:
@@ -101,6 +118,12 @@ def compile_delivery_plan(item_name: str, received_before: int = 0,
         return ItemDeliveryPlan(item_name, tuple(
             DeliveryStep((DeliveryMutation(pouch_kind(actor), actor, 1),), actor)
             for actor in delivery["actors"]))
+    if kind == "arrows":
+        return ItemDeliveryPlan(item_name, (DeliveryStep((DeliveryMutation(
+            MutationKind.GET_DEMO_BUNDLE, delivery["actor"], 1),)),))
+    if kind == "cook":
+        return ItemDeliveryPlan(item_name, (DeliveryStep((DeliveryMutation(
+            MutationKind.COOK, COOKED, tuple(delivery["ingredients"])),)),))
     if kind == "getdemo_actor":
         return ItemDeliveryPlan(item_name, (
             DeliveryStep((DeliveryMutation(

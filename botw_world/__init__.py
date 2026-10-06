@@ -11,7 +11,8 @@ from worlds.AutoWorld import WebWorld, World
 from Options import OptionError
 from rule_builder.rules import And, Has, HasAll, HasAny, HasFromList, Or, Rule, True_
 
-from .catalog import GAME, GOAL_LOCATION, ITEMS, LOCATIONS, TRAPS, WORLD_VERSION, categories, requirements
+from .catalog import (FILLER, GAME, GOAL_LOCATION, ITEMS, LOCATIONS, TRAPS, WORLD_VERSION, categories,
+                      requirements)
 from .options import OPTION_GROUPS, PRESETS, BotwOptions
 from .slot_file import BotwSlotFile
 
@@ -173,7 +174,10 @@ class BotwWorld(World):
         return BotwItem(name, classification, row["id"], self.player)
 
     def get_filler_item_name(self) -> str:
-        return "Rupee Bundle"
+        """Arrows, elixirs, gems or rupees, drawn by FILLER's weights."""
+        families = list(FILLER.values())
+        _weight, items = self.random.choices(families, weights=[w for w, _ in families])[0]
+        return self.random.choices(list(items), weights=list(items.values()))[0]
 
     def trap_names(self, filler: int) -> list[str]:
         """The traps that take the place of a share of the `filler` slots: Trap
@@ -202,8 +206,9 @@ class BotwWorld(World):
     def fill_slot_data(self) -> dict[str, Any]:
         # client_schema 4: the Gerudo Set, an item a client of schema 3 cannot deliver.
         # 5: the goal and the sanctum's requirements, which a client of schema 4 cannot read.
+        # 6: arrows, elixirs, gems and rupees as filler, which a client of schema 5 cannot deliver.
         # stall_locations: the stalls drawn by the seed, for Universal Tracker.
-        return {"client_schema": 5, "world_schema": 4, "world_version": WORLD_VERSION,
+        return {"client_schema": 6, "world_schema": 4, "world_version": WORLD_VERSION,
                 "death_link": bool(self.options.death_link.value),
                 **self.options.as_dict(*self.SLOT_OPTIONS),
                 "stall_locations": sorted(location_id for location_id in self.shop_prices

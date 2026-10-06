@@ -30,8 +30,7 @@ STALLS = {"General Stall": "magasin", "Fruit Stall": "étal de fruits", "Arrow S
           "Materials Stall": "étal de matériaux", "Mushroom Stall": "étal de champignons"}
 # Archipelago's own items, which the game does not name.
 OWN_ITEMS = {"Weapon Shatter": "Arme brisée (piège)", "Rupoor": "Rubis maudit (piège)",
-             "Hearts Down": "Cœurs en moins (piège)", "Strip Down": "Déshabillage (piège)",
-             "Rupee Bundle": "Rubis"}
+             "Hearts Down": "Cœurs en moins (piège)", "Strip Down": "Déshabillage (piège)"}
 # Traps named after something of the game: (actor or label, suffix).
 GAME_TRAPS = {"Blood Moon": "Lune de sang (piège)", "Cucco Swarm": "Nuée de cocottes (piège)"}
 
@@ -111,6 +110,15 @@ def item_fr(names: Names, entry: dict) -> str:
         return GAME_TRAPS[name]
     if name == "Sheikah Sensor":
         return names.actor("Obj_SheikSensor")
+    if name == "Fairy Tonic":
+        return names.actor("Item_Cook_C_16")
+    if delivery.get("kind") == "cook":
+        # As the game names a dish: its base name, then its effect's
+        # (StaticMsg/CookEffect, "Hasty " in English, " tempo" in French).
+        effect = next(key for key, text in names.en.items()
+                      if key[0] == "StaticMsg/CookEffect.msbt" and key[1].endswith("_Name")
+                      and text and name.startswith(text))
+        return names.actor(entry["display_actor"]) + names.fr[effect]
     actors = delivery.get("actors") or [delivery.get("actor") or entry.get("display_actor")]
     if delivery.get("kind") == "rune":
         actors = [entry["display_actor"]]

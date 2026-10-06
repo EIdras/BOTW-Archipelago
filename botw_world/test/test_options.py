@@ -1,4 +1,7 @@
+from BaseClasses import ItemClassification
+
 from . import BotwTestBase
+from ..catalog import FILLER
 
 
 class TestWithoutShops(BotwTestBase):
@@ -64,13 +67,24 @@ class TestEveryFillerATrap(BotwTestBase):
 
     def test_the_filler_becomes_traps_of_the_default_weights(self) -> None:
         pool = [item.name for item in self.multiworld.itempool]
-        self.assertEqual(pool.count("Rupee Bundle"), 0)
+        self.assertFalse(set(pool) & {name for _, items in FILLER.values() for name in items})
         traps = [item for item in self.multiworld.itempool if item.trap]
         self.assertEqual(len(traps), 55)
         self.assertEqual({item.name for item in traps}, {
             "Weapon Shatter", "Blood Moon", "Rupoor", "Hearts Down", "Strip Down",
             "Cucco Swarm"})
         self.assertEqual(len(pool), 152)
+
+
+class TestFiller(BotwTestBase):
+    def test_the_filler_is_drawn_from_every_family(self) -> None:
+        fillers = {name: family for family, (_, items) in FILLER.items() for name in items}
+        drawn = [fillers[item.name] for item in self.multiworld.itempool if item.name in fillers]
+        self.assertEqual(len(drawn), 55)
+        self.assertTrue(all(item.classification == ItemClassification.filler
+                            for item in self.multiworld.itempool if item.name in fillers))
+        # With 55 draws, every family comes up (about 19, 19, 8 and 8).
+        self.assertEqual(set(drawn), set(FILLER))
 
 
 class TestOneTrapOnly(BotwTestBase):
@@ -80,7 +94,8 @@ class TestOneTrapOnly(BotwTestBase):
         names = [item.name for item in self.multiworld.itempool if item.trap]
         self.assertEqual(set(names), {"Rupoor"})
         self.assertEqual(len(names), round(55 * 50 / 100))
-        self.assertEqual([item.name for item in self.multiworld.itempool].count("Rupee Bundle"),
+        fillers = {name for _, items in FILLER.values() for name in items}
+        self.assertEqual(len([item for item in self.multiworld.itempool if item.name in fillers]),
                          55 - len(names))
 
 

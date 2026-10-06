@@ -294,6 +294,15 @@ class ReceivedAnnouncementTests(unittest.TestCase):
         r.ap.received_items = {2: r.ap.received_items[2]}         # the first one
         self.assertFalse(r._repeat_filler(2))
 
+    def test_an_elixir_received_again_keeps_the_cooking_window(self):
+        from botw_client.runtime import BotwClientRuntime
+        r = self.runtime("grant_actor")
+        r._received_before = BotwClientRuntime._received_before.__get__(r)
+        self.assertTrue(r._repeat_filler(2))
+        name = r.ap.item_name(r.ap.received_items[2])
+        r.game = type("G", (), {"item_map": {name: {"window": "always"}}})()
+        self.assertFalse(r._repeat_filler(2))
+
     def test_the_pickup_notification_waits_for_link_and_never_stops_the_client(self):
         from botw_client.runtime import BotwClientRuntime
         r = self.runtime()

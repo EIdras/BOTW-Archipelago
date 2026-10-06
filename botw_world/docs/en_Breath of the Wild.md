@@ -46,7 +46,8 @@ Opening Beedle's list, or looking at a stall's jewel, hints the items for sale t
 - 17 Heart Containers and 5 Stamina Vessels
 - The Master Sword, the Hylian Shield, the Champion's Tunic, the Ancient Bridle and Saddle, the Barbarian, Ancient
   and Radiant sets
-- Spirit Orbs, Ancient Cores, Star Fragments, Fairies and rupees (the Koroks still give their seeds, as in the game)
+- Spirit Orbs, Ancient Cores, Star Fragments, Fairies (the Koroks still give their seeds, as in the game)
+- Filler: arrows (normal, fire, ice, shock, bomb, ancient), elixirs, gems and rupees
 - Traps, with the `trap_percentage` option: Weapon Shatter, Blood Moon, Rupoor, Hearts Down, Strip Down and Cucco
   Swarm
 
@@ -108,7 +109,7 @@ cutscene, a menu or a loading screen.
 
 ## What do traps do?
 
-With the `trap_percentage` option, that share of the filler, the items that would be rupees, becomes traps, drawn
+With the `trap_percentage` option, that share of the filler (arrows, elixirs, gems and rupees) becomes traps, drawn
 by the `trap_weights` option (a trap of weight 0 or left out never comes up). A trap strikes when it is received,
 at a safe moment, and the Archipelago journal says what it did. Only the cuccos can kill Link.
 
