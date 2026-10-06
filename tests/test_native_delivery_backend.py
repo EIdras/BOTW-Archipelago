@@ -303,6 +303,29 @@ class NativeDeliveryBackendTests(unittest.TestCase):
         backend = self.backend(lambda *_a, **_k: self.fail("no request"))
         self.assertIsNone(backend.request_status_item())
 
+    def test_a_dropped_item_is_committed_by_its_drop_entry(self):
+        data = json.loads(self.path.read_text(encoding="utf-8"))
+        data["items"]["Core"]["variants"]["default"][0].update(
+            quiet_entry="APD_CORE_00Q", quiet_flow="OperationGuide",
+            drop_entry="APD_CORE_00D", drop_flow="OperationGuide")
+        self.path.write_text(json.dumps(data), encoding="utf-8")
+        calls = []
+
+        def request(_process, _cave, _number, checkpoint, **kwargs):
+            calls.append((kwargs["flow"], kwargs["entry"]))
+            checkpoint({"status": "prepared"})
+            self.values[flag("APReceivedCursor")] += 256
+            return {"native_return": 1}
+
+        result = self.backend(request).deliver(
+            DeliveryCommand("seed", 2, 7, "Core", quiet=True, drop=True))
+        self.assertEqual(result.status, DeliveryStatus.APPLIED)
+        self.assertEqual(calls, [("OperationGuide", "APD_CORE_00D")])
+        # A step without a drop entry never takes that way.
+        with self.assertRaises(BackendContractError):
+            self.backend(request).deliver(DeliveryCommand("seed", 2, 7, "Set", step_count=2,
+                                                          drop=True))
+
     def test_capacity_rejection_keeps_cursor_and_reports_full(self):
         def request(*_args, **_kwargs):
             self.values[flag("APDeliveryRejectCounter")] += 1
@@ -580,6 +603,28 @@ class _BindingRuntimeBackend(_RuntimeBackend):
         return self.result
 
 
+class _FullPouchBackend(_RuntimeBackend):
+    """Core's pouch is full: its entry says so; it can be dropped."""
+
+    def __init__(self):
+        super().__init__(0)
+        self.catalog = SimpleNamespace(steps=lambda name, before=0: [dict(
+            step=0, capacity_actor="Weapon_Shield_030", drop_entry="APD_CORE_00D")])
+        self.drops = []
+        self.drop_answer = "ok"
+
+    def drop_item(self, actor):
+        self.drops.append(actor)
+        return self.drop_answer
+
+    def deliver(self, command):
+        if not command.drop:
+            self.commands.append(command)
+            return SimpleNamespace(status=DeliveryStatus.INVENTORY_FULL,
+                                   cursor=command.cursor, detail="inventory full")
+        return super().deliver(command)
+
+
 class NativeDeliveryRuntimeTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.temporary = tempfile.TemporaryDirectory()
@@ -617,6 +662,28 @@ class NativeDeliveryRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.runtime.state["applied"], [0, 1])
         self.assertEqual(self.runtime.state["apply_queue"], [])
         self.assertEqual(self.runtime.state["steps"], {})
+
+    async def test_a_full_pouch_drops_the_item_then_commits_it(self):
+        backend = _FullPouchBackend()
+        self.runtime.deliveries = DeliveryCoordinator(backend)
+        self.runtime.ap.received_items = {0: SimpleNamespace(item=10)}
+        self.runtime._discover_received()
+        # Not dropped yet (Link busy): asked again, nothing committed.
+        backend.drop_answer = "Link not in the world"
+        await self.runtime._apply_one_received_native()
+        self.assertEqual((backend.drops, self.runtime.state.get("drop_cursor")),
+                         (["Weapon_Shield_030"], None))
+        # Dropped: the next turn commits it by its drop entry, once.
+        backend.drop_answer = "ok"
+        self.runtime._native_delivery_retry_after = 0.0
+        await self.runtime._apply_one_received_native()
+        self.assertEqual(self.runtime.state["drop_cursor"], 0)
+        await self.runtime._apply_one_received_native()
+        self.assertEqual(len(backend.drops), 2)
+        self.assertTrue(backend.commands[-1].drop)
+        self.assertFalse(backend.commands[-1].pickup)
+        self.assertNotIn("drop_cursor", self.runtime.state)
+        self.assertEqual(self.runtime.state["apply_queue"], [])
 
     async def test_a_state_from_before_tracking_still_gives_back_silently(self):
         # A state saved before delivered_high existed, then the oldest

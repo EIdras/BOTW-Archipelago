@@ -19,7 +19,7 @@ from evfl.event import ActionEvent, Event, SubFlowEvent, SwitchEvent
 from evfl.util import Index, make_rindex
 
 from botw_client.delivery_plan import (
-    DeliveryMutation, DeliveryStep, ItemDeliveryPlan, MutationKind, compile_delivery_plan)
+    DeliveryMutation, DeliveryStep, ItemDeliveryPlan, MutationKind, compile_delivery_plan, droppable)
 from botw_client.items import load_item_map
 from .events import graph_snapshot, read_flow, write_flow
 from .resources import unpack
@@ -105,6 +105,9 @@ class NativeDeliveryEntry:
     # give back items a reloaded save lost, under one AP summary instead of
     # one window per item.
     quiet: bool = False
+    # The commit of a step whose item the client dropped at Link's feet, the
+    # pouch full (drop_step).
+    drop: bool = False
 
 
 # Rupees of a GetDemo rupee actor, given silently by Demo_IncreaseRupee.
@@ -157,6 +160,15 @@ def quiet_step(plan: DeliveryStep) -> DeliveryStep | None:
     return replace(plan, mutations=tuple(
         replace(m, kind=MutationKind.GRANT_ACTOR) if m.kind is MutationKind.GET_DEMO_ACTOR
         else m for m in plan.mutations))
+
+
+def drop_step(plan: DeliveryStep) -> DeliveryStep | None:
+    """The step's commit alone, for an item the client dropped at Link's feet
+    when the pouch had no room (botw_client/item_drop.py): only for the items
+    measured on the ground."""
+    if not droppable(plan.capacity_actor):
+        return None
+    return DeliveryStep((DeliveryMutation(MutationKind.DROPPED, plan.capacity_actor, 1),))
 
 
 def shows_window(plan: DeliveryStep) -> bool:
@@ -227,9 +239,14 @@ def compile_native_entries(mapping=None) -> tuple[list[NativeDeliveryEntry], dic
                     plan=operation,
                     progressive_tier=tier))
                 quiet = quiet_step(operation)
+                main = entries[-1]
                 if quiet is not None:
-                    entries.append(replace(entries[-1], entry_name=f"{stem}_{step:02X}Q",
+                    entries.append(replace(main, entry_name=f"{stem}_{step:02X}Q",
                                            plan=quiet, quiet=True))
+                dropped = drop_step(operation)
+                if dropped is not None:
+                    entries.append(replace(main, entry_name=f"{stem}_{step:02X}D",
+                                           plan=dropped, drop=True))
 
     names = [entry.entry_name for entry in entries]
     if len(names) != len(set(names)):
@@ -248,6 +265,10 @@ def delivery_catalog(mapping=None, *, binding_token: int | None = None) -> dict:
             # Follows its step: the catalogue names it on that step.
             item["variants"][variant][-1]["quiet_entry"] = entry.entry_name
             item["variants"][variant][-1]["quiet_flow"] = QUIET_FLOW
+            continue
+        if entry.drop:
+            item["variants"][variant][-1]["drop_entry"] = entry.entry_name
+            item["variants"][variant][-1]["drop_flow"] = QUIET_FLOW
             continue
         item["variants"].setdefault(variant, []).append({
             "entry": entry.entry_name,
@@ -650,9 +671,10 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
                 nxt = action(stem + f"_Mut{index}", "Demo_FlagON", {
                     "FlagName": DOWNLOAD_FLAG, "IsWaitFinish": True}, settle)
             elif mutation.kind in (MutationKind.TRAP, MutationKind.TRAP_SPENT,
-                                   MutationKind.NATIVE_TRAP):
+                                   MutationKind.NATIVE_TRAP, MutationKind.DROPPED):
                 # TRAP: after the guard (above); SPENT: no effect; NATIVE_TRAP:
-                # played by the client once it has seen the commit.
+                # played by the client once it has seen the commit; DROPPED:
+                # created by the client before the commit.
                 continue
             elif mutation.kind is MutationKind.INCREASE_RUPEE:
                 # Not waited for: the counter's animation then runs after the

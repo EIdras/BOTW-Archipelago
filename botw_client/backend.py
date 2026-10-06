@@ -29,6 +29,9 @@ class DeliveryCommand:
     # A filler received again: its silent entry, the game's pickup notification
     # shown by the client once it has committed (rupees: their counter shows them).
     pickup: bool = False
+    # The pouch was full and the client dropped the item at Link's feet: the
+    # step's drop entry, which only commits (botw_client/item_drop.py).
+    drop: bool = False
 
     def __post_init__(self):
         if (self.index < 0 or self.received_before < 0

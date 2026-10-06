@@ -796,12 +796,19 @@ class BotwClientRuntime:
             self._journal_note(f"{{1}}{count} items{{/}} of a release on their way, "
                                "listed once all are given")
             self._bulk_told = True
+        # Dropped at Link's feet, the pouch full: what is left is the commit.
+        dropped = (self.state.get("drop_cursor") == checkpoint.cursor
+                   and bool(steps[step].get("drop_entry")))
         command = DeliveryCommand(
             self._session_identity[0], self._session_identity[2], index, name,
-            step, len(steps), before, quiet=quiet, pickup=self._repeat_filler(index))
+            step, len(steps), before, quiet=quiet,
+            pickup=self._repeat_filler(index) and not dropped, drop=dropped)
         result = await asyncio.to_thread(self.deliveries.deliver, command)
         if result.status in (DeliveryStatus.APPLIED,
                              DeliveryStatus.ALREADY_APPLIED):
+            if dropped:
+                self.state.pop("drop_cursor", None)
+                self.state_store.save()
             trap = next((m for m in steps[step].get("mutations", ())
                          if m.get("kind") in ("trap", "native_trap")), None)
             if trap is not None:
@@ -836,6 +843,22 @@ class BotwClientRuntime:
             return
         if result.status is DeliveryStatus.INVENTORY_FULL:
             self.game.delivery_block_reason = result.detail or "inventory full"
+            actor = steps[step].get("capacity_actor")
+            if steps[step].get("drop_entry") and actor:
+                # The game said "pouch full": the item falls at Link's feet
+                # and the queue goes on (botw_client/item_drop.py). Created
+                # first, committed after: a crash between gives it twice.
+                outcome = await asyncio.to_thread(self.deliveries.backend.drop_item, actor)
+                if outcome == "ok":
+                    self.state["drop_cursor"] = checkpoint.cursor
+                    self.state_store.save()
+                    self._journal_note(f"Pouch full: {{1}}{name}{{/}} fell at your feet")
+                    self.log(f"native step #{index}/{step}: {name} dropped at Link's feet")
+                    self._native_delivery_retry_after = 0.0
+                else:
+                    self.log(f"native step #{index}/{step}: {name} not dropped ({outcome})")
+                    self._native_delivery_retry_after = time.monotonic() + 5.0
+                return
             self._native_delivery_retry_after = time.monotonic() + 5.0
             return
         raise FatalClientError(

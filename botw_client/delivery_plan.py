@@ -29,6 +29,9 @@ class MutationKind(str, Enum):
     # A trap the client plays itself once the delivery is committed (the
     # game has no action for it): its effect's name, its text as the value.
     NATIVE_TRAP = "native_trap"
+    # The pouch was full: the client created the item at Link's feet
+    # (botw_client/item_drop.py); the entry only commits.
+    DROPPED = "dropped"
     SET_BOOL = "set_bool"
     SET_S32 = "set_s32"
     INCREMENT = "increment"
@@ -66,6 +69,15 @@ class ItemDeliveryPlan:
 # just before. Horse tack is not a pouch item: granted silently, its AP
 # window stays.
 SILENT_ACTOR_PREFIXES = ("GameRomHorse",)
+
+
+# The items that fall at Link's feet when the pouch is full: the kinds
+# measured on the ground (botw_client/item_drop.py). The others wait for room.
+DROPPABLE_PREFIXES = ("Weapon_Lsword_", "Weapon_Bow_", "Weapon_Shield_", "Obj_ArrowBundle_")
+
+
+def droppable(actor: str | None) -> bool:
+    return bool(actor) and actor.startswith(DROPPABLE_PREFIXES)
 
 
 def pouch_kind(actor: str) -> MutationKind:

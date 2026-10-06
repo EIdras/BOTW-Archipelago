@@ -19,7 +19,7 @@ SOURCE = ROOT / ".build/ledger-validation/4e60affc56def09f/content"
 class NativeDeliveryCompilationTests(unittest.TestCase):
     def test_catalog_covers_verified_action_families_only(self):
         entries, unsupported = compile_native_entries()
-        self.assertEqual(len([e for e in entries if not e.quiet]), 63)
+        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 63)
         self.assertEqual(set(unsupported), set())
         self.assertEqual(len({entry.entry_name for entry in entries}), len(entries))
         self.assertTrue(all(entry.plan.mutations for entry in entries))
@@ -137,7 +137,7 @@ class NativeDeliveryGraphTests(unittest.TestCase):
         twins = {s.entry_name for s in self.specs if host_of(s) == QUIET_FLOW}
         # With the twins, the steps that open no window of their own.
         self.assertEqual({s.item_name for s in self.specs
-                          if host_of(s) == QUIET_FLOW and not s.quiet}, {
+                          if host_of(s) == QUIET_FLOW and not s.quiet and not s.drop}, {
             "Sheikah Sensor", "Ancient Bridle", "Ancient Saddle",
             *(trap.item for trap in TRAPS if trap.host == QUIET_FLOW), "Cucco Swarm"})
         # The traps' own entries come first, then the delivery entries.
@@ -170,6 +170,32 @@ class NativeDeliveryGraphTests(unittest.TestCase):
             self.assertEqual(after["events"][name], node)
         self.assertEqual(after["entry_points"][:len(before["entry_points"])],
                          before["entry_points"])
+
+    def test_a_dropped_item_is_committed_by_its_own_silent_entry(self):
+        # The pouch full, the client drops the item at Link's feet; this entry
+        # only commits. Only the kinds measured on the ground have one.
+        drops = [s for s in self.specs if s.drop]
+        self.assertEqual({s.item_name for s in drops}, {"Hylian Shield"})
+        (drop,) = drops
+        main = self.spec("Hylian Shield")
+        self.assertEqual((drop.entry_name, drop.cursor_delta, host_of(drop)),
+                         (main.entry_name + "D", main.cursor_delta, QUIET_FLOW))
+        self.assertEqual([(m.kind.value, m.target) for m in drop.plan.mutations],
+                         [("dropped", "Weapon_Shield_030")])
+        graph = graph_snapshot(read_flow(self.quiet))
+        events = graph["events"]
+        path = [drop.entry_name + "_GuardON", drop.entry_name + "_Commit",
+                drop.entry_name + "_GuardOFF"]
+        self.assertEqual(dict(graph["entry_points"])[drop.entry_name], path[0])
+        for current, following in zip(path, path[1:]):
+            self.assertEqual(events[current]["nxt"], following)
+        self.assertIsNone(events[path[-1]]["nxt"])
+        self.assertEqual(events[path[1]]["params"]["Value"], main.cursor_delta)
+        step = delivery_catalog()["items"]["Hylian Shield"]["variants"]["default"][0]
+        self.assertEqual((step["entry"], step["drop_entry"], step["drop_flow"]),
+                         (main.entry_name, drop.entry_name, QUIET_FLOW))
+        self.assertNotIn("drop_entry", delivery_catalog()["items"]["Master Sword"]
+                         ["variants"]["default"][0])
 
     def test_actor_entry_refuses_before_guard_and_commits_before_release(self):
         spec = self.spec("Warm Doublet")

@@ -500,6 +500,35 @@ class CemuNativeDeliveryBackend:
                           turn=lambda: lock_factory(pid) if lock_factory else nullcontext(),
                           playing=self.playing).run(stop)
 
+    def drop_item(self, actor: str) -> str:
+        """Create `actor` at Link's feet (botw_client/item_drop.py): 'ok' once
+        the game took the request, else why not (to ask again: Link out of the
+        world, an entry running, the invoker busy)."""
+        from .item_drop import drop
+        try:
+            if self._guard():
+                return "an entry running"
+        except Exception:  # noqa: BLE001 - a loading
+            return "save guard unreadable"
+        if not self._link_in_world():
+            return "Link not in the world"
+        process, cave = self.game.process, self.game.cave
+        _request, lock_factory = self._dependencies()
+
+        def read(guest, size):
+            return process.read(cave.base + guest, size)
+
+        def write(guest, data):
+            if not process.write(cave.base + guest, data):
+                raise RuntimeError(f"memory write failed at {guest:#x}")
+
+        try:
+            # One turn for the whole creation, as an attacker of the swarm.
+            with (lock_factory(int(process.pid)) if lock_factory else nullcontext()):
+                return drop(read, write, self._call, actor)
+        except Exception as exc:  # noqa: BLE001 - invoker busy or unreadable: asked again
+            return f"{type(exc).__name__}: {exc}"
+
     def _call(self, address: int, *args, timeout: float = 1.0) -> int | None:
         """Call a game function from the cave's per-frame hook, as the event
         requests are made: its r3, or None when it could not be called."""
@@ -559,6 +588,8 @@ class CemuNativeDeliveryBackend:
                 DeliveryStatus.SESSION_MISMATCH, cursor,
                 f"catalog built for {binding['seed_token']}, token {self.token}")
         flow, step = self.catalog.resolve(command)
+        if command.drop and not step.get("drop_entry"):
+            raise BackendContractError(f"{command.item_name}: no drop entry for step {command.step}")
         # Read before submitting: a malformed setter must fail before any call.
         equip = equip_requirement(step)
         if token != self.token:
@@ -598,7 +629,8 @@ class CemuNativeDeliveryBackend:
                     # own flowchart, registered not to pause the game
                     # (botw_patch/delivery_flow.host_of); older catalogues
                     # kept them in the delivery flow.
-                    twin = ("quiet" if (command.quiet or command.pickup)
+                    twin = ("drop" if command.drop else
+                            "quiet" if (command.quiet or command.pickup)
                             and step.get("quiet_entry") else None)
                     result = request(
                         self.game.process, self.game.cave, command.index + 1,
