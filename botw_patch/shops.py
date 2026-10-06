@@ -34,7 +34,7 @@ from botw_patch.resources import ResourceBuilder, digest, unpack
 from botw_patch.shop_items import (DESCRIPTION_LINES, DESCRIPTION_WIDTH, MODEL_PARTS, MSBT,
                                    ApShopItem, add_declarations, add_item_texts,
                                    add_purchase_record, arrange_stock, check_model,
-                                   clone_actor_pack, model_size, rename_model)
+                                   clone_actor_pack, model_bounds, model_size, rename_model)
 
 ROOT = Path(__file__).resolve().parents[1]
 ACTOR_INFO = "Actor/ActorInfo.product.sbyml"
@@ -340,7 +340,10 @@ def generate(files: dict[str, bytes], content: Path,
                     FLOW: lambda raw: add_purchase_record(raw, BUY_EVENT, records)})
         aoc_files: dict[str, bytes] = {}
         if stall:
-            changes.extend(stall_stage.generate(builder, aoc_files, content, aoc, stall))
+            # The jewel's size, from the model itself: it lies on the stalls.
+            size = model_bounds(model[""])["size"]
+            changes.extend(stall_stage.generate(builder, aoc_files, content, aoc, stall,
+                                                jewel=(size[1], size[2])))
 
         # Saved flags.
         from tools.build_game_data_mod import modify_gamedata_flags, modify_saveformat

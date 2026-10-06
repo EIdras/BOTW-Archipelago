@@ -1,7 +1,7 @@
 # Shops and stalls
 
 With the options `beedle_shop_items` and `stall_items`, Archipelago items are sold in the game: by Beedle, from
-his list, and on the village stalls, as a medallion laid among the goods. Buying one checks its location. Everything
+his list, and on the village stalls, as a jewel laid among the goods. Buying one checks its location. Everything
 is done in the game's resources, built for each seed; the client only reads.
 
 ## Beedle's shops
@@ -46,12 +46,16 @@ is done in the game's resources, built for each seed; the client only reads.
   through the merchant's entry `ClerkAsk`, then `DisplayShop:Armor`. Goron City's (`Npc_goron004`) sells the
   Flamebreaker set, an item of the logic: its `ClerkAsk` says his sold-out line instead
   ([`botw_patch/goron_armor.py`](../../botw_patch/goron_armor.py)). The other armor shops are unchanged.
-- **Objects replaced**: among the items sold in several copies, the most repeated first, never the last copy. The
-  stall keeps everything it sold (in Kakariko, for example, 1 arrow out of 10 and 1 fire arrow out of 10).
+- **Objects replaced**: among the items sold in several copies, the lowest first, at the counter's or the ground's
+  level: an object of a rack or a shelf lifted the jewel out of place (seen in the game, an arrow standing in a
+  Kakariko rack). The second at least 0.6 m from the first (`SPACING`), as the jewels are about that wide; never the
+  last copy: the stall keeps everything it sold.
 - **Places and regions**: the nearest `LocationTag`, named from `LocationMarker.msbt`. Region: the nearest tower, the
   rule used for shrines.
-- **Map**: the object becomes `AP_Shop_<id>`. Its HashId, position and links (`ForSale`, sold-out tags) stay the
-  same. Its rotation is set to the merchant's yaw, so the medallion faces the customer.
+- **Map**: the object becomes `AP_Shop_<id>`. Its HashId and links (`ForSale`, sold-out tags) stay the same. The
+  jewel (`assets/models/ap_item`) stands on its origin; here it lies on its back, face up: `Rotate` is
+  `[-π/2, yaw, 0]` (the pitch, then the merchant's yaw: its top points to the merchant, its logo upright for the
+  customer), centred on the object it replaces and raised by half its thickness, both read from the model.
 - **Respawn**: a new `LinkTagAnd` without inputs, `SaveFlag = IsGet_AP_Shop_<id>`, creates the object through a
   `Create` link. It is the vanilla pattern of 956 tags of these maps (for example `BalladOfHeroGerudo_Activated` →
   `Create` → `Area`). The flag is true until the purchase, so a bought object is never created again, blood moon
@@ -62,7 +66,7 @@ is done in the game's resources, built for each seed; the client only reads.
 - **Purchase**: recorded as at Beedle's, after the merchant's `DisplayShop` event (checked on the 14 flows).
 - **Pack**: the maps are written under `aoc/0010/…` at the root of the pack, with their size counted under
   `Aoc/0010/…` (`tools/build_resources_from_source.pack_path`). Cemu reads the `aoc/` folder of a graphic pack.
-- **Hints on sight**: Link looking at a stall's AP medallion hints its item (`create_as_hint=2`), once per
+- **Hints on sight**: Link looking at a stall's AP jewel hints its item (`create_as_hint=2`), once per
   location. Measured: looking at an object on sale, before any purchase, sets `Shop_ScreenType` to 7 and
   `Shop_SelectItemName` to its actor (`NormalArrow`, `FireArrow`, `AP_Shop_203`), which stay set after
   ([`botw_client/shop_state.py`](../../botw_client/shop_state.py)).

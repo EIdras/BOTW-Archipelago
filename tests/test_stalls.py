@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 from pathlib import Path
 import unittest
 from tests.full_build import full_build
@@ -10,7 +11,7 @@ from tests.full_build import full_build
 import oead
 
 from botw_client.stall_catalog import (BY_ID, FIRST_LOCATION_ID, LOCATIONS, MERCHANTS,
-                                       SLOTS_PER_MERCHANT, catalogue_row, world_row)
+                                       SLOTS_PER_MERCHANT, SPACING, catalogue_row, world_row)
 from botw_patch.resources import unpack
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -74,6 +75,28 @@ class GameFileTests(unittest.TestCase):
                 counts[actor] -= 1
             self.assertTrue(all(n >= 1 for n in counts.values()), merchant.actor)
 
+    def test_the_objects_are_the_lowest_spaced_and_never_the_last_copy(self):
+        for merchant in MERCHANTS:
+            objs = objects(merchant.map_unit)
+            sold = [o for o in objs.values() if ("ForSale", merchant.hash_id) in links(o)]
+            left = {}
+            for o in sold:
+                left[str(o["UnitConfigName"])] = left.get(str(o["UnitConfigName"]), 0) + 1
+            base = min(float(o["Translate"][1]) for o in sold)
+            place = lambda o: (float(o["Translate"][0]), float(o["Translate"][2]))
+            picks = []
+            for o in sorted(sold, key=lambda o: (round(float(o["Translate"][1]) - base, 2),
+                                                 str(o["UnitConfigName"]), int(o["HashId"]))):
+                name = str(o["UnitConfigName"])
+                if left[name] < 2 or picks and math.dist(place(o), place(picks[0])) < SPACING:
+                    continue
+                picks.append(o)
+                left[name] -= 1
+                if len(picks) == SLOTS_PER_MERCHANT:
+                    break
+            self.assertEqual(tuple((int(o["HashId"]), str(o["UnitConfigName"])) for o in picks),
+                             merchant.objects, merchant.actor)
+
     def test_the_buy_event_is_the_merchants_display_shop(self):
         from botw_patch.events import graph_snapshot, read_flow
         for merchant in MERCHANTS:
@@ -89,17 +112,25 @@ class GameFileTests(unittest.TestCase):
         from botw_patch.stalls import patch_map, tag_hash
         located = [l for l in LOCATIONS if l.merchant.cell == "G-6"]
         raw = (AOC / located[0].merchant.map_unit).read_bytes()
-        new, _ = patch_map(raw, located)
+        new, _ = patch_map(raw, located, (0.5, 0.1))
         before = oead.byml.from_binary(unpack(raw))
         after = oead.byml.from_binary(unpack(new))
         objs = {int(o["HashId"]): o for o in after["Objs"]}
         self.assertEqual(len(after["Objs"]), len(before["Objs"]) + len(located))
         hashes = [int(o["HashId"]) for o in after["Objs"]]
         self.assertEqual(hashes, sorted(hashes))
+        olds = {int(o["HashId"]): o for o in before["Objs"]}
         for location in located:
             obj = objs[location.object_hash]
             self.assertEqual(str(obj["UnitConfigName"]), location.actor)
-            self.assertAlmostEqual(float(obj["Rotate"]), location.merchant.yaw, places=5)
+            # Lying on its back, its top towards the merchant, centred on the object.
+            yaw = location.merchant.yaw
+            self.assertEqual([round(float(v), 5) for v in obj["Rotate"]],
+                             [round(-math.pi / 2, 5), round(yaw, 5), 0.0])
+            x, y, z = (float(v) for v in olds[location.object_hash]["Translate"])
+            for got, want in zip(obj["Translate"], (x + 0.25 * math.sin(yaw), y + 0.05,
+                                                    z + 0.25 * math.cos(yaw))):
+                self.assertAlmostEqual(float(got), want, places=3)
             self.assertIn(("ForSale", location.merchant.hash_id), links(obj))
             tag = objs[tag_hash(location)]
             self.assertEqual(str(tag["UnitConfigName"]), "LinkTagAnd")

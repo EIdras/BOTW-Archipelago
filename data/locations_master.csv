@@ -184,31 +184,31 @@ Highland Stable - Beedle Item 1,Lake,Shop,,APShop_182,-357592239,Npc_TripMaster_
 Highland Stable - Beedle Item 2,Lake,Shop,,APShop_183,-1649892409,Npc_TripMaster_14 slot 2; custom saved s32
 Kara Kara Bazaar - Beedle Item 1,Gerudo,Shop,,APShop_184,63714916,Npc_TripMaster_15 slot 1; custom saved s32
 Kara Kara Bazaar - Beedle Item 2,Gerudo,Shop,,APShop_185,1959462642,Npc_TripMaster_15 slot 2; custom saved s32
-Rito Village - General Stall Item 1,Tabantha,Stall,,APShop_186,-306030776,Npc_HighMountain021 object 423019033 (Item_Material_06); custom saved s32
-Rito Village - General Stall Item 2,Tabantha,Stall,,APShop_187,-1698338850,Npc_HighMountain021 object 494548693 (Obj_BombArrow_A_02); custom saved s32
-Gerudo Town - Fruit Stall Item 1,Gerudo,Stall,,APShop_188,175798863,Npc_oasis045 object 511626942 (Item_Fruit_C); custom saved s32
-Gerudo Town - Fruit Stall Item 2,Gerudo,Stall,,APShop_189,2105363161,Npc_oasis045 object 2006787345 (Item_Fruit_D); custom saved s32
+Rito Village - General Stall Item 1,Tabantha,Stall,,APShop_186,-306030776,Npc_HighMountain021 object 2045856764 (Item_Material_07); custom saved s32
+Rito Village - General Stall Item 2,Tabantha,Stall,,APShop_187,-1698338850,Npc_HighMountain021 object 1260425555 (Item_Mushroom_C); custom saved s32
+Gerudo Town - Fruit Stall Item 1,Gerudo,Stall,,APShop_188,175798863,Npc_oasis045 object 1621577614 (Item_Fruit_C); custom saved s32
+Gerudo Town - Fruit Stall Item 2,Gerudo,Stall,,APShop_189,2105363161,Npc_oasis045 object 4235145977 (Item_Fruit_D); custom saved s32
 Gerudo Town - Arrow Stall Item 1,Gerudo,Stall,,APShop_190,498778940,Npc_oasis002 object 1250568235 (Obj_ArrowBundle_A_01); custom saved s32
 Gerudo Town - Arrow Stall Item 2,Gerudo,Stall,,APShop_191,1790833578,Npc_oasis002 object 2199728615 (Obj_BombArrow_A_04); custom saved s32
 Kara Kara Bazaar - Fruit Stall Item 1,Gerudo,Stall,,APShop_192,-206265840,Npc_SmallOasis010 object 509375341 (Item_Fruit_F); custom saved s32
-Kara Kara Bazaar - Fruit Stall Item 2,Gerudo,Stall,,APShop_193,-2068606330,Npc_SmallOasis010 object 769942167 (Item_Fruit_F); custom saved s32
-Gerudo Town - Materials Stall Item 1,Gerudo,Stall,,APShop_194,450299685,Npc_oasis044 object 1171458777 (Item_Material_07); custom saved s32
-Gerudo Town - Materials Stall Item 2,Gerudo,Stall,,APShop_195,1842362291,Npc_oasis044 object 1497053731 (Item_Material_03); custom saved s32
-Korok Forest - Mushroom Stall Item 1,Woodland,Stall,,APShop_196,-187079159,Npc_kokiri004 object 1644056108 (Item_MushroomGet_D); custom saved s32
-Korok Forest - Mushroom Stall Item 2,Woodland,Stall,,APShop_197,-2082580833,Npc_kokiri004 object 525736165 (Item_Mushroom_A); custom saved s32
-Korok Forest - General Stall Item 1,Woodland,Stall,,APShop_198,325143310,Npc_kokiri003 object 732968041 (Item_Material_01); custom saved s32
-Korok Forest - General Stall Item 2,Woodland,Stall,,APShop_199,1684437912,Npc_kokiri003 object 837449055 (Item_Material_03); custom saved s32
+Kara Kara Bazaar - Fruit Stall Item 2,Gerudo,Stall,,APShop_193,-2068606330,Npc_SmallOasis010 object 4031761654 (Item_Fruit_F); custom saved s32
+Gerudo Town - Materials Stall Item 1,Gerudo,Stall,,APShop_194,450299685,Npc_oasis044 object 1497053731 (Item_Material_03); custom saved s32
+Gerudo Town - Materials Stall Item 2,Gerudo,Stall,,APShop_195,1842362291,Npc_oasis044 object 1171458777 (Item_Material_07); custom saved s32
+Korok Forest - Mushroom Stall Item 1,Woodland,Stall,,APShop_196,-187079159,Npc_kokiri004 object 525736165 (Item_Mushroom_A); custom saved s32
+Korok Forest - Mushroom Stall Item 2,Woodland,Stall,,APShop_197,-2082580833,Npc_kokiri004 object 1902174028 (Item_Mushroom_A); custom saved s32
+Korok Forest - General Stall Item 1,Woodland,Stall,,APShop_198,325143310,Npc_kokiri003 object 837449055 (Item_Material_03); custom saved s32
+Korok Forest - General Stall Item 2,Woodland,Stall,,APShop_199,1684437912,Npc_kokiri003 object 2136474935 (Item_Material_03); custom saved s32
 Goron City - General Stall Item 1,Eldin,Stall,,APShop_200,-834746836,Npc_goron002 object 1456518560 (Item_Material_01); custom saved s32
-Goron City - General Stall Item 2,Eldin,Stall,,APShop_201,-1187383622,Npc_goron002 object 705800106 (Item_Material_02); custom saved s32
-Kakariko Village - Arrow Stall Item 1,Dueling Peaks,Stall,,APShop_202,540059392,Npc_Kakariko010 object 171020671 (Obj_ArrowNormal_A_01); custom saved s32
-Kakariko Village - Arrow Stall Item 2,Dueling Peaks,Stall,,APShop_203,1463261078,Npc_Kakariko010 object 332208147 (Obj_FireArrow_A_01); custom saved s32
-Kakariko Village - General Stall Item 1,Dueling Peaks,Stall,,APShop_204,-917306827,Npc_Kakariko014 object 505115208 (Item_PlantGet_M); custom saved s32
-Kakariko Village - General Stall Item 2,Dueling Peaks,Stall,,APShop_205,-1101778269,Npc_Kakariko014 object 1467506359 (Item_PlantGet_M); custom saved s32
-Lurelin Village - General Stall Item 1,Hateno,Stall,,APShop_206,660431641,Npc_SouthernVillage005 object 112779393 (Item_Enemy_Put_57); custom saved s32
+Goron City - General Stall Item 2,Eldin,Stall,,APShop_201,-1187383622,Npc_goron002 object 3043415669 (Item_Material_01); custom saved s32
+Kakariko Village - Arrow Stall Item 1,Dueling Peaks,Stall,,APShop_202,540059392,Npc_Kakariko010 object 2059197917 (Obj_ArrowBundle_A_01); custom saved s32
+Kakariko Village - Arrow Stall Item 2,Dueling Peaks,Stall,,APShop_203,1463261078,Npc_Kakariko010 object 2376699312 (Obj_FireArrow_A_03); custom saved s32
+Kakariko Village - General Stall Item 1,Dueling Peaks,Stall,,APShop_204,-917306827,Npc_Kakariko014 object 1798493424 (Item_Material_06); custom saved s32
+Kakariko Village - General Stall Item 2,Dueling Peaks,Stall,,APShop_205,-1101778269,Npc_Kakariko014 object 516954329 (Item_Material_04); custom saved s32
+Lurelin Village - General Stall Item 1,Hateno,Stall,,APShop_206,660431641,Npc_SouthernVillage005 object 316323603 (Item_Enemy_Put_57); custom saved s32
 Lurelin Village - General Stall Item 2,Hateno,Stall,,APShop_207,1348096911,Npc_SouthernVillage005 object 852333563 (Item_FishGet_F); custom saved s32
 Tarrey Town - Arrow Stall Item 1,Akkala,Stall,,APShop_208,-1058714082,Npc_HighMountain010 object 781734643 (Obj_ArrowBundle_A_02); custom saved s32
 Tarrey Town - Arrow Stall Item 2,Akkala,Stall,,APShop_209,-1209893240,Npc_HighMountain010 object 225064014 (Obj_BombArrow_A_03); custom saved s32
-Zora's Domain - General Stall Item 1,Akkala,Stall,,APShop_210,-685377683,Npc_Zora002 object 212342133 (Obj_IceArrow_A_01); custom saved s32
-Zora's Domain - General Stall Item 2,Akkala,Stall,,APShop_211,-1608333317,Npc_Zora002 object 882863430 (Item_Material_03); custom saved s32
-Hateno Village - General Stall Item 1,Hateno,Stall,,APShop_212,959157825,Npc_HatenoVillage002 object 360418546 (Item_Material_03); custom saved s32
+Zora's Domain - General Stall Item 1,Akkala,Stall,,APShop_210,-685377683,Npc_Zora002 object 882863430 (Item_Material_03); custom saved s32
+Zora's Domain - General Stall Item 2,Akkala,Stall,,APShop_211,-1608333317,Npc_Zora002 object 2178080993 (Item_Material_03); custom saved s32
+Hateno Village - General Stall Item 1,Hateno,Stall,,APShop_212,959157825,Npc_HatenoVillage002 object 1551305830 (Item_Mushroom_O); custom saved s32
 Hateno Village - General Stall Item 2,Hateno,Stall,,APShop_213,1311549143,Npc_HatenoVillage002 object 611564340 (Item_Material_04); custom saved s32

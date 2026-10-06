@@ -4,9 +4,12 @@ The item actor, its model, icon, price, texts and flags are the shops' (the
 same AP_Shop_<id> scheme, botw_patch/shops.py builds them for every placement).
 What is proper to a stall (botw_client/stall_catalog.py):
   * in the DLC map unit, the stall object turns into the AP actor: same
-    HashId, position and links (ForSale to its merchant, DeadUp to the
-    stall's sold-out tag), rotation reduced to the merchant's yaw (an object's
-    own tilt looks wrong on the medallion);
+    HashId and links (ForSale to its merchant, DeadUp to the stall's sold-out
+    tag). The jewel (assets/models/ap_item) stands on its origin, its faces
+    along Z: here it lies on its back, face up (Rotate [-pi/2, yaw, 0]: the
+    pitch first, then the merchant's yaw, so its top points to the merchant
+    and its logo is upright for the customer), centred on the object it
+    replaces and resting on its level (half its thickness up);
   * a new LinkTagAnd reading the saved bool IsGet_AP_Shop_<id> creates the
     object: true until bought, so a bought one is never created again, blood
     moon included. It is the vanilla pattern of 956 tags of these maps (no
@@ -17,6 +20,7 @@ What is proper to a stall (botw_client/stall_catalog.py):
 """
 from __future__ import annotations
 
+import math
 import zlib
 
 import oead
@@ -94,8 +98,11 @@ def _links(obj) -> list[tuple[str, int]]:
             for link in _link_nodes(obj)]
 
 
-def patch_map(raw: bytes, locations: list[StallLocation]) -> tuple[bytes, dict]:
-    """One map unit with its stall locations: objects turned, tags added."""
+def patch_map(raw: bytes, locations: list[StallLocation],
+              jewel: tuple[float, float]) -> tuple[bytes, dict]:
+    """One map unit with its stall locations: objects turned, tags added.
+    jewel: the model's (height, thickness), in metres."""
+    height, thickness = jewel
     doc = oead.byml.from_binary(unpack(raw))
     objects = list(doc["Objs"])
     hashes = [int(o["HashId"]) for o in objects]
@@ -120,7 +127,13 @@ def patch_map(raw: bytes, locations: list[StallLocation]) -> tuple[bytes, dict]:
             raise ValueError(f"object not for sale by {merchant.actor}: {location.name}")
         # Its links (ForSale, sold-out tags) stay as they are.
         obj["UnitConfigName"] = location.actor
-        obj["Rotate"] = oead.F32(merchant.yaw)
+        yaw = merchant.yaw
+        obj["Rotate"] = oead.byml.Array([oead.F32(-math.pi / 2), oead.F32(yaw), oead.F32(0.0)])
+        # Lying, its middle is height/2 from its origin, towards the merchant.
+        x, y, z = (float(v) for v in obj["Translate"])
+        obj["Translate"] = oead.byml.Array([oead.F32(x + height / 2 * math.sin(yaw)),
+                                            oead.F32(y + thickness / 2),
+                                            oead.F32(z + height / 2 * math.cos(yaw))])
 
         tag = clone(model)
         new_hash = tag_hash(location)
@@ -151,8 +164,8 @@ def patch_map(raw: bytes, locations: list[StallLocation]) -> tuple[bytes, dict]:
     return bytes(oead.yaz0.compress(out)), detail
 
 
-def generate(builder, files: dict[str, bytes], content, aoc, locations: list[StallLocation]
-             ) -> list[dict]:
+def generate(builder, files: dict[str, bytes], content, aoc, locations: list[StallLocation],
+             jewel: tuple[float, float]) -> list[dict]:
     """Map units and merchant flows of the seed's stall locations, into a
     ResourceBuilder whose stage holds `files`. Returns the changes; the map
     units go to files[aoc/0010/...]."""
@@ -164,7 +177,7 @@ def generate(builder, files: dict[str, bytes], content, aoc, locations: list[Sta
         raw = (aoc / unit).read_bytes()
         if digest(raw) != MAP_HASHES[unit]:
             raise ValueError(f"unexpected DLC map: {unit}")
-        new, detail = patch_map(raw, located)
+        new, detail = patch_map(raw, located, jewel)
         builder.account(TABLE_PREFIX + unit, new, raw)
         files[AOC_PREFIX + unit] = new
         changes.append({"resource": AOC_PREFIX + unit, "stalls": detail})

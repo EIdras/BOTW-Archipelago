@@ -31,8 +31,8 @@ given back quietly, then listed in a single Archipelago window.
 | Village stalls (option)                    | 0 to 28    |
 
 With the shop options, Archipelago items are sold by Beedle at his 16 shops (listed first in his stock) and placed as a
-medallion on the village stalls, spread at random over 14 stalls (2 at most on one); buying one checks its location.
-Opening Beedle's list, or looking at a stall's medallion, hints the items for sale there.
+jewel on the village stalls, spread at random over 14 stalls (2 at most on one); buying one checks its location.
+Opening Beedle's list, or looking at a stall's jewel, hints the items for sale there.
 
 ## Which items can be received?
 
@@ -128,7 +128,7 @@ rest, and a trap is not suffered twice.
 
 Your own items appear as the game shows them. An item for another player is announced in the Archipelago journal, a
 line of text in the game's tip frame (top right of the screen). In shops and on stalls, it is shown as an Archipelago
-medallion, with the item's name and its recipient.
+jewel, with the item's name and its recipient.
 
 ## Current limitations
 
