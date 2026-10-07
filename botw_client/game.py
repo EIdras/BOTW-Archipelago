@@ -29,6 +29,12 @@ BLOCK_LEASE_FRAMES = 180
 # be instrumented; do not clear its internals by hand.
 DISPLAY_SETTLE_SECONDS = 2.5
 SAFE_STABLE_SECONDS = 3.0
+# The frame tick unchanged this long: the game paused or in the background.
+# Unchanged for less, it is the same frame: a second caller of the gate in the
+# client's loop (the presentations' and the deliveries'), which gets the frame's
+# answer. Taken for a pause, it reset the stable time for both, and neither ever
+# reached SAFE_STABLE_SECONDS (an AP summary waiting, items behind it: seen in play).
+SAFE_PAUSE_SECONDS = 0.25
 TERMINAL_RUNE_FLAGS = {
     "Magnesis Terminal": "IsGet_Obj_Magnetglove",
     "Remote Bombs Terminal": "IsGet_Obj_RemoteBomb",
@@ -71,6 +77,8 @@ class BotwGame:
         self._safe_signature = None
         self._safe_since = None
         self._last_safe_tick = None
+        self._safe_tick_at = 0.0
+        self._safe_answer = False
         self.save_ledger_available = False
         self.save_ledger_flags_present = False
         self.delivery_block_reason = "game not connected"
@@ -91,6 +99,8 @@ class BotwGame:
         self._safe_signature = None
         self._safe_since = None
         self._last_safe_tick = None
+        self._safe_tick_at = 0.0
+        self._safe_answer = False
 
     def connect(self, progress=print):
         self.close()
@@ -430,20 +440,30 @@ class BotwGame:
             self.delivery_block_reason = "safety flags unreadable"
             return False
         tick = be(self.process.read(self.cave.tick, 4))
+        now = time.monotonic()
+        if tick == self._last_safe_tick and now - self._safe_tick_at < SAFE_PAUSE_SECONDS:
+            return self._safe_answer            # the same frame (SAFE_PAUSE_SECONDS)
+        if tick != self._last_safe_tick:
+            self._safe_tick_at = now
         if health <= 0 or save_prohibited or tick == self._last_safe_tick:
             self._safe_signature = self._safe_since = None
             self._last_safe_tick = tick
+            self._safe_answer = False
             self.delivery_block_reason = (
                 "Link dead" if health <= 0 else
                 "saving/loading forbidden" if save_prohibited else
                 "game paused or in the background")
             return False
         self._last_safe_tick = tick
+        self._safe_answer = self._stable_signature(now)
+        return self._safe_answer
+
+    def _stable_signature(self, now: float) -> bool:
+        """The UI pointers unchanged for SAFE_STABLE_SECONDS."""
         signature = (
             be(self.process.read(self.cave.pmdm_this, 4)),
             be(self.process.read(self.cave.scr_table, 4)),
         )
-        now = time.monotonic()
         if not all(signature) or signature != self._safe_signature:
             self._safe_signature = signature
             self._safe_since = now

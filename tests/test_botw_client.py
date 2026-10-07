@@ -322,6 +322,37 @@ class StateTests(unittest.TestCase):
                 reopened.select("seed", 0, 1, "package-b")["applied"], [])
 
 
+class SafetyGateTests(unittest.TestCase):
+    def test_a_second_caller_in_the_same_frame_keeps_the_stable_time(self):
+        # Two callers of the gate in the client's loop (an AP summary waiting,
+        # items behind it): the second, in the same frame, was taken for a
+        # pause and reset the stable time of both, which never got ready.
+        from types import SimpleNamespace
+        from unittest import mock
+        from botw_client import game as module
+        clock, memory = [0.0], {0x10: 1, 0x20: 0xAA, 0x30: 0xBB}
+        game = module.BotwGame()
+        game.cave = SimpleNamespace(ui_ready=lambda: True, tick=0x10, pmdm_this=0x20, scr_table=0x30)
+        game.process = SimpleNamespace(read=lambda address, _size: memory[address].to_bytes(4, "big"))
+        game.get_window_free = lambda: True
+        game._read_flag = lambda name, _kind: 3 if name == "CurrentHart" else False
+
+        def at(seconds, tick):
+            clock[0], memory[0x10] = seconds, tick
+            with mock.patch.object(module.time, "monotonic", lambda: clock[0]):
+                return game.safe_for_delivery()
+        self.assertFalse(at(0.0, 1))                # the UI pointers just seen
+        self.assertFalse(at(1.0, 31))
+        self.assertTrue(at(3.1, 94))
+        self.assertTrue(at(3.1, 94))                # the same frame: the same answer
+        self.assertTrue(at(3.3, 100))               # not reset
+        self.assertTrue(at(3.4, 100))
+        self.assertFalse(at(3.6, 100))              # the tick still: paused
+        self.assertEqual(game.delivery_block_reason, "game paused or in the background")
+        self.assertFalse(at(3.7, 103))              # the stable time starts again
+        self.assertTrue(at(6.8, 196))
+
+
 class RuntimeSafetyTests(unittest.IsolatedAsyncioTestCase):
     def test_ap_messages_are_single_and_truncated(self):
         self.assertEqual(BotwClientRuntime._message_pages("  short   text "),

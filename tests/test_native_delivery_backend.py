@@ -517,6 +517,60 @@ class NativeDeliveryBackendTests(unittest.TestCase):
                              (DeliveryStatus.DEFERRED, "waiting for Link in the world"))
         self.assertFalse(calls)
 
+    def test_a_drop_waits_for_the_pouch_full_message_to_close(self):
+        # The entry shows the "pouch full" message after the rejection the
+        # client saw: dropped at once, the item was refused, in a loop.
+        import time
+        import botw_client.native_delivery as module
+        opened = time.monotonic()
+        backend = self.backend(None, in_world=lambda: time.monotonic() - opened > 0.1)
+        dropped = []
+
+        def drop(*_args):
+            dropped.append(time.monotonic() - opened)
+            return "ok"
+        with mock.patch.object(module, "DROP_SETTLE_SECONDS", 0.05), \
+                mock.patch("botw_client.item_drop.drop", drop):
+            self.assertEqual(backend.drop_item("Weapon_Sword_024"), "ok")
+        self.assertGreaterEqual(dropped[0], 0.15)
+        # Still out of the world once DROP_WAIT_SECONDS are over: why, to ask again.
+        backend = self.backend(None, in_world=lambda: False)
+        with mock.patch.object(module, "DROP_WAIT_SECONDS", 0.05), \
+                mock.patch("botw_client.item_drop.drop", drop):
+            self.assertEqual(backend.drop_item("Weapon_Sword_024"), "Link not in the world")
+        self.assertEqual(len(dropped), 1)
+
+    def test_a_binding_accepted_but_not_run_is_asked_again(self):
+        # Seen at a new game's start, Link in the world: accepted, never run.
+        # The entry writes only on a 0/0 ledger, so asking again is safe.
+        self.add_binding()
+        self.values[flag("APSeedToken")] = 0
+        self.values[flag("APReceivedCursor")] = 0
+        calls = []
+
+        def request(*_args, **_kwargs):
+            calls.append(1)
+            if len(calls) == 2:
+                self.values[flag("APSeedToken")] = 123
+            return {"native_return": 1}
+
+        backend = self.backend(request)
+        backend.commit_timeout, backend.poll_seconds = 0.05, 0.005
+        self.assertEqual(backend.bind_session().status, DeliveryStatus.DEFERRED)
+        self.assertEqual(backend.bind_session().status, DeliveryStatus.APPLIED)
+        self.assertEqual(calls, [1, 1])
+        # The guard up at the deadline (an entry running): not asked again.
+        self.values[flag("APSeedToken")] = 0
+
+        def running(*_args, **_kwargs):
+            self.values[flag("SaveProhibition")] = True
+            return {"native_return": 1}
+
+        backend = self.backend(running)
+        backend.commit_timeout, backend.poll_seconds = 0.05, 0.005
+        self.assertEqual(backend.bind_session().status, DeliveryStatus.UNCERTAIN)
+        self.values[flag("SaveProhibition")] = False
+
     def test_foreign_catalog_blocks_even_an_already_bound_save(self):
         self.add_binding(token=999)
         calls = []

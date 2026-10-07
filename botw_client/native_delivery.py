@@ -36,6 +36,13 @@ SETTLE_FRAMES = 90
 QUIET_SETTLE_FRAMES = 20
 # The longest wait for an accepted entry's commit, a window left open included.
 COMMIT_LIMIT = 600.0
+# The entry raises its reject counter, then shows the game's "pouch full"
+# message: the client sees the rejection as the message opens. A drop waits
+# for it to close, Link back in the world for DROP_SETTLE_SECONDS, at most
+# DROP_WAIT_SECONDS; asked at once, it was refused, and the entry asked again
+# showed the message again, in a loop (seen in play).
+DROP_WAIT_SECONDS = 15.0
+DROP_SETTLE_SECONDS = 0.5
 # A wait for a commit says in the client's log, this often, what holds it.
 WAIT_REPORT_SECONDS = 60.0
 # The game's pickup notification (the list on the right), as a real pickup asks
@@ -385,6 +392,19 @@ class CemuNativeDeliveryBackend:
             return DeliveryResult(
                 DeliveryStatus.UNCERTAIN, cursor_now,
                 f"binding outcome unknown: {exc}")
+        # Accepted, yet never run (seen at a new game's start, Link in the
+        # world): the ledger still 0/0 and no entry holding the guard. Asking
+        # again is safe, since the entry writes only on a 0/0 ledger: should the
+        # first request still run, the second changes nothing.
+        try:
+            token_now, cursor_now, _ = self._state()
+            idle = not self._guard()
+        except Exception:  # noqa: BLE001 - unreadable: not asked again
+            token_now, cursor_now, idle = token, cursor, False
+        if token_now == 0 and cursor_now == 0 and idle:
+            return DeliveryResult(
+                DeliveryStatus.DEFERRED, cursor_now,
+                "binding entry accepted but not run; asking again")
         return DeliveryResult(
             DeliveryStatus.UNCERTAIN, cursor,
             "binding entry accepted without an observed commit")
@@ -503,15 +523,20 @@ class CemuNativeDeliveryBackend:
     def drop_item(self, actor: str) -> str:
         """Create `actor` at Link's feet (botw_client/item_drop.py): 'ok' once
         the game took the request, else why not (to ask again: Link out of the
-        world, an entry running, the invoker busy)."""
+        world, an entry running, the invoker busy). First, the "pouch full"
+        message closed (DROP_WAIT_SECONDS)."""
         from .item_drop import drop
-        try:
-            if self._guard():
-                return "an entry running"
-        except Exception:  # noqa: BLE001 - a loading
-            return "save guard unreadable"
-        if not self._link_in_world():
-            return "Link not in the world"
+        deadline = time.monotonic() + DROP_WAIT_SECONDS
+        free_since = None
+        while True:
+            reason = self._drop_blocked()
+            now = time.monotonic()
+            free_since = None if reason else (free_since or now)
+            if free_since is not None and now - free_since >= DROP_SETTLE_SECONDS:
+                break
+            if now >= deadline:
+                return reason or "Link not settled in the world"
+            time.sleep(self.poll_seconds)
         process, cave = self.game.process, self.game.cave
         _request, lock_factory = self._dependencies()
 
@@ -528,6 +553,17 @@ class CemuNativeDeliveryBackend:
                 return drop(read, write, self._call, actor)
         except Exception as exc:  # noqa: BLE001 - invoker busy or unreadable: asked again
             return f"{type(exc).__name__}: {exc}"
+
+    def _drop_blocked(self) -> str | None:
+        """Why an item cannot be dropped now, or None."""
+        try:
+            if self._guard():
+                return "an entry running"
+        except Exception:  # noqa: BLE001 - a loading
+            return "save guard unreadable"
+        if not self._link_in_world():
+            return "Link not in the world"
+        return None
 
     def _call(self, address: int, *args, timeout: float = 1.0) -> int | None:
         """Call a game function from the cave's per-frame hook, as the event

@@ -45,6 +45,16 @@ class QueueTests(unittest.TestCase):
         self.assertEqual(q.tick(b),'waiting_ready')
         self.assertEqual(b.submit.call_count,1)
 
+    def test_only_a_request_never_submitted_can_be_withdrawn(self):
+        q,j,b=self.make()
+        self.assertEqual(q.tick(b),'accepted')                  # received/0 shown
+        self.assertFalse(q.withdraw('received/0'))
+        self.assertTrue(q.withdraw('received/1'))
+        self.assertEqual([e['id'] for e in j[-1]['entries']],['received/0'])
+        self.assertTrue(q.withdraw('never/enqueued'))
+        self.assertEqual(q.tick(b),'completed')
+        self.assertEqual(q.tick(b),'idle')
+
     def test_duplicate_identity_is_idempotent_but_payload_conflict_fails(self):
         q,j,b=self.make()
         q.enqueue('received/0','One','First')

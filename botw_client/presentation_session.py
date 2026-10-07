@@ -66,6 +66,10 @@ class NativePresentationSession:
     def close(self):
         self.store.close()
 
+    def withdraw(self, request_id):
+        """Drop an announcement never submitted (PresentationQueue.withdraw)."""
+        return self.store.queue.withdraw(request_id)
+
     def request_replay(self, request_id):
         self.store.queue.authorize_replay(request_id, self.backend.recovery_incarnation())
 

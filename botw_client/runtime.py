@@ -699,6 +699,9 @@ class BotwClientRuntime:
                 detail = detail() if callable(detail) else None
                 if isinstance(detail, str):
                     reason += f' ({detail})'
+                elif native_wait.startswith('game not yet stable'):
+                    # The client's gate said no: its reason.
+                    reason += f' ({self.game.delivery_block_reason})'
             if (self._presentation_status in ('queued', 'waiting_ready')
                     and isinstance(submission, dict) and submission.get('status') == 'deferred'):
                 reason = ('native resource unavailable; announcement not submitted, '
@@ -1374,8 +1377,7 @@ class BotwClientRuntime:
             self._native_traps.clear()
             return
         # No safety check of its own: the trap is queued at its commit, which
-        # happened at a safe moment, and safe_for_delivery() is stateful (a
-        # second caller in the loop makes the deliveries read "game paused").
+        # happened at a safe moment.
         effect = self._native_traps.pop(0)
         if effect != "cucco_swarm":
             self.log(f"native trap without an effect in this client: {effect}")
@@ -1584,10 +1586,8 @@ class BotwClientRuntime:
             self._journal_pages = self._journal_next_pages()
         if not self._journal_pages or time.monotonic() < self._journal_retry_after:
             return
-        # Not _safe_now(): safe_for_delivery() is stateful (it compares the
-        # game tick with its previous call); a second caller in the same loop
-        # made every delivery read "game paused". in_world() is the
-        # stateless presentation guard.
+        # Not _safe_now(), which waits for SAFE_STABLE_SECONDS of a still UI:
+        # in_world() is the stateless presentation guard.
         if not await asyncio.to_thread(tips.in_world):
             self._journal_retry_after = time.monotonic() + 0.5
             return
@@ -1806,6 +1806,11 @@ class BotwClientRuntime:
             return
         queue = self.state["apply_queue"]
         high = int(self.state.get("delivered_high", 0))
+        if queue and int(queue[0]) < high:
+            # A reload is being given back: an "Items restored" window still
+            # waiting is a former reload's, which this one's supersedes (seen in
+            # play: shown first, then the items it named came back again).
+            self._withdraw_summaries("Items restored")
         for batch_name, title, done, log in (
                 ("replay_batch", "Items restored", not (queue and int(queue[0]) < high),
                  "items restored after a load"),
@@ -1825,6 +1830,18 @@ class BotwClientRuntime:
             self.log(f"{log}: {len(batch)}")
             if batch_name == "bulk_batch":
                 self._bulk_told = False
+
+    def _withdraw_summaries(self, title: str):
+        """Drop the AP summaries of this title not yet shown; one the game was
+        already asked for stays."""
+        session = getattr(self, "presentations", None)
+        pending = self.state.get("summary_queue") or []
+        kept = [summary for summary in pending if summary["title"] != title
+                or (session is not None and not session.withdraw(summary["key"]))]
+        if len(kept) != len(pending):
+            self.state["summary_queue"] = kept
+            self.state_store.save()
+            self.log(f"{len(pending) - len(kept)} former '{title}' window(s) superseded by this reload")
 
     def _mark_bulk(self):
         """The items a release or a collect sends at once: told by the server's

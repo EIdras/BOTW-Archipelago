@@ -151,6 +151,21 @@ class PresentationQueue:
         self._save()
         return entry['status']
 
+    def withdraw(self,request_id):
+        """Explicit caller decision: drop a request a later one supersedes, only
+        while it never reached the native wrapper (queued, no attempt). True once
+        it is gone or was never there; False if it stays (submitted or shown)."""
+        if self.broken:
+            raise RuntimeError('Journal unavailable; queue stopped')
+        for position,e in enumerate(self.state['entries']):
+            if e['id']==request_id:
+                if e['status']!='queued' or e['attempts']!=0:
+                    return False
+                del self.state['entries'][position]
+                self._save()
+                return True
+        return True
+
     def retry_refused(self,request_id):
         """Explicit caller decision, only for a proven refusal; never uncertainty."""
         if self.broken:

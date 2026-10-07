@@ -111,10 +111,10 @@ without committing stops the client (possible mutation).
   useful or progression item, or the first of a kind, keeps its window; so do an elixir and a weapon, every time
   (`"window": "always"`).
 - **A full pouch**: the entry checks for room first (`CheckAddPorchItem`), shows the game's "pouch full" message and
-  gives nothing. A weapon (but the Master Sword), a bow, a shield, an arrow bundle or a gem then falls at Link's
-  feet, created by the game's actor creation, and the step's drop entry only commits it: the queue goes on
-  ([`botw_client/item_drop.py`](../../botw_client/item_drop.py)). An item left on the ground is lost with the area.
-  Other items wait for room.
+  gives nothing. Once the message has closed, a weapon (but the Master Sword), a bow, a shield, an arrow bundle or a
+  gem falls at Link's feet, created by the game's actor creation, and the step's drop entry only commits it: the
+  queue goes on ([`botw_client/item_drop.py`](../../botw_client/item_drop.py)). An item left on the ground is lost
+  with the area. Other items wait for room.
 
 The commit comes at the entry's end, after the window, which waits for the player. The client waits for it as long as
 the entry runs (its `SaveProhibition` guard up) or a window or menu is open; only 30 s of Link playing with nothing
@@ -127,6 +127,8 @@ Loading an older save moves the delivery cursor back. The client keeps the highe
 (`delivered_high`): below it, an item is given back, not new. It is then delivered by the step's **quiet twin**
 (`quiet_entry` in the catalog), which puts it straight into the inventory, without its window. Once they are all back,
 **one Archipelago window, "Items restored"**, names them (4 lines of 40 characters, "and N more" when they do not fit).
+A former reload's window still waiting when another reload is given back is dropped, as long as the game was
+never asked for it (`PresentationQueue.withdraw`): the new one names what comes back again.
 
 The items a **release or a collect** sends at once come the same way, named by one window **"Items received"**,
 without their journal lines. Archipelago marks no item as released: the server's notice tells it (PrintJSON `Release`

@@ -93,6 +93,32 @@ class ReplayTests(unittest.TestCase):
         asyncio.run(r._apply_one_received_native())      # index 2: new, not given back
         self.assertFalse(backend.commands[-1].quiet)
 
+    def test_a_new_reload_supersedes_a_summary_not_yet_shown(self):
+        # Seen in play: a reload's window still waiting, then another reload;
+        # the first was shown, then the items it named came back again.
+        r, _backend = runtime()
+        asked = []
+
+        class Session:
+            def withdraw(self, key):
+                asked.append(key)
+                return key != "summary/2"           # summary/2: already submitted
+
+        r.presentations = Session()
+        r.state.update(summary_queue=[
+            {"key": "summary/1", "title": "Items restored", "lines": ["Zora Set"]},
+            {"key": "summary/2", "title": "Items restored", "lines": ["Korok Seed"]},
+            {"key": "summary/3", "title": "Items received", "lines": ["Korok Seed"]}],
+            replay_batch=[])
+        r._flush_replay_summary()
+        self.assertEqual(asked, ["summary/1", "summary/2"])
+        self.assertEqual([s["key"] for s in r.state["summary_queue"]], ["summary/2", "summary/3"])
+        # Nothing given back: a waiting window stays.
+        r.state["apply_queue"] = [5]
+        asked.clear()
+        r._flush_replay_summary()
+        self.assertEqual(asked, [])
+
     def test_the_session_presents_the_summary_and_forgets_it_once_shown(self):
         from botw_client.presentation_session import NativePresentationSession
         enqueued, done = [], set()
