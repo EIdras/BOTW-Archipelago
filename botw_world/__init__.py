@@ -3,17 +3,18 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
-from BaseClasses import Item, ItemClassification, Location, Region, Tutorial
+from BaseClasses import Item, ItemClassification, Location, MultiWorld, Region, Tutorial
 from worlds.AutoWorld import WebWorld, World
 from Options import OptionError
 from rule_builder.rules import And, Has, HasAll, HasAny, HasFromList, Or, Rule, True_
 
-from .catalog import (FILLER, GAME, GOAL_LOCATION, ITEMS, LOCATIONS, TRAPS, WORLD_VERSION, categories,
-                      requirements)
-from .options import OPTION_GROUPS, PRESETS, BotwOptions
+from .catalog import (FILLER, GAME, GOAL_LOCATION, ITEMS, LOCATIONS, TRAPS, WEAPON_LEVELS, WORLD_VERSION,
+                      categories, requirements)
+from .options import OPTION_GROUPS, PRESETS, BotwOptions, WeaponOrder
 from .slot_file import BotwSlotFile
 
 
@@ -52,7 +53,10 @@ class BotwWorld(World):
     required_client_version = (0, 6, 7)
     item_name_to_id = {row["name"]: row["id"] for row in ITEMS}
     location_name_to_id = {row["name"]: row["id"] for row in LOCATIONS if row["name"] != GOAL_LOCATION}
-    item_name_groups = {"Runes": {"Magnesis", "Remote Bomb", "Stasis", "Cryonis"}}
+    item_name_groups = {"Runes": {"Magnesis", "Remote Bomb", "Stasis", "Cryonis"},
+                        "Weapons": set(WEAPON_LEVELS)}
+    # weapon_order loosely_smoothed: how far, in levels, a weapon may move.
+    WEAPON_LEVEL_SPREAD = 1.5
     STALL_IDS = frozenset(r["id"] for r in LOCATIONS if "Stall" in categories(r))
     location_name_groups = {
         "Shrines": {r["name"] for r in LOCATIONS if "Shrine" in categories(r)},
@@ -174,7 +178,7 @@ class BotwWorld(World):
         return BotwItem(name, classification, row["id"], self.player)
 
     def get_filler_item_name(self) -> str:
-        """Arrows, elixirs, gems or rupees, drawn by FILLER's weights."""
+        """Arrows, elixirs, weapons, gems or rupees, drawn by FILLER's weights."""
         families = list(FILLER.values())
         _weight, items = self.random.choices(families, weights=[w for w, _ in families])[0]
         return self.random.choices(list(items), weights=list(items.values()))[0]
@@ -203,12 +207,64 @@ class BotwWorld(World):
         pool.extend(self.create_item(self.get_filler_item_name()) for _ in range(capacity - len(pool)))
         self.multiworld.itempool.extend(pool)
 
+    @classmethod
+    def stage_finalize_multiworld(cls, multiworld: MultiWorld) -> None:
+        """weapon_order, once the fill and the progression balancing are done, as
+        Dark Souls III smooths its weapons: the spheres of the whole multiworld,
+        computed once, then each world's weapons dealt again over their own
+        locations. No rule names a weapon, so the spheres do not change."""
+        worlds = [world for world in multiworld.get_game_worlds(cls.game)
+                  if world.options.weapon_order != WeaponOrder.option_anywhere]
+        if not worlds:
+            return
+        spheres = []
+        for sphere in multiworld.get_spheres():
+            if not sphere:
+                break           # what follows is unreachable: left as the fill put it
+            spheres.append(sorted(sphere))
+        for world in worlds:
+            world.order_weapons(spheres)
+
+    def order_weapons(self, spheres: list[list[Location]]) -> None:
+        """The locations holding this world's weapons, in any world, by sphere (at
+        random within one), receive these weapons again by level: the weaker in
+        the first. Loosely smoothed, each level moves by up to WEAPON_LEVEL_SPREAD.
+        The jokes (level 0) and the plando's locked placements do not move. A
+        location's own rules still decide what it takes; should they leave a weapon
+        without a place, the fill's placement stays."""
+        locations = []
+        for sphere in spheres:
+            mine = [location for location in sphere if not location.locked
+                    and location.item.player == self.player and WEAPON_LEVELS.get(location.item.name)]
+            self.random.shuffle(mine)
+            locations += mine
+        weapons = [location.item for location in locations]
+        self.random.shuffle(weapons)
+        spread = (self.WEAPON_LEVEL_SPREAD
+                  if self.options.weapon_order == WeaponOrder.option_loosely_smoothed else 0)
+        order = sorted(((WEAPON_LEVELS[item.name] + self.random.uniform(-spread, spread), index)
+                        for index, item in enumerate(weapons)))
+        free, placements = list(locations), []
+        for _key, index in order:
+            item = weapons[index]
+            spot = next((location for location in free
+                         if location.can_fill(self.multiworld.state, item, check_access=False)), None)
+            if spot is None:
+                logging.warning(f"{self.player_name}: weapon_order left as the fill made it "
+                                f"(no location takes {item.name})")
+                return
+            free.remove(spot)
+            placements.append((spot, item))
+        for location, item in placements:
+            self.multiworld.push_item(location, item, collect=False)
+
     def fill_slot_data(self) -> dict[str, Any]:
         # client_schema 4: the Gerudo Set, an item a client of schema 3 cannot deliver.
         # 5: the goal and the sanctum's requirements, which a client of schema 4 cannot read.
         # 6: arrows, elixirs, gems and rupees as filler, which a client of schema 5 cannot deliver.
+        # 7: weapons as filler, which a client of schema 6 cannot deliver.
         # stall_locations: the stalls drawn by the seed, for Universal Tracker.
-        return {"client_schema": 6, "world_schema": 4, "world_version": WORLD_VERSION,
+        return {"client_schema": 7, "world_schema": 4, "world_version": WORLD_VERSION,
                 "death_link": bool(self.options.death_link.value),
                 **self.options.as_dict(*self.SLOT_OPTIONS),
                 "stall_locations": sorted(location_id for location_id in self.shop_prices

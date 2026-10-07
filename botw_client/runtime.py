@@ -51,8 +51,8 @@ GOAL_LOCATION = "Defeat Calamity Ganon"
 STATE_SCHEMA = 3
 CLIENT_SCHEMA = 2
 # The client schemas of BOTW seeds this client plays: 4 added the Gerudo Set, 5 the
-# goal and the sanctum's requirements.
-BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6)
+# goal and the sanctum's requirements, 6 the new filler, 7 the weapons.
+BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7)
 # The mutations that present the item themselves: no AP window before them.
 VANILLA_WINDOWS = ("get_demo_actor", "champion_actor", "rune_download", "trap", "native_trap",
                    "get_demo_bundle", "cook", "pouch_slot")
@@ -1680,7 +1680,7 @@ class BotwClientRuntime:
         # Only the world's filler: an item cheated in (!getitem, /send) comes
         # with flags 0 too, and a Gerudo Set or a pouch upgrade received again
         # that way came quietly (seen in play). An elixir keeps the cooking's
-        # window every time ("window": "always").
+        # window every time, and a weapon its get window ("window": "always").
         if entry is not None and (not (entry.get("pickup") or entry.get("generated_filler"))
                                   or entry.get("window") == "always"):
             return False

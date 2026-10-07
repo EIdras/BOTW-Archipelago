@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 import unittest
 
@@ -19,7 +20,7 @@ SOURCE = ROOT / ".build/ledger-validation/4e60affc56def09f/content"
 class NativeDeliveryCompilationTests(unittest.TestCase):
     def test_catalog_covers_verified_action_families_only(self):
         entries, unsupported = compile_native_entries()
-        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 95)
+        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 178)
         self.assertEqual(set(unsupported), set())
         self.assertEqual(len({entry.entry_name for entry in entries}), len(entries))
         self.assertTrue(all(entry.plan.mutations for entry in entries))
@@ -187,10 +188,15 @@ class NativeDeliveryGraphTests(unittest.TestCase):
 
     def test_a_dropped_item_is_committed_by_its_own_silent_entry(self):
         # The pouch full, the client drops the item at Link's feet; this entry
-        # only commits. Only the kinds measured on the ground have one.
+        # only commits. Only the kinds measured on the ground have one; never
+        # the Master Sword.
+        weapons = {row["name"] for row in json.loads((ROOT / "botw_world/data/items.json").read_text(
+            encoding="utf-8")) if "Weapon" in row.get("category", ())}
+        self.assertEqual(len(weapons), 83)
         drops = [s for s in self.specs if s.drop]
         self.assertEqual({s.item_name for s in drops}, {
-            "Hylian Shield", "Star Fragment", "Diamond", "Ruby", "Sapphire", "Topaz", "Opal", "Amber"})
+            "Hylian Shield", "Star Fragment", "Diamond", "Ruby", "Sapphire", "Topaz", "Opal", "Amber",
+            *weapons})
         (drop,) = [s for s in drops if s.item_name == "Hylian Shield"]
         main = self.spec("Hylian Shield")
         self.assertEqual((drop.entry_name, drop.cursor_delta, host_of(drop)),

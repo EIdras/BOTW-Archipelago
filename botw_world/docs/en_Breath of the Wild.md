@@ -48,7 +48,9 @@ Opening Beedle's list, or looking at a stall's jewel, hints the items for sale t
   and Radiant sets
 - Pouch upgrades: 4 for weapons, 3 for bows, 4 for shields (each one of Hestu's, who offers one fewer)
 - Spirit Orbs, Ancient Cores, Star Fragments, Fairies (the Koroks still give their seeds, as in the game)
-- Filler: arrows (normal, fire, ice, shock, bomb, ancient), elixirs, gems and rupees
+- Filler: arrows (normal, fire, ice, shock, bomb, ancient), elixirs, weapons, gems and rupees
+- Weapons, bows and shields: 83 of the game's, from the soldiers' to the Lynels', elemental and ancient ones, a few
+  jokes (a Soup Ladle, a Pot Lid) and, rarely, the amiibo's treasures (Biggoron's Sword, the Twilight Bow...)
 - Traps, with the `trap_percentage` option: Weapon Shatter, Blood Moon, Rupoor, Hearts Down, Strip Down and Cucco
   Swarm
 
@@ -99,6 +101,18 @@ its rune, and leaving it needs the Paraglider. Beyond, the logic asks only for w
 Only what these rules name is progression; the champions' abilities, the other armor, the climbing gear and the
 stamina vessels help without being required, and come wherever the seed puts them.
 
+## How are the weapons spread?
+
+The `weapon_order` option orders the weapons wherever they land in the multiworld, by the logic's spheres:
+
+- `smoothed` (the default): the weaker first, the stronger as the game goes on, the amiibo's treasures last;
+- `loosely_smoothed`: the same order, with some chance: a weapon may come a level earlier or later, never a treasure
+  among the first;
+- `anywhere`: wherever the fill put them, a treasure on the Great Plateau too.
+
+The jokes come anywhere. Alone in a game, the first sphere past the Great Plateau holds most of Hyrule: the Plateau
+gets the weakest weapons, the strongest wait behind the last items, and the rest is mixed.
+
 ## What does DeathLink do?
 
 With the `death_link` option, Link's death kills the other DeathLink players of the room, with what killed him
@@ -110,7 +124,7 @@ cutscene, a menu or a loading screen.
 
 ## What do traps do?
 
-With the `trap_percentage` option, that share of the filler (arrows, elixirs, gems and rupees) becomes traps, drawn
+With the `trap_percentage` option, that share of the filler (arrows, elixirs, weapons, gems and rupees) becomes traps, drawn
 by the `trap_weights` option (a trap of weight 0 or left out never comes up). A trap strikes when it is received,
 at a safe moment, and the Archipelago journal says what it did. Only the cuccos can kill Link.
 

@@ -339,3 +339,86 @@ Archipelago affiche les noms anglais du jeu. Voici leurs équivalents dans le je
 | Purple Rupee | Rubis violet |
 | Silver Rupee | Rubis argenté |
 | Gold Rupee | Rubis doré |
+| Soldier's Broadsword | Épée de soldat |
+| Soldier's Claymore | Espadon de soldat |
+| Soldier's Spear | Lance de soldat |
+| Soldier's Bow | Arc de soldat |
+| Soldier's Shield | Bouclier de soldat |
+| Zora Sword | Épée zora |
+| Gerudo Scimitar | Cimeterre gerudo |
+| Gerudo Spear | Trident gerudo |
+| Eightfold Blade | Petit sabre de la défiance |
+| Silver Bow | Arc zora |
+| Knight's Broadsword | Épée de chevalier |
+| Knight's Claymore | Espadon de chevalier |
+| Knight's Bow | Arc de chevalier |
+| Knight's Shield | Bouclier de chevalier |
+| Royal Broadsword | Épée royale |
+| Royal Claymore | Espadon royal |
+| Royal Halberd | Hallebarde royale |
+| Royal Bow | Arc royal |
+| Royal Shield | Bouclier royal |
+| Flameblade | Épée des flammes |
+| Frostblade | Épée des glaces |
+| Thunderblade | Épée électrique |
+| Great Flameblade | Longue épée des flammes |
+| Great Frostblade | Longue épée des glaces |
+| Great Thunderblade | Longue épée électrique |
+| Flamespear | Trident des flammes |
+| Frostspear | Trident des glaces |
+| Thunderspear | Fourche électrique |
+| Fire Rod | Baguette de feu |
+| Ice Rod | Baguette de glace |
+| Lightning Rod | Baguette électrique |
+| Meteor Rod | Baguette des météores |
+| Blizzard Rod | Baguette des blizzards |
+| Thunderstorm Rod | Baguette de fulguration |
+| Royal Guard's Sword | Épée de garde royal |
+| Royal Guard's Claymore | Espadon de garde royal |
+| Royal Guard's Spear | Hallebarde de garde royal |
+| Royal Guard's Bow | Arc de garde royal |
+| Royal Guard's Shield | Bouclier de garde royal |
+| Dragonbone Boko Bat | Draco-batte boko |
+| Dragonbone Moblin Club | Draco-batte moblin |
+| Ancient Short Sword | Glaive archéonique |
+| Ancient Bladesaw | Longue épée archéonique |
+| Ancient Spear | Lance archéonique |
+| Ancient Bow | Arc archéonique |
+| Ancient Shield | Bouclier archéonique |
+| Guardian Sword++ | Glaive de Gardien 3.0 |
+| Ancient Battle Axe++ | Hache de Gardien 3.0 |
+| Guardian Spear++ | Lance de Gardien 3.0 |
+| Guardian Shield++ | Bouclier de Gardien 3.0 |
+| Mighty Lynel Sword | Épée du roi bestial |
+| Mighty Lynel Crusher | Espadon du roi bestial |
+| Mighty Lynel Spear | Hallebarde du roi bestial |
+| Mighty Lynel Bow | Arc du roi bestial |
+| Mighty Lynel Shield | Bouclier du roi bestial |
+| Savage Lynel Sword | Épée du dieu bestial |
+| Savage Lynel Crusher | Espadon du dieu bestial |
+| Savage Lynel Spear | Hallebarde du dieu bestial |
+| Savage Lynel Bow | Arc du dieu bestial |
+| Savage Lynel Shield | Bouclier du dieu bestial |
+| Korok Leaf | Éventail korogu |
+| Giant Boomerang | Grand boomerang |
+| Sea-Breeze Boomerang | Boomerang du vent marin |
+| Duplex Bow | Arc à double encoche |
+| Phrenic Bow | Arc de la dévotion |
+| Demon Carver | Tranche-démons |
+| Windcleaver | Sabre tranche-vent |
+| Stone Smasher | Brise-roc |
+| Torch | Torche |
+| Moonlight Scimitar | Cimeterre du clair de lune |
+| Biggoron's Sword | Épée de Biggoron |
+| Fierce Deity Sword | Espadon du Dieu démon |
+| Sword of the Six Sages | Épée des six Sages |
+| Goddess Sword | Blanche épée divine |
+| Sword | Épée |
+| Twilight Bow | Arc du Crépuscule |
+| Hero's Shield | Bouclier du Héros |
+| Soup Ladle | Louche |
+| Boat Oar | Rame |
+| Farming Hoe | Houe |
+| Wooden Mop | Balai-brosse |
+| Tree Branch | Branche d'arbre |
+| Pot Lid | Couvercle de marmite |

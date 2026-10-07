@@ -108,10 +108,11 @@ without committing stops the client (possible mutation).
   (measured). The item map opts in with `"pickup": true` (Spirit Orb, Ancient Core, Star
   Fragment, Korok Seed, Fairy; `validate_item_map` refuses it on a useful or progression item). A notification not
   shown is only logged. Rupee bundles: their silent twin, `Demo_IncreaseRupee`, whose counter shows them. A unique,
-  useful or progression item, or the first of a kind, keeps its window.
+  useful or progression item, or the first of a kind, keeps its window; so do an elixir and a weapon, every time
+  (`"window": "always"`).
 - **A full pouch**: the entry checks for room first (`CheckAddPorchItem`), shows the game's "pouch full" message and
-  gives nothing. A two-handed sword, a bow, a shield, an arrow bundle or a gem then falls at Link's feet, created by the
-  game's actor creation, and the step's drop entry only commits it: the queue goes on
+  gives nothing. A weapon (but the Master Sword), a bow, a shield, an arrow bundle or a gem then falls at Link's
+  feet, created by the game's actor creation, and the step's drop entry only commits it: the queue goes on
   ([`botw_client/item_drop.py`](../../botw_client/item_drop.py)). An item left on the ground is lost with the area.
   Other items wait for room.
 

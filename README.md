@@ -34,6 +34,8 @@ your own server.
 - **PopTracker**: a map tracker with the world's logic, which follows the room by itself; the launcher builds it
   from your game and installs it when PopTracker is there.
 - **Universal Tracker**: supported without a YAML, and its `/explain` says what a location still asks for.
+- **Weapons**: 83 of the game's weapons, bows and shields in the filler, the weaker first and the amiibo's
+  treasures last (option); with a full pouch, a weapon falls at Link's feet.
 - **Traps** (option): a share of the filler turns into Weapon Shatter, Blood Moon, Rupoor, Hearts Down, Strip
   Down and Cucco Swarm, which strike when received. Only the cuccos can kill, and a trap given back by a reload is
   spent, not suffered twice.

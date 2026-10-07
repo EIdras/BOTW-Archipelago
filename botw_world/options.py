@@ -81,8 +81,23 @@ class StallItems(Range):
     default = 0
 
 
+class WeaponOrder(Choice):
+    """How the weapons of the filler are spread over the game, wherever they land
+    in the multiworld (the jokes, a Soup Ladle or a Pot Lid, always come anywhere).
+    smoothed: the weaker first, the stronger as the game goes on, the amiibo's
+    treasures last.
+    loosely_smoothed: the same order, with some chance: a weapon may come a level
+    earlier or later, never a treasure among the first.
+    anywhere: wherever the fill put them, a treasure on the Great Plateau too."""
+    display_name = "Weapon Order"
+    option_anywhere = 0
+    option_loosely_smoothed = 1
+    option_smoothed = 2
+    default = 2
+
+
 class TrapPercentage(Range):
-    """Share of the filler (arrows, elixirs, gems and rupees) that becomes traps,
+    """Share of the filler (arrows, elixirs, weapons, gems and rupees) that becomes traps,
     chosen among the traps of Trap Weights. 0: no trap. A trap strikes when it is
     received: Weapon Shatter breaks the weapon in Link's hand, Blood Moon calls a
     Blood Moon at once, Rupoor takes up to 100 rupees, Hearts Down takes up
@@ -117,6 +132,7 @@ class BotwOptions(PerGameCommonOptions):
     beedle_shop_items: BeedleShopItems
     stall_items: StallItems
     death_link: DeathLink
+    weapon_order: WeaponOrder
     trap_percentage: TrapPercentage
     trap_weights: TrapWeights
 
@@ -126,6 +142,7 @@ OPTION_GROUPS = [
     OptionGroup("Hyrule Castle's Sanctum",
                 [SanctumDivineBeasts, SanctumShrines, SanctumMasterSword, SanctumRunes]),
     OptionGroup("Shops", [BeedleShopItems, StallItems]),
+    OptionGroup("Weapons", [WeaponOrder]),
     OptionGroup("Traps", [TrapPercentage, TrapWeights]),
 ]
 

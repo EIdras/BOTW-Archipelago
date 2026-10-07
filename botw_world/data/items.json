@@ -489,5 +489,752 @@
     "useful": true,
     "count": 4,
     "id": 72
+  },
+  {
+    "name": "Soldier's Broadsword",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 73
+  },
+  {
+    "name": "Soldier's Claymore",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 74
+  },
+  {
+    "name": "Soldier's Spear",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 75
+  },
+  {
+    "name": "Soldier's Bow",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 76
+  },
+  {
+    "name": "Soldier's Shield",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 77
+  },
+  {
+    "name": "Zora Sword",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 78
+  },
+  {
+    "name": "Gerudo Scimitar",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 79
+  },
+  {
+    "name": "Gerudo Spear",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 80
+  },
+  {
+    "name": "Eightfold Blade",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 81
+  },
+  {
+    "name": "Silver Bow",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 82
+  },
+  {
+    "name": "Knight's Broadsword",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 83
+  },
+  {
+    "name": "Knight's Claymore",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 84
+  },
+  {
+    "name": "Knight's Bow",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 85
+  },
+  {
+    "name": "Knight's Shield",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 86
+  },
+  {
+    "name": "Royal Broadsword",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 87
+  },
+  {
+    "name": "Royal Claymore",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 88
+  },
+  {
+    "name": "Royal Halberd",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 89
+  },
+  {
+    "name": "Royal Bow",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 90
+  },
+  {
+    "name": "Royal Shield",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 91
+  },
+  {
+    "name": "Flameblade",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 92
+  },
+  {
+    "name": "Frostblade",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 93
+  },
+  {
+    "name": "Thunderblade",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 94
+  },
+  {
+    "name": "Great Flameblade",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 95
+  },
+  {
+    "name": "Great Frostblade",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 96
+  },
+  {
+    "name": "Great Thunderblade",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 97
+  },
+  {
+    "name": "Flamespear",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 98
+  },
+  {
+    "name": "Frostspear",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 99
+  },
+  {
+    "name": "Thunderspear",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 100
+  },
+  {
+    "name": "Fire Rod",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 101
+  },
+  {
+    "name": "Ice Rod",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 102
+  },
+  {
+    "name": "Lightning Rod",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 103
+  },
+  {
+    "name": "Meteor Rod",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 104
+  },
+  {
+    "name": "Blizzard Rod",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 105
+  },
+  {
+    "name": "Thunderstorm Rod",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 106
+  },
+  {
+    "name": "Royal Guard's Sword",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 107
+  },
+  {
+    "name": "Royal Guard's Claymore",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 108
+  },
+  {
+    "name": "Royal Guard's Spear",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 109
+  },
+  {
+    "name": "Royal Guard's Bow",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 110
+  },
+  {
+    "name": "Royal Guard's Shield",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 111
+  },
+  {
+    "name": "Dragonbone Boko Bat",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 112
+  },
+  {
+    "name": "Dragonbone Moblin Club",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 113
+  },
+  {
+    "name": "Ancient Short Sword",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 114
+  },
+  {
+    "name": "Ancient Bladesaw",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 115
+  },
+  {
+    "name": "Ancient Spear",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 116
+  },
+  {
+    "name": "Ancient Bow",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 117
+  },
+  {
+    "name": "Ancient Shield",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 118
+  },
+  {
+    "name": "Guardian Sword++",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 119
+  },
+  {
+    "name": "Ancient Battle Axe++",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 120
+  },
+  {
+    "name": "Guardian Spear++",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 121
+  },
+  {
+    "name": "Guardian Shield++",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 122
+  },
+  {
+    "name": "Mighty Lynel Sword",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 123
+  },
+  {
+    "name": "Mighty Lynel Crusher",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 124
+  },
+  {
+    "name": "Mighty Lynel Spear",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 125
+  },
+  {
+    "name": "Mighty Lynel Bow",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 126
+  },
+  {
+    "name": "Mighty Lynel Shield",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 127
+  },
+  {
+    "name": "Savage Lynel Sword",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 128
+  },
+  {
+    "name": "Savage Lynel Crusher",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 129
+  },
+  {
+    "name": "Savage Lynel Spear",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 130
+  },
+  {
+    "name": "Savage Lynel Bow",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 131
+  },
+  {
+    "name": "Savage Lynel Shield",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 132
+  },
+  {
+    "name": "Korok Leaf",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 133
+  },
+  {
+    "name": "Giant Boomerang",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 134
+  },
+  {
+    "name": "Sea-Breeze Boomerang",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 135
+  },
+  {
+    "name": "Duplex Bow",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 136
+  },
+  {
+    "name": "Phrenic Bow",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 137
+  },
+  {
+    "name": "Demon Carver",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 138
+  },
+  {
+    "name": "Windcleaver",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 139
+  },
+  {
+    "name": "Stone Smasher",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 140
+  },
+  {
+    "name": "Torch",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 141
+  },
+  {
+    "name": "Moonlight Scimitar",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 142
+  },
+  {
+    "name": "Biggoron's Sword",
+    "category": [
+      "Weapon"
+    ],
+    "useful": true,
+    "count": 0,
+    "id": 143
+  },
+  {
+    "name": "Fierce Deity Sword",
+    "category": [
+      "Weapon"
+    ],
+    "useful": true,
+    "count": 0,
+    "id": 144
+  },
+  {
+    "name": "Sword of the Six Sages",
+    "category": [
+      "Weapon"
+    ],
+    "useful": true,
+    "count": 0,
+    "id": 145
+  },
+  {
+    "name": "Goddess Sword",
+    "category": [
+      "Weapon"
+    ],
+    "useful": true,
+    "count": 0,
+    "id": 146
+  },
+  {
+    "name": "Sword",
+    "category": [
+      "Weapon"
+    ],
+    "useful": true,
+    "count": 0,
+    "id": 147
+  },
+  {
+    "name": "Twilight Bow",
+    "category": [
+      "Weapon"
+    ],
+    "useful": true,
+    "count": 0,
+    "id": 148
+  },
+  {
+    "name": "Hero's Shield",
+    "category": [
+      "Weapon"
+    ],
+    "useful": true,
+    "count": 0,
+    "id": 149
+  },
+  {
+    "name": "Soup Ladle",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 150
+  },
+  {
+    "name": "Boat Oar",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 151
+  },
+  {
+    "name": "Farming Hoe",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 152
+  },
+  {
+    "name": "Wooden Mop",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 153
+  },
+  {
+    "name": "Tree Branch",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 154
+  },
+  {
+    "name": "Pot Lid",
+    "category": [
+      "Weapon"
+    ],
+    "filler": true,
+    "count": 0,
+    "id": 155
   }
 ]

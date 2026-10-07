@@ -34,10 +34,10 @@ The sets are deliberately strong: they are not filler items.
 
 ## Filler and traps
 
-The filler is generated to fill the pool, one draw per slot left (`FILLER` in `botw_world/catalog.py`): arrows 35 %,
-elixirs 35 %, gems 15 %, rupees 15 %, then one item of the family (rupees: smaller sums more often). With the
-`trap_percentage` option, that share of the filler slots is taken by traps instead, drawn by `trap_weights` (0 by
-default: no trap). What each trap does, and how: [traps.md](traps.md).
+The filler is generated to fill the pool, one draw per slot left (`FILLER` in `botw_world/catalog.py`): arrows 30 %,
+elixirs 25 %, weapons 25 %, gems 10 %, rupees 10 %, then one item of the family (rupees: smaller sums more often;
+weapons: a group by its weight, see below). With the `trap_percentage` option, that share of the filler slots is
+taken by traps instead, drawn by `trap_weights` (0 by default: no trap). What each trap does, and how: [traps.md](traps.md).
 
 | Archipelago item | Count | In the game |
 |---|---:|---|
@@ -50,8 +50,40 @@ default: no trap). What each trap does, and how: [traps.md](traps.md).
 | Diamond, Ruby, Sapphire, Topaz, Opal, Amber | drawn | one gem |
 | Hasty, Electro, Tough, Hearty, Fireproof, Chilly, Spicy, Mighty, Sneaky, Energizing, Enduring Elixir, Fairy Tonic | drawn | the elixir, cooked by the game from its ingredients (`Demo_SetCookItem`, the Champions' Ballad's recipes or two critters and a Bokoblin Horn), then the cooking pot's own window (`GetDemo<ShowGetDemoCookResult>`), every time |
 | Blue Rupee (5), Red Rupee (20, `Rupee Bundle` in seeds generated before), Purple Rupee (50), Silver Rupee (100), Gold Rupee (300) | drawn | the rupees |
+| 83 weapons, bows and shields (below) | drawn | the weapon, with the game's get window every time; the pouch full, it falls at Link's feet |
 | Weapon Shatter, Blood Moon, Rupoor, Hearts Down, Strip Down, Cucco Swarm | none fixed | traps, see below |
 
 A received item is delivered by the game itself: its get window when it has one, the download screen for a rune,
 otherwise straight into the inventory. Given back after the reload of an older save, it returns quietly, then an
 Archipelago window lists the items given back (see [messages and deliveries](ap_messages.md)).
+
+## Weapons
+
+Drawn by group (`WEAPONS` in `botw_world/catalog.py`), then one weapon of the group; a weapon's level orders them
+through the game. The amiibo's treasures are useful items, the others filler; all are in the item group `Weapons`.
+
+| Group | Weight | Level | Weapons |
+|---|---:|---:|---|
+| medium | 20 | 1 | Soldier's Broadsword, Claymore, Spear, Bow, Shield; Zora Sword, Gerudo Scimitar, Gerudo Spear, Eightfold Blade, Silver Bow |
+| solid | 25 | 2 | Knight's Broadsword, Claymore, Bow, Shield; Royal Broadsword, Claymore, Halberd, Bow, Shield |
+| elemental | 20 | 2 | Flameblade, Frostblade, Thunderblade and their Great ones; Flamespear, Frostspear, Thunderspear; Fire, Ice, Lightning, Meteor, Blizzard, Thunderstorm Rod |
+| fragile | 10 | 3 | Royal Guard's Sword, Claymore, Spear, Bow, Shield; Dragonbone Boko Bat, Dragonbone Moblin Club |
+| ancient | 10 | 3 | Ancient Short Sword, Bladesaw, Spear, Bow, Shield; Guardian Sword++, Ancient Battle Axe++, Guardian Spear++, Guardian Shield++ |
+| mighty_lynel | 5 | 3 | Mighty Lynel Sword, Crusher, Spear, Bow, Shield |
+| savage_lynel | 5 | 4 | Savage Lynel Sword, Crusher, Spear, Bow, Shield |
+| special | 5 | 3 | Korok Leaf, Giant Boomerang, Sea-Breeze Boomerang, Duplex Bow, Phrenic Bow, Demon Carver, Windcleaver, Stone Smasher, Torch, Moonlight Scimitar |
+| treasure | 4 | 5 | Biggoron's Sword, Fierce Deity Sword, Sword of the Six Sages, Goddess Sword, Sword, Twilight Bow, Hero's Shield |
+| joke | 4 | — | Soup Ladle, Boat Oar, Farming Hoe, Wooden Mop, Tree Branch, Pot Lid |
+
+Left out: the Master Sword (an item of its own) and its other forms, the Bow of Light (the final fight's), the
+One-Hit Obliterator (DLC 2), the champions' weapons (the game gives them after each Divine Beast), the weak
+Bokoblin, Moblin and Lizalfos weapons, the arms and the rusty ones.
+
+`weapon_order` spreads them over the game, as Dark Souls III smooths its weapons
+(`BotwWorld.stage_finalize_multiworld`): after the fill and the progression balancing, the locations holding a world's
+weapons, in any world of the multiworld, are taken by sphere, and its weapons dealt again over them by level, the
+weaker first. `smoothed` (the default) follows the levels; `loosely_smoothed` moves each level by up to 1.5 at
+random, so a weapon may come a level earlier or later, never a treasure among the first; `anywhere` keeps the fill's
+placement. The jokes stay where the fill put them. No rule names a weapon, so the spheres do not change; a location's
+own rules still decide what it takes. In a solo game the first sphere after the Great Plateau holds most of Hyrule:
+there the weapons are mixed, the weakest on the Plateau, the strongest behind the last items.

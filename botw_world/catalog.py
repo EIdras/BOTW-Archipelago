@@ -23,17 +23,53 @@ CLIMATES = {
     "heat": (("Flamebreaker Set",),),                   # Death Mountain's burning zone
 }
 GOAL_LOCATION = "Defeat Calamity Ganon"
+# The weapons of the filler: a group by its weight, then one of its weapons.
+# Its level orders the weapons through the game (the weapon_order option):
+# 1 first, 5 last; 0, the jokes, stay wherever the fill put them.
+WEAPONS = {
+    "medium": (20, 1, ("Soldier's Broadsword", "Soldier's Claymore", "Soldier's Spear", "Soldier's Bow",
+                       "Soldier's Shield", "Zora Sword", "Gerudo Scimitar", "Gerudo Spear",
+                       "Eightfold Blade", "Silver Bow")),
+    "solid": (25, 2, ("Knight's Broadsword", "Knight's Claymore", "Knight's Bow", "Knight's Shield",
+                      "Royal Broadsword", "Royal Claymore", "Royal Halberd", "Royal Bow", "Royal Shield")),
+    "elemental": (20, 2, ("Flameblade", "Frostblade", "Thunderblade", "Great Flameblade",
+                          "Great Frostblade", "Great Thunderblade", "Flamespear", "Frostspear",
+                          "Thunderspear", "Fire Rod", "Ice Rod", "Lightning Rod", "Meteor Rod",
+                          "Blizzard Rod", "Thunderstorm Rod")),
+    # Strong, but they break fast.
+    "fragile": (10, 3, ("Royal Guard's Sword", "Royal Guard's Claymore", "Royal Guard's Spear",
+                        "Royal Guard's Bow", "Royal Guard's Shield", "Dragonbone Boko Bat",
+                        "Dragonbone Moblin Club")),
+    "ancient": (10, 3, ("Ancient Short Sword", "Ancient Bladesaw", "Ancient Spear", "Ancient Bow",
+                        "Ancient Shield", "Guardian Sword++", "Ancient Battle Axe++", "Guardian Spear++",
+                        "Guardian Shield++")),
+    "mighty_lynel": (5, 3, ("Mighty Lynel Sword", "Mighty Lynel Crusher", "Mighty Lynel Spear",
+                            "Mighty Lynel Bow", "Mighty Lynel Shield")),
+    "savage_lynel": (5, 4, ("Savage Lynel Sword", "Savage Lynel Crusher", "Savage Lynel Spear",
+                            "Savage Lynel Bow", "Savage Lynel Shield")),
+    "special": (5, 3, ("Korok Leaf", "Giant Boomerang", "Sea-Breeze Boomerang", "Duplex Bow",
+                       "Phrenic Bow", "Demon Carver", "Windcleaver", "Stone Smasher", "Torch",
+                       "Moonlight Scimitar")),
+    # The amiibo's: rare, and useful items.
+    "treasure": (4, 5, ("Biggoron's Sword", "Fierce Deity Sword", "Sword of the Six Sages",
+                        "Goddess Sword", "Sword", "Twilight Bow", "Hero's Shield")),
+    "joke": (4, 0, ("Soup Ladle", "Boat Oar", "Farming Hoe", "Wooden Mop", "Tree Branch", "Pot Lid")),
+}
+WEAPON_LEVELS = {name: level for _weight, level, names in WEAPONS.values() for name in names}
 # The generated filler, one draw per slot the other items leave: a family by
-# its weight, then one of its items by theirs (smaller sums of rupees more often).
+# its weight, then one of its items by theirs (smaller sums of rupees more often,
+# a weapon by its group's weight).
 FILLER = {
-    "arrows": (35, {"10 Arrows": 1, "10 Fire Arrows": 1, "10 Ice Arrows": 1, "10 Shock Arrows": 1,
+    "arrows": (30, {"10 Arrows": 1, "10 Fire Arrows": 1, "10 Ice Arrows": 1, "10 Shock Arrows": 1,
                     "10 Bomb Arrows": 1, "5 Ancient Arrows": 1}),
-    "elixirs": (35, {name: 1 for name in (
+    "elixirs": (25, {name: 1 for name in (
         "Hasty Elixir", "Electro Elixir", "Tough Elixir", "Hearty Elixir", "Fireproof Elixir",
         "Chilly Elixir", "Spicy Elixir", "Mighty Elixir", "Sneaky Elixir", "Energizing Elixir",
         "Enduring Elixir", "Fairy Tonic")}),
-    "gems": (15, {name: 1 for name in ("Diamond", "Ruby", "Sapphire", "Topaz", "Opal", "Amber")}),
-    "rupees": (15, {"Blue Rupee": 30, "Red Rupee": 35, "Purple Rupee": 20, "Silver Rupee": 10,
+    "weapons": (25, {name: weight / len(names) for weight, _level, names in WEAPONS.values()
+                     for name in names}),
+    "gems": (10, {name: 1 for name in ("Diamond", "Ruby", "Sapphire", "Topaz", "Opal", "Amber")}),
+    "rupees": (10, {"Blue Rupee": 30, "Red Rupee": 35, "Purple Rupee": 20, "Silver Rupee": 10,
                     "Gold Rupee": 5}),
 }
 PLATEAU_RUNES = {name: row["runes"] for name, row in LOGIC.items()
@@ -90,4 +126,12 @@ def _check_logic() -> None:
             raise ValueError(f"{row['name']}: unknown requirement {sorted(unknown)}")
 
 
+def _check_weapons() -> None:
+    """WEAPONS names exactly the items of the Weapon category."""
+    weapons = {row["name"] for row in ITEMS if "Weapon" in row.get("category", ())}
+    if set(WEAPON_LEVELS) != weapons or sum(len(names) for _, _, names in WEAPONS.values()) != len(weapons):
+        raise ValueError(f"WEAPONS differs from the Weapon items: {sorted(set(WEAPON_LEVELS) ^ weapons)[:5]}")
+
+
 _check_logic()
+_check_weapons()

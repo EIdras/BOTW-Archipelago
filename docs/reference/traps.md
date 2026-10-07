@@ -81,7 +81,7 @@ requested alone.
 
 ## Options
 
-`trap_percentage` (0 to 100, default 0): the share of the filler (arrows, elixirs, gems, rupees) taken by
+`trap_percentage` (0 to 100, default 0): the share of the filler (arrows, elixirs, weapons, gems, rupees) taken by
 traps. `trap_weights`: how likely each trap is compared with the others, by item name; one left out, or at 0, never
 comes up; all at 0 with a percentage above 0 is an error at generation. The traps are drawn with the seed's random
 generator, so a seed is reproducible. Their classification is `trap`.

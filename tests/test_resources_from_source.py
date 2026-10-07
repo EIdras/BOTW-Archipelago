@@ -52,7 +52,7 @@ hashes = dict(manifest['files'])
 hashes['delivery_catalog.json'] = digest((a / 'delivery_catalog.json').read_bytes())
 # All 30 resources (7 message archives: Vilia's price; the sanctum's gate; the gifts of the Zora King and Kima; Goron City's armor shop) + the delivery catalog.
 assert len(manifest['files']) == 30
-assert digest(encode(hashes)) == '83d37af9f613f19c0040cbf806152390c16cbb004015e6bc2664a95ba33e3f32', 'new pin: ' + digest(encode(hashes))
+assert digest(encode(hashes)) == '78d816cff017085bb56748405efbc00afa883d376d0ca5197fd4137f6bb4cdcb', 'new pin: ' + digest(encode(hashes))
 assert manifest['gameplay_aids'] is False
 assert manifest['status'] == 'not_installable'
 (a / 'content/Pack/Bootup.pack').write_bytes(b'altered')

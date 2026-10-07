@@ -1,7 +1,7 @@
 from BaseClasses import ItemClassification
 
 from . import BotwTestBase
-from ..catalog import FILLER
+from ..catalog import FILLER, WEAPONS
 
 
 class TestWithoutShops(BotwTestBase):
@@ -79,12 +79,21 @@ class TestEveryFillerATrap(BotwTestBase):
 class TestFiller(BotwTestBase):
     def test_the_filler_is_drawn_from_every_family(self) -> None:
         fillers = {name: family for family, (_, items) in FILLER.items() for name in items}
-        drawn = [fillers[item.name] for item in self.multiworld.itempool if item.name in fillers]
+        drawn = [item for item in self.multiworld.itempool if item.name in fillers]
         self.assertEqual(len(drawn), 44)
-        self.assertTrue(all(item.classification == ItemClassification.filler
-                            for item in self.multiworld.itempool if item.name in fillers))
-        # With 44 draws, every family comes up (about 15, 15, 7 and 7).
-        self.assertEqual(set(drawn), set(FILLER))
+        # Filler, but for the amiibo's weapons: useful.
+        treasures = set(WEAPONS["treasure"][2])
+        self.assertTrue(all(item.classification == (ItemClassification.useful if item.name in treasures
+                                                    else ItemClassification.filler) for item in drawn))
+        # 2000 draws: every family and every weapon group, near their weights.
+        names = [self.world.get_filler_item_name() for _ in range(2000)]
+        for family, (weight, _items) in FILLER.items():
+            share = sum(fillers[name] == family for name in names) / len(names)
+            self.assertAlmostEqual(share, weight / 100, delta=0.04, msg=family)
+        groups = sum(weight for weight, _level, _weapons in WEAPONS.values())
+        for group, (weight, _level, weapons) in WEAPONS.items():
+            share = sum(name in weapons for name in names) / len(names)
+            self.assertAlmostEqual(share, FILLER["weapons"][0] / 100 * weight / groups, delta=0.02, msg=group)
 
 
 class TestOneTrapOnly(BotwTestBase):

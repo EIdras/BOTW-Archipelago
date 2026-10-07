@@ -86,8 +86,11 @@ SILENT_ACTOR_PREFIXES = ("GameRomHorse",)
 
 
 # The items that fall at Link's feet when the pouch is full: the kinds
-# measured on the ground (botw_client/item_drop.py). The others wait for room.
-DROPPABLE_PREFIXES = ("Weapon_Lsword_", "Weapon_Bow_", "Weapon_Shield_", "Obj_ArrowBundle_", "Item_Ore_")
+# measured on the ground (botw_client/item_drop.py). The others wait for room,
+# and so does the Master Sword, which is never left lying on the ground.
+DROPPABLE_PREFIXES = ("Weapon_Sword_", "Weapon_Lsword_", "Weapon_Spear_", "Weapon_Bow_",
+                      "Weapon_Shield_", "Obj_ArrowBundle_", "Item_Ore_")
+NOT_DROPPABLE = frozenset({"Weapon_Sword_070"})
 
 
 # What a cooked dish is to the pouch: the game's elixir (its effect comes from
@@ -115,7 +118,7 @@ POUCHES = {
 
 
 def droppable(actor: str | None) -> bool:
-    return bool(actor) and actor.startswith(DROPPABLE_PREFIXES)
+    return bool(actor) and actor.startswith(DROPPABLE_PREFIXES) and actor not in NOT_DROPPABLE
 
 
 def pouch_kind(actor: str) -> MutationKind:
