@@ -46,6 +46,15 @@ class MutationKind(str, Enum):
     # (target: the pouch, POUCHES), one more slot, then his pouch screen
     # (Demo_OpenPouchAddStockNum); its silent twin, without the screen.
     POUCH_SLOT = "pouch_slot"
+    # A rune selected only when the Slate has none in hand (the Master Cycle
+    # Zero, value its PlayerEquipItemType): the client asks the game after the
+    # commit, as the inventory selects one (botw_client/rune_selection.py).
+    SELECT_IF_NONE = "select_if_none"
+    # A horse written in the first free stable slot by the client, through the
+    # game's GameData setters, before its entry (botw_client/horse_stable.py):
+    # target its actor, value its mane, saddle and bridle. The stables full, the
+    # client creates it by Link instead and the entry's drop twin commits.
+    REGISTER_HORSE = "register_horse"
     SET_BOOL = "set_bool"
     SET_S32 = "set_s32"
     INCREMENT = "increment"
@@ -148,6 +157,14 @@ def compile_delivery_plan(item_name: str, received_before: int = 0,
     if kind == "cook":
         return ItemDeliveryPlan(item_name, (DeliveryStep((DeliveryMutation(
             MutationKind.COOK, COOKED, tuple(delivery["ingredients"])),)),))
+    if kind == "horse":
+        # Horse_Is_Registration: set when a stable registers a horse; only an
+        # event may set it (not program-writable).
+        return ItemDeliveryPlan(item_name, (DeliveryStep((
+            DeliveryMutation(MutationKind.REGISTER_HORSE, delivery["actor"],
+                             (delivery["mane"], delivery["saddle"], delivery["reins"])),
+            DeliveryMutation(MutationKind.SET_BOOL, "Horse_Is_Registration", True, value_type="bool"),
+        )),))
     if kind == "pouch_slot":
         return ItemDeliveryPlan(item_name, (DeliveryStep((DeliveryMutation(
             MutationKind.POUCH_SLOT, delivery["pouch"], 1),)),))
@@ -178,11 +195,14 @@ def compile_delivery_plan(item_name: str, received_before: int = 0,
         # PlayerEquipItemType in the same guarded step makes the first received
         # rune usable without forcing the player through the inventory menu.
         # The flag is set by the terminal's presentation (RUNE_DOWNLOAD). Without
-        # an equip type (the Master Cycle Zero), the rune in hand stays.
+        # an equip type (the Master Cycle Zero), the rune in hand stays, and the
+        # new one is selected only when there is none (select_if_none).
         download = DeliveryMutation(
             MutationKind.RUNE_DOWNLOAD, delivery["flag"], int(delivery["download_type"]))
         if "equip_type" not in delivery:
-            return ItemDeliveryPlan(item_name, (DeliveryStep((download,)),))
+            select = DeliveryMutation(MutationKind.SELECT_IF_NONE, "PlayerEquipItemType",
+                                      int(delivery["select_if_none"]), value_type="s32")
+            return ItemDeliveryPlan(item_name, (DeliveryStep((download, select)),))
         return ItemDeliveryPlan(item_name, (DeliveryStep((
             download,
             DeliveryMutation(

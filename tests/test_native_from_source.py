@@ -96,6 +96,13 @@ print(a.name)
                     with patch.object(tip, 'FRAME_HOOK', code(tip.FRAME_HOOK)), \
                             patch.object(tip, 'TEXT_HOOK', code(tip.TEXT_HOOK)):
                         composed = tip.compose(code(validated.decode('utf-8')))
+                    # Since then, the rune selection also takes the Master Cycle
+                    # Zero (type 6): its type limit, 5 in the validated file.
+                    from tools.build_rune_selection_sync import _TYPE_LIMIT
+                    old_limit = '    cmpwi r12, 5\n    bge   apSelFinish'
+                    self.assertEqual(composed.count(old_limit), 1)
+                    composed = composed.replace(
+                        old_limit, f'    cmpwi r12, {_TYPE_LIMIT}\n    bge   apSelFinish')
                     self.assertEqual(code(raw.decode('utf-8')), code(composed))
                 else:
                     self.assertEqual(digest(raw), manifest['native_files'][Path(name).name])

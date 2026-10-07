@@ -103,6 +103,17 @@ class ReconcileTests(unittest.TestCase):
         self.assertEqual(outcome.after.current, 2)
         self.assertTrue(outcome.ok)
 
+    def test_the_master_cycle_is_selected_only_when_no_rune_is_in_hand(self):
+        # Owned, nothing selected: no module to use until it is (measured, 07/10).
+        game = FakeGame(equip=-1, current=-1)
+        outcome = game.sync().select_if_none(6)
+        self.assertEqual((outcome.status, game.requests, outcome.after.current), ("synced", [6], 6))
+        # A rune in hand stays there.
+        game = FakeGame(equip=2, current=2)
+        outcome = game.sync().select_if_none(6)
+        self.assertEqual((outcome.status, game.requests), ("kept", []))
+        self.assertTrue(outcome.ok)
+
     def test_object_already_on_the_rune_is_left_alone(self):
         game = FakeGame(equip=3, current=3)
         self.assertEqual(game.sync().reconcile(3).status, "in_sync")

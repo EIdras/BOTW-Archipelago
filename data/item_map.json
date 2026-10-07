@@ -11,7 +11,7 @@
     {"name":"Remote Bomb","delivery":{"kind":"rune","flag":"IsGet_Obj_RemoteBomb","equip_type":0,"download_type":0},"display_actor":"Obj_RemoteBomb"},
     {"name":"Stasis","delivery":{"kind":"rune","flag":"IsGet_Obj_StopTimer","equip_type":3,"download_type":2},"display_actor":"Obj_StopTimer"},
     {"name":"Cryonis","delivery":{"kind":"rune","flag":"IsGet_Obj_IceMaker","equip_type":4,"download_type":3},"display_actor":"Obj_IceMaker"},
-    {"name":"Master Cycle Zero","delivery":{"kind":"rune","flag":"IsGet_Obj_Motorcycle","download_type":5},"display_actor":"Obj_Motorcycle"},
+    {"name":"Master Cycle Zero","delivery":{"kind":"rune","flag":"IsGet_Obj_Motorcycle","download_type":5,"select_if_none":6},"display_actor":"Obj_Motorcycle"},
     {"name":"Sheikah Sensor","delivery":{"kind":"flags","writes":[["IsGet_Obj_SheikSensor",true],["IsStart_Obj_SheikSensor",true],["App_SeakSensor_IsEnabled",true]]},"display_actor":"Item_AP"},
 
     {"name":"Warm Doublet","delivery":{"kind":"actors","actors":["Armor_044_Upper"]},"display_actor":"Armor_044_Upper"},
@@ -39,6 +39,7 @@
     {"name":"Champion's Tunic","delivery":{"kind":"actors","actors":["Armor_116_Upper"]},"display_actor":"Armor_116_Upper"},
     {"name":"Ancient Bridle","delivery":{"kind":"actors","actors":["GameRomHorseReins_10"]},"display_actor":"GameRomHorseReins_10"},
     {"name":"Ancient Saddle","delivery":{"kind":"actors","actors":["GameRomHorseSaddle_10"]},"display_actor":"GameRomHorseSaddle_10"},
+    {"name":"Epona","delivery":{"kind":"horse","actor":"GameRomHorseEpona","mane":"Horse_Link_Mane","saddle":"GameRomHorseSaddle_06","reins":"GameRomHorseReins_06"},"display_actor":"GameRomHorseEpona"},
     {"name":"Barbarian Set","delivery":{"kind":"actors","actors":["Armor_048_Head","Armor_048_Upper","Armor_048_Lower"]},"display_actor":"Armor_048_Upper"},
     {"name":"Ancient Set","delivery":{"kind":"actors","actors":["Armor_021_Head","Armor_021_Upper","Armor_021_Lower"]},"display_actor":"Armor_021_Upper"},
     {"name":"Radiant Set","delivery":{"kind":"actors","actors":["Armor_017_Head","Armor_017_Upper","Armor_017_Lower"]},"display_actor":"Armor_017_Upper"},

@@ -31,7 +31,7 @@ from tools import build_master_sword_candidate as sword
 from tools import build_ballad_condition_candidate as ballad
 from tools.build_ballad_upgrade_delivery import champion_entries, transform_for as upgrade_delivery
 from botw_patch import (beast_heart, death_link, ganon_gate, gerudo_outfit, goron_armor,
-                        hud_layout, loading_icon, pedestal, traps)
+                        horses, hud_layout, loading_icon, pedestal, traps)
 from botw_patch.status_item import INPUT_HASHES as STATUS_INPUTS
 
 TITLE = "Pack/TitleBG.pack"
@@ -79,6 +79,7 @@ SOURCE_FILES = (
     "botw_client/items.py", "data/item_map.json", "assets/wiiu/Item_AP.sbitemico",
     "botw_patch/hud_layout.py", "tools/bitemico.py", "botw_patch/death_link.py",
     "botw_patch/loading_icon.py", "botw_patch/traps.py", "botw_patch/melee_weapons.py",
+    "botw_patch/horses.py",
     *gerudo_outfit.SOURCE_FILES, *ganon_gate.SOURCE_FILES, *beast_heart.SOURCE_FILES,
     *goron_armor.SOURCE_FILES, *pedestal.SOURCE_FILES,
 )
@@ -222,6 +223,9 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
     catalog["death_link"] = {"entry": death_link.ENTRY, "flow": death_link.FLOW_NAME,
                              "flag": death_link.FLAG,
                              "attackers": death_link.attacker_names(inputs[death_link.MESSAGES])}
+    # The names a stable gives the horses AP delivers, in every language
+    # (botw_patch/horses.py): the client writes the one of the game's.
+    catalog["horses"] = horses.names(content)
     # The AP connection indicator of the HUD (botw_patch/hud_layout.py) and
     # the AP icon of the loading screen (botw_patch/loading_icon.py).
     icon = (ROOT / "assets/wiiu/Item_AP.sbitemico").read_bytes()

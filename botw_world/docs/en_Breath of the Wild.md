@@ -48,6 +48,7 @@ Opening Beedle's list, or looking at a stall's jewel, hints the items for sale t
   and Radiant sets
 - Pouch upgrades: 4 for weapons, 3 for bows, 4 for shields (each one of Hestu's, who offers one fewer)
 - The Master Cycle Zero (The Champions' Ballad), the Travel Medallion and the Korok Mask (The Master Trials)
+- Epona, registered at the stables: take her out at any of them
 - Spirit Orbs, Ancient Cores, Star Fragments, Fairies (the Koroks still give their seeds, as in the game)
 - Filler: arrows (normal, fire, ice, shock, bomb, ancient), elixirs, weapons, gems and rupees
 - Weapons, bows and shields: 83 of the game's, from the soldiers' to the Lynels', elemental and ancient ones, a few

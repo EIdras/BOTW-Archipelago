@@ -35,9 +35,13 @@ PACK_ROOM = 0x100
 MEMORY = 0x200
 
 
-def drop(read: Callable, write: Callable, call: Callable, actor: str) -> str:
+def drop(read: Callable, write: Callable, call: Callable, actor: str, *,
+         ahead: float = AHEAD, up: float = UP, mode: int = 1) -> str:
     """Create `actor` by Link: 'ok', or the step that failed. read(guest, size),
-    write(guest, data) and call(address, *args) -> r3 or None, as the swarm's."""
+    write(guest, data) and call(address, *args) -> r3 or None, as the swarm's.
+    `ahead` and `up` place it from Link; `mode` is requestCreateActor's last
+    argument (1 as the angry cucco's AI; 2 as the amiibo's CreateEpona,
+    0x0214C8E0)."""
     def u32(guest):
         raw = read(guest, 4)
         return int.from_bytes(raw, "big") if raw and len(raw) == 4 else None
@@ -65,8 +69,8 @@ def drop(read: Callable, write: Callable, call: Callable, actor: str) -> str:
     pack = base
     text, key_text, key, value = (base + PACK_ROOM + offset for offset in (0x00, 0x50, 0x60, 0x70))
     norm = math.hypot(forward[0], forward[2]) or 1.0
-    at = (position[0] + AHEAD * forward[0] / norm, position[1] + UP,
-          position[2] + AHEAD * forward[2] / norm)
+    at = (position[0] + ahead * forward[0] / norm, position[1] + up,
+          position[2] + ahead * forward[2] / norm)
     write(base, bytes(MEMORY))
     write(text, name)
     write(key_text, b"@P\0")
@@ -76,4 +80,4 @@ def drop(read: Callable, write: Callable, call: Callable, actor: str) -> str:
         return "busy (pack)"
     if call(PACK_ADD, pack + 4, value, key, 0xC, 4) is None:
         return "busy (place)"
-    return "ok" if call(REQUEST_CREATE, creator, text, heap, 0, pack, 0, 1) == 1 else "request"
+    return "ok" if call(REQUEST_CREATE, creator, text, heap, 0, pack, 0, mode) == 1 else "request"

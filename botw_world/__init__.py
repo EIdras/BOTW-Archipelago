@@ -264,8 +264,10 @@ class BotwWorld(World):
         # 6: arrows, elixirs, gems and rupees as filler, which a client of schema 5 cannot deliver.
         # 7: weapons as filler, which a client of schema 6 cannot deliver.
         # 8: the Master Cycle Zero, the Travel Medallion and the Korok Mask, which one of 7 cannot.
+        # 9: Epona, registered at the stables, and the Master Cycle Zero selected only when no
+        #    rune is, which one of 8 cannot.
         # stall_locations: the stalls drawn by the seed, for Universal Tracker.
-        return {"client_schema": 8, "world_schema": 4, "world_version": WORLD_VERSION,
+        return {"client_schema": 9, "world_schema": 4, "world_version": WORLD_VERSION,
                 "death_link": bool(self.options.death_link.value),
                 **self.options.as_dict(*self.SLOT_OPTIONS),
                 "stall_locations": sorted(location_id for location_id in self.shop_prices

@@ -227,7 +227,8 @@ async def play(folder: Path, report: dict, pack: Path, session: Path,
             log=log, game_name=GAME, native_presentations=True, native_delivery=True,
             tip_factory=TipChannel if journal else None,
             game_process_alive=lambda: process.poll() is None,
-            delivery_catalog_path=pack / "delivery_catalog.json")
+            delivery_catalog_path=pack / "delivery_catalog.json",
+            game_language=profile.console_language())
 
         async def watch_cemu():
             while process.poll() is None:

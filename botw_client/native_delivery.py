@@ -14,7 +14,7 @@ from .backend import (
     DeliveryResult,
     DeliveryStatus,
 )
-from .rune_selection import equip_requirement
+from .rune_selection import equip_requirement, select_requirement
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -409,18 +409,22 @@ class CemuNativeDeliveryBackend:
             DeliveryStatus.UNCERTAIN, cursor,
             "binding entry accepted without an observed commit")
 
-    def _sync_selection(self, equip: int | None) -> str:
-        """After a commit that selected a rune, make the live game show it.
+    def _sync_selection(self, equip: int | None, selection: int | None = None) -> str:
+        """After a commit that selected a rune, make the live game show it; or,
+        for a rune selected only when none is in hand (the Master Cycle Zero),
+        have the game select it then.
 
         The save is already coherent: whatever happens here, the step stays
         APPLIED and is never replayed. See botw_client/rune_selection.py.
         """
-        if equip is None:
+        if equip is None and selection is None:
             return ""
         sync = getattr(self.game, "sync_rune_selection", None)
         if sync is None:
             return "rune selection not synchronized: the game lacks this capability"
         try:
+            if equip is None:
+                return sync(select_if_none=selection).summary()
             return sync(equip).summary()
         except Exception as exc:  # noqa: BLE001 - the commit is already durable
             return f"rune selection not synchronized: {type(exc).__name__}: {exc}"
@@ -520,11 +524,12 @@ class CemuNativeDeliveryBackend:
                           turn=lambda: lock_factory(pid) if lock_factory else nullcontext(),
                           playing=self.playing).run(stop)
 
-    def drop_item(self, actor: str) -> str:
+    def drop_item(self, actor: str, **place) -> str:
         """Create `actor` at Link's feet (botw_client/item_drop.py): 'ok' once
         the game took the request, else why not (to ask again: Link out of the
         world, an entry running, the invoker busy). First, the "pouch full"
-        message closed (DROP_WAIT_SECONDS)."""
+        message closed (DROP_WAIT_SECONDS). `place`: item_drop.drop's ahead, up
+        and mode (Epona, as the amiibo creates her)."""
         from .item_drop import drop
         deadline = time.monotonic() + DROP_WAIT_SECONDS
         free_since = None
@@ -537,6 +542,22 @@ class CemuNativeDeliveryBackend:
             if now >= deadline:
                 return reason or "Link not settled in the world"
             time.sleep(self.poll_seconds)
+        return self._in_one_turn(lambda read, write: drop(read, write, self._call, actor, **place))
+
+    def register_horse(self, actor: str, name: str, mane: str, saddle: str, reins: str) -> str:
+        """Write `actor` in the first free stable slot, by the game's GameData
+        setters (botw_client/horse_stable.py): 'registered', 'already', 'full',
+        or why not now (to ask again)."""
+        from .horse_stable import register
+        reason = self._drop_blocked()
+        if reason:
+            return reason
+        return self._in_one_turn(lambda read, write: register(
+            read, write, self._call, actor, name, mane, saddle, reins))
+
+    def _in_one_turn(self, work) -> str:
+        """work(read, write) in one turn of the invoker, as an attacker of the
+        swarm: none of the client's other users comes between its calls."""
         process, cave = self.game.process, self.game.cave
         _request, lock_factory = self._dependencies()
 
@@ -548,9 +569,8 @@ class CemuNativeDeliveryBackend:
                 raise RuntimeError(f"memory write failed at {guest:#x}")
 
         try:
-            # One turn for the whole creation, as an attacker of the swarm.
             with (lock_factory(int(process.pid)) if lock_factory else nullcontext()):
-                return drop(read, write, self._call, actor)
+                return work(read, write)
         except Exception as exc:  # noqa: BLE001 - invoker busy or unreadable: asked again
             return f"{type(exc).__name__}: {exc}"
 
@@ -627,7 +647,7 @@ class CemuNativeDeliveryBackend:
         if command.drop and not step.get("drop_entry"):
             raise BackendContractError(f"{command.item_name}: no drop entry for step {command.step}")
         # Read before submitting: a malformed setter must fail before any call.
-        equip = equip_requirement(step)
+        equip, selection = equip_requirement(step), select_requirement(step)
         if token != self.token:
             return DeliveryResult(DeliveryStatus.SESSION_MISMATCH, cursor,
                                   f"BOTW token {token}, expected {self.token}")
@@ -737,7 +757,7 @@ class CemuNativeDeliveryBackend:
                         # A trap's twin is spent without its strike: silent too.
                         self._settle = QUIET_SETTLE_FRAMES if twin else SETTLE_FRAMES
                         return DeliveryResult(DeliveryStatus.APPLIED, cursor_now,
-                                              self._sync_selection(equip))
+                                              self._sync_selection(equip, selection))
                     if cursor_now != command.cursor:
                         raise BackendContractError(
                             f"impossible native commit: {cursor_now}, expected "

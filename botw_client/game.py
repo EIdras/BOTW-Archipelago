@@ -488,8 +488,10 @@ class BotwGame:
         if current == 0:
             self._write_flag("APSeedToken", token, "s32")
 
-    def sync_rune_selection(self, expected: int | None = None) -> SyncOutcome:
-        """Align the live rune selection object with PlayerEquipItemType.
+    def sync_rune_selection(self, expected: int | None = None, *,
+                            select_if_none: int | None = None) -> SyncOutcome:
+        """Align the live rune selection object with PlayerEquipItemType; with
+        `select_if_none`, select that rune when none is in hand instead.
 
         See botw_client/rune_selection.py. Never raises for a missing or
         stale patch: the committed save is already correct, so the outcome
@@ -511,6 +513,8 @@ class BotwGame:
             lambda address: getdemo.rd(self.process, self.cave, address),
             read_equip, self.cave.request_rune_selection)
         try:
+            if select_if_none is not None:
+                return sync.select_if_none(select_if_none)
             return sync.reconcile(expected)
         except Exception as exc:  # noqa: BLE001 - runs after a commit, must not raise
             return SyncOutcome("unavailable", expected,

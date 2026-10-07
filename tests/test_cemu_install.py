@@ -71,6 +71,18 @@ def detect(install: Install):
         return ci.detect(user_data=install.user)
 
 
+class ConsoleLanguageTests(unittest.TestCase):
+    def test_the_games_language_follows_cemus_console(self):
+        # The name a stable gives Epona is the one in the game's language.
+        with tempfile.TemporaryDirectory() as temp:
+            settings = Path(temp) / "settings.xml"
+            for value, expected in (("2", "EUfr"), ("1", "EUen"), ("10", "EUru"), ("0", "EUen"), ("x", "EUen")):
+                settings.write_text(f"<content><console_language>{value}</console_language></content>",
+                                    encoding="utf-8")
+                self.assertEqual(cemu_profile.console_language(settings), expected, value)
+            self.assertEqual(cemu_profile.console_language(Path(temp) / "missing.xml"), "EUen")
+
+
 class UserFolderTests(unittest.TestCase):
     def test_portable_next_to_the_executable_then_the_roaming_folder(self):
         with tempfile.TemporaryDirectory() as temp:

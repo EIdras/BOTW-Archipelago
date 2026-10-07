@@ -296,6 +296,7 @@ Archipelago affiche les noms anglais du jeu. Voici leurs équivalents dans le je
 | Champion's Tunic | Tunique de Prodige |
 | Ancient Bridle | Filet archéonique |
 | Ancient Saddle | Selle archéonique |
+| Epona | Épona |
 | Barbarian Set | Casque barbare, Gilet barbare, Culotte barbare |
 | Ancient Set | Casque archéonique, Plastron archéonique, Jambières archéoniques |
 | Radiant Set | Masque nox, Combinaison nox, Chausses nox |

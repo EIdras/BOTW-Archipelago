@@ -56,9 +56,20 @@ class DeliveryPlanTests(unittest.TestCase):
     def test_the_master_cycle_downloads_as_a_rune_without_taking_the_hand(self):
         # Demo645_0 (Event63, Event73): the download screen, type 5, then its flag;
         # the rune the player holds stays selected.
+        # Selected only when no rune is in hand: owned, but nothing selected, the
+        # Slate had no module to use (measured, 07/10).
         (step,) = compile_delivery_plan("Master Cycle Zero").steps
         self.assertEqual([(m.kind, m.target, m.value) for m in step.mutations],
-                         [(MutationKind.RUNE_DOWNLOAD, "IsGet_Obj_Motorcycle", 5)])
+                         [(MutationKind.RUNE_DOWNLOAD, "IsGet_Obj_Motorcycle", 5),
+                          (MutationKind.SELECT_IF_NONE, "PlayerEquipItemType", 6)])
+
+    def test_epona_is_written_at_the_stables_then_flagged_registered(self):
+        (step,) = compile_delivery_plan("Epona").steps
+        self.assertEqual([(m.kind, m.target, m.value) for m in step.mutations], [
+            (MutationKind.REGISTER_HORSE, "GameRomHorseEpona",
+             ("Horse_Link_Mane", "GameRomHorseSaddle_06", "GameRomHorseReins_06")),
+            (MutationKind.SET_BOOL, "Horse_Is_Registration", True)])
+        self.assertIsNone(step.capacity_actor)
 
     def test_heart_uses_vanilla_getdemo_actor(self):
         mutation = compile_delivery_plan(

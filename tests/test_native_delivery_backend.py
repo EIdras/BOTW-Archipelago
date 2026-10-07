@@ -679,7 +679,61 @@ class _FullPouchBackend(_RuntimeBackend):
         return super().deliver(command)
 
 
+class _HorseBackend(_RuntimeBackend):
+    """Epona's step: written in a stable slot, or the stables full."""
+
+    def __init__(self, answer):
+        super().__init__(0)
+        step = dict(step=0, flow="OperationGuide", drop_entry="APD_EPONA_00D", mutations=[
+            {"kind": "register_horse", "target": "GameRomHorseEpona",
+             "value": ["Horse_Link_Mane", "GameRomHorseSaddle_06", "GameRomHorseReins_06"]},
+            {"kind": "set_bool", "target": "Horse_Is_Registration", "value": True}])
+        self.catalog = SimpleNamespace(
+            data={"horses": {"GameRomHorseEpona": {"EUen": "Epona", "EUfr": "Épona"}}},
+            steps=lambda name, before=0: [step])
+        self.answer, self.registrations, self.drops = answer, [], []
+
+    def register_horse(self, *args):
+        self.registrations.append(args)
+        return self.answer
+
+    def drop_item(self, actor, **place):
+        self.drops.append((actor, place))
+        return "ok"
+
+
 class NativeDeliveryRuntimeTests(unittest.IsolatedAsyncioTestCase):
+    async def epona(self, answer, restored=False):
+        backend = _HorseBackend(answer)
+        self.runtime.deliveries = DeliveryCoordinator(backend)
+        self.runtime.game_language = "EUfr"
+        self.runtime.ap.received_items = {0: SimpleNamespace(item=10)}
+        self.runtime._discover_received()
+        if restored:
+            self.runtime.state["delivered_high"] = 1
+        for _ in range(2):
+            self.runtime._native_delivery_retry_after = 0.0
+            await self.runtime._apply_one_received_native()
+        self.assertEqual(self.runtime.state["apply_queue"], [])
+        return backend
+
+    async def test_epona_is_registered_under_the_games_name_then_committed(self):
+        backend = await self.epona("registered")
+        self.assertEqual(backend.registrations, [(
+            "GameRomHorseEpona", "Épona", "Horse_Link_Mane", "GameRomHorseSaddle_06",
+            "GameRomHorseReins_06")])
+        self.assertEqual((len(backend.commands), backend.commands[0].drop, backend.drops), (1, False, []))
+
+    async def test_full_stables_create_epona_by_link_once_then_commit_by_the_drop_entry(self):
+        backend = await self.epona("full")
+        self.assertEqual(backend.drops, [("GameRomHorseEpona", {"ahead": 4.0, "up": 1.0, "mode": 2})])
+        self.assertTrue(backend.commands[-1].drop)
+
+    async def test_given_back_to_full_stables_epona_is_not_created_again(self):
+        backend = await self.epona("full", restored=True)
+        self.assertEqual(backend.drops, [])
+        self.assertTrue(backend.commands[-1].drop)
+
     async def asyncSetUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)

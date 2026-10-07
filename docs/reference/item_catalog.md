@@ -6,8 +6,8 @@ classification; [`data/item_map.json`](../../data/item_map.json) defines what ea
 
 ## Pool size
 
-111 items are declared, completed with drawn filler up to the number of locations: 152 locations without the shop
-options (41 filler items), up to 212 with two items in every shop and all 28 stall items (101). `Defeat Calamity Ganon` is
+112 items are declared, completed with drawn filler up to the number of locations: 152 locations without the shop
+options (40 filler items), up to 212 with two items in every shop and all 28 stall items (100). `Defeat Calamity Ganon` is
 the victory location and holds no item.
 
 ## Progression and equipment
@@ -27,7 +27,8 @@ the victory location and holds no item.
 | Stamina Vessel | 5 | one stamina segment, with the game's get window |
 | Master Sword, Hylian Shield, Champion's Tunic | 1 each | the equipment |
 | Ancient Bridle, Ancient Saddle | 1 each | the horse gear |
-| Master Cycle Zero | 1 | the motorcycle (DLC 2), as a rune: the Sheikah Slate's download screen (type 5, as `Demo645_0` gives it), then its flag; the rune in hand stays selected, and its tank is full |
+| Master Cycle Zero | 1 | the motorcycle (DLC 2), as a rune: the Sheikah Slate's download screen (type 5, as `Demo645_0` gives it, without equipping it), then its flag; the rune in hand stays selected, and with none, the client has the game select the motorcycle as the inventory does (owned but unselected, the Slate had no module to use); its tank is full |
+| Epona | 1 | registered at the stables in the first free slot, under her name in the game's language (her actor's, for Cemu's console language), with her saddle and bridle, as a stable registers her, through the game's own GameData setters ([`botw_client/horse_stable.py`](../../botw_client/horse_stable.py)); the entry then sets `Horse_Is_Registration`. Stables full: created by Link as the amiibo creates her, the first time only |
 | Travel Medallion, Korok Mask | 1 each | the medallion and the mask (DLC 1), with their get window |
 | Barbarian, Ancient, Radiant Set | 1 each | the three pieces of the set |
 | Weapon, Bow, Shield Pouch Upgrade | 4, 3, 4 | one of Hestu's upgrades (`Npc_OldKorok`): his next upgrade flag, one more slot, then his pouch screen when Link holds an item of that pouch (in an empty pouch the screen played on another page: the slot comes quietly and the tab shows, already grown, with the first item); he offers one fewer, so the pouch never passes the game's maximum, and once he has given them all the item adds nothing |

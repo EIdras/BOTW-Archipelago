@@ -51,8 +51,9 @@ GOAL_LOCATION = "Defeat Calamity Ganon"
 STATE_SCHEMA = 3
 CLIENT_SCHEMA = 2
 # The client schemas of BOTW seeds this client plays: 4 added the Gerudo Set, 5 the
-# goal and the sanctum's requirements, 6 the new filler, 7 the weapons, 8 the travel items.
-BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8)
+# goal and the sanctum's requirements, 6 the new filler, 7 the weapons, 8 the travel items,
+# 9 Epona and the Master Cycle Zero selected only when no rune is.
+BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9)
 # The mutations that present the item themselves: no AP window before them.
 VANILLA_WINDOWS = ("get_demo_actor", "champion_actor", "rune_download", "trap", "native_trap",
                    "get_demo_bundle", "cook", "pouch_slot")
@@ -196,7 +197,11 @@ class BotwClientRuntime:
                  native_presentations=False, presentation_factory=None,
                  native_delivery=False, delivery_factory=None,
                  delivery_catalog_path=None, game_process_alive=None,
-                 tip_factory=None, journal_chat=True, journal_everyone=False):
+                 tip_factory=None, journal_chat=True, journal_everyone=False,
+                 game_language="EUen"):
+        # The game's language (tools/cemu_profile.console_language): the name a
+        # stable gives a delivered horse (botw_client/horse_stable.py).
+        self.game_language = game_language
         # AP journal in the game's tip frame (botw_client/tip_channel.py).
         self.tip_factory = tip_factory
         self.tips = None
@@ -805,6 +810,20 @@ class BotwClientRuntime:
         # Dropped at Link's feet, the pouch full: what is left is the commit.
         dropped = (self.state.get("drop_cursor") == checkpoint.cursor
                    and bool(steps[step].get("drop_entry")))
+        horse = next((m for m in steps[step].get("mutations", ())
+                      if m.get("kind") == "register_horse"), None)
+        if horse is not None and not dropped:
+            # Written in a stable slot first, then its entry commits. The
+            # stables full, its drop twin commits: the horse created by Link
+            # the first time, not again when given back.
+            outcome = await self._register_horse(horse, name, restored)
+            if outcome is None:
+                return
+            if outcome == "full":
+                self.state["drop_cursor"] = checkpoint.cursor
+                self.state_store.save()
+                self._native_delivery_retry_after = 0.0
+                return
         command = DeliveryCommand(
             self._session_identity[0], self._session_identity[2], index, name,
             step, len(steps), before, quiet=quiet,
@@ -870,6 +889,39 @@ class BotwClientRuntime:
         raise FatalClientError(
             f"native delivery #{index}/{step} blocked ({result.status.value}): "
             f"{result.detail}")
+
+    async def _register_horse(self, mutation: dict, name: str, restored: bool) -> str | None:
+        """A delivered horse (Epona) in the first free stable slot, under the
+        name a stable gives it in the game's language (the pack's catalog):
+        'registered' or 'already' (its entry commits next), 'full' (its drop
+        twin commits; created by Link unless given back), None to ask again."""
+        backend = self.deliveries.backend
+        actor = mutation["target"]
+        mane, saddle, reins = mutation["value"]
+        names = getattr(getattr(backend, "catalog", None), "data", {}).get("horses", {}).get(actor, {})
+        horse_name = names.get(self.game_language) or names.get("EUen") or name
+        outcome = await asyncio.to_thread(backend.register_horse, actor, horse_name, mane, saddle, reins)
+        if outcome == "registered":
+            self.log(f"{name} registered at the stables as {horse_name}")
+            if not restored:
+                self._journal_note(f"{{1}}{name}{{/}} waits for you at the stables")
+            return outcome
+        if outcome == "already":
+            return outcome
+        if outcome == "full":
+            if restored:
+                self.log(f"{name}: the stables are full, not created again (given back)")
+                return outcome
+            # As the amiibo creates her (botw_client/item_drop.py).
+            created = await asyncio.to_thread(backend.drop_item, actor, ahead=4.0, up=1.0, mode=2)
+            if created == "ok":
+                self.log(f"{name}: the stables are full, created by Link")
+                self._journal_note(f"Stables full: {{1}}{name}{{/}} waits for you here")
+                return outcome
+            outcome = f"not created by Link: {created}"
+        self.log(f"{name} not registered yet ({outcome})")
+        self._native_delivery_retry_after = time.monotonic() + 5.0
+        return None
 
     async def _show_one_location_reward(self) -> bool:
         if self.native_presentations:

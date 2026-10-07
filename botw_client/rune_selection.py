@@ -29,8 +29,10 @@ FIELDS = {"flags_4c": 0x4C, "flags_50": 0x50, "requested": 0x1D0,
 EQUIP_FLAG = "PlayerEquipItemType"
 EQUIP_HASH = zlib.crc32(EQUIP_FLAG.encode()) & 0xFFFFFFFF
 # Rune values written by delivery steps (item_map.json): Bombs 0, Magnesis 2,
-# Stasis 3, Cryonis 4; 1 is the cube bomb. 5-7 are not runes delivered by AP.
-RUNE_TYPES = frozenset(range(5))
+# Stasis 3, Cryonis 4; 1 is the cube bomb. The Master Cycle Zero is 6 (a save
+# with it in hand, 07/10), selected only when no rune is (select_if_none).
+MOTORCYCLE = 6
+RUNE_TYPES = frozenset(range(5)) | {MOTORCYCLE}
 _HEAP = range(0x10000000, 0x50000000)
 
 
@@ -61,6 +63,17 @@ def equip_requirement(step: dict) -> int | None:
         return None
     if len(values) != 1 or values[0] not in RUNE_TYPES:
         raise ValueError(f"unexpected {EQUIP_FLAG} setter in the step: {values}")
+    return int(values[0])
+
+
+def select_requirement(step: dict) -> int | None:
+    """The rune a delivery step selects only when none is in hand (the Master
+    Cycle Zero), from its catalog mutations."""
+    values = [m.get("value") for m in step.get("mutations", ()) if m.get("kind") == "select_if_none"]
+    if not values:
+        return None
+    if len(values) != 1 or values[0] not in RUNE_TYPES:
+        raise ValueError(f"unexpected select_if_none in the step: {values}")
     return int(values[0])
 
 
@@ -98,6 +111,7 @@ class SyncOutcome:
     ``pending``      request accepted, not yet applied when the wait ended
     ``refused``      the injected request was not executed
     ``mismatch``     GameData differs from the value the caller committed
+    ``kept``         select_if_none: a rune was already in hand, left there
     """
     status: str
     equip: int | None = None
@@ -109,7 +123,7 @@ class SyncOutcome:
 
     @property
     def ok(self) -> bool:
-        return self.status in ("no_rune", "in_sync", "synced")
+        return self.status in ("no_rune", "in_sync", "synced", "kept")
 
     def summary(self) -> str:
         text = f"rune selection {self.status}"
@@ -147,6 +161,20 @@ class RuneSelectionSync:
                                detail=f"GameData {equip}, commit {expected}")
         if equip not in RUNE_TYPES:
             return SyncOutcome("no_rune", equip)
+        return self._apply(equip)
+
+    def select_if_none(self, rune: int) -> SyncOutcome:
+        """Select `rune` when the Slate has none in hand (PlayerEquipItemType
+        -1), as the inventory does: the game writes the GameData itself. A rune
+        in hand stays (``kept``). Measured: the Master Cycle Zero owned, nothing
+        selected, the Slate had no module to use until the inventory chose it."""
+        equip = self.read_equip()
+        if equip != -1:
+            return SyncOutcome("kept", equip)
+        return self._apply(rune)
+
+    def _apply(self, equip: int) -> SyncOutcome:
+        """Have the game select `equip` and wait for its per-frame update."""
         before = read_state(self.read_u32)
         if before is None:
             return SyncOutcome("unavailable", equip, detail="selection object unreadable")

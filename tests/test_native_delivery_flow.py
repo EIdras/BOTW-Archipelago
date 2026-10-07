@@ -20,7 +20,7 @@ SOURCE = ROOT / ".build/ledger-validation/4e60affc56def09f/content"
 class NativeDeliveryCompilationTests(unittest.TestCase):
     def test_catalog_covers_verified_action_families_only(self):
         entries, unsupported = compile_native_entries()
-        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 181)
+        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 182)
         self.assertEqual(set(unsupported), set())
         self.assertEqual(len({entry.entry_name for entry in entries}), len(entries))
         self.assertTrue(all(entry.plan.mutations for entry in entries))
@@ -46,7 +46,7 @@ class NativeDeliveryCompilationTests(unittest.TestCase):
             self.assertTrue(all(m.kind.value in ("grant_actor", "champion_actor",
                                                  "increase_rupee", "increase_max", "set_bool",
                                                  "set_s32", "trap_spent", "increase_porch", "cook",
-                                                 "pouch_slot")
+                                                 "pouch_slot", "select_if_none")
                                 for m in twin.plan.mutations))
         # Vessels: the Horned Statue's action (Demo035_0); horse gear has no window.
         self.assertEqual({e.item_name for e in quiet if e.item_name in (
@@ -153,7 +153,7 @@ class NativeDeliveryGraphTests(unittest.TestCase):
         # With the twins, the steps that open no window of their own.
         self.assertEqual({s.item_name for s in self.specs
                           if host_of(s) == QUIET_FLOW and not s.quiet and not s.drop}, {
-            "Sheikah Sensor", "Ancient Bridle", "Ancient Saddle",
+            "Sheikah Sensor", "Ancient Bridle", "Ancient Saddle", "Epona",
             *(trap.item for trap in TRAPS if trap.host == QUIET_FLOW), "Cucco Swarm"})
         # The traps' own entries come first, then the delivery entries.
         added = [name for name, _ in quiet["entry_points"][len(vanilla["entry_points"]):]]
@@ -196,7 +196,7 @@ class NativeDeliveryGraphTests(unittest.TestCase):
         drops = [s for s in self.specs if s.drop]
         self.assertEqual({s.item_name for s in drops}, {
             "Hylian Shield", "Star Fragment", "Diamond", "Ruby", "Sapphire", "Topaz", "Opal", "Amber",
-            *weapons})
+            "Epona", *weapons})
         (drop,) = [s for s in drops if s.item_name == "Hylian Shield"]
         main = self.spec("Hylian Shield")
         self.assertEqual((drop.entry_name, drop.cursor_delta, host_of(drop)),
@@ -217,6 +217,23 @@ class NativeDeliveryGraphTests(unittest.TestCase):
                          (main.entry_name, drop.entry_name, QUIET_FLOW))
         self.assertNotIn("drop_entry", delivery_catalog()["items"]["Master Sword"]
                          ["variants"]["default"][0])
+
+    def test_epona_is_written_by_the_client_then_her_entry_sets_the_registration_flag(self):
+        # Written in a stable slot by the client (botw_client/horse_stable.py);
+        # Horse_Is_Registration, not program-writable, by the entry. The stables
+        # full, the drop twin only commits.
+        main = next(s for s in self.specs if s.item_name == "Epona" and not s.drop)
+        drop = next(s for s in self.specs if s.item_name == "Epona" and s.drop)
+        self.assertEqual((host_of(main), host_of(drop)), (QUIET_FLOW, QUIET_FLOW))
+        graph = graph_snapshot(read_flow(self.quiet))
+        entries = dict(graph["entry_points"])
+        events = graph["events"]
+        path = self.path(graph, entries[main.entry_name])
+        self.assertEqual([events[name]["actor_action"] for name in path],
+                         ["Demo_FlagON", "Demo_FlagON", "Demo_IncreaseGameDataInt", "Demo_FlagOFF"])
+        self.assertEqual(events[path[1]]["params"]["FlagName"], "Horse_Is_Registration")
+        self.assertEqual([events[name]["actor_action"] for name in self.path(graph, entries[drop.entry_name])],
+                         ["Demo_FlagON", "Demo_IncreaseGameDataInt", "Demo_FlagOFF"])
 
     def path(self, graph, first):
         events, out, name = graph["events"], [], first

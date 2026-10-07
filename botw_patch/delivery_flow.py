@@ -175,7 +175,11 @@ def quiet_step(plan: DeliveryStep) -> DeliveryStep | None:
 def drop_step(plan: DeliveryStep) -> DeliveryStep | None:
     """The step's commit alone, for an item the client dropped at Link's feet
     when the pouch had no room (botw_client/item_drop.py): only for the items
-    measured on the ground."""
+    measured on the ground; or for a horse the stables had no room for, which
+    the client created by Link (botw_client/horse_stable.py)."""
+    horse = next((m for m in plan.mutations if m.kind is MutationKind.REGISTER_HORSE), None)
+    if horse is not None:
+        return DeliveryStep((DeliveryMutation(MutationKind.DROPPED, horse.target, 1),))
     if not droppable(plan.capacity_actor):
         return None
     return DeliveryStep((DeliveryMutation(MutationKind.DROPPED, plan.capacity_actor, 1),))
@@ -684,18 +688,23 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
                                dict(SLATE_MESSAGE), close)
                 waited = acted(stem + f"_Mut{index}_Wait", waiter, "Demo_WaitFrame", {
                     "IsWaitFinish": True, "Frame": DOWNLOAD_WAIT}, voiced)
+                # IsEquip selects the new rune, as a terminal does; not a rune
+                # selected only when none is in hand (SELECT_IF_NONE).
+                equip = not any(m.kind is MutationKind.SELECT_IF_NONE for m in spec.plan.mutations)
                 screen = action(stem + f"_Mut{index}_Open", "Demo_OpenItemDownloadDemo", {
-                    "ItemType": int(mutation.value), "IsWaitFinish": True, "IsEquip": True,
+                    "ItemType": int(mutation.value), "IsWaitFinish": True, "IsEquip": equip,
                     "IsPowerUp": False, "IsPlayerClose": False}, waited)
                 settle = acted(stem + f"_Mut{index}_Settle", waiter, "Demo_WaitFrame", {
                     "IsWaitFinish": True, "Frame": DOWNLOAD_SETTLE}, screen)
                 nxt = action(stem + f"_Mut{index}", "Demo_FlagON", {
                     "FlagName": DOWNLOAD_FLAG, "IsWaitFinish": True}, settle)
             elif mutation.kind in (MutationKind.TRAP, MutationKind.TRAP_SPENT,
-                                   MutationKind.NATIVE_TRAP, MutationKind.DROPPED):
+                                   MutationKind.NATIVE_TRAP, MutationKind.DROPPED,
+                                   MutationKind.SELECT_IF_NONE, MutationKind.REGISTER_HORSE):
                 # TRAP: after the guard (above); SPENT: no effect; NATIVE_TRAP:
-                # played by the client once it has seen the commit; DROPPED:
-                # created by the client before the commit.
+                # played by the client once it has seen the commit; DROPPED and
+                # REGISTER_HORSE: done by the client before the commit;
+                # SELECT_IF_NONE: asked by the client after the commit.
                 continue
             elif mutation.kind is MutationKind.GET_DEMO_BUNDLE:
                 nxt = subflow(stem + f"_Mut{index}", "GetDemo", "GetItemByName", {

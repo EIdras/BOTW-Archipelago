@@ -112,6 +112,20 @@ def update() -> Path:
     return PORTABLE / "mlc01/usr/title/0005000e/101c9500"
 
 
+# Cemu's console languages (settings.xml console_language) the EUR game has
+# texts for; any other one, as the game, falls back to English.
+CONSOLE_LANGUAGES = {1: "EUen", 2: "EUfr", 3: "EUde", 4: "EUit", 5: "EUes", 8: "EUnl", 10: "EUru"}
+
+
+def console_language(settings: Path | None = None) -> str:
+    """The game's language in the profile's Cemu, as its message archives name it."""
+    try:
+        value = ET.parse(settings or PORTABLE / "settings.xml").getroot().findtext("console_language")
+        return CONSOLE_LANGUAGES.get(int(value), "EUen")
+    except (OSError, ET.ParseError, TypeError, ValueError):
+        return "EUen"
+
+
 def check_isolated() -> None:
     """The profile exists and no link leads out of it; Cemu is not running."""
     if not (PROFILE / "isolation.json").is_file():

@@ -69,7 +69,7 @@ class TestEveryFillerATrap(BotwTestBase):
         pool = [item.name for item in self.multiworld.itempool]
         self.assertFalse(set(pool) & {name for _, items in FILLER.values() for name in items})
         traps = [item for item in self.multiworld.itempool if item.trap]
-        self.assertEqual(len(traps), 41)
+        self.assertEqual(len(traps), 40)
         self.assertEqual({item.name for item in traps}, {
             "Weapon Shatter", "Blood Moon", "Rupoor", "Hearts Down", "Strip Down",
             "Cucco Swarm"})
@@ -80,7 +80,7 @@ class TestFiller(BotwTestBase):
     def test_the_filler_is_drawn_from_every_family(self) -> None:
         fillers = {name: family for family, (_, items) in FILLER.items() for name in items}
         drawn = [item for item in self.multiworld.itempool if item.name in fillers]
-        self.assertEqual(len(drawn), 41)
+        self.assertEqual(len(drawn), 40)
         # Filler, but for the amiibo's weapons: useful.
         treasures = set(WEAPONS["treasure"][2])
         self.assertTrue(all(item.classification == (ItemClassification.useful if item.name in treasures
@@ -102,10 +102,10 @@ class TestOneTrapOnly(BotwTestBase):
     def test_only_the_weighted_trap_comes_up(self) -> None:
         names = [item.name for item in self.multiworld.itempool if item.trap]
         self.assertEqual(set(names), {"Rupoor"})
-        self.assertEqual(len(names), round(41 * 50 / 100))
+        self.assertEqual(len(names), round(40 * 50 / 100))
         fillers = {name for _, items in FILLER.values() for name in items}
         self.assertEqual(len([item for item in self.multiworld.itempool if item.name in fillers]),
-                         41 - len(names))
+                         40 - len(names))
 
 
 class TestDivineBeastGoal(BotwTestBase):

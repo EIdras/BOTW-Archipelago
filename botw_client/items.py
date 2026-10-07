@@ -53,7 +53,7 @@ def validate_item_map(items_path: Path = ITEMS_JSON,
 
     allowed = {"actors", "progressive_actors", "flags", "rune", "counter",
                "counter_at_least", "getdemo_actor", "champion_actor", "manual_prompt", "trap",
-               "native_trap", "arrows", "cook", "pouch_slot"}
+               "native_trap", "arrows", "cook", "pouch_slot", "horse"}
     from .gamedata_table import load
     gamedata = load()
     flag_types = {flag_name: kind for kind, flag_name in gamedata.values()}
@@ -67,6 +67,10 @@ def validate_item_map(items_path: Path = ITEMS_JSON,
         actors = delivery.get("actors", [])
         if kind in ("getdemo_actor", "champion_actor", "arrows"):
             actors = [delivery.get("actor")]
+        if kind == "horse":
+            actors = [delivery.get(key) for key in ("actor", "mane", "saddle", "reins")]
+            if not all(actors):
+                raise ItemMapError(f"{name}: a horse needs its actor, mane, saddle and reins")
         if kind == "cook":
             actors = list(delivery.get("ingredients", []))
             if not 1 <= len(actors) <= 5 or not all(actors):
@@ -103,6 +107,10 @@ def validate_item_map(items_path: Path = ITEMS_JSON,
             # Master Cycle Zero's 5, Demo645_0 Event63).
             if delivery.get("download_type") not in (0, 1, 2, 3, 5):
                 raise ItemMapError(f"{name}: invalid rune download type")
+            # Without an equip type, the rune selected when none is in hand.
+            from .rune_selection import RUNE_TYPES
+            if "equip_type" not in delivery and delivery.get("select_if_none") not in RUNE_TYPES:
+                raise ItemMapError(f"{name}: a rune without equip_type needs select_if_none")
             if flag_types.get("PlayerEquipItemType") != "s32":
                 raise ItemMapError("PlayerEquipItemType missing from the s32 GameData")
         elif kind == "trap":
