@@ -53,7 +53,7 @@ def validate_item_map(items_path: Path = ITEMS_JSON,
 
     allowed = {"actors", "progressive_actors", "flags", "rune", "counter",
                "counter_at_least", "getdemo_actor", "champion_actor", "manual_prompt", "trap",
-               "native_trap", "arrows", "cook"}
+               "native_trap", "arrows", "cook", "pouch_slot"}
     from .gamedata_table import load
     gamedata = load()
     flag_types = {flag_name: kind for kind, flag_name in gamedata.values()}
@@ -109,6 +109,14 @@ def validate_item_map(items_path: Path = ITEMS_JSON,
                 raise ItemMapError(f"{name}: a trap needs an APTrap entry and a text")
             if delivery.get("host") not in (None, "Demo007_1"):
                 raise ItemMapError(f"{name}: a trap is hosted in OperationGuide or Demo007_1")
+        elif kind == "pouch_slot":
+            from .delivery_plan import POUCHES
+            pouch = POUCHES.get(delivery.get("pouch"))
+            if pouch is None:
+                raise ItemMapError(f"{name}: unknown pouch")
+            if flag_types.get(pouch.counter) != "s32" or any(
+                    flag_types.get(flag) != "bool" for flag in pouch.flags):
+                raise ItemMapError(f"{name}: unknown pouch counter or Hestu flag")
         elif kind == "native_trap":
             if delivery.get("effect") not in NATIVE_EFFECTS or not delivery.get("text"):
                 raise ItemMapError(f"{name}: a native trap needs a known effect and a text")

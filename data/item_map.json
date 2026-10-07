@@ -39,6 +39,9 @@
     {"name":"Barbarian Set","delivery":{"kind":"actors","actors":["Armor_048_Head","Armor_048_Upper","Armor_048_Lower"]},"display_actor":"Armor_048_Upper"},
     {"name":"Ancient Set","delivery":{"kind":"actors","actors":["Armor_021_Head","Armor_021_Upper","Armor_021_Lower"]},"display_actor":"Armor_021_Upper"},
     {"name":"Radiant Set","delivery":{"kind":"actors","actors":["Armor_017_Head","Armor_017_Upper","Armor_017_Lower"]},"display_actor":"Armor_017_Upper"},
+    {"name":"Weapon Pouch Upgrade","delivery":{"kind":"pouch_slot","pouch":"weapon"},"display_actor":"Item_AP"},
+    {"name":"Bow Pouch Upgrade","delivery":{"kind":"pouch_slot","pouch":"bow"},"display_actor":"Item_AP"},
+    {"name":"Shield Pouch Upgrade","delivery":{"kind":"pouch_slot","pouch":"shield"},"display_actor":"Item_AP"},
 
     {"name":"Spirit Orb","delivery":{"kind":"actors","actors":["Obj_DungeonClearSeal"]},"display_actor":"Obj_DungeonClearSeal","pickup":true},
     {"name":"Ancient Core","delivery":{"kind":"actors","actors":["Item_Enemy_30"]},"display_actor":"Item_Enemy_30","pickup":true},

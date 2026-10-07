@@ -19,7 +19,7 @@ from evfl.event import ActionEvent, Event, SubFlowEvent, SwitchEvent
 from evfl.util import Index, make_rindex
 
 from botw_client.delivery_plan import (
-    COOK_SLOTS, DeliveryMutation, DeliveryStep, ItemDeliveryPlan, MutationKind,
+    COOK_SLOTS, POUCHES, DeliveryMutation, DeliveryStep, ItemDeliveryPlan, MutationKind,
     compile_delivery_plan, droppable)
 from botw_client.items import load_item_map
 from .events import graph_snapshot, read_flow, write_flow
@@ -91,6 +91,8 @@ SLATE_MESSAGE = {"IsCloseMessageDialog": True, "IsWaitFinish": True, "ASName": "
                  "MessageOpenDelayTime": 0, "IsWaitAS": False, "IsBecomingSpeaker": True,
                  "MessageId": "DemoMsg/Demo003_0:Demo003_0_Text005"}
 BIND_ENTRY = "APBindSession"
+# How long a pouch upgrade's screen stays open (measured: 90 frames, closed cleanly).
+POUCH_SCREEN_FRAMES = 90
 
 
 @dataclass(frozen=True)
@@ -140,8 +142,8 @@ def quiet_step(plan: DeliveryStep) -> DeliveryStep | None:
     if bundles and len(plan.mutations) == 1:
         return replace(plan, mutations=(replace(
             bundles[0], kind=MutationKind.INCREASE_PORCH, value=1),))
-    if any(m.kind is MutationKind.COOK for m in plan.mutations):
-        # The same dish, cooked without its window (the builder reads `quiet`).
+    if any(m.kind in (MutationKind.COOK, MutationKind.POUCH_SLOT) for m in plan.mutations):
+        # The same dish or slot, without its window (the builder reads `quiet`).
         return plan
     if any(m.kind is MutationKind.RUNE_DOWNLOAD for m in plan.mutations):
         return replace(plan, mutations=tuple(
@@ -184,7 +186,7 @@ def shows_window(plan: DeliveryStep) -> bool:
     download screen)."""
     return any(m.kind in (MutationKind.GET_DEMO_ACTOR, MutationKind.CHAMPION_ACTOR,
                           MutationKind.RUNE_DOWNLOAD, MutationKind.GET_DEMO_BUNDLE,
-                          MutationKind.COOK)
+                          MutationKind.COOK, MutationKind.POUCH_SLOT)
                for m in plan.mutations)
 
 
@@ -539,9 +541,14 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
         action_names += ('Demo_IncreasePorchItem',)
     if MutationKind.COOK in kinds:
         action_names += ('Demo_SetCookItem', 'Demo_WaitFrame')
+    if MutationKind.POUCH_SLOT in kinds:
+        action_names += ('Demo_OpenPouchAddStockNum', 'Demo_ClosePouchAddStockNum', 'Demo_WaitFrame')
     actions = {name: holder(system.actions, name) for name in action_names}
     queries = {"CheckAddPorchItem": holder(
         system.queries, "CheckAddPorchItem")}
+    if MutationKind.POUCH_SLOT in kinds:
+        queries["CheckFlag"] = holder(system.queries, "CheckFlag")
+        queries["HasPouchItemByPouchCategory"] = holder(system.queries, "HasPouchItemByPouchCategory")
 
     def action(name, command, params, nxt=None):
         if name in existing_events:
@@ -713,6 +720,39 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
                     "IsWaitFinish": True, "SetNum": 1,
                     **{f"PorchItemName{slot + 1:02d}": name
                        for slot, name in enumerate(ingredients)}}, nxt)
+            elif mutation.kind is MutationKind.POUCH_SLOT:
+                pouch, mut = POUCHES[mutation.target], stem + f"_Mut{index}"
+                tail = nxt
+                if not spec.quiet:
+                    # Hestu's pouch screen (Npc_OldKorok Event790-894), without his line.
+                    tail = action(mut + "_After", "Demo_WaitFrame", {
+                        "Frame": 5, "IsWaitFinish": True}, tail)
+                    tail = action(mut + "_Close", "Demo_ClosePouchAddStockNum", {
+                        "IsWaitFinish": True}, tail)
+                    tail = action(mut + "_Wait", "Demo_WaitFrame", {
+                        "Frame": POUCH_SCREEN_FRAMES, "IsWaitFinish": True}, tail)
+                    tail = action(mut + "_Open", "Demo_OpenPouchAddStockNum", {
+                        "Type": pouch.screen, "IsWaitFinish": True}, tail)
+                    # The screen animates the pouch's tab only when Link holds one of
+                    # its items: in an empty pouch, even with its tab opened before
+                    # (Demo_OpenItemCategory), it played on another page, and an
+                    # empty tab shows no slot (measured). The slot comes quietly
+                    # then; the tab shows with the pouch's first item. GetDemo's
+                    # query (Event288-291), measured: 1 when the pouch holds fewer
+                    # than Count items, 0 when it holds them.
+                    tail = switch(mut + "_Held", "HasPouchItemByPouchCategory", {
+                        "Category": pouch.category, "Count": 1}, nxt, tail)
+                add = action(mut + "_Add", "Demo_IncreaseGameDataInt", {
+                    "GameDataIntName": pouch.counter, "Value": 1, "IsWaitFinish": True}, tail)
+                # Hestu's first upgrade not yet done becomes this one; all done,
+                # the pouch is full-grown and nothing changes.
+                check = nxt
+                for number, flag in reversed(list(enumerate(pouch.flags))):
+                    mark = action(mut + f"_Mark{number:02d}", "Demo_FlagON", {
+                        "FlagName": flag, "IsWaitFinish": True}, add)
+                    check = switch(mut + f"_Check{number:02d}", "CheckFlag", {"FlagName": flag},
+                                   check, mark)
+                nxt = check
             elif mutation.kind is MutationKind.INCREASE_RUPEE:
                 # Not waited for: the counter's animation then runs after the
                 # event instead of freezing the player.

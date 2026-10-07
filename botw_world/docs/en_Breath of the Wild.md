@@ -46,6 +46,7 @@ Opening Beedle's list, or looking at a stall's jewel, hints the items for sale t
 - 17 Heart Containers and 5 Stamina Vessels
 - The Master Sword, the Hylian Shield, the Champion's Tunic, the Ancient Bridle and Saddle, the Barbarian, Ancient
   and Radiant sets
+- Pouch upgrades: 4 for weapons, 3 for bows, 4 for shields (each one of Hestu's, who offers one fewer)
 - Spirit Orbs, Ancient Cores, Star Fragments, Fairies (the Koroks still give their seeds, as in the game)
 - Filler: arrows (normal, fire, ice, shock, bomb, ancient), elixirs, gems and rupees
 - Traps, with the `trap_percentage` option: Weapon Shatter, Blood Moon, Rupoor, Hearts Down, Strip Down and Cucco

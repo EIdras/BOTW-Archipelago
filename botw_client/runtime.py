@@ -55,7 +55,7 @@ CLIENT_SCHEMA = 2
 BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6)
 # The mutations that present the item themselves: no AP window before them.
 VANILLA_WINDOWS = ("get_demo_actor", "champion_actor", "rune_download", "trap", "native_trap",
-                   "get_demo_bundle", "cook")
+                   "get_demo_bundle", "cook", "pouch_slot")
 TERMINAL_ITEMS = {
     "Magnesis Terminal": "Magnesis",
     "Remote Bombs Terminal": "Remote Bomb",
@@ -1676,9 +1676,13 @@ class BotwClientRuntime:
         if item is None or getattr(item, "flags", None) != 0:
             return False
         name = self.ap.item_name(item)
-        # An elixir keeps the cooking's window every time ("window": "always").
-        entry = getattr(getattr(self, "game", None), "item_map", {}).get(name) or {}
-        if entry.get("window") == "always":
+        entry = getattr(getattr(self, "game", None), "item_map", {}).get(name)
+        # Only the world's filler: an item cheated in (!getitem, /send) comes
+        # with flags 0 too, and a Gerudo Set or a pouch upgrade received again
+        # that way came quietly (seen in play). An elixir keeps the cooking's
+        # window every time ("window": "always").
+        if entry is not None and (not (entry.get("pickup") or entry.get("generated_filler"))
+                                  or entry.get("window") == "always"):
             return False
         return bool(name) and self._received_before(index, name) > 0
 

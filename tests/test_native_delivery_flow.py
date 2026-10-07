@@ -19,7 +19,7 @@ SOURCE = ROOT / ".build/ledger-validation/4e60affc56def09f/content"
 class NativeDeliveryCompilationTests(unittest.TestCase):
     def test_catalog_covers_verified_action_families_only(self):
         entries, unsupported = compile_native_entries()
-        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 92)
+        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 95)
         self.assertEqual(set(unsupported), set())
         self.assertEqual(len({entry.entry_name for entry in entries}), len(entries))
         self.assertTrue(all(entry.plan.mutations for entry in entries))
@@ -44,7 +44,8 @@ class NativeDeliveryCompilationTests(unittest.TestCase):
                              (step.item_name, step.step, step.cursor_delta))
             self.assertTrue(all(m.kind.value in ("grant_actor", "champion_actor",
                                                  "increase_rupee", "increase_max", "set_bool",
-                                                 "set_s32", "trap_spent", "increase_porch", "cook")
+                                                 "set_s32", "trap_spent", "increase_porch", "cook",
+                                                 "pouch_slot")
                                 for m in twin.plan.mutations))
         # Vessels: the Horned Statue's action (Demo035_0); horse gear has no window.
         self.assertEqual({e.item_name for e in quiet if e.item_name in (
@@ -256,6 +257,42 @@ class NativeDeliveryGraphTests(unittest.TestCase):
         quiet_graph = graph_snapshot(read_flow(self.quiet))
         self.assertEqual(self.path(quiet_graph, dict(quiet_graph["entry_points"])[quiet.entry_name]), [
             quiet.entry_name + s for s in ("_GuardON", "_Mut0", "_Commit", "_GuardOFF")])
+
+    def test_a_pouch_upgrade_is_hestus_next_one(self):
+        main = self.spec("Bow Pouch Upgrade")
+        quiet = next(s for s in self.specs if s.entry_name == main.entry_name + "Q")
+        graph = graph_snapshot(read_flow(self.patched))
+        events, mut = graph["events"], main.entry_name + "_Mut0"
+        self.assertEqual(events[main.entry_name + "_GuardON"]["nxt"], mut + "_Check00")
+        # His first upgrade not done becomes this one: flag, slot, his screen.
+        for number in range(8):
+            check = events[mut + f"_Check{number:02d}"]
+            self.assertEqual((check["actor_query"], check["params"]),
+                             ("CheckFlag", {"FlagName": f"Npc_OldKorok_Bow{number + 1:02d}"}))
+            self.assertEqual(check["cases"][0], mut + f"_Mark{number:02d}")
+            self.assertEqual(events[mut + f"_Mark{number:02d}"]["nxt"], mut + "_Add")
+        # All of them done: nothing, the commit.
+        self.assertEqual(events[mut + "_Check07"]["cases"][1], main.entry_name + "_Commit")
+        self.assertEqual(events[mut + "_Add"]["params"]["GameDataIntName"], "BowPorchStockNum")
+        self.assertEqual(events[mut + "_Add"]["nxt"], mut + "_Held")
+        # His screen only when Link holds an item of that pouch (else the slot quietly).
+        held = events[mut + "_Held"]
+        self.assertEqual((held["actor_query"], held["params"], held["cases"]),
+                         ("HasPouchItemByPouchCategory", {"Category": 1, "Count": 1},
+                          {0: mut + "_Open", 1: main.entry_name + "_Commit"}))
+        # Shields: Hestu's screen 2, the query's category 3 (2 is the arrows).
+        shield = graph_snapshot(read_flow(self.patched))["events"]
+        stem = self.spec("Shield Pouch Upgrade").entry_name + "_Mut0"
+        self.assertEqual((shield[stem + "_Held"]["params"]["Category"],
+                          shield[stem + "_Open"]["params"]["Type"]), (3, 2))
+        self.assertEqual(self.path(graph, mut + "_Open"), [
+            mut + s for s in ("_Open", "_Wait", "_Close", "_After")] + [
+            main.entry_name + "_Commit", main.entry_name + "_GuardOFF"])
+        self.assertEqual(events[mut + "_Open"]["params"], {"Type": 1, "IsWaitFinish": True})
+        # Quiet: the slot without the screen.
+        quiet_graph = graph_snapshot(read_flow(self.quiet))
+        self.assertEqual(self.path(quiet_graph, quiet.entry_name + "_Mut0_Add"), [
+            quiet.entry_name + s for s in ("_Mut0_Add", "_Commit", "_GuardOFF")])
 
     def test_actor_entry_refuses_before_guard_and_commits_before_release(self):
         spec = self.spec("Warm Doublet")

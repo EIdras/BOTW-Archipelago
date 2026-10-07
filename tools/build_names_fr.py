@@ -30,7 +30,10 @@ STALLS = {"General Stall": "magasin", "Fruit Stall": "étal de fruits", "Arrow S
           "Materials Stall": "étal de matériaux", "Mushroom Stall": "étal de champignons"}
 # Archipelago's own items, which the game does not name.
 OWN_ITEMS = {"Weapon Shatter": "Arme brisée (piège)", "Rupoor": "Rubis maudit (piège)",
-             "Hearts Down": "Cœurs en moins (piège)", "Strip Down": "Déshabillage (piège)"}
+             "Hearts Down": "Cœurs en moins (piège)", "Strip Down": "Déshabillage (piège)",
+             "Weapon Pouch Upgrade": "Emplacement d'arme en plus (Noïa)",
+             "Bow Pouch Upgrade": "Emplacement d'arc en plus (Noïa)",
+             "Shield Pouch Upgrade": "Emplacement de bouclier en plus (Noïa)"}
 # Traps named after something of the game: (actor or label, suffix).
 GAME_TRAPS = {"Blood Moon": "Lune de sang (piège)", "Cucco Swarm": "Nuée de cocottes (piège)"}
 

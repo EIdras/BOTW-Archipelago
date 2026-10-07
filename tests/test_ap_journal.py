@@ -303,6 +303,18 @@ class ReceivedAnnouncementTests(unittest.TestCase):
         r.game = type("G", (), {"item_map": {name: {"window": "always"}}})()
         self.assertFalse(r._repeat_filler(2))
 
+    def test_a_useful_item_cheated_in_again_keeps_its_window(self):
+        # /send and !getitem give flags 0: a Gerudo Set or a pouch upgrade
+        # received again that way came quietly, as a filler.
+        from botw_client.runtime import BotwClientRuntime
+        r = self.runtime("grant_actor")
+        r._received_before = BotwClientRuntime._received_before.__get__(r)
+        name = r.ap.item_name(r.ap.received_items[2])
+        r.game = type("G", (), {"item_map": {name: {"display_actor": "Item_AP"}}})()
+        self.assertFalse(r._repeat_filler(2))
+        r.game.item_map[name]["generated_filler"] = True
+        self.assertTrue(r._repeat_filler(2))
+
     def test_the_pickup_notification_waits_for_link_and_never_stops_the_client(self):
         from botw_client.runtime import BotwClientRuntime
         r = self.runtime()

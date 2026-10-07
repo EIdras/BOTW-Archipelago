@@ -6,8 +6,8 @@ classification; [`data/item_map.json`](../../data/item_map.json) defines what ea
 
 ## Pool size
 
-97 items are declared, completed with drawn filler up to the number of locations: 152 locations without the shop
-options (55 rupee bundles), up to 212 with two items in every shop and all 28 stall items (115 bundles). `Defeat Calamity Ganon` is
+108 items are declared, completed with drawn filler up to the number of locations: 152 locations without the shop
+options (44 filler items), up to 212 with two items in every shop and all 28 stall items (104). `Defeat Calamity Ganon` is
 the victory location and holds no item.
 
 ## Progression and equipment
@@ -28,6 +28,7 @@ the victory location and holds no item.
 | Master Sword, Hylian Shield, Champion's Tunic | 1 each | the equipment |
 | Ancient Bridle, Ancient Saddle | 1 each | the horse gear |
 | Barbarian, Ancient, Radiant Set | 1 each | the three pieces of the set |
+| Weapon, Bow, Shield Pouch Upgrade | 4, 3, 4 | one of Hestu's upgrades (`Npc_OldKorok`): his next upgrade flag, one more slot, then his pouch screen when Link holds an item of that pouch (in an empty pouch the screen played on another page: the slot comes quietly and the tab shows, already grown, with the first item); he offers one fewer, so the pouch never passes the game's maximum, and once he has given them all the item adds nothing |
 
 The sets are deliberately strong: they are not filler items.
 

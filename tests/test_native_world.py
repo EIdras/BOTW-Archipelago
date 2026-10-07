@@ -119,7 +119,7 @@ class NativeWorldTests(unittest.TestCase):
         self.assertFalse([i for i in mw.itempool if i.classification == ItemClassification.trap])
         everything = self.make_world(seed=3, trap_percentage=100)
         traps = [i.name for i in everything.itempool if i.classification == ItemClassification.trap]
-        self.assertEqual(len(traps), 55)
+        self.assertEqual(len(traps), 44)
         self.assertEqual(len(everything.itempool), len(mw.itempool))
         self.assertEqual(set(traps), {"Weapon Shatter", "Blood Moon", "Rupoor", "Hearts Down",
                                       "Strip Down", "Cucco Swarm"})

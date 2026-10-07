@@ -42,6 +42,10 @@ class MutationKind(str, Enum):
     # Champions' Ballad gives its elixirs (Demo_SetCookItem), then the cooking's
     # own get window (GetDemo<ShowGetDemoCookResult>); its silent twin cooks only.
     COOK = "cook"
+    # One of Hestu's pouch upgrades (Npc_OldKorok): his next upgrade flag
+    # (target: the pouch, POUCHES), one more slot, then his pouch screen
+    # (Demo_OpenPouchAddStockNum); its silent twin, without the screen.
+    POUCH_SLOT = "pouch_slot"
     SET_BOOL = "set_bool"
     SET_S32 = "set_s32"
     INCREMENT = "increment"
@@ -93,6 +97,23 @@ COOKED = "Item_Cook_C_17"
 COOK_SLOTS = 5
 
 
+@dataclass(frozen=True)
+class Pouch:
+    counter: str            # its slots, an s32 of the save
+    screen: int             # Demo_OpenPouchAddStockNum's Type (Hestu's: 0, 1, 2)
+    category: int           # HasPouchItemByPouchCategory's (0, 1, 3: 2 is the arrows)
+    flags: tuple[str, ...]  # Hestu's upgrades, in the order his flow checks them
+
+
+# Hestu's upgrades (Npc_OldKorok): an AP upgrade is one of his, so he offers one
+# fewer and the pouch never passes the game's maximum (20, 13 of 14, 20).
+POUCHES = {
+    "weapon": Pouch("WeaponPorchStockNum", 0, 0, tuple(f"Npc_OldKorok_Weapon{n:02d}" for n in range(1, 12))),
+    "bow": Pouch("BowPorchStockNum", 1, 1, tuple(f"Npc_OldKorok_Bow{n:02d}" for n in range(1, 9))),
+    "shield": Pouch("ShieldPorchStockNum", 2, 3, tuple(f"Npc_OldKorok_Shield{n:02d}" for n in range(1, 17))),
+}
+
+
 def droppable(actor: str | None) -> bool:
     return bool(actor) and actor.startswith(DROPPABLE_PREFIXES)
 
@@ -124,6 +145,9 @@ def compile_delivery_plan(item_name: str, received_before: int = 0,
     if kind == "cook":
         return ItemDeliveryPlan(item_name, (DeliveryStep((DeliveryMutation(
             MutationKind.COOK, COOKED, tuple(delivery["ingredients"])),)),))
+    if kind == "pouch_slot":
+        return ItemDeliveryPlan(item_name, (DeliveryStep((DeliveryMutation(
+            MutationKind.POUCH_SLOT, delivery["pouch"], 1),)),))
     if kind == "getdemo_actor":
         return ItemDeliveryPlan(item_name, (
             DeliveryStep((DeliveryMutation(

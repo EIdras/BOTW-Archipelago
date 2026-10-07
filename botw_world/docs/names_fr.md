@@ -296,6 +296,9 @@ Archipelago affiche les noms anglais du jeu. Voici leurs équivalents dans le je
 | Barbarian Set | Casque barbare, Gilet barbare, Culotte barbare |
 | Ancient Set | Casque archéonique, Plastron archéonique, Jambières archéoniques |
 | Radiant Set | Masque nox, Combinaison nox, Chausses nox |
+| Weapon Pouch Upgrade | Emplacement d'arme en plus (Noïa) |
+| Bow Pouch Upgrade | Emplacement d'arc en plus (Noïa) |
+| Shield Pouch Upgrade | Emplacement de bouclier en plus (Noïa) |
 | Spirit Orb | Emblème du triomphe |
 | Ancient Core | Cœur antique |
 | Star Fragment | Fragment d'étoile |
