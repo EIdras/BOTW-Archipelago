@@ -177,11 +177,14 @@ def compile_delivery_plan(item_name: str, received_before: int = 0,
         # Vanilla rune downloads both unlock and select the new app. Keeping
         # PlayerEquipItemType in the same guarded step makes the first received
         # rune usable without forcing the player through the inventory menu.
-        # The flag is set by the terminal's presentation (RUNE_DOWNLOAD).
+        # The flag is set by the terminal's presentation (RUNE_DOWNLOAD). Without
+        # an equip type (the Master Cycle Zero), the rune in hand stays.
+        download = DeliveryMutation(
+            MutationKind.RUNE_DOWNLOAD, delivery["flag"], int(delivery["download_type"]))
+        if "equip_type" not in delivery:
+            return ItemDeliveryPlan(item_name, (DeliveryStep((download,)),))
         return ItemDeliveryPlan(item_name, (DeliveryStep((
-            DeliveryMutation(
-                MutationKind.RUNE_DOWNLOAD, delivery["flag"],
-                int(delivery["download_type"])),
+            download,
             DeliveryMutation(
                 MutationKind.SET_S32, "PlayerEquipItemType",
                 int(delivery["equip_type"]), value_type="s32"),

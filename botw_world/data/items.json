@@ -1236,5 +1236,29 @@
     "filler": true,
     "count": 0,
     "id": 155
+  },
+  {
+    "name": "Master Cycle Zero",
+    "category": [
+      "Travel"
+    ],
+    "useful": true,
+    "id": 156
+  },
+  {
+    "name": "Travel Medallion",
+    "category": [
+      "Travel"
+    ],
+    "useful": true,
+    "id": 157
+  },
+  {
+    "name": "Korok Mask",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 158
   }
 ]

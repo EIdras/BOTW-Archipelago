@@ -53,6 +53,13 @@ class DeliveryPlanTests(unittest.TestCase):
                 (MutationKind.SET_S32, "PlayerEquipItemType", 3),
             ])
 
+    def test_the_master_cycle_downloads_as_a_rune_without_taking_the_hand(self):
+        # Demo645_0 (Event63, Event73): the download screen, type 5, then its flag;
+        # the rune the player holds stays selected.
+        (step,) = compile_delivery_plan("Master Cycle Zero").steps
+        self.assertEqual([(m.kind, m.target, m.value) for m in step.mutations],
+                         [(MutationKind.RUNE_DOWNLOAD, "IsGet_Obj_Motorcycle", 5)])
+
     def test_heart_uses_vanilla_getdemo_actor(self):
         mutation = compile_delivery_plan(
             "Heart Container").steps[0].mutations[0]

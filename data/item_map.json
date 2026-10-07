@@ -11,6 +11,7 @@
     {"name":"Remote Bomb","delivery":{"kind":"rune","flag":"IsGet_Obj_RemoteBomb","equip_type":0,"download_type":0},"display_actor":"Obj_RemoteBomb"},
     {"name":"Stasis","delivery":{"kind":"rune","flag":"IsGet_Obj_StopTimer","equip_type":3,"download_type":2},"display_actor":"Obj_StopTimer"},
     {"name":"Cryonis","delivery":{"kind":"rune","flag":"IsGet_Obj_IceMaker","equip_type":4,"download_type":3},"display_actor":"Obj_IceMaker"},
+    {"name":"Master Cycle Zero","delivery":{"kind":"rune","flag":"IsGet_Obj_Motorcycle","download_type":5},"display_actor":"Obj_Motorcycle"},
     {"name":"Sheikah Sensor","delivery":{"kind":"flags","writes":[["IsGet_Obj_SheikSensor",true],["IsStart_Obj_SheikSensor",true],["App_SeakSensor_IsEnabled",true]]},"display_actor":"Item_AP"},
 
     {"name":"Warm Doublet","delivery":{"kind":"actors","actors":["Armor_044_Upper"]},"display_actor":"Armor_044_Upper"},
@@ -33,6 +34,8 @@
 
     {"name":"Master Sword","delivery":{"kind":"actors","actors":["Weapon_Sword_070"]},"display_actor":"Weapon_Sword_070"},
     {"name":"Hylian Shield","delivery":{"kind":"actors","actors":["Weapon_Shield_030"]},"display_actor":"Weapon_Shield_030"},
+    {"name":"Travel Medallion","delivery":{"kind":"actors","actors":["Obj_WarpDLC"]},"display_actor":"Obj_WarpDLC"},
+    {"name":"Korok Mask","delivery":{"kind":"actors","actors":["Armor_176_Head"]},"display_actor":"Armor_176_Head"},
     {"name":"Champion's Tunic","delivery":{"kind":"actors","actors":["Armor_116_Upper"]},"display_actor":"Armor_116_Upper"},
     {"name":"Ancient Bridle","delivery":{"kind":"actors","actors":["GameRomHorseReins_10"]},"display_actor":"GameRomHorseReins_10"},
     {"name":"Ancient Saddle","delivery":{"kind":"actors","actors":["GameRomHorseSaddle_10"]},"display_actor":"GameRomHorseSaddle_10"},

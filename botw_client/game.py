@@ -384,8 +384,9 @@ class BotwGame:
             self._write_flag(flag, value, "bool")
         elif kind == "rune":
             self._write_flag(delivery["flag"], True, "bool")
-            self._write_flag(
-                "PlayerEquipItemType", delivery["equip_type"], "s32")
+            if "equip_type" in delivery:
+                self._write_flag(
+                    "PlayerEquipItemType", delivery["equip_type"], "s32")
         elif kind == "counter":
             self._increment_flag(delivery["flag"], delivery["type"],
                                  delivery["delta"], delivery["maximum"])

@@ -51,8 +51,8 @@ GOAL_LOCATION = "Defeat Calamity Ganon"
 STATE_SCHEMA = 3
 CLIENT_SCHEMA = 2
 # The client schemas of BOTW seeds this client plays: 4 added the Gerudo Set, 5 the
-# goal and the sanctum's requirements, 6 the new filler, 7 the weapons.
-BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7)
+# goal and the sanctum's requirements, 6 the new filler, 7 the weapons, 8 the travel items.
+BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8)
 # The mutations that present the item themselves: no AP window before them.
 VANILLA_WINDOWS = ("get_demo_actor", "champion_actor", "rune_download", "trap", "native_trap",
                    "get_demo_bundle", "cook", "pouch_slot")

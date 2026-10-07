@@ -93,14 +93,15 @@ def validate_item_map(items_path: Path = ITEMS_JSON,
                     raise ItemMapError(f"{name}: unknown bool flag: {flag}")
         elif kind == "rune":
             flag = delivery.get("flag")
-            equip_type = delivery.get("equip_type")
+            equip_type = delivery.get("equip_type", 0)
             if flag_types.get(flag) != "bool":
                 raise ItemMapError(f"{name}: unknown rune flag: {flag}")
             if not isinstance(equip_type, int) or equip_type < 0:
                 raise ItemMapError(f"{name}: invalid rune equip type")
             # The terminal's Demo_OpenItemDownloadDemo ItemType (Demo003_0
-            # Item01..04: Remote Bomb 0, Magnesis 1, Stasis 2, Cryonis 3).
-            if delivery.get("download_type") not in (0, 1, 2, 3):
+            # Item01..04: Remote Bomb 0, Magnesis 1, Stasis 2, Cryonis 3; the
+            # Master Cycle Zero's 5, Demo645_0 Event63).
+            if delivery.get("download_type") not in (0, 1, 2, 3, 5):
                 raise ItemMapError(f"{name}: invalid rune download type")
             if flag_types.get("PlayerEquipItemType") != "s32":
                 raise ItemMapError("PlayerEquipItemType missing from the s32 GameData")

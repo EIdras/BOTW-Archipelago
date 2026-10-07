@@ -272,6 +272,7 @@ Archipelago affiche les noms anglais du jeu. Voici leurs équivalents dans le je
 | Remote Bomb | Bombes à distance |
 | Stasis | Cinetis |
 | Cryonis | Cryonis |
+| Master Cycle Zero | Destrier de légende 0.1 |
 | Sheikah Sensor | Détecteur sheikah |
 | Warm Doublet | Doublet |
 | Snowquill Set | Bijou à plumes, Tunique duveteuse piaf, Pantalon duveteux piaf |
@@ -290,6 +291,8 @@ Archipelago affiche les noms anglais du jeu. Voici leurs équivalents dans le je
 | Stamina Vessel | Réceptacle d'endurance |
 | Master Sword | Épée de légende |
 | Hylian Shield | Bouclier d'Hylia |
+| Travel Medallion | Amulette de téléportation |
+| Korok Mask | Masque de Korogu |
 | Champion's Tunic | Tunique de Prodige |
 | Ancient Bridle | Filet archéonique |
 | Ancient Saddle | Selle archéonique |
