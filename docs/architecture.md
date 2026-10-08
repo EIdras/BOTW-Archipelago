@@ -17,7 +17,8 @@ players/*.yaml ──> Archipelago + botw_world ──> AP_<seed>.zip (multidata
 A standard Archipelago world, packaged as `botw.apworld` (`tools/package_native.py`). Its data files
 (`botw_world/data/items.json`, `locations.json`) follow the project's sources: `data/locations_master.csv` for the
 locations, whose identifiers are append-only (a test checks that both agree), and `data/item_map.json` for what each
-item does in the game. `generate_output` writes, for each slot, a slot file `.apbotw` (`botw_world/slot_file.py`), an
+item does in the game. A location's region is the tower whose map shows it, as the game cuts its map
+(`tools/map_regions.py`, checked against the game's file by a test). `generate_output` writes, for each slot, a slot file `.apbotw` (`botw_world/slot_file.py`), an
 Archipelago player container that a room on archipelago.gg offers its player to download: the placements of the slot's
 locations and the prices drawn for its shop locations. The game pack is built from it.
 

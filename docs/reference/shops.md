@@ -48,8 +48,8 @@ is done in the game's resources, built for each seed; the client only reads.
   ([`botw_patch/goron_armor.py`](../../botw_patch/goron_armor.py)). The other armor shops are unchanged.
 - **Objects replaced**: chosen by hand in the game; per slot, the catalogue keeps the object, the pose, the yaw and a
   height. Never the last copy of an item; the two slots at least 0.6 m apart.
-- **Places and regions**: the nearest `LocationTag`, named from `LocationMarker.msbt`. Region: the nearest tower, the
-  rule used for shrines.
+- **Places and regions**: the nearest `LocationTag`, named from `LocationMarker.msbt`. Region: the tower whose map
+  shows the merchant, as for every location ([`tools/map_regions.py`](../../tools/map_regions.py)).
 - **Map**: the object becomes `AP_Shop_<id>`. Its HashId and links (`ForSale`, sold-out tags) stay the same. The
   jewel lies face up (`Rotate` `[-π/2, yaw, 0]`) or stands (`[0, yaw, 0]`, Kakariko's arrow stall only).
 - **Respawn**: a new `LinkTagAnd` without inputs, `SaveFlag = IsGet_AP_Shop_<id>`, creates the object through a

@@ -2,19 +2,19 @@ name,region,category,requires,gamedata_flag,flag_hash,notes
 Tah Muhl Shrine,Eldin,Shrine,,Clear_Dungeon000,-139866780,Dungeon000
 Jee Noh Shrine,Wasteland,Shrine,,Clear_Dungeon001,-2136015374,Dungeon001
 Sah Dahaj Shrine,Eldin,Shrine,,Clear_Dungeon002,430419016,Dungeon002
-Hawa Koth Shrine,Gerudo,Shrine,,Clear_Dungeon003,1856019678,Dungeon003
+Hawa Koth Shrine,Wasteland,Shrine,,Clear_Dungeon003,1856019678,Dungeon003
 Zalta Wa Shrine,Ridgeland,Shrine,,Clear_Dungeon004,-255587971,Dungeon004
-Ne'ez Yohma Shrine,Akkala,Shrine,,Clear_Dungeon005,-2017248789,Dungeon005
-Yah Rin Shrine,Hateno,Shrine,,Clear_Dungeon006,516581457,Dungeon006
+Ne'ez Yohma Shrine,Lanayru,Shrine,,Clear_Dungeon005,-2017248789,Dungeon005
+Yah Rin Shrine,Faron,Shrine,,Clear_Dungeon006,516581457,Dungeon006
 Bosh Kala Shrine,Dueling Peaks,Shrine,,Clear_Dungeon007,1775065287,Dungeon007
 Bareeda Naag Shrine,Tabantha,Shrine,,Clear_Dungeon008,-109951658,Dungeon008
 Owa Daim Shrine,Great Plateau,Shrine|Plateau,,Clear_Dungeon009,-1904904768,Dungeon009
 Kay Noh Shrine,Wasteland,Shrine,,Clear_Dungeon010,-290259931,Dungeon010
-Monya Toma Shrine,Ridgeland,Shrine,,Clear_Dungeon011,-1716138829,Dungeon011
+Monya Toma Shrine,Woodland,Shrine,,Clear_Dungeon011,-1716138829,Dungeon011
 Voo Lota Shrine,Tabantha,Shrine,,Clear_Dungeon012,12360969,Dungeon012
 Katosa Aug Shrine,Akkala,Shrine,,Clear_Dungeon013,2008788383,Dungeon013
 Kam Urog Shrine,Hateno,Shrine,,Clear_Dungeon014,-371247044,Dungeon014
-Toto Sah Shrine,Faron,Shrine,,Clear_Dungeon015,-1630009174,Dungeon015
+Toto Sah Shrine,Dueling Peaks,Shrine,,Clear_Dungeon015,-1630009174,Dungeon015
 Rucco Maag Shrine,Lanayru,Shrine,,Clear_Dungeon016,131160336,Dungeon016
 Shee Vaneer Shrine,Dueling Peaks,Shrine,,Clear_Dungeon017,1893099910,Dungeon017
 Rok Uwog Shrine,Hebra,Shrine,,Clear_Dungeon018,-529959913,Dungeon018
@@ -23,20 +23,20 @@ Sheem Dagoze Shrine,Ridgeland,Shrine,,Clear_Dungeon020,-979390490,Dungeon020
 Toh Yahsa Shrine,Ridgeland,Shrine,,Clear_Dungeon021,-1298620560,Dungeon021
 Keo Ruug Shrine,Woodland,Shrine,,Clear_Dungeon022,730975946,Dungeon022
 Sheh Rata Shrine,Lanayru,Shrine,,Clear_Dungeon023,1553399388,Dungeon023
-Mezza Lo Shrine,Lanayru,Shrine,,Clear_Dungeon024,-1024300033,Dungeon024
+Mezza Lo Shrine,Hateno,Shrine,,Clear_Dungeon024,-1024300033,Dungeon024
 Kayra Mah Shrine,Eldin,Shrine,,Clear_Dungeon025,-1242211479,Dungeon025
 Shae Mo'sah Shrine,Eldin,Shrine,,Clear_Dungeon026,754715347,Dungeon026
 Rota Ooh Shrine,Central,Shrine,,Clear_Dungeon027,1543191109,Dungeon027
-Shora Hah Shrine,Woodland,Shrine,,Clear_Dungeon028,-884725804,Dungeon028
+Shora Hah Shrine,Eldin,Shrine,,Clear_Dungeon028,-884725804,Dungeon028
 Hila Rao Shrine,Dueling Peaks,Shrine,,Clear_Dungeon029,-1136453822,Dungeon029
-Joloo Nah Shrine,Wasteland,Shrine,,Clear_Dungeon030,-595288409,Dungeon030
-Mo'a Keet Shrine,Akkala,Shrine,,Clear_Dungeon031,-1417433551,Dungeon031
-Dako Tah Shrine,Gerudo,Shrine,,Clear_Dungeon032,847970187,Dungeon032
+Joloo Nah Shrine,Gerudo,Shrine,,Clear_Dungeon030,-595288409,Dungeon030
+Mo'a Keet Shrine,Eldin,Shrine,,Clear_Dungeon031,-1417433551,Dungeon031
+Dako Tah Shrine,Wasteland,Shrine,,Clear_Dungeon032,847970187,Dungeon032
 Daka Tuss Shrine,Lanayru,Shrine,,Clear_Dungeon033,1166921501,Dungeon033
-Kah Yah Shrine,Hateno,Shrine,,Clear_Dungeon034,-605463874,Dungeon034
+Kah Yah Shrine,Faron,Shrine,,Clear_Dungeon034,-605463874,Dungeon034
 Akh Va'quot Shrine,Tabantha,Shrine,,Clear_Dungeon035,-1393661400,Dungeon035
 Sho Dantu Shrine,Gerudo,Shrine,,Clear_Dungeon036,904346514,Dungeon036
-Shae Loya Shrine,Tabantha,Shrine,,Clear_Dungeon037,1121979140,Dungeon037
+Shae Loya Shrine,Ridgeland,Shrine,,Clear_Dungeon037,1121979140,Dungeon037
 Oman Au Shrine,Great Plateau,Shrine|Plateau,,Clear_Dungeon038,-765520235,Dungeon038
 Myahm Agana Shrine,Hateno,Shrine,,Clear_Dungeon039,-1520949757,Dungeon039
 Kaam Ya'tak Shrine,Central,Shrine,,Clear_Dungeon040,-1815803808,Dungeon040
@@ -50,37 +50,37 @@ Ree Dahee Shrine,Dueling Peaks,Shrine,,Clear_Dungeon047,228695491,Dungeon047 sou
 Ze Kasho Shrine,Akkala,Shrine,,Clear_Dungeon048,-1658945454,Dungeon048
 Kaya Wan Shrine,Lanayru,Shrine,,Clear_Dungeon049,-367415100,Dungeon049
 Shai Utoh Shrine,Faron,Shrine,,Clear_Dungeon050,-1965147871,Dungeon050
-Maka Rah Shrine,Tabantha,Shrine,,Clear_Dungeon051,-36107849,Dungeon051
+Maka Rah Shrine,Hebra,Shrine,,Clear_Dungeon051,-36107849,Dungeon051
 Gee Ha'rah Shrine,Hebra,Shrine,,Clear_Dungeon052,1691375629,Dungeon052
 Sha Warvo Shrine,Tabantha,Shrine,,Clear_Dungeon053,332884123,Dungeon053
 Ka'o Makagh Shrine,Lake,Shrine,,Clear_Dungeon054,-1917584072,Dungeon054
 Dunba Taag Shrine,Hebra,Shrine,,Clear_Dungeon055,-88814162,Dungeon055
 Mirro Shaz Shrine,Woodland,Shrine,,Clear_Dungeon056,1673370644,Dungeon056
-Wahgo Katta Shrine,Dueling Peaks,Shrine,,Clear_Dungeon057,347778178,Dungeon057
+Wahgo Katta Shrine,Central,Shrine,,Clear_Dungeon057,347778178,Dungeon057
 Mogg Latan Shrine,Ridgeland,Shrine,,Clear_Dungeon058,-2080001773,Dungeon058
 Kah Okeo Shrine,Tabantha,Shrine,,Clear_Dungeon059,-217939579,Dungeon059
-Daqo Chisay Shrine,Gerudo,Shrine,,Clear_Dungeon060,-1577882910,Dungeon060
+Daqo Chisay Shrine,Wasteland,Shrine,,Clear_Dungeon060,-1577882910,Dungeon060
 Shoda Sah Shrine,Faron,Shrine,,Clear_Dungeon061,-688629132,Dungeon061
 Sha Gehma Shrine,Hebra,Shrine,,Clear_Dungeon062,1341983694,Dungeon062
-Kema Zoos Shrine,Gerudo,Shrine,,Clear_Dungeon063,955923288,Dungeon063
+Kema Zoos Shrine,Wasteland,Shrine,,Clear_Dungeon063,955923288,Dungeon063
 Daqa Koh Shrine,Eldin,Shrine,,Clear_Dungeon064,-1499549957,Dungeon064
 Keh Namut Shrine,Great Plateau,Shrine|Plateau,,Clear_Dungeon065,-778461587,Dungeon065
-Kah Mael Shrine,Akkala,Shrine,,Clear_Dungeon066,1217449943,Dungeon066
+Kah Mael Shrine,Lanayru,Shrine,,Clear_Dungeon066,1217449943,Dungeon066
 Qua Raym Shrine,Eldin,Shrine,,Clear_Dungeon067,1066925889,Dungeon067
 Ya Naga Shrine,Lake,Shrine,,Clear_Dungeon068,-1356274992,Dungeon068
 Ishto Soh Shrine,Lake,Shrine,,Clear_Dungeon069,-667954618,Dungeon069
 Soh Kofi Shrine,Lanayru,Shrine,,Clear_Dungeon070,-1192731741,Dungeon070
 Pumaag Nitae Shrine,Lake,Shrine,,Clear_Dungeon071,-806393035,Dungeon071
-Dah Kaso Shrine,Wasteland,Shrine,,Clear_Dungeon072,1457928847,Dungeon072
+Dah Kaso Shrine,Central,Shrine,,Clear_Dungeon072,1457928847,Dungeon072
 Katah Chuki Shrine,Central,Shrine,,Clear_Dungeon073,568396313,Dungeon073
-Noya Neha Shrine,Ridgeland,Shrine,,Clear_Dungeon074,-1081761862,Dungeon074
+Noya Neha Shrine,Central,Shrine,,Clear_Dungeon074,-1081761862,Dungeon074
 Dah Hesho Shrine,Akkala,Shrine,,Clear_Dungeon075,-930959572,Dungeon075
 Sasa Kai Shrine,Gerudo,Shrine,,Clear_Dungeon076,1368129174,Dungeon076
 Ke'nai Shakah Shrine,Akkala,Shrine,,Clear_Dungeon077,646761984,Dungeon077
 Mijah Rokee Shrine,Ridgeland,Shrine,,Clear_Dungeon078,-1238117487,Dungeon078
-Namika Ozz Shrine,Woodland,Shrine,,Clear_Dungeon079,-1053498617,Dungeon079
+Namika Ozz Shrine,Central,Shrine,,Clear_Dungeon079,-1053498617,Dungeon079
 Shoqa Tatone Shrine,Lake,Shrine,,Clear_Dungeon080,1064322924,Dungeon080
-Muwo Jeem Shrine,Hateno,Shrine,,Clear_Dungeon081,1215789050,Dungeon081
+Muwo Jeem Shrine,Faron,Shrine,,Clear_Dungeon081,1215789050,Dungeon081
 Chaas Qeta Shrine,Hateno,Shrine,,Clear_Dungeon082,-780261824,Dungeon082
 Tena Ko'sah Shrine,Tabantha,Shrine,,Clear_Dungeon083,-1502013738,Dungeon083
 Tutsuwa Nima Shrine,Akkala,Shrine,,Clear_Dungeon084,941458293,Dungeon084
@@ -88,17 +88,17 @@ Kema Kosassa Shrine,Gerudo,Shrine,,Clear_Dungeon085,1327150051,Dungeon085
 Goma Asaagh Shrine,Hebra,Shrine,,Clear_Dungeon086,-703339943,Dungeon086
 Mozo Shenno Shrine,Hebra,Shrine,,Clear_Dungeon087,-1592470833,Dungeon087
 Hia Miu Shrine,Hebra,Shrine,,Clear_Dungeon088,833343326,Dungeon088
-Saas Ko'sah Shrine,Woodland,Shrine,,Clear_Dungeon089,1185742792,Dungeon089
+Saas Ko'sah Shrine,Central,Shrine,,Clear_Dungeon089,1185742792,Dungeon089
 Suma Sahma Shrine,Wasteland,Shrine,,Clear_Dungeon090,644576813,Dungeon090
 Gorae Torr Shrine,Eldin,Shrine,,Clear_Dungeon091,1366050491,Dungeon091
-Maag No'rah Shrine,Hebra,Shrine,,Clear_Dungeon092,-932899071,Dungeon092
-Raqa Zunzo Shrine,Gerudo,Shrine,,Clear_Dungeon093,-1084086377,Dungeon093
-Tho Kayu Shrine,Gerudo,Shrine,,Clear_Dungeon094,554086964,Dungeon094
+Maag No'rah Shrine,Ridgeland,Shrine,,Clear_Dungeon092,-932899071,Dungeon092
+Raqa Zunzo Shrine,Wasteland,Shrine,,Clear_Dungeon093,-1084086377,Dungeon093
+Tho Kayu Shrine,Wasteland,Shrine,,Clear_Dungeon094,554086964,Dungeon094
 Kuhn Sidajj Shrine,Woodland,Shrine,,Clear_Dungeon095,1442939554,Dungeon095
 Qukah Nata Shrine,Faron,Shrine,,Clear_Dungeon096,-821505256,Dungeon096
-Korgu Chideh Shrine,Hateno,Shrine,,Clear_Dungeon097,-1206918258,Dungeon097
+Korgu Chideh Shrine,Faron,Shrine,,Clear_Dungeon097,-1206918258,Dungeon097
 Daag Chokah Shrine,Woodland,Shrine,,Clear_Dungeon098,682688031,Dungeon098
-Ta'loh Naeg Shrine,Lanayru,Shrine,,Clear_Dungeon099,1605881481,Dungeon099
+Ta'loh Naeg Shrine,Dueling Peaks,Shrine,,Clear_Dungeon099,1605881481,Dungeon099
 Keeha Yoog Shrine,Gerudo,Shrine,,Clear_Dungeon100,-160716973,Dungeon100
 Dagah Keek Shrine,Lanayru,Shrine,,Clear_Dungeon101,-2123589691,Dungeon101
 Zuna Kai Shrine,Akkala,Shrine,,Clear_Dungeon102,409323135,Dungeon102
@@ -110,11 +110,11 @@ Misae Suma Shrine,Wasteland,Shrine,,Clear_Dungeon107,1745826544,Dungeon107
 Ketoh Wawai Shrine,Woodland,Shrine,,Clear_Dungeon108,-122671263,Dungeon108
 Ritaag Zumo Shrine,Akkala,Shrine,,Clear_Dungeon109,-1883824137,Dungeon109
 Korsh O'hu Shrine,Wasteland,Shrine,,Clear_Dungeon110,-277834222,Dungeon110
-Tawa Jinn Shrine,Hateno,Shrine,,Clear_Dungeon111,-1736989052,Dungeon111
-Lakna Rokee Shrine,Lanayru,Shrine,,Clear_Dungeon112,25098046,Dungeon112
-Shae Katha Shrine,Dueling Peaks,Shrine,,Clear_Dungeon113,1987692456,Dungeon113
-Shai Yota Shrine,Akkala,Shrine,,Clear_Dungeon114,-400731637,Dungeon114
-Rona Kachta Shrine,Hebra,Shrine,,Clear_Dungeon115,-1625660771,Dungeon115
+Tawa Jinn Shrine,Faron,Shrine,,Clear_Dungeon111,-1736989052,Dungeon111
+Lakna Rokee Shrine,Dueling Peaks,Shrine,,Clear_Dungeon112,25098046,Dungeon112
+Shae Katha Shrine,Lake,Shrine,,Clear_Dungeon113,1987692456,Dungeon113
+Shai Yota Shrine,Lanayru,Shrine,,Clear_Dungeon114,-400731637,Dungeon114
+Rona Kachta Shrine,Woodland,Shrine,,Clear_Dungeon115,-1625660771,Dungeon115
 Qaza Tokki Shrine,Hebra,Shrine,,Clear_Dungeon116,101921575,Dungeon116
 Jitan Sa'mi Shrine,Hateno,Shrine,,Clear_Dungeon117,1897137073,Dungeon117
 To Quomo Shrine,Hebra,Shrine,,Clear_Dungeon118,-508879328,Dungeon118
@@ -135,7 +135,7 @@ Hateno Tower,Hateno,Tower,,MapTower_13,-1931400491,tower activation flag
 Faron Tower,Faron,Tower,,MapTower_14,310755190,tower activation flag
 Ridgeland Tower,Ridgeland,Tower,,MapTower_15,1703055328,tower activation flag
 Great Fairy Cotera,Dueling Peaks,Great Fairy,,RevivalGreatFairy1,-101197467,Demo028_0 Event10 argument FailyReactive; NPC00 Cotera; saved, set once
-Great Fairy Kaysa,Ridgeland,Great Fairy,,RevivalGreatFairy3,402241609,Demo028_0 Event10 argument FailyReactive; NPC02 Kaysa; saved, set once
+Great Fairy Kaysa,Tabantha,Great Fairy,,RevivalGreatFairy3,402241609,Demo028_0 Event10 argument FailyReactive; NPC02 Kaysa; saved, set once
 Great Fairy Mija,Akkala,Great Fairy,,RevivalGreatFairy2,1627293919,Demo028_0 Event10 argument FailyReactive; NPC01 Mija; saved, set once
 Great Fairy Tera,Wasteland,Great Fairy,,RevivalGreatFairy4,-1986187798,Demo028_0 Event10 argument FailyReactive; NPC03 Tera; saved, set once
 Divine Beast Vah Ruta,Lanayru,Divine Beast,,Clear_RemainsWater,-1220354708,
@@ -160,16 +160,16 @@ Gerudo Canyon Stable - Beedle Item 1,Wasteland,Shop,,APShop_158,-1076624382,Npc_
 Gerudo Canyon Stable - Beedle Item 2,Wasteland,Shop,,APShop_159,-925682540,Npc_TripMaster_02 slot 2; custom saved s32
 East Akkala Stable - Beedle Item 1,Akkala,Shop,,APShop_160,-1708990477,Npc_TripMaster_03 slot 1; custom saved s32
 East Akkala Stable - Beedle Item 2,Akkala,Shop,,APShop_161,-316280987,Npc_TripMaster_03 slot 2; custom saved s32
-Tabantha Bridge Stable - Beedle Item 1,Tabantha,Shop,,APShop_162,1949089503,Npc_TripMaster_04 slot 1; custom saved s32
-Tabantha Bridge Stable - Beedle Item 2,Tabantha,Shop,,APShop_163,53186121,Npc_TripMaster_04 slot 2; custom saved s32
-Serenne Stable - Beedle Item 1,Ridgeland,Shop,,APShop_164,-1655759894,Npc_TripMaster_05 slot 1; custom saved s32
-Serenne Stable - Beedle Item 2,Ridgeland,Shop,,APShop_165,-364369028,Npc_TripMaster_05 slot 2; custom saved s32
+Tabantha Bridge Stable - Beedle Item 1,Ridgeland,Shop,,APShop_162,1949089503,Npc_TripMaster_04 slot 1; custom saved s32
+Tabantha Bridge Stable - Beedle Item 2,Ridgeland,Shop,,APShop_163,53186121,Npc_TripMaster_04 slot 2; custom saved s32
+Serenne Stable - Beedle Item 1,Woodland,Shop,,APShop_164,-1655759894,Npc_TripMaster_05 slot 1; custom saved s32
+Serenne Stable - Beedle Item 2,Woodland,Shop,,APShop_165,-364369028,Npc_TripMaster_05 slot 2; custom saved s32
 South Akkala Stable - Beedle Item 1,Akkala,Shop,,APShop_166,1933671110,Npc_TripMaster_06 slot 1; custom saved s32
 South Akkala Stable - Beedle Item 2,Akkala,Shop,,APShop_167,71715408,Npc_TripMaster_06 slot 2; custom saved s32
 Rito Stable - Beedle Item 1,Tabantha,Shop,,APShop_168,-1795598399,Npc_TripMaster_07 slot 1; custom saved s32
 Rito Stable - Beedle Item 2,Tabantha,Shop,,APShop_169,-469866665,Npc_TripMaster_07 slot 2; custom saved s32
-Riverside Stable - Beedle Item 1,Dueling Peaks,Shop,,APShop_170,-2093355342,Npc_TripMaster_08 slot 1; custom saved s32
-Riverside Stable - Beedle Item 2,Dueling Peaks,Shop,,APShop_171,-197206492,Npc_TripMaster_08 slot 2; custom saved s32
+Riverside Stable - Beedle Item 1,Central,Shop,,APShop_170,-2093355342,Npc_TripMaster_08 slot 1; custom saved s32
+Riverside Stable - Beedle Item 2,Central,Shop,,APShop_171,-197206492,Npc_TripMaster_08 slot 2; custom saved s32
 Lakeside Stable - Beedle Item 1,Faron,Shop,,APShop_172,1832357790,Npc_TripMaster_09 slot 1; custom saved s32
 Lakeside Stable - Beedle Item 2,Faron,Shop,,APShop_173,439402248,Npc_TripMaster_09 slot 2; custom saved s32
 Outskirt Stable - Beedle Item 1,Central,Shop,,APShop_174,-2074858837,Npc_TripMaster_10 slot 1; custom saved s32
@@ -182,18 +182,18 @@ Snowfield Stable - Beedle Item 1,Hebra,Shop,,APShop_180,77722237,Npc_TripMaster_
 Snowfield Stable - Beedle Item 2,Hebra,Shop,,APShop_181,1940308715,Npc_TripMaster_13 slot 2; custom saved s32
 Highland Stable - Beedle Item 1,Lake,Shop,,APShop_182,-357592239,Npc_TripMaster_14 slot 1; custom saved s32
 Highland Stable - Beedle Item 2,Lake,Shop,,APShop_183,-1649892409,Npc_TripMaster_14 slot 2; custom saved s32
-Kara Kara Bazaar - Beedle Item 1,Gerudo,Shop,,APShop_184,63714916,Npc_TripMaster_15 slot 1; custom saved s32
-Kara Kara Bazaar - Beedle Item 2,Gerudo,Shop,,APShop_185,1959462642,Npc_TripMaster_15 slot 2; custom saved s32
+Kara Kara Bazaar - Beedle Item 1,Wasteland,Shop,,APShop_184,63714916,Npc_TripMaster_15 slot 1; custom saved s32
+Kara Kara Bazaar - Beedle Item 2,Wasteland,Shop,,APShop_185,1959462642,Npc_TripMaster_15 slot 2; custom saved s32
 Rito Village - General Stall Item 1,Tabantha,Stall,,APShop_186,-306030776,Npc_HighMountain021 object 1287359318 (Item_Material_01); custom saved s32
 Rito Village - General Stall Item 2,Tabantha,Stall,,APShop_187,-1698338850,Npc_HighMountain021 object 2529727570 (Item_Material_06); custom saved s32
-Gerudo Town - Fruit Stall Item 1,Gerudo,Stall,,APShop_188,175798863,Npc_oasis045 object 1621577614 (Item_Fruit_C); custom saved s32
-Gerudo Town - Fruit Stall Item 2,Gerudo,Stall,,APShop_189,2105363161,Npc_oasis045 object 2048757940 (Item_Fruit_F); custom saved s32
-Gerudo Town - Arrow Stall Item 1,Gerudo,Stall,,APShop_190,498778940,Npc_oasis002 object 1250568235 (Obj_ArrowBundle_A_01); custom saved s32
-Gerudo Town - Arrow Stall Item 2,Gerudo,Stall,,APShop_191,1790833578,Npc_oasis002 object 3521419955 (Obj_ElectricArrow_A_02); custom saved s32
-Kara Kara Bazaar - Fruit Stall Item 1,Gerudo,Stall,,APShop_192,-206265840,Npc_SmallOasis010 object 3418843795 (Item_Fruit_F); custom saved s32
-Kara Kara Bazaar - Fruit Stall Item 2,Gerudo,Stall,,APShop_193,-2068606330,Npc_SmallOasis010 object 769942167 (Item_Fruit_F); custom saved s32
-Gerudo Town - Materials Stall Item 1,Gerudo,Stall,,APShop_194,450299685,Npc_oasis044 object 1256391030 (Item_Material_07); custom saved s32
-Gerudo Town - Materials Stall Item 2,Gerudo,Stall,,APShop_195,1842362291,Npc_oasis044 object 1497053731 (Item_Material_03); custom saved s32
+Gerudo Town - Fruit Stall Item 1,Wasteland,Stall,,APShop_188,175798863,Npc_oasis045 object 1621577614 (Item_Fruit_C); custom saved s32
+Gerudo Town - Fruit Stall Item 2,Wasteland,Stall,,APShop_189,2105363161,Npc_oasis045 object 2048757940 (Item_Fruit_F); custom saved s32
+Gerudo Town - Arrow Stall Item 1,Wasteland,Stall,,APShop_190,498778940,Npc_oasis002 object 1250568235 (Obj_ArrowBundle_A_01); custom saved s32
+Gerudo Town - Arrow Stall Item 2,Wasteland,Stall,,APShop_191,1790833578,Npc_oasis002 object 3521419955 (Obj_ElectricArrow_A_02); custom saved s32
+Kara Kara Bazaar - Fruit Stall Item 1,Wasteland,Stall,,APShop_192,-206265840,Npc_SmallOasis010 object 3418843795 (Item_Fruit_F); custom saved s32
+Kara Kara Bazaar - Fruit Stall Item 2,Wasteland,Stall,,APShop_193,-2068606330,Npc_SmallOasis010 object 769942167 (Item_Fruit_F); custom saved s32
+Gerudo Town - Materials Stall Item 1,Wasteland,Stall,,APShop_194,450299685,Npc_oasis044 object 1256391030 (Item_Material_07); custom saved s32
+Gerudo Town - Materials Stall Item 2,Wasteland,Stall,,APShop_195,1842362291,Npc_oasis044 object 1497053731 (Item_Material_03); custom saved s32
 Korok Forest - Mushroom Stall Item 1,Woodland,Stall,,APShop_196,-187079159,Npc_kokiri004 object 3793699955 (Item_MushroomGet_D); custom saved s32
 Korok Forest - Mushroom Stall Item 2,Woodland,Stall,,APShop_197,-2082580833,Npc_kokiri004 object 525736165 (Item_Mushroom_A); custom saved s32
 Korok Forest - General Stall Item 1,Woodland,Stall,,APShop_198,325143310,Npc_kokiri003 object 3559016972 (Item_Material_01); custom saved s32
@@ -204,11 +204,11 @@ Kakariko Village - Arrow Stall Item 1,Dueling Peaks,Stall,,APShop_202,540059392,
 Kakariko Village - Arrow Stall Item 2,Dueling Peaks,Stall,,APShop_203,1463261078,Npc_Kakariko010 object 2376699312 (Obj_FireArrow_A_03); custom saved s32
 Kakariko Village - General Stall Item 1,Dueling Peaks,Stall,,APShop_204,-917306827,Npc_Kakariko014 object 3640152823 (Item_PlantGet_M); custom saved s32
 Kakariko Village - General Stall Item 2,Dueling Peaks,Stall,,APShop_205,-1101778269,Npc_Kakariko014 object 3058983883 (Item_Material_06); custom saved s32
-Lurelin Village - General Stall Item 1,Hateno,Stall,,APShop_206,660431641,Npc_SouthernVillage005 object 4103452247 (Item_InsectGet_O); custom saved s32
-Lurelin Village - General Stall Item 2,Hateno,Stall,,APShop_207,1348096911,Npc_SouthernVillage005 object 2335650137 (Obj_ArrowBundle_A_01); custom saved s32
+Lurelin Village - General Stall Item 1,Faron,Stall,,APShop_206,660431641,Npc_SouthernVillage005 object 4103452247 (Item_InsectGet_O); custom saved s32
+Lurelin Village - General Stall Item 2,Faron,Stall,,APShop_207,1348096911,Npc_SouthernVillage005 object 2335650137 (Obj_ArrowBundle_A_01); custom saved s32
 Tarrey Town - Arrow Stall Item 1,Akkala,Stall,,APShop_208,-1058714082,Npc_HighMountain010 object 781734643 (Obj_ArrowBundle_A_02); custom saved s32
 Tarrey Town - Arrow Stall Item 2,Akkala,Stall,,APShop_209,-1209893240,Npc_HighMountain010 object 225064014 (Obj_BombArrow_A_03); custom saved s32
-Zora's Domain - General Stall Item 1,Akkala,Stall,,APShop_210,-685377683,Npc_Zora002 object 2425727025 (Item_Ore_H); custom saved s32
-Zora's Domain - General Stall Item 2,Akkala,Stall,,APShop_211,-1608333317,Npc_Zora002 object 2178080993 (Item_Material_03); custom saved s32
+Zora's Domain - General Stall Item 1,Lanayru,Stall,,APShop_210,-685377683,Npc_Zora002 object 2425727025 (Item_Ore_H); custom saved s32
+Zora's Domain - General Stall Item 2,Lanayru,Stall,,APShop_211,-1608333317,Npc_Zora002 object 2178080993 (Item_Material_03); custom saved s32
 Hateno Village - General Stall Item 1,Hateno,Stall,,APShop_212,959157825,Npc_HatenoVillage002 object 4020751443 (Item_Material_05); custom saved s32
 Hateno Village - General Stall Item 2,Hateno,Stall,,APShop_213,1311549143,Npc_HatenoVillage002 object 2366597095 (Obj_ArrowBundle_A_01); custom saved s32

@@ -31,7 +31,7 @@
   },
   {
     "name": "Hawa Koth Shrine",
-    "region": "Gerudo",
+    "region": "Wasteland",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon003",
@@ -51,7 +51,7 @@
   },
   {
     "name": "Ne'ez Yohma Shrine",
-    "region": "Akkala",
+    "region": "Lanayru",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon005",
@@ -61,7 +61,7 @@
   },
   {
     "name": "Yah Rin Shrine",
-    "region": "Hateno",
+    "region": "Faron",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon006",
@@ -111,7 +111,7 @@
   },
   {
     "name": "Monya Toma Shrine",
-    "region": "Ridgeland",
+    "region": "Woodland",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon011",
@@ -151,7 +151,7 @@
   },
   {
     "name": "Toto Sah Shrine",
-    "region": "Faron",
+    "region": "Dueling Peaks",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon015",
@@ -241,7 +241,7 @@
   },
   {
     "name": "Mezza Lo Shrine",
-    "region": "Lanayru",
+    "region": "Hateno",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon024",
@@ -281,7 +281,7 @@
   },
   {
     "name": "Shora Hah Shrine",
-    "region": "Woodland",
+    "region": "Eldin",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon028",
@@ -301,7 +301,7 @@
   },
   {
     "name": "Joloo Nah Shrine",
-    "region": "Wasteland",
+    "region": "Gerudo",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon030",
@@ -311,7 +311,7 @@
   },
   {
     "name": "Mo'a Keet Shrine",
-    "region": "Akkala",
+    "region": "Eldin",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon031",
@@ -321,7 +321,7 @@
   },
   {
     "name": "Dako Tah Shrine",
-    "region": "Gerudo",
+    "region": "Wasteland",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon032",
@@ -341,7 +341,7 @@
   },
   {
     "name": "Kah Yah Shrine",
-    "region": "Hateno",
+    "region": "Faron",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon034",
@@ -371,7 +371,7 @@
   },
   {
     "name": "Shae Loya Shrine",
-    "region": "Tabantha",
+    "region": "Ridgeland",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon037",
@@ -511,7 +511,7 @@
   },
   {
     "name": "Maka Rah Shrine",
-    "region": "Tabantha",
+    "region": "Hebra",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon051",
@@ -571,7 +571,7 @@
   },
   {
     "name": "Wahgo Katta Shrine",
-    "region": "Dueling Peaks",
+    "region": "Central",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon057",
@@ -601,7 +601,7 @@
   },
   {
     "name": "Daqo Chisay Shrine",
-    "region": "Gerudo",
+    "region": "Wasteland",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon060",
@@ -631,7 +631,7 @@
   },
   {
     "name": "Kema Zoos Shrine",
-    "region": "Gerudo",
+    "region": "Wasteland",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon063",
@@ -661,7 +661,7 @@
   },
   {
     "name": "Kah Mael Shrine",
-    "region": "Akkala",
+    "region": "Lanayru",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon066",
@@ -721,7 +721,7 @@
   },
   {
     "name": "Dah Kaso Shrine",
-    "region": "Wasteland",
+    "region": "Central",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon072",
@@ -741,7 +741,7 @@
   },
   {
     "name": "Noya Neha Shrine",
-    "region": "Ridgeland",
+    "region": "Central",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon074",
@@ -791,7 +791,7 @@
   },
   {
     "name": "Namika Ozz Shrine",
-    "region": "Woodland",
+    "region": "Central",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon079",
@@ -811,7 +811,7 @@
   },
   {
     "name": "Muwo Jeem Shrine",
-    "region": "Hateno",
+    "region": "Faron",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon081",
@@ -891,7 +891,7 @@
   },
   {
     "name": "Saas Ko'sah Shrine",
-    "region": "Woodland",
+    "region": "Central",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon089",
@@ -921,7 +921,7 @@
   },
   {
     "name": "Maag No'rah Shrine",
-    "region": "Hebra",
+    "region": "Ridgeland",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon092",
@@ -931,7 +931,7 @@
   },
   {
     "name": "Raqa Zunzo Shrine",
-    "region": "Gerudo",
+    "region": "Wasteland",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon093",
@@ -941,7 +941,7 @@
   },
   {
     "name": "Tho Kayu Shrine",
-    "region": "Gerudo",
+    "region": "Wasteland",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon094",
@@ -971,7 +971,7 @@
   },
   {
     "name": "Korgu Chideh Shrine",
-    "region": "Hateno",
+    "region": "Faron",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon097",
@@ -991,7 +991,7 @@
   },
   {
     "name": "Ta'loh Naeg Shrine",
-    "region": "Lanayru",
+    "region": "Dueling Peaks",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon099",
@@ -1111,7 +1111,7 @@
   },
   {
     "name": "Tawa Jinn Shrine",
-    "region": "Hateno",
+    "region": "Faron",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon111",
@@ -1121,7 +1121,7 @@
   },
   {
     "name": "Lakna Rokee Shrine",
-    "region": "Lanayru",
+    "region": "Dueling Peaks",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon112",
@@ -1131,7 +1131,7 @@
   },
   {
     "name": "Shae Katha Shrine",
-    "region": "Dueling Peaks",
+    "region": "Lake",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon113",
@@ -1141,7 +1141,7 @@
   },
   {
     "name": "Shai Yota Shrine",
-    "region": "Akkala",
+    "region": "Lanayru",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon114",
@@ -1151,7 +1151,7 @@
   },
   {
     "name": "Rona Kachta Shrine",
-    "region": "Hebra",
+    "region": "Woodland",
     "category": "Shrine",
     "requires": "",
     "gamedata_flag": "Clear_Dungeon115",
@@ -1361,7 +1361,7 @@
   },
   {
     "name": "Great Fairy Kaysa",
-    "region": "Ridgeland",
+    "region": "Tabantha",
     "category": "Great Fairy",
     "requires": "",
     "gamedata_flag": "RevivalGreatFairy3",
@@ -1627,7 +1627,7 @@
   },
   {
     "name": "Tabantha Bridge Stable - Beedle Item 1",
-    "region": "Tabantha",
+    "region": "Ridgeland",
     "category": "Shop",
     "requires": "",
     "gamedata_flag": "APShop_162",
@@ -1639,7 +1639,7 @@
   },
   {
     "name": "Tabantha Bridge Stable - Beedle Item 2",
-    "region": "Tabantha",
+    "region": "Ridgeland",
     "category": "Shop",
     "requires": "",
     "gamedata_flag": "APShop_163",
@@ -1651,7 +1651,7 @@
   },
   {
     "name": "Serenne Stable - Beedle Item 1",
-    "region": "Ridgeland",
+    "region": "Woodland",
     "category": "Shop",
     "requires": "",
     "gamedata_flag": "APShop_164",
@@ -1663,7 +1663,7 @@
   },
   {
     "name": "Serenne Stable - Beedle Item 2",
-    "region": "Ridgeland",
+    "region": "Woodland",
     "category": "Shop",
     "requires": "",
     "gamedata_flag": "APShop_165",
@@ -1723,7 +1723,7 @@
   },
   {
     "name": "Riverside Stable - Beedle Item 1",
-    "region": "Dueling Peaks",
+    "region": "Central",
     "category": "Shop",
     "requires": "",
     "gamedata_flag": "APShop_170",
@@ -1735,7 +1735,7 @@
   },
   {
     "name": "Riverside Stable - Beedle Item 2",
-    "region": "Dueling Peaks",
+    "region": "Central",
     "category": "Shop",
     "requires": "",
     "gamedata_flag": "APShop_171",
@@ -1891,7 +1891,7 @@
   },
   {
     "name": "Kara Kara Bazaar - Beedle Item 1",
-    "region": "Gerudo",
+    "region": "Wasteland",
     "category": "Shop",
     "requires": "",
     "gamedata_flag": "APShop_184",
@@ -1903,7 +1903,7 @@
   },
   {
     "name": "Kara Kara Bazaar - Beedle Item 2",
-    "region": "Gerudo",
+    "region": "Wasteland",
     "category": "Shop",
     "requires": "",
     "gamedata_flag": "APShop_185",
@@ -1939,7 +1939,7 @@
   },
   {
     "name": "Gerudo Town - Fruit Stall Item 1",
-    "region": "Gerudo",
+    "region": "Wasteland",
     "category": "Stall",
     "requires": "",
     "gamedata_flag": "APShop_188",
@@ -1951,7 +1951,7 @@
   },
   {
     "name": "Gerudo Town - Fruit Stall Item 2",
-    "region": "Gerudo",
+    "region": "Wasteland",
     "category": "Stall",
     "requires": "",
     "gamedata_flag": "APShop_189",
@@ -1963,7 +1963,7 @@
   },
   {
     "name": "Gerudo Town - Arrow Stall Item 1",
-    "region": "Gerudo",
+    "region": "Wasteland",
     "category": "Stall",
     "requires": "",
     "gamedata_flag": "APShop_190",
@@ -1975,7 +1975,7 @@
   },
   {
     "name": "Gerudo Town - Arrow Stall Item 2",
-    "region": "Gerudo",
+    "region": "Wasteland",
     "category": "Stall",
     "requires": "",
     "gamedata_flag": "APShop_191",
@@ -1987,7 +1987,7 @@
   },
   {
     "name": "Kara Kara Bazaar - Fruit Stall Item 1",
-    "region": "Gerudo",
+    "region": "Wasteland",
     "category": "Stall",
     "requires": "",
     "gamedata_flag": "APShop_192",
@@ -1999,7 +1999,7 @@
   },
   {
     "name": "Kara Kara Bazaar - Fruit Stall Item 2",
-    "region": "Gerudo",
+    "region": "Wasteland",
     "category": "Stall",
     "requires": "",
     "gamedata_flag": "APShop_193",
@@ -2011,7 +2011,7 @@
   },
   {
     "name": "Gerudo Town - Materials Stall Item 1",
-    "region": "Gerudo",
+    "region": "Wasteland",
     "category": "Stall",
     "requires": "",
     "gamedata_flag": "APShop_194",
@@ -2023,7 +2023,7 @@
   },
   {
     "name": "Gerudo Town - Materials Stall Item 2",
-    "region": "Gerudo",
+    "region": "Wasteland",
     "category": "Stall",
     "requires": "",
     "gamedata_flag": "APShop_195",
@@ -2155,7 +2155,7 @@
   },
   {
     "name": "Lurelin Village - General Stall Item 1",
-    "region": "Hateno",
+    "region": "Faron",
     "category": "Stall",
     "requires": "",
     "gamedata_flag": "APShop_206",
@@ -2167,7 +2167,7 @@
   },
   {
     "name": "Lurelin Village - General Stall Item 2",
-    "region": "Hateno",
+    "region": "Faron",
     "category": "Stall",
     "requires": "",
     "gamedata_flag": "APShop_207",
@@ -2203,7 +2203,7 @@
   },
   {
     "name": "Zora's Domain - General Stall Item 1",
-    "region": "Akkala",
+    "region": "Lanayru",
     "category": "Stall",
     "requires": "",
     "gamedata_flag": "APShop_210",
@@ -2215,7 +2215,7 @@
   },
   {
     "name": "Zora's Domain - General Stall Item 2",
-    "region": "Akkala",
+    "region": "Lanayru",
     "category": "Stall",
     "requires": "",
     "gamedata_flag": "APShop_211",

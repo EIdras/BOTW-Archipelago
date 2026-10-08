@@ -25,8 +25,8 @@ kept: an item sold in several copies, never its last one (the stall keeps
 everything it sold), the two at least SPACING apart (the jewels are about
 0.6 m wide). Tarrey Town's stall, built by a quest, keeps the automatic
 choice (the lowest objects, lying, its top towards the merchant). Places:
-nearest LocationTag, named from LocationMarker.msbt. Regions: nearest tower,
-the rule used for the shrines.
+nearest LocationTag, named from LocationMarker.msbt. Regions: the tower whose
+map shows the merchant, as for every location (tools/map_regions.py).
 """
 from __future__ import annotations
 
@@ -68,19 +68,19 @@ MERCHANTS = (
                   ((1287359318, "Item_Material_01", "lying", 2.2861, 0.0),
                    (2529727570, "Item_Material_06", "lying", 1.8793, 0.0))),
     StallMerchant(1, "Npc_oasis045", "B-7", 2770706636, "Gerudo Town", "Fruit Stall",
-                  "Gerudo", "Event27", 0.8168146014213562,
+                  "Wasteland", "Event27", 0.8168146014213562,
                   ((1621577614, "Item_Fruit_C", "lying", 0.7794, 0.0),
                    (2048757940, "Item_Fruit_F", "lying", 0.8325, 0.0))),
     StallMerchant(2, "Npc_oasis002", "B-7", 2768665121, "Gerudo Town", "Arrow Stall",
-                  "Gerudo", "Event31", 0.8799998760223389,
+                  "Wasteland", "Event31", 0.8799998760223389,
                   ((1250568235, "Obj_ArrowBundle_A_01", "lying", 0.7243, 0.0),
                    (3521419955, "Obj_ElectricArrow_A_02", "lying", 0.8701, 0.0))),
     StallMerchant(3, "Npc_SmallOasis010", "B-7", 262592810, "Kara Kara Bazaar", "Fruit Stall",
-                  "Gerudo", "Event34", 1.5399999618530273,
+                  "Wasteland", "Event34", 1.5399999618530273,
                   ((3418843795, "Item_Fruit_F", "lying", 1.9764, 0.0),
                    (769942167, "Item_Fruit_F", "lying", 0.9912, 0.0))),
     StallMerchant(4, "Npc_oasis044", "B-7", 3321817496, "Gerudo Town", "Materials Stall",
-                  "Gerudo", "Event29", -0.6200000643730164,
+                  "Wasteland", "Event29", -0.6200000643730164,
                   ((1256391030, "Item_Material_07", "lying", -0.9542, 0.0),
                    (1497053731, "Item_Material_03", "lying", -1.0515, 0.0))),
     StallMerchant(5, "Npc_kokiri004", "F-2", 2323688611, "Korok Forest", "Mushroom Stall",
@@ -104,7 +104,7 @@ MERCHANTS = (
                   ((3640152823, "Item_PlantGet_M", "lying", -2.4887, 0.0),
                    (3058983883, "Item_Material_06", "lying", -2.6858, 0.0))),
     StallMerchant(10, "Npc_SouthernVillage005", "H-8", 3292211395, "Lurelin Village",
-                  "General Stall", "Hateno", "Event49", 2.9399991035461426,
+                  "General Stall", "Faron", "Event49", 2.9399991035461426,
                   ((4103452247, "Item_InsectGet_O", "lying", -1.6142, 0.0),
                    (2335650137, "Obj_ArrowBundle_A_01", "lying", 2.4697, 0.0))),
     StallMerchant(11, "Npc_HighMountain010", "I-3", 2045298369, "Tarrey Town", "Arrow Stall",
@@ -112,7 +112,7 @@ MERCHANTS = (
                   ((781734643, "Obj_ArrowBundle_A_02", "lying", 2.2832, 0.0),
                    (225064014, "Obj_BombArrow_A_03", "lying", 2.2832, 0.0))),
     StallMerchant(12, "Npc_Zora002", "I-4", 2771744683, "Zora's Domain", "General Stall",
-                  "Akkala", "Event103", -0.33999988436698914,
+                  "Lanayru", "Event103", -0.33999988436698914,
                   ((2425727025, "Item_Ore_H", "lying", 1.2063, 0.0),
                    (2178080993, "Item_Material_03", "lying", -1.8332, 0.0))),
     StallMerchant(13, "Npc_HatenoVillage002", "I-7", 330593372, "Hateno Village",

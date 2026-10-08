@@ -28,7 +28,7 @@ FLAG_KIND = "s32"
 class Merchant:
     index: int
     place: str          # marker name (LocationMarker.msbt)
-    region: str         # region of the nearest shrine (logic: any region needs the paraglider)
+    region: str         # the tower whose map shows him (tools/map_regions.py)
     # Vanilla `Normal` table, in order (checked against the sheet at build time).
     stock: tuple[str, ...]
 
@@ -47,15 +47,15 @@ MERCHANTS = (
              (_A, _B2, "Animal_Insect_N", "Animal_Insect_T", "Animal_Insect_M")),
     Merchant(3, "East Akkala Stable", "Akkala",
              (_A, _B2, "Item_Plant_M", "Animal_Insect_AB", "Item_Plant_B")),
-    Merchant(4, "Tabantha Bridge Stable", "Tabantha",
+    Merchant(4, "Tabantha Bridge Stable", "Ridgeland",
              (_A, _B2, "Animal_Insect_Q", "Animal_Insect_N", "Animal_Insect_R")),
-    Merchant(5, "Serenne Stable", "Ridgeland",
+    Merchant(5, "Serenne Stable", "Woodland",
              (_A, _B2, "Animal_Insect_T", "Animal_Insect_E", "Animal_Insect_B")),
     Merchant(6, "South Akkala Stable", "Akkala",
              (_A, _B2, "Animal_Insect_S", "Animal_Insect_X", "Animal_Insect_M")),
     Merchant(7, "Rito Stable", "Tabantha",
              (_A, _B2, "Animal_Insect_E", "Animal_Insect_T", "Animal_Insect_B")),
-    Merchant(8, "Riverside Stable", "Dueling Peaks",
+    Merchant(8, "Riverside Stable", "Central",
              (_A, _B1, "Animal_Insect_R", "Animal_Insect_I", "Animal_Insect_B")),
     Merchant(9, "Lakeside Stable", "Faron",
              (_A, _B1, "Animal_Insect_R", "Animal_Insect_S", "Animal_Insect_B")),
@@ -69,7 +69,7 @@ MERCHANTS = (
              (_A, _B2, "Animal_Insect_Q", "Animal_Insect_T", "Animal_Insect_B")),
     Merchant(14, "Highland Stable", "Lake",
              (_A, _B2, "Animal_Insect_E", "Animal_Insect_M", "Item_Enemy_57")),
-    Merchant(15, "Kara Kara Bazaar", "Gerudo",
+    Merchant(15, "Kara Kara Bazaar", "Wasteland",
              (_A, _B2, "Animal_Insect_Q", "Animal_Insect_C", "Animal_Insect_B")),
 )
 # Arrows (single and bundle) stay on sale: the AP entries replace insects and
