@@ -3,9 +3,8 @@ from BaseClasses import ItemClassification
 from . import BotwTestBase
 from ..catalog import FILLER, WEAPONS
 
-# The filler of the default options: 152 locations, 112 declared items, 13 maps
-# (the 14th, the starting map, is given at the start).
-FILLER_SLOTS = 27
+# The filler of the default options: 152 locations, 112 declared items, 14 maps.
+FILLER_SLOTS = 26
 
 
 class TestWithoutShops(BotwTestBase):
@@ -74,9 +73,12 @@ class TestEveryFillerATrap(BotwTestBase):
         self.assertFalse(set(pool) & {name for _, items in FILLER.values() for name in items})
         traps = [item for item in self.multiworld.itempool if item.trap]
         self.assertEqual(len(traps), FILLER_SLOTS)
-        self.assertEqual({item.name for item in traps}, {
-            "Weapon Shatter", "Blood Moon", "Rupoor", "Hearts Down", "Strip Down",
-            "Cucco Swarm"})
+        # Drawn at random, of equal weights: every kind may not come up in 26
+        # draws (one in twenty misses one), but nearly always four of them.
+        names = {item.name for item in traps}
+        self.assertLessEqual(names, {"Weapon Shatter", "Blood Moon", "Rupoor", "Hearts Down", "Strip Down",
+                                     "Cucco Swarm"})
+        self.assertGreaterEqual(len(names), 4)
         self.assertEqual(len(pool), 152)
 
 

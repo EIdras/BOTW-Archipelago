@@ -1,5 +1,5 @@
 """The tower maps: items of the pool (tower_maps), region keys of the logic, the
-map Link starts with (starting_map), and Universal Tracker's out-of-logic view."""
+map placed early (early_map), and Universal Tracker's out-of-logic view."""
 from BaseClasses import CollectionState, ItemClassification
 
 from . import BotwTestBase
@@ -7,18 +7,31 @@ from .test_tracker import generate
 from ..catalog import GENTLE_REGIONS, LOCATIONS, MAPS, RUNES, categories, map_keys
 
 STAND_IN = "Region Without Its Map"
+# What the start reaches: the Great Plateau's rune terminals and its tower.
+FIRST_LOCATIONS = {"Magnesis Terminal", "Remote Bombs Terminal", "Stasis Terminal", "Cryonis Terminal",
+                   "Great Plateau Tower"}
 
 
 def maps_of(multiworld):
     return sorted(item.name for item in multiworld.itempool if item.name in MAPS.values())
 
 
+def filled(options, seed):
+    from Fill import distribute_items_restrictive
+    from worlds.AutoWorld import call_all
+    multiworld = generate(options, seed=seed)
+    distribute_items_restrictive(multiworld)
+    call_all(multiworld, "post_fill")
+    return multiworld
+
+
 class TestRegionKeysByDefault(BotwTestBase):
-    def test_thirteen_maps_in_the_pool_and_a_gentle_one_at_the_start(self) -> None:
-        start = [item.name for item in self.multiworld.precollected_items[self.player]]
-        self.assertEqual(len(start), 1)
-        self.assertIn(start[0], {MAPS[region] for region in GENTLE_REGIONS})
-        self.assertEqual(maps_of(self.multiworld), sorted(set(MAPS.values()) - set(start)))
+    def test_fourteen_maps_in_the_pool_a_gentle_one_early(self) -> None:
+        self.assertEqual(self.multiworld.precollected_items[self.player], [])
+        self.assertEqual(maps_of(self.multiworld), sorted(MAPS.values()))
+        early = self.multiworld.local_early_items[self.player]
+        self.assertEqual(len(early), 1)
+        self.assertIn(next(iter(early)), {MAPS[region] for region in GENTLE_REGIONS})
         self.assertTrue(all(self.world.create_item(name).classification == ItemClassification.progression
                             for name in MAPS.values()))
 
@@ -41,8 +54,20 @@ class TestRegionKeysByDefault(BotwTestBase):
         self.assertTrue(self.can_reach_location("Freed - Divine Beast Vah Medoh"))
 
 
+class TestTheEarlyMapIsOnThePlateau(BotwTestBase):
+    def test_the_fill_puts_it_at_one_of_the_first_locations(self) -> None:
+        for seed in range(40, 50):
+            for options in ({}, {"beedle_shop_items": 2, "stall_items": 28}, {"early_map": "any"}):
+                with self.subTest(seed=seed, options=options):
+                    multiworld = filled(options, seed)
+                    (early,) = multiworld.local_early_items[1]
+                    spots = [loc.name for loc in multiworld.get_locations(1) if loc.item and loc.item.name == early]
+                    self.assertEqual(len(spots), 1)
+                    self.assertIn(spots[0], FIRST_LOCATIONS)
+
+
 class TestQuestsThroughOtherRegions(BotwTestBase):
-    options = {"stall_items": 28, "starting_map": "none"}
+    options = {"stall_items": 28, "early_map": "none"}
 
     def test_tarrey_towns_arrow_stall_needs_the_maps_of_its_recruits(self) -> None:
         self.collect_by_name(["Paraglider", *RUNES, "Flamebreaker Set", "Akkala Map", "Eldin Map", "Wasteland Map"])
@@ -77,28 +102,28 @@ class TestUniversalTrackerOutOfLogic(BotwTestBase):
         self.assertFalse(self.multiworld.state.has("Hebra Map", self.player))
 
 
-class TestNoStartingMap(BotwTestBase):
-    options = {"starting_map": "none", "beedle_shop_items": 2, "stall_items": 28}
+class TestNoEarlyMap(BotwTestBase):
+    options = {"early_map": "none", "beedle_shop_items": 2, "stall_items": 28}
 
-    def test_all_fourteen_maps_in_the_pool(self) -> None:
-        self.assertEqual(self.multiworld.precollected_items[self.player], [])
+    def test_all_fourteen_maps_anywhere(self) -> None:
+        self.assertEqual(self.multiworld.local_early_items[self.player], {})
         self.assertEqual(maps_of(self.multiworld), sorted(MAPS.values()))
 
 
-class TestAnyStartingMap(BotwTestBase):
-    options = {"starting_map": "any", "accessibility": "minimal"}
+class TestAnyEarlyMap(BotwTestBase):
+    options = {"early_map": "any", "accessibility": "minimal"}
 
-    def test_one_map_at_the_start(self) -> None:
-        start = [item.name for item in self.multiworld.precollected_items[self.player]]
-        self.assertEqual(len(start), 1)
-        self.assertIn(start[0], MAPS.values())
+    def test_one_map_early(self) -> None:
+        early = self.multiworld.local_early_items[self.player]
+        self.assertEqual(len(early), 1)
+        self.assertIn(next(iter(early)), MAPS.values())
 
 
 class TestMapsAsItemsOnly(BotwTestBase):
     options = {"tower_maps": "items"}
 
     def test_maps_are_useful_and_the_logic_has_no_key(self) -> None:
-        self.assertEqual(len(maps_of(self.multiworld)) + len(self.multiworld.precollected_items[self.player]), 14)
+        self.assertEqual(maps_of(self.multiworld), sorted(MAPS.values()))
         self.assertTrue(all(self.world.create_item(name).classification == ItemClassification.useful
                             for name in MAPS.values()))
         self.collect_by_name(["Paraglider", *RUNES])
@@ -110,25 +135,22 @@ class TestVanillaMaps(BotwTestBase):
 
     def test_no_map_anywhere(self) -> None:
         self.assertEqual(maps_of(self.multiworld), [])
-        self.assertEqual(self.multiworld.precollected_items[self.player], [])
+        self.assertEqual(self.multiworld.local_early_items[self.player], {})
         self.collect_by_name(["Paraglider", *RUNES])
         self.assertTrue(self.can_reach_location("Rin Oyaa Shrine"))
         self.assertEqual(self.world.fill_slot_data()["tower_maps"], 0)
 
 
 class TestManySeeds(BotwTestBase):
-    """Region keys with every shop and stall: the fill places everything, seed after seed."""
+    """Region keys with every shop and stall, or no early map: the fill places everything, seed after seed."""
     options = {"beedle_shop_items": 2, "stall_items": 28}
 
     def test_the_fill_succeeds_on_more_seeds(self) -> None:
-        from Fill import distribute_items_restrictive
-        from worlds.AutoWorld import call_all
         for seed in range(20, 30):
-            for options in ({"beedle_shop_items": 2, "stall_items": 28}, {"starting_map": "none"}):
+            for options in ({"beedle_shop_items": 2, "stall_items": 28}, {"early_map": "none"},
+                            {"early_map": "any", "accessibility": "minimal"}):
                 with self.subTest(seed=seed, options=options):
-                    multiworld = generate(options, seed=seed)
-                    distribute_items_restrictive(multiworld)
-                    call_all(multiworld, "post_fill")
+                    multiworld = filled(options, seed)
                     self.assertTrue(multiworld.can_beat_game(CollectionState(multiworld)))
 
 
@@ -139,10 +161,9 @@ class TestRegenerationWithoutMaps(BotwTestBase):
         again = generate(passthrough=slot_data, seed=5)
         self.assertEqual(again.worlds[1].options.tower_maps.value, 0)
         self.assertEqual(maps_of(again), [])
-        self.assertEqual(again.precollected_items[1], [])
 
-    def test_the_starting_map_is_not_drawn_again(self) -> None:
+    def test_a_seed_with_maps_regenerates_them(self) -> None:
         slot_data = generate().worlds[1].fill_slot_data()
         again = generate(passthrough=slot_data, seed=5)
         self.assertEqual(again.precollected_items[1], [])
-        self.assertEqual(len(maps_of(again)), 14)
+        self.assertEqual(maps_of(again), sorted(MAPS.values()))

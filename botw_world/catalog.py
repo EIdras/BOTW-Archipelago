@@ -81,7 +81,7 @@ MAPS = {row["name"][:-len(" Map")]: row["name"] for row in ITEMS if "Map" in row
 # Regions whose locations need no map: the Plateau, where the game starts, and
 # Hyrule Castle (Ganon), which the sanctum's own options gate.
 MAPLESS_REGIONS = frozenset({"Great Plateau", "Hyrule Castle"})
-# The maps a starting_map of "gentle" draws from: the regions the game itself
+# The maps an early_map of "gentle" draws from: the regions the game itself
 # leads to first, from the Plateau to Kakariko, Hateno and Lake Hylia.
 GENTLE_REGIONS = ("Dueling Peaks", "Hateno", "Lake", "Faron")
 

@@ -122,9 +122,10 @@ A tower reveals one area of the game's map; each location belongs to the region 
 With the maps as items, climbing a tower still counts as its location and opens its travel point, but no longer
 reveals the map: a map received does, with the game's own animation of a map opening.
 
-The `starting_map` option gives Link one map at the start, so that a region is open besides the towers: `gentle`
-(the default) draws one of the regions the game leads to first (Dueling Peaks, Hateno, Lake or Faron), `any` one of
-the 14, `none` no map. A given map is started with through `start_inventory` instead, with `starting_map` on `none`.
+The `early_map` option places one map among the Great Plateau's first locations, those reachable from the start (its
+rune terminals and its tower), so that a region opens besides the towers once Link leaves the Plateau: `gentle` (the
+default) draws one of the regions the game leads to first (Dueling Peaks, Hateno, Lake or Faron), `any` one of the 14,
+`none` places none early.
 
 ## How are the weapons spread?
 

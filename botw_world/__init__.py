@@ -14,7 +14,7 @@ from rule_builder.rules import And, Has, HasAll, HasAny, HasFromList, Or, Rule, 
 
 from .catalog import (FILLER, GAME, GENTLE_REGIONS, GOAL_LOCATION, ITEMS, LOCATIONS, MAPS, TRAPS, WEAPON_LEVELS,
                       WORLD_VERSION, categories, map_keys, requirements)
-from .options import OPTION_GROUPS, PRESETS, BotwOptions, StartingMap, TowerMaps, WeaponOrder
+from .options import OPTION_GROUPS, PRESETS, BotwOptions, EarlyMap, TowerMaps, WeaponOrder
 from .slot_file import BotwSlotFile
 
 
@@ -93,10 +93,9 @@ class BotwWorld(World):
         for name in self.SLOT_OPTIONS:
             if name in passed:
                 getattr(self.options, name).value = passed[name]
-        # A seed of world 0.1 has no maps; the starting map comes back as an item received.
+        # A seed generated before the maps has none.
         if "tower_maps" not in passed:
             self.options.tower_maps.value = TowerMaps.option_vanilla
-        self.options.starting_map.value = StartingMap.option_none
         # A seed generated before world 0.2.0 does not name its stalls: they are
         # drawn again, and may differ from the seed's.
         if "stall_locations" in passed:
@@ -218,18 +217,16 @@ class BotwWorld(World):
         return self.random.choices(names, weights=[weights[name] for name in names], k=count)
 
     def maps(self) -> list[str]:
-        """The maps of the pool, all 14 (tower_maps on items or region_keys) or
-        none, but the one starting_map gives Link at the start."""
+        """The maps of the pool: all 14 (tower_maps on items or region_keys) or
+        none. With early_map, one of them is placed among the locations
+        reachable from the start, the Great Plateau's (local_early_items)."""
         if self.options.tower_maps == TowerMaps.option_vanilla:
             return []
-        maps = list(MAPS.values())
-        choice = self.options.starting_map
-        if choice != StartingMap.option_none:
-            regions = GENTLE_REGIONS if choice == StartingMap.option_gentle else sorted(MAPS)
-            start = MAPS[self.random.choice(regions)]
-            self.multiworld.push_precollected(self.create_item(start))
-            maps.remove(start)
-        return maps
+        choice = self.options.early_map
+        if choice != EarlyMap.option_none:
+            regions = GENTLE_REGIONS if choice == EarlyMap.option_gentle else sorted(MAPS)
+            self.multiworld.local_early_items[self.player][MAPS[self.random.choice(regions)]] = 1
+        return list(MAPS.values())
 
     def create_items(self) -> None:
         pool = [self.create_item(row["name"]) for row in ITEMS if not row.get("trap")

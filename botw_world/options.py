@@ -115,16 +115,17 @@ class TowerMaps(Choice):
     default = 2
 
 
-class StartingMap(Choice):
-    """With Tower Maps on items or region_keys, a map Link starts with.
-    none: no map; until one comes, the towers are all the logic outside the Great
-    Plateau.
+class EarlyMap(Choice):
+    """With Tower Maps on items or region_keys, a map placed early: at one of the
+    Great Plateau's first locations, those reachable from the start (its rune
+    terminals and its tower), so that a region opens besides the towers once Link
+    leaves the Plateau.
+    none: no map placed early; until one comes, the towers are all the logic
+    outside the Great Plateau.
     gentle: one of the regions the game leads to first: Dueling Peaks, Hateno,
     Lake or Faron.
-    any: any of the 14 maps.
-    A given map is started with by start_inventory instead (for example
-    "Hateno Map": 1), with Starting Map on none."""
-    display_name = "Starting Map"
+    any: any of the 14 maps."""
+    display_name = "Early Map"
     option_none = 0
     option_gentle = 1
     option_any = 2
@@ -169,7 +170,7 @@ class BotwOptions(PerGameCommonOptions):
     death_link: DeathLink
     weapon_order: WeaponOrder
     tower_maps: TowerMaps
-    starting_map: StartingMap
+    early_map: EarlyMap
     trap_percentage: TrapPercentage
     trap_weights: TrapWeights
 
@@ -180,7 +181,7 @@ OPTION_GROUPS = [
                 [SanctumDivineBeasts, SanctumShrines, SanctumMasterSword, SanctumRunes]),
     OptionGroup("Shops", [BeedleShopItems, StallItems]),
     OptionGroup("Weapons", [WeaponOrder]),
-    OptionGroup("Maps", [TowerMaps, StartingMap]),
+    OptionGroup("Maps", [TowerMaps, EarlyMap]),
     OptionGroup("Traps", [TrapPercentage, TrapWeights]),
 ]
 

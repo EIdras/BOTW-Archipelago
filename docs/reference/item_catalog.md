@@ -7,9 +7,8 @@ classification; [`data/item_map.json`](../../data/item_map.json) defines what ea
 ## Pool size
 
 126 items are declared, the 14 maps among them (`tower_maps`: none on `vanilla`), completed with drawn filler up to
-the number of locations: 152 locations without the shop options (27 filler items with the default options, one map
-given at the start; 40 with `tower_maps` on `vanilla`), up to 212 with two items in every shop and all 28 stall items
-(87). `Defeat Calamity Ganon` is the victory location and holds no item.
+the number of locations: 152 locations without the shop options (26 filler items with the default options, 40 with
+`tower_maps` on `vanilla`), up to 212 with two items in every shop and all 28 stall items (86). `Defeat Calamity Ganon` is the victory location and holds no item.
 
 ## Progression and equipment
 
