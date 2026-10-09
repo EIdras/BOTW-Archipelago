@@ -28,6 +28,11 @@ Breath of the Wild:
   # How the weapons of the filler are spread over the game: smoothed (the weaker first, the amiibo's
   # treasures last), loosely_smoothed (the same, a weapon may come a level earlier or later) or anywhere
   weapon_order: smoothed
+  # The regions' maps: region_keys (items, and a region's locations are in the logic once its map is received),
+  # items (items only) or vanilla (each tower reveals its map, as in the game)
+  tower_maps: region_keys
+  # A map Link starts with: gentle (Dueling Peaks, Hateno, Lake or Faron), any, or none
+  starting_map: gentle
   # Share of the filler (arrows, elixirs, weapons, gems, rupees) that becomes traps, 0 to 100, and how likely each is
   # compared with the others (a trap left out never comes up): Weapon Shatter, Blood Moon,
   # Rupoor, Hearts Down, Strip Down, Cucco Swarm. Only the cuccos can kill Link.

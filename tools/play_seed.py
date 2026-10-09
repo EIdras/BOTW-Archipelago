@@ -53,8 +53,8 @@ sys.path.insert(0, str(BUILD / "ap-runtime"))
 PLAY_SEEDS = DATA / "play-seeds"
 PACKS = DATA / "packs-from-source"
 SCOPE = "generated_ap_seed"
-CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9)    # 4: the Gerudo Set; 5: the goal and the sanctum; 6: the new filler;
-#                                          7: the weapons; 8: the travel items; 9: Epona
+CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10)    # 4: the Gerudo Set; 5: the goal and the sanctum; 6: the new
+#                                              filler; 7: the weapons; 8: the travel items; 9: Epona; 10: maps
 GAME = "Breath of the Wild"
 _ROWS = json.loads((ROOT / "botw_world/data/locations.json").read_text(encoding="utf-8"))
 # Every location but the goal, shops apart: they depend on beedle_shop_items

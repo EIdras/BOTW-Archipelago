@@ -662,10 +662,11 @@ class CemuNativeDeliveryBackend:
             return DeliveryResult(DeliveryStatus.DEFERRED, cursor,
                                   f"previous event closing ({since}/{self._settle} frames)")
         if not (command.quiet and step.get("quiet_entry")) and any(
-                m.get("kind") == "rune_download" for m in step.get("mutations", ())):
+                m.get("kind") in ("rune_download", "map_open") for m in step.get("mutations", ())):
             # The download screen needs the pause menu built at once, or the
             # menu clears its request and the event waits forever
-            # (botw_client/pause_menu.py).
+            # (botw_client/pause_menu.py); so may the map's opening, a screen
+            # of the same menu.
             try:
                 ready, reason = self.game.pause_menu_ready()
             except Exception as exc:  # noqa: BLE001 - unreadable: not now
@@ -673,6 +674,13 @@ class CemuNativeDeliveryBackend:
             if not ready:
                 return DeliveryResult(DeliveryStatus.DEFERRED, cursor,
                                       f"pause menu not ready: {reason}")
+            opening = next((m for m in step.get("mutations", ()) if m.get("kind") == "map_open"), None)
+            if opening is not None:
+                # The map's opening has no tower near its actor: it takes the
+                # tower the client names (tools/build_tower_maps_native.py).
+                prepare = getattr(self.game, "prepare_map_opening", None)
+                if prepare is not None:
+                    prepare(opening["target"])
 
         request, lock_factory = self._dependencies()
         evidence = {}

@@ -53,7 +53,7 @@ def validate_item_map(items_path: Path = ITEMS_JSON,
 
     allowed = {"actors", "progressive_actors", "flags", "rune", "counter",
                "counter_at_least", "getdemo_actor", "champion_actor", "manual_prompt", "trap",
-               "native_trap", "arrows", "cook", "pouch_slot", "horse"}
+               "native_trap", "arrows", "cook", "pouch_slot", "horse", "map"}
     from .gamedata_table import load
     gamedata = load()
     flag_types = {flag_name: kind for kind, flag_name in gamedata.values()}
@@ -113,6 +113,11 @@ def validate_item_map(items_path: Path = ITEMS_JSON,
                 raise ItemMapError(f"{name}: a rune without equip_type needs select_if_none")
             if flag_types.get("PlayerEquipItemType") != "s32":
                 raise ItemMapError("PlayerEquipItemType missing from the s32 GameData")
+        elif kind == "map":
+            # A tower's map: the flag the game's map reads to show its area.
+            flag = delivery.get("flag", "")
+            if not flag.startswith("MapTower_") or flag_types.get(flag) != "bool":
+                raise ItemMapError(f"{name}: a map needs its tower's MapTower_NN flag")
         elif kind == "trap":
             if not str(delivery.get("entry", "")).startswith("APTrap") or not delivery.get("text"):
                 raise ItemMapError(f"{name}: a trap needs an APTrap entry and a text")

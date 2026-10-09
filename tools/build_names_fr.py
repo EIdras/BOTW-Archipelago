@@ -113,6 +113,9 @@ def item_fr(names: Names, entry: dict) -> str:
         return GAME_TRAPS[name]
     if name == "Sheikah Sensor":
         return names.actor("Obj_SheikSensor")
+    if delivery.get("kind") == "map":
+        # A region's map: its tower's name, as the game's map shows it.
+        return f"Carte ({names.place(name[:-len(' Map')] + ' Tower')})"
     if name == "Fairy Tonic":
         return names.actor("Item_Cook_C_16")
     if delivery.get("kind") == "cook":

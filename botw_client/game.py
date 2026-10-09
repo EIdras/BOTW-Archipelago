@@ -161,6 +161,8 @@ class BotwGame:
             delivery = entry["delivery"]
             if delivery["kind"] == "flags":
                 fields = [(flag, "bool") for flag, _ in delivery["writes"]]
+            elif delivery["kind"] == "map":
+                fields = [(delivery["flag"], "bool")]
             elif delivery["kind"] == "rune":
                 fields = [(delivery["flag"], "bool"),
                           ("PlayerEquipItemType", "s32")]
@@ -298,6 +300,19 @@ class BotwGame:
         if name in self.flag_by_name:
             return self.flag_by_name[name]
         raise KeyError(f"unknown GameData flag: {name}")
+
+    def prepare_map_opening(self, map_flag: str) -> bool:
+        """The tower (MapTower_NN) the next map opening without a tower near
+        its actor shows (tools/build_tower_maps_native.py). False on a patch
+        without it: the map is then revealed without its opening."""
+        if not self.process or not self.cave:
+            return False
+        return bool(self.cave.set_map_tower(int(map_flag.rsplit("_", 1)[1]) - 1))
+
+    def slate_has_map(self) -> bool:
+        """The Sheikah Slate has a map: the Great Plateau's tower, the first, gave
+        it (MapTower_07). Before, the game's map shows no data."""
+        return bool(self._read_flag("MapTower_07", "bool"))
 
     def _read_flag(self, name: str, expected_kind: str | None = None):
         hash_u32, kind = self._hash(name)

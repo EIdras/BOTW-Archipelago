@@ -1268,5 +1268,117 @@
     ],
     "useful": true,
     "id": 159
+  },
+  {
+    "name": "Hebra Map",
+    "category": [
+      "Map"
+    ],
+    "useful": true,
+    "id": 160
+  },
+  {
+    "name": "Tabantha Map",
+    "category": [
+      "Map"
+    ],
+    "useful": true,
+    "id": 161
+  },
+  {
+    "name": "Gerudo Map",
+    "category": [
+      "Map"
+    ],
+    "useful": true,
+    "id": 162
+  },
+  {
+    "name": "Wasteland Map",
+    "category": [
+      "Map"
+    ],
+    "useful": true,
+    "id": 163
+  },
+  {
+    "name": "Woodland Map",
+    "category": [
+      "Map"
+    ],
+    "useful": true,
+    "id": 164
+  },
+  {
+    "name": "Central Map",
+    "category": [
+      "Map"
+    ],
+    "useful": true,
+    "id": 165
+  },
+  {
+    "name": "Dueling Peaks Map",
+    "category": [
+      "Map"
+    ],
+    "useful": true,
+    "id": 166
+  },
+  {
+    "name": "Lake Map",
+    "category": [
+      "Map"
+    ],
+    "useful": true,
+    "id": 167
+  },
+  {
+    "name": "Eldin Map",
+    "category": [
+      "Map"
+    ],
+    "useful": true,
+    "id": 168
+  },
+  {
+    "name": "Akkala Map",
+    "category": [
+      "Map"
+    ],
+    "useful": true,
+    "id": 169
+  },
+  {
+    "name": "Lanayru Map",
+    "category": [
+      "Map"
+    ],
+    "useful": true,
+    "id": 170
+  },
+  {
+    "name": "Hateno Map",
+    "category": [
+      "Map"
+    ],
+    "useful": true,
+    "id": 171
+  },
+  {
+    "name": "Faron Map",
+    "category": [
+      "Map"
+    ],
+    "useful": true,
+    "id": 172
+  },
+  {
+    "name": "Ridgeland Map",
+    "category": [
+      "Map"
+    ],
+    "useful": true,
+    "id": 173
   }
 ]

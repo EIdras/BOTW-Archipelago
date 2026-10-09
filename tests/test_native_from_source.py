@@ -103,6 +103,9 @@ print(a.name)
                     self.assertEqual(composed.count(old_limit), 1)
                     composed = composed.replace(
                         old_limit, f'    cmpwi r12, {_TYPE_LIMIT}\n    bge   apSelFinish')
+                    # And the map opening's fallback of the tower maps, in every pack.
+                    from tools.build_tower_maps_native import patch_injection as tower_maps
+                    composed = tower_maps(composed, icons=False)
                     self.assertEqual(code(raw.decode('utf-8')), code(composed))
                 else:
                     self.assertEqual(digest(raw), manifest['native_files'][Path(name).name])

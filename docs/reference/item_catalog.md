@@ -6,9 +6,10 @@ classification; [`data/item_map.json`](../../data/item_map.json) defines what ea
 
 ## Pool size
 
-112 items are declared, completed with drawn filler up to the number of locations: 152 locations without the shop
-options (40 filler items), up to 212 with two items in every shop and all 28 stall items (100). `Defeat Calamity Ganon` is
-the victory location and holds no item.
+126 items are declared, the 14 maps among them (`tower_maps`: none on `vanilla`), completed with drawn filler up to
+the number of locations: 152 locations without the shop options (27 filler items with the default options, one map
+given at the start; 40 with `tower_maps` on `vanilla`), up to 212 with two items in every shop and all 28 stall items
+(87). `Defeat Calamity Ganon` is the victory location and holds no item.
 
 ## Progression and equipment
 
@@ -30,6 +31,7 @@ the victory location and holds no item.
 | Master Cycle Zero | 1 | the motorcycle (DLC 2), as a rune: the Sheikah Slate's download screen (type 5, as `Demo645_0` gives it, without equipping it), then its flag; the rune in hand stays selected, and with none, the client has the game select the motorcycle as the inventory does (owned but unselected, the Slate had no module to use); its tank is full |
 | Epona | 1 | registered at the stables in the first free slot, under her name in the game's language (her actor's, for Cemu's console language), with her saddle and bridle, as a stable registers her, through the game's own GameData setters ([`botw_client/horse_stable.py`](../../botw_client/horse_stable.py)); the entry then sets `Horse_Is_Registration`. Stables full: created by Link as the amiibo creates her, the first time only |
 | Travel Medallion, Korok Mask | 1 each | the medallion and the mask (DLC 1), with their get window |
+| Hebra, Tabantha, Gerudo, Wasteland, Woodland, Central, Dueling Peaks, Lake, Eldin, Akkala, Lanayru, Hateno, Faron, Ridgeland Map | 1 each (`tower_maps`) | the tower's flag `MapTower_NN`, which the game's map reads to show its area, then the map's opening as after a tower ([ap_messages.md](ap_messages.md)); its silent twin sets the flag only. The towers of such a seed save their own flag, `APTower_NN`, instead ([`botw_patch/tower_maps.py`](../../botw_patch/tower_maps.py)): activating one counts as its location and opens its travel point, without revealing its map; the map's tower icons read that flag too (a native patch, [`tools/build_tower_maps_native.py`](../../tools/build_tower_maps_native.py)), the Great Plateau's excepted. Progression with `region_keys` |
 | Barbarian, Ancient, Radiant Set | 1 each | the three pieces of the set |
 | Weapon, Bow, Shield Pouch Upgrade | 4, 3, 4 | one of Hestu's upgrades (`Npc_OldKorok`): his next upgrade flag, one more slot, then his pouch screen when Link holds an item of that pouch (in an empty pouch the screen played on another page: the slot comes quietly and the tab shows, already grown, with the first item); he offers one fewer, so the pouch never passes the game's maximum, and once he has given them all the item adds nothing |
 

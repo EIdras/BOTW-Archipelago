@@ -101,6 +101,11 @@ def encode(data) -> bytes:
     return (json.dumps(data, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode("utf-8")
 
 
+def tower_maps(status: dict | None) -> bool:
+    """The slot's maps are items (the world's tower_maps, items or region_keys)."""
+    return bool(status and status.get("slot_data", {}).get("tower_maps"))
+
+
 def generate(content: Path, binding_token: int, shops: list | None = None,
              status: dict | None = None, aoc: Path | None = None
              ) -> tuple[dict[str, bytes], dict, list[dict]]:
@@ -247,6 +252,11 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
         files, edits = status_item.generate(files, content, status)
         changes.extend(edits)
         catalog["status_item"] = {"entry": status_item.ENTRY, "actor": status_item.ACTOR}
+    if tower_maps(status):
+        # The maps are items: the towers keep their own flag (botw_patch/tower_maps.py).
+        from botw_patch import tower_maps as tower_stage
+        files, edits = tower_stage.generate(files, aoc if aoc is not None else default_aoc(content))
+        changes.extend(edits)
     # Vilia's lines at the price she now asks (botw_patch/gerudo_outfit.py).
     files, edits = gerudo_outfit.generate_texts(files, content)
     changes.extend(edits)
@@ -298,6 +308,14 @@ def build(content: Path, output: Path, *, binding_token: int, shops: list | None
         manifest["input_hashes"] = {**manifest["input_hashes"], **status_item.INPUT_HASHES}
         manifest["source_hashes"].update({name: digest((ROOT / name).read_bytes())
                                           for name in status_item.SOURCE_FILES})
+    if tower_maps(status):
+        # Only for seeds whose maps are items, so that the others keep their identity.
+        from botw_patch import stalls, tower_maps as tower_stage
+        manifest["tower_maps"] = sorted(tower_stage.FLAGS)
+        manifest["input_hashes"] = {**manifest["input_hashes"], **{
+            stalls.AOC_PREFIX + tower_stage.unit(cell): sha for cell, sha in tower_stage.MAP_HASHES.items()}}
+        manifest["source_hashes"].update({name: digest((ROOT / name).read_bytes())
+                                          for name in tower_stage.SOURCE_FILES})
     build_id = digest(encode(manifest))[:16]
     manifest["build_id"] = build_id
     outputs = {pack_path(name): raw for name, raw in files.items()}

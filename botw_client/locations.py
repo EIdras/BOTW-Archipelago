@@ -4,7 +4,7 @@ from __future__ import annotations
 import csv
 import time
 import zlib
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import numpy as np
@@ -23,10 +23,21 @@ MASTER_CSV = ROOT / "data" / "locations_master.csv"
 # slot_data["world_schema"].
 SCHEMA_LOCATION_COUNTS = {1: 149, 2: 153, 3: 185, 4: 213}
 WORLD_SCHEMA = 4
+# The Great Plateau's tower reveals its own map: its map is no item.
+PLATEAU_TOWER_FLAG = "MapTower_07"
 # Locations tracked by a saved s32 of their own (APShop_<id>), present only
 # in packs built for a seed that has them.
 CUSTOM_CATEGORIES = (SHOP_CATEGORY, STALL_CATEGORY)
 EXPECTED_LOCATION_COUNT = SCHEMA_LOCATION_COUNTS[WORLD_SCHEMA]
+
+
+def tower_activation_flag(map_flag: str) -> str:
+    """The saved bool a tower's own objects follow in a pack where its map is an
+    item (botw_patch/tower_maps.py): MapTower_NN then only shows the map, and
+    this flag, set when the tower is activated, is its location."""
+    if not map_flag.startswith("MapTower_"):
+        raise ValueError(f"not a tower flag: {map_flag}")
+    return "APTower_" + map_flag[len("MapTower_"):]
 
 
 @dataclass(frozen=True)
@@ -38,6 +49,17 @@ class LocationTarget:
     # Custom flags exist only in packs built with them (shops of a seed that
     # has them): absent from the game, the location is simply not tracked.
     optional: bool = False
+    # A custom flag a pack may track this location by instead (a tower whose map
+    # is an item: tower_activation_flag), when the game has it.
+    pack_flag: str | None = None
+
+    @property
+    def pack_hash(self) -> int | None:
+        return zlib.crc32(self.pack_flag.encode()) if self.pack_flag else None
+
+    def in_pack(self) -> "LocationTarget":
+        """The target as a pack that declares pack_flag tracks it."""
+        return replace(self, flag=self.pack_flag, hash_u32=self.pack_hash, optional=True, pack_flag=None)
 
 
 def load_targets(path: Path = MASTER_CSV,
@@ -55,9 +77,11 @@ def load_targets(path: Path = MASTER_CSV,
         if not row.get("gamedata_flag") or not row.get("flag_hash"):
             raise ValueError(f"location without GameData: {row.get('name')}")
         shop = row["category"] in CUSTOM_CATEGORIES
+        tower = row["category"] == "Tower" and row["gamedata_flag"] != PLATEAU_TOWER_FLAG
         targets.append(LocationTarget(
             row["name"], row["gamedata_flag"], int(row["flag_hash"]) & 0xFFFFFFFF,
-            SHOP_FLAG_KIND if shop else "bool", optional=shop))
+            SHOP_FLAG_KIND if shop else "bool", optional=shop,
+            pack_flag=tower_activation_flag(row["gamedata_flag"]) if tower else None))
     if len({target.name for target in targets}) != len(targets):
         raise ValueError("duplicate location names")
     if len({target.hash_u32 for target in targets}) != len(targets):
@@ -105,6 +129,11 @@ class LocationTracker:
 
         def in_live(target):
             return target.hash_u32 in live_index.get(target.kind, {})
+
+        # A pack where the towers' maps are items declares their activation
+        # flags: a tower is then that flag, MapTower_NN being its map.
+        self.targets = [target.in_pack() if target.pack_flag and target.pack_hash in live_index.get("bool", {})
+                        else target for target in self.targets]
 
         # Custom (optional) flags: live GameData only, and only when present.
         self.unavailable = [target.name for target in self.targets

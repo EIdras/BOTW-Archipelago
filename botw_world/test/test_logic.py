@@ -2,9 +2,15 @@ from . import BotwTestBase
 from ..catalog import CLIMATES, ITEMS, LOCATIONS, LOGIC, PLATEAU_RUNES, RUNES, required_items
 
 TERMINALS = ("Magnesis Terminal", "Remote Bombs Terminal", "Stasis Terminal", "Cryonis Terminal")
+# The logic of the locations themselves; the maps as region keys: test_maps.py.
+MAPLESS = {"tower_maps": "vanilla"}
 
 
-class TestGreatPlateau(BotwTestBase):
+class LogicTestBase(BotwTestBase):
+    options = MAPLESS
+
+
+class TestGreatPlateau(LogicTestBase):
     def test_terminals_need_nothing(self) -> None:
         for terminal in TERMINALS:
             self.assertTrue(self.can_reach_location(terminal), terminal)
@@ -22,19 +28,19 @@ class TestGreatPlateau(BotwTestBase):
         self.assertTrue(self.can_reach_region("Hateno"))
 
 
-class TestShrinesOutsideThePlateau(BotwTestBase):
+class TestShrinesOutsideThePlateau(LogicTestBase):
     def test_a_temperate_shrine_needs_the_paraglider_and_its_runes(self) -> None:
         self.assertEqual(LOGIC["Kam Urog Shrine"]["climate"], "none")
         self.assertAccessDependency(["Kam Urog Shrine"], [["Paraglider", *RUNES]], only_check_listed=True)
 
 
-class TestEitherWay(BotwTestBase):
+class TestEitherWay(LogicTestBase):
     def test_either_rune_opens_a_shrine_with_two_ways(self) -> None:
         self.assertEqual(LOGIC["Maka Rah Shrine"]["runes"], "Magnesis/Stasis")
         self.assertAccessDependency(["Maka Rah Shrine"], [["Magnesis", "Stasis"]], only_check_listed=True)
 
 
-class TestWhatTheGameBlocks(BotwTestBase):
+class TestWhatTheGameBlocks(LogicTestBase):
     def reach_with(self, location: str, *names: str) -> bool:
         self.collect_by_name(["Paraglider", *RUNES, *names])
         return self.can_reach_location(location)
@@ -63,8 +69,8 @@ class TestWhatTheGameBlocks(BotwTestBase):
         self.assertTrue(self.can_reach_location("Divine Beast Vah Ruta"))
 
 
-class TestGerudoTown(BotwTestBase):
-    options = {"stall_items": 28}
+class TestGerudoTown(LogicTestBase):
+    options = {**MAPLESS, "stall_items": 28}
 
     def test_the_guards_and_vah_naboris_need_the_gerudo_outfit(self) -> None:
         self.collect_by_name(["Paraglider", *RUNES])
@@ -82,8 +88,8 @@ class TestGerudoTown(BotwTestBase):
         self.assertTrue(self.can_reach_location("Misae Suma Shrine"))
 
 
-class TestTarreyTown(BotwTestBase):
-    options = {"stall_items": 28}
+class TestTarreyTown(LogicTestBase):
+    options = {**MAPLESS, "stall_items": 28}
 
     def test_its_arrow_stall_comes_through_the_southern_mine(self) -> None:
         self.collect_by_name(["Paraglider", *RUNES])
@@ -92,7 +98,7 @@ class TestTarreyTown(BotwTestBase):
         self.assertTrue(self.can_reach_location("Tarrey Town - Arrow Stall Item 1"))
 
 
-class TestClassification(BotwTestBase):
+class TestClassification(LogicTestBase):
     def test_progression_items_are_exactly_those_the_logic_names(self) -> None:
         # Archipelago's rule (docs/world api.md): an item a rule names must be
         # progression; and one no rule names is not, or balancing hurries it early.
@@ -107,7 +113,7 @@ class TestClassification(BotwTestBase):
                 self.assertLessEqual(set(group), names)
 
 
-class TestMasterSword(BotwTestBase):
+class TestMasterSword(LogicTestBase):
     def test_the_master_sword_needs_ten_heart_containers(self) -> None:
         self.collect_by_name("Paraglider")
         hearts = self.get_items_by_name("Heart Container")
@@ -117,11 +123,11 @@ class TestMasterSword(BotwTestBase):
         self.assertTrue(self.can_reach_location("Master Sword Pedestal"))
 
 
-HARD = {"sanctum_divine_beasts": 0, "sanctum_shrines": 0,
+HARD = {**MAPLESS, "sanctum_divine_beasts": 0, "sanctum_shrines": 0,
         "sanctum_master_sword": False, "sanctum_runes": False}
 
 
-class TestSanctumByDefault(BotwTestBase):
+class TestSanctumByDefault(LogicTestBase):
     def test_the_defaults_are_the_medium_preset(self) -> None:
         from ..options import PRESETS
         for option, value in PRESETS["Medium"].items():
@@ -129,7 +135,7 @@ class TestSanctumByDefault(BotwTestBase):
         self.assertTrue(self.get_item_by_name("Master Sword").advancement)
 
 
-class TestSanctumOpen(BotwTestBase):
+class TestSanctumOpen(LogicTestBase):
     options = HARD
 
     def test_ganon_is_there_as_soon_as_link_leaves_the_plateau(self) -> None:
@@ -138,7 +144,7 @@ class TestSanctumOpen(BotwTestBase):
         self.assertTrue(self.can_reach_location("Defeat Calamity Ganon"))
 
 
-class TestSanctumMasterSword(BotwTestBase):
+class TestSanctumMasterSword(LogicTestBase):
     options = {**HARD, "sanctum_master_sword": True}
 
     def test_the_master_sword_is_asked_and_becomes_a_key_item(self) -> None:
@@ -149,7 +155,7 @@ class TestSanctumMasterSword(BotwTestBase):
         self.assertTrue(self.can_reach_location("Defeat Calamity Ganon"))
 
 
-class TestSanctumRunes(BotwTestBase):
+class TestSanctumRunes(LogicTestBase):
     options = {**HARD, "sanctum_runes": True}
 
     def test_the_four_runes_are_asked(self) -> None:
@@ -159,7 +165,7 @@ class TestSanctumRunes(BotwTestBase):
         self.assertTrue(self.can_reach_location("Defeat Calamity Ganon"))
 
 
-class TestSanctumDivineBeast(BotwTestBase):
+class TestSanctumDivineBeast(LogicTestBase):
     options = {**HARD, "sanctum_divine_beasts": 1}
 
     def test_one_divine_beast_then_ganon(self) -> None:
@@ -170,7 +176,7 @@ class TestSanctumDivineBeast(BotwTestBase):
         self.assertTrue(self.can_reach_location("Defeat Calamity Ganon"))
 
 
-class TestPresets(BotwTestBase):
+class TestPresets(LogicTestBase):
     def test_every_preset_sets_options_of_the_world(self) -> None:
         from ..options import PRESETS, BotwOptions
         for name, preset in PRESETS.items():

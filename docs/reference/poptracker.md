@@ -32,7 +32,9 @@ game, so that no file of the game is in the repository.
 - **Logic**: `botw_world/catalog.requirements`, the world's own, generated into `scripts/data.lua`; a location is
   reachable when each of its groups is met by one of its items. An event "Freed - Divine Beast X" counts as the world
   counts it, the beast reachable (its own groups), not checked: a heart container is picked up before the beast's
-  control unit. Ganon's square follows the sanctum's requirements of the slot data, which count, as the game's gate
+  control unit. The region maps (`catalog.map_keys`, `MAP_KEYS` in `data.lua`) are an optional rule in brackets,
+  `[$botw_maps|<id>]`: when the slot data's `tower_maps` is `region_keys` (2) and a map is missing, the location is a
+  sequence break (yellow), possible but out of logic. The maps have their own two rows in the item grid. Ganon's square follows the sanctum's requirements of the slot data, which count, as the game's gate
   does, the Divine Beasts freed and the shrines cleared: their squares, checked by Archipelago or by hand. Ganon is no
   AP location: his square is checked when the server's status of the slot (`_read_client_status_<team>_<slot>`, read
   and watched) says the goal is reached. Once a slot is released (on its goal, with the room's default), every

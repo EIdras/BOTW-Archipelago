@@ -31,6 +31,25 @@ function botw_access(id)
     return groups == nil or met(groups)
 end
 
+-- The maps as region keys (slot data tower_maps 2, region_keys): a location
+-- is in logic once its maps are received; without them, its rule's bracket
+-- makes it a sequence break, possible but out of logic.
+function botw_maps(id)
+    if tonumber(SLOT_DATA.tower_maps) ~= 2 then
+        return true
+    end
+    local maps = MAP_KEYS[tonumber(id)]
+    if maps == nil then
+        return true
+    end
+    for _, code in ipairs(maps) do
+        if Tracker:ProviderCountForCode(code) < 1 then
+            return false
+        end
+    end
+    return true
+end
+
 function botw_in_seed(id)
     return SEED_LOCATIONS == nil or SEED_LOCATIONS[tonumber(id)] == true
 end

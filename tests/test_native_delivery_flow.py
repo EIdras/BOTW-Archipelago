@@ -20,7 +20,7 @@ SOURCE = ROOT / ".build/ledger-validation/4e60affc56def09f/content"
 class NativeDeliveryCompilationTests(unittest.TestCase):
     def test_catalog_covers_verified_action_families_only(self):
         entries, unsupported = compile_native_entries()
-        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 182)
+        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 196)
         self.assertEqual(set(unsupported), set())
         self.assertEqual(len({entry.entry_name for entry in entries}), len(entries))
         self.assertTrue(all(entry.plan.mutations for entry in entries))
@@ -140,6 +140,39 @@ class NativeDeliveryGraphTests(unittest.TestCase):
         return next(entry for entry in self.specs
                     if entry.item_name == item and entry.step == step
                     and entry.progressive_tier == tier)
+
+    def test_a_map_sets_its_flag_then_the_map_opens_as_after_a_tower(self):
+        spec = self.spec("Hebra Map")
+        self.assertEqual(host_of(spec), "Demo007_1")
+        events = graph_snapshot(read_flow(self.patched))["events"]
+        stem, mut = spec.entry_name, spec.entry_name + "_Mut0"
+        chain = [mut, mut + "_Download", mut + "_Settle", mut + "_Open", mut + "_Wait", mut + "_Voice",
+                 mut + "_Close", mut + "_Away", mut + "_Idle", mut + "_After", mut + "_Clear", stem + "_Commit"]
+        self.assertEqual(events[stem + "_GuardON"]["nxt"], chain[0])
+        for name, following in zip(chain, chain[1:]):
+            self.assertEqual(events[name]["nxt"], following, name)
+        self.assertEqual(events[mut]["params"], {"FlagName": "MapTower_01", "IsWaitFinish": True})
+        self.assertEqual(events[mut + "_Download"]["params"], {"FlagName": "IsDownloadDemo", "IsWaitFinish": True})
+        opening = events[mut + "_Open"]
+        self.assertEqual((opening["actor"], opening["actor_action"], opening["params"]),
+                         ("EventSystemActor", "Demo_StartMapOpenDemo", {"IsWaitFinish": True, "IsPlayerClose": False}))
+        self.assertEqual((events[mut + "_Wait"]["actor"], events[mut + "_Wait"]["params"]),
+                         ("EventSystemActor[01]", {"IsWaitFinish": True, "Frame": 240}))
+        self.assertEqual((events[mut + "_Voice"]["actor"], events[mut + "_Voice"]["params"]["MessageId"]),
+                         ("NPC_DRCVoice", "DemoMsg/Demo004_0:Demo004_0_Text026"))
+        self.assertEqual(events[mut + "_Close"]["actor_action"], "Demo_CloseItemMenu")
+        self.assertEqual(events[mut + "_Away"]["params"]["ASName"], "SheikPadSetOff")
+        self.assertEqual((events[mut + "_Clear"]["actor_action"], events[mut + "_Clear"]["params"]),
+                         ("Demo_FlagOFF", {"FlagName": "IsDownloadDemo", "IsWaitFinish": True}))
+
+    def test_a_maps_twin_sets_its_flag_only(self):
+        twin = next(s for s in self.specs if s.item_name == "Hebra Map" and s.quiet)
+        self.assertEqual(host_of(twin), QUIET_FLOW)
+        events = graph_snapshot(read_flow(self.quiet))["events"]
+        stem = twin.entry_name
+        self.assertEqual((events[stem + "_Mut0"]["params"], events[stem + "_Mut0"]["nxt"]),
+                         ({"FlagName": "MapTower_01", "IsWaitFinish": True}, stem + "_Commit"))
+        self.assertNotIn(stem + "_Mut0_Open", events)
 
     def test_silent_twins_live_in_a_resident_non_demo_flowchart(self):
         # The twins' host is the resident OperationGuide (see

@@ -117,7 +117,7 @@ def _verified_seed(report_path: Path, slot: int, archive: Path | None = None) ->
             or manifest.get("seed") != identity["seed"]
             or manifest.get("slot_name") != report["audit"]["slots"][str(slot)]
             or manifest.get("slot_data", {}).get("world_schema") not in (2, 3, 4)
-            or manifest.get("slot_data", {}).get("client_schema") not in (3, 4, 5, 6, 7, 8, 9)
+            or manifest.get("slot_data", {}).get("client_schema") not in (3, 4, 5, 6, 7, 8, 9, 10)
             or manifest.get("data_package_checksum", identity["data_package_checksum"])
             != identity["data_package_checksum"]):
         raise ValueError("AP slot manifest identity/schema mismatch")
@@ -174,7 +174,8 @@ def build(content: Path, rpx: Path, report: Path, slot: int, output: Path, *,
     # temporary folder takes it, rather than failing the pack.
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp:
         work = Path(temp)
-        native_dir = native.build(rpx, work / "native", resource_gate=resource_gate, event_gate=event_gate)
+        native_dir = native.build(rpx, work / "native", resource_gate=resource_gate, event_gate=event_gate,
+                                  tower_maps=bool(slot_data.get("slot_data", {}).get("tower_maps")))
         resource_dir = resources.build(content, work / "resources", binding_token=binding["token"],
                                        shops=shops, status=slot_data)
         nm = json.loads((native_dir / "manifest.json").read_text(encoding="utf-8"))

@@ -297,6 +297,20 @@ Archipelago affiche les noms anglais du jeu. Voici leurs équivalents dans le je
 | Ancient Bridle | Filet archéonique |
 | Ancient Saddle | Selle archéonique |
 | Epona | Épona |
+| Hebra Map | Carte (Tour d'Hébra) |
+| Tabantha Map | Carte (Tour de Tabanta) |
+| Gerudo Map | Carte (Tour Gerudo) |
+| Wasteland Map | Carte (Tour des landes sauvages) |
+| Woodland Map | Carte (Tour sylvestre) |
+| Central Map | Carte (Tour de la plaine) |
+| Dueling Peaks Map | Carte (Tour des monts Géminés) |
+| Lake Map | Carte (Tour du lac) |
+| Eldin Map | Carte (Tour d'Ordinn) |
+| Akkala Map | Carte (Tour d'Akkala) |
+| Lanayru Map | Carte (Tour de Lanelle) |
+| Hateno Map | Carte (Tour d'Elimith) |
+| Faron Map | Carte (Tour de Firone) |
+| Ridgeland Map | Carte (Tour des collines) |
 | Barbarian Set | Casque barbare, Gilet barbare, Culotte barbare |
 | Ancient Set | Casque archéonique, Plastron archéonique, Jambières archéoniques |
 | Radiant Set | Masque nox, Combinaison nox, Chausses nox |

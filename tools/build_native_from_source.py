@@ -26,7 +26,7 @@ SOURCE_FILES = (
     'tools/build_world_heart_withhold.py', 'tools/build_hero_soul_restore_withhold.py',
     'tools/build_event_request_trace.py', 'tools/build_ui_lifecycle.py',
     'tools/build_request_reject_trace.py', 'tools/build_tip_channel.py',
-    'botw_client/tip_protocol.py',
+    'botw_client/tip_protocol.py', 'tools/build_tower_maps_native.py',
 )
 
 
@@ -38,8 +38,10 @@ def encode(data):
     return (json.dumps(data, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode('utf-8')
 
 
-def generate(*, resource_gate=False, event_gate=False):
-    """Pure native assembly generation; no dump, candidate or Cemu access."""
+def generate(*, resource_gate=False, event_gate=False, tower_maps=False):
+    """Pure native assembly generation; no dump, candidate or Cemu access.
+    tower_maps: the seed's maps are items, the towers' icons read APTower_NN
+    (tools/build_tower_maps_native.py; the map opening's fallback is in every pack)."""
     from tools.build_scoped_text import scoped_source
     from tools.build_owned_presentation import patch_native, owner_source
     from tools.build_rune_selection_sync import patch_injection as rune
@@ -61,6 +63,8 @@ def generate(*, resource_gate=False, event_gate=False):
     # The AP journal in the game's tip frame.
     from tools.build_tip_channel import compose as tip_channel
     injection = tip_channel(injection)
+    from tools.build_tower_maps_native import patch_injection as tower_maps_stage
+    injection = tower_maps_stage(injection, icons=tower_maps)
     from tools.patch_lint import lint
     problems = lint(injection)
     if problems:
@@ -74,11 +78,11 @@ def generate(*, resource_gate=False, event_gate=False):
     }
 
 
-def build(rpx: Path, output: Path, *, resource_gate=False, event_gate=False) -> Path:
+def build(rpx: Path, output: Path, *, resource_gate=False, event_gate=False, tower_maps=False) -> Path:
     raw = rpx.read_bytes()
     if digest(raw) != RPX_SHA256:
         raise ValueError('incompatible RPX: provide the verified Wii U EUR v208 dump')
-    files = generate(resource_gate=resource_gate, event_gate=event_gate)
+    files = generate(resource_gate=resource_gate, event_gate=event_gate, tower_maps=tower_maps)
     source_hashes = {name: digest((ROOT / name).read_bytes()) for name in SOURCE_FILES}
     hashes = {name: digest(data) for name, data in sorted(files.items())}
     manifest = {
@@ -88,7 +92,8 @@ def build(rpx: Path, output: Path, *, resource_gate=False, event_gate=False) -> 
         'source_hashes': source_hashes, 'files': hashes,
         'options': {'owned_presentation': 2, 'retired_executor_guard': True,
                     'tip_channel': True,
-                    'resource_gate': resource_gate, 'event_gate': event_gate, 'gameplay_aids': False},
+                    'resource_gate': resource_gate, 'event_gate': event_gate, 'gameplay_aids': False,
+                    'tower_map_icons': tower_maps},
         'runtime_files': sorted(n for n in files if n.startswith('runtime/')),
         'optional_diagnostics': sorted(n for n in files if n.startswith('diagnostics/')),
         'limits': ['resources_and_seed_binding_not_built',

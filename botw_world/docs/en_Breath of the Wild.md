@@ -49,6 +49,7 @@ Opening Beedle's list, or looking at a stall's jewel, hints the items for sale t
 - Pouch upgrades: 4 for weapons, 3 for bows, 4 for shields (each one of Hestu's, who offers one fewer)
 - The Master Cycle Zero (The Champions' Ballad), the Travel Medallion and the Korok Mask (The Master Trials)
 - Epona, registered at the stables: take her out at any of them
+- The maps of the 14 regions (all but the Great Plateau's), with the `tower_maps` option: see below
 - Spirit Orbs, Ancient Cores, Star Fragments, Fairies (the Koroks still give their seeds, as in the game)
 - Filler: arrows (normal, fire, ice, shock, bomb, ancient), elixirs, weapons, gems and rupees
 - Weapons, bows and shields: 83 of the game's, from the soldiers' to the Lynels', elemental and ancient ones, a few
@@ -103,6 +104,28 @@ its rune, and leaving it needs the Paraglider. Beyond, the logic asks only for w
 Only what these rules name is progression; the champions' abilities, the other armor, the climbing gear and the
 stamina vessels help without being required, and come wherever the seed puts them.
 
+## What do the region maps do?
+
+A tower reveals one area of the game's map; each location belongs to the region of the tower whose map shows it. The
+`tower_maps` option makes these maps items:
+
+- `region_keys` (the default): the 14 maps, all but the Great Plateau's, are items. A region's locations are in the
+  logic once its map is received; so are the locations whose quest goes through another region, with that region's
+  map too: Tarrey Town's arrow stall (its quest recruits in Eldin, the Wasteland and Tabantha) and Shoqa Tatone
+  (its quest wants pictures of Guardians, taken with the camera Purah gives in Hateno, of the kinds that roam
+  Central Hyrule). The towers, the Great Plateau and Calamity Ganon need no map. Nothing is locked in the game: a
+  location done without its map counts all the same, it was just out of the logic. The trackers show such a
+  location as possible but out of logic: "glitched" in Universal Tracker, a sequence break (yellow) in PopTracker.
+- `items`: the maps are items, but the logic does not ask for them.
+- `vanilla`: as in the game, each tower reveals its own map; no map is an item.
+
+With the maps as items, climbing a tower still counts as its location and opens its travel point, but no longer
+reveals the map: a map received does, with the game's own animation of a map opening.
+
+The `starting_map` option gives Link one map at the start, so that a region is open besides the towers: `gentle`
+(the default) draws one of the regions the game leads to first (Dueling Peaks, Hateno, Lake or Faron), `any` one of
+the 14, `none` no map. A given map is started with through `start_inventory` instead, with `starting_map` on `none`.
+
 ## How are the weapons spread?
 
 The `weapon_order` option orders the weapons wherever they land in the multiworld, by the logic's spheres:
@@ -112,8 +135,9 @@ The `weapon_order` option orders the weapons wherever they land in the multiworl
   among the first;
 - `anywhere`: wherever the fill put them, a treasure on the Great Plateau too.
 
-The jokes come anywhere. Alone in a game, the first sphere past the Great Plateau holds most of Hyrule: the Plateau
-gets the weakest weapons, the strongest wait behind the last items, and the rest is mixed.
+The jokes come anywhere. Alone in a game, without the region maps as keys, the first sphere past the Great Plateau
+holds most of Hyrule: the Plateau gets the weakest weapons, the strongest wait behind the last items, and the rest is
+mixed. With them, each map opens a sphere of its own, and the weapons grow region after region.
 
 ## What does DeathLink do?
 

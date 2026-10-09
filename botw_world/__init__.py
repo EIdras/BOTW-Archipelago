@@ -12,9 +12,9 @@ from worlds.AutoWorld import WebWorld, World
 from Options import OptionError
 from rule_builder.rules import And, Has, HasAll, HasAny, HasFromList, Or, Rule, True_
 
-from .catalog import (FILLER, GAME, GOAL_LOCATION, ITEMS, LOCATIONS, TRAPS, WEAPON_LEVELS, WORLD_VERSION,
-                      categories, requirements)
-from .options import OPTION_GROUPS, PRESETS, BotwOptions, WeaponOrder
+from .catalog import (FILLER, GAME, GENTLE_REGIONS, GOAL_LOCATION, ITEMS, LOCATIONS, MAPS, TRAPS, WEAPON_LEVELS,
+                      WORLD_VERSION, categories, map_keys, requirements)
+from .options import OPTION_GROUPS, PRESETS, BotwOptions, StartingMap, TowerMaps, WeaponOrder
 from .slot_file import BotwSlotFile
 
 
@@ -54,7 +54,10 @@ class BotwWorld(World):
     item_name_to_id = {row["name"]: row["id"] for row in ITEMS}
     location_name_to_id = {row["name"]: row["id"] for row in LOCATIONS if row["name"] != GOAL_LOCATION}
     item_name_groups = {"Runes": {"Magnesis", "Remote Bomb", "Stasis", "Cryonis"},
-                        "Weapons": set(WEAPON_LEVELS)}
+                        "Weapons": set(WEAPON_LEVELS), "Maps": set(MAPS.values())}
+    # Universal Tracker shows as "glitched" (out of logic, but possible) what this
+    # item, which only it gives itself, would reach: a region without its map.
+    glitches_item_name = "Region Without Its Map"
     # weapon_order loosely_smoothed: how far, in levels, a weapon may move.
     WEAPON_LEVEL_SPREAD = 1.5
     STALL_IDS = frozenset(r["id"] for r in LOCATIONS if "Stall" in categories(r))
@@ -74,7 +77,7 @@ class BotwWorld(World):
     ut_can_gen_without_yaml = True
     # The options that shape the world, given back by the slot data.
     SLOT_OPTIONS = ("goal", "goal_shrines", "sanctum_divine_beasts", "sanctum_shrines",
-                    "sanctum_master_sword", "sanctum_runes", "beedle_shop_items", "stall_items")
+                    "sanctum_master_sword", "sanctum_runes", "beedle_shop_items", "stall_items", "tower_maps")
     # The stall locations of the slot data, when Universal Tracker regenerates.
     passed_stalls: set[int] | None = None
 
@@ -90,6 +93,10 @@ class BotwWorld(World):
         for name in self.SLOT_OPTIONS:
             if name in passed:
                 getattr(self.options, name).value = passed[name]
+        # A seed of world 0.1 has no maps; the starting map comes back as an item received.
+        if "tower_maps" not in passed:
+            self.options.tower_maps.value = TowerMaps.option_vanilla
+        self.options.starting_map.value = StartingMap.option_none
         # A seed generated before world 0.2.0 does not name its stalls: they are
         # drawn again, and may differ from the seed's.
         if "stall_locations" in passed:
@@ -120,17 +127,27 @@ class BotwWorld(World):
             loc = BotwLocation(self.player, row["name"],
                                None if row["name"] == GOAL_LOCATION else row["id"], region)
             region.locations.append(loc)
-            self.set_rule(loc, self.rule(requirements(row)))
+            self.set_rule(loc, self.location_rule(row))
             if categories(row) & {"Shrine", "Divine Beast"}:
                 # Events counted by the shrine and Divine Beast goals: in the
                 # location's region, with its rule.
                 prefix = "Cleared" if "Shrine" in categories(row) else "Freed"
                 event = BotwLocation(self.player, f"{prefix} - {row['name']}", None, region)
                 event.place_locked_item(BotwItem(event.name, ItemClassification.progression, None, self.player))
-                self.set_rule(event, self.rule(requirements(row)))
+                self.set_rule(event, self.location_rule(row))
                 region.locations.append(event)
         goal = self.multiworld.get_location(GOAL_LOCATION, self.player)
         goal.place_locked_item(BotwItem("Victory", ItemClassification.progression, None, self.player))
+
+    def location_rule(self, row) -> Rule:
+        """A location's rule: its requirements, and with tower_maps on region_keys,
+        its maps (map_keys), or Universal Tracker's stand-in for a missing map."""
+        rule = self.rule(requirements(row))
+        maps = map_keys(row) if self.options.tower_maps == TowerMaps.option_region_keys else ()
+        if not maps:
+            return rule
+        keys = Or(Has(maps[0]) if len(maps) == 1 else HasAll(*maps), Has(self.glitches_item_name))
+        return keys if isinstance(rule, True_) else And(rule, keys)
 
     @staticmethod
     def rule(groups) -> Rule:
@@ -169,9 +186,13 @@ class BotwWorld(World):
         self.set_completion_rule(done)
 
     def create_item(self, name: str) -> BotwItem:
+        if name == self.glitches_item_name:
+            return BotwItem(name, ItemClassification.progression, None, self.player)
         row = next(r for r in ITEMS if r["name"] == name)
-        # A rule names the Master Sword only when the sanctum asks for it.
-        needed = name == "Master Sword" and self.options.sanctum_master_sword
+        # A rule names the Master Sword only when the sanctum asks for it, a map
+        # when the maps are region keys.
+        needed = (name == "Master Sword" and self.options.sanctum_master_sword
+                  or name in MAPS.values() and self.options.tower_maps == TowerMaps.option_region_keys)
         classification = (ItemClassification.progression if row.get("progression") or needed else
                           ItemClassification.useful if row.get("useful") else
                           ItemClassification.trap if row.get("trap") else ItemClassification.filler)
@@ -196,9 +217,24 @@ class BotwWorld(World):
                               "but every trap of trap_weights has a weight of 0")
         return self.random.choices(names, weights=[weights[name] for name in names], k=count)
 
+    def maps(self) -> list[str]:
+        """The maps of the pool, all 14 (tower_maps on items or region_keys) or
+        none, but the one starting_map gives Link at the start."""
+        if self.options.tower_maps == TowerMaps.option_vanilla:
+            return []
+        maps = list(MAPS.values())
+        choice = self.options.starting_map
+        if choice != StartingMap.option_none:
+            regions = GENTLE_REGIONS if choice == StartingMap.option_gentle else sorted(MAPS)
+            start = MAPS[self.random.choice(regions)]
+            self.multiworld.push_precollected(self.create_item(start))
+            maps.remove(start)
+        return maps
+
     def create_items(self) -> None:
         pool = [self.create_item(row["name"]) for row in ITEMS if not row.get("trap")
-                for _ in range(int(row.get("count", 1)))]
+                and row["name"] not in MAPS.values() for _ in range(int(row.get("count", 1)))]
+        pool += [self.create_item(name) for name in self.maps()]
         # Main.py applies start_inventory_from_pool centrally after create_items.
         capacity = len(self.multiworld.get_unfilled_locations(self.player))
         if len(pool) > capacity:
@@ -266,8 +302,9 @@ class BotwWorld(World):
         # 8: the Master Cycle Zero, the Travel Medallion and the Korok Mask, which one of 7 cannot.
         # 9: Epona, registered at the stables, and the Master Cycle Zero selected only when no
         #    rune is, which one of 8 cannot.
+        # 10: the tower maps, as items, which one of 9 cannot deliver nor tell from the towers.
         # stall_locations: the stalls drawn by the seed, for Universal Tracker.
-        return {"client_schema": 9, "world_schema": 4, "world_version": WORLD_VERSION,
+        return {"client_schema": 10, "world_schema": 4, "world_version": WORLD_VERSION,
                 "death_link": bool(self.options.death_link.value),
                 **self.options.as_dict(*self.SLOT_OPTIONS),
                 "stall_locations": sorted(location_id for location_id in self.shop_prices

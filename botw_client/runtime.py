@@ -52,11 +52,14 @@ STATE_SCHEMA = 3
 CLIENT_SCHEMA = 2
 # The client schemas of BOTW seeds this client plays: 4 added the Gerudo Set, 5 the
 # goal and the sanctum's requirements, 6 the new filler, 7 the weapons, 8 the travel items,
-# 9 Epona and the Master Cycle Zero selected only when no rune is.
-BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9)
+# 9 Epona and the Master Cycle Zero selected only when no rune is, 10 the tower maps.
+BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10)
 # The mutations that present the item themselves: no AP window before them.
 VANILLA_WINDOWS = ("get_demo_actor", "champion_actor", "rune_download", "trap", "native_trap",
-                   "get_demo_bundle", "cook", "pouch_slot")
+                   "get_demo_bundle", "cook", "pouch_slot", "map_open")
+# The location of an item Link starts with (the start inventory, a world's
+# starting map): Archipelago's server sends it from player 0, at location -2.
+START_INVENTORY = -2
 TERMINAL_ITEMS = {
     "Magnesis Terminal": "Magnesis",
     "Remote Bombs Terminal": "Remote Bomb",
@@ -795,6 +798,13 @@ class BotwClientRuntime:
                 f"AP cursor #{index}: invalid step {step}/{len(steps)}")
         restored = index < int(self.state.get("delivered_high", 0))
         quiet = restored or self._bulk(index)
+        # A region's map opens on the game's map, which the Slate has only once
+        # the Great Plateau's tower gave it one (a starting map comes right after
+        # the intro): before, its silent twin reveals it, its journal line alone.
+        unmapped = False
+        if not quiet and any(m.get("kind") == "map_open" for m in steps[step].get("mutations", ())):
+            has_map = getattr(self.game, "slate_has_map", None)
+            unmapped = has_map is not None and not await asyncio.to_thread(has_map)
         # A step hosted in the quiet flowchart has no window of its own
         # (Sheikah Sensor, horse gear): given quietly, it is named by the summary.
         catalog_flow = getattr(self.deliveries.backend.catalog, "data", {}).get("flow")
@@ -826,7 +836,7 @@ class BotwClientRuntime:
                 return
         command = DeliveryCommand(
             self._session_identity[0], self._session_identity[2], index, name,
-            step, len(steps), before, quiet=quiet,
+            step, len(steps), before, quiet=quiet or unmapped,
             pickup=self._repeat_filler(index) and not dropped, drop=dropped)
         result = await asyncio.to_thread(self.deliveries.deliver, command)
         if result.status in (DeliveryStatus.APPLIED,
@@ -1710,6 +1720,8 @@ class BotwClientRuntime:
             return None
         name = self.ap.item_name(item) or f"#{item.item}"
         me = self.ap.players.get(self.ap.slot, self.ap.slot_name)
+        if item.player == 0 and item.location == START_INVENTORY:
+            return f"{{2}}{me}{{/}} starts with {{1}}{name}{{/}}"
         if item.player == 0:
             return f"{{1}}{name}{{/}} sent to {{2}}{me}{{/}} by the server"
         sender, game = self.ap.sender(item)

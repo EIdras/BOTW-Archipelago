@@ -509,6 +509,10 @@ class Cave:
         self.sel_type = version_addr + 9280
         self.sel_done = version_addr + 9284
         self.sel_result = version_addr + 9288
+        # The tower maps (tools/build_tower_maps_native.py), after them: the
+        # tower index the next map opening takes when no tower is near.
+        self.map_magic = version_addr + 9292
+        self.map_tower = version_addr + 9296
         # The twelve levels of the call chain, probed at once.
         # Each level: N, r3, r4, r5, r6, r7, Lr -- 7 words.
         self.lvl0 = version_addr + 8568
@@ -1097,6 +1101,19 @@ class Cave:
         fall on code and read without error. The magic word decides.
         """
         return be(self.p.read(self.sel_magic, 4)) == self.SEL_MAGIC
+
+    MAP_MAGIC = 0x4D4F5031  # "MOP1", written by tools/build_tower_maps_native.py
+
+    def map_ready(self):
+        """Has the loaded patch the map opening's fallback? (the magic word, as sel_ready)"""
+        return be(self.p.read(self.map_magic, 4)) == self.MAP_MAGIC
+
+    def set_map_tower(self, index):
+        """The tower index (0..14) the next map opening without a tower near its
+        actor takes, spent by the game; -1: none. False on a patch without it."""
+        if not self.map_ready():
+            return False
+        return bool(self.p.write(self.map_tower, (int(index) & 0xFFFFFFFF).to_bytes(4, "big")))
 
     def request_rune_selection(self, rune_type, timeout=1.0):
         """Have the game call 0x02A2D6D4(*(0x10463798), type).

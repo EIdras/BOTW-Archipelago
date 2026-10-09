@@ -141,7 +141,7 @@ def runtime(tips):
         slot, slot_name, players = ME, "Player", NAMES
         location_names_by_game = {"A Link to the Past": PLACES, "Breath of the Wild": PLACES}
         received_items = {0: NetworkItem(5, 77, ALICE, 1), 1: NetworkItem(6, 12, ME, 1),
-                          2: NetworkItem(5, -1, 0, 0)}
+                          2: NetworkItem(5, -1, 0, 0), 3: NetworkItem(6, -2, 0, 1)}
 
         def render_node(self, node):
             return render(node)
@@ -267,6 +267,8 @@ class ReceivedAnnouncementTests(unittest.TestCase):
                          "Player found their Paraglider (Oman Au Shrine)")
         self.assertEqual(self.announce_and_show(r, 2),
                          "Rupee Bundle sent to Player by the server")
+        # The start inventory (a starting map): from the server, at location -2.
+        self.assertEqual(self.announce_and_show(r, 3), "Player starts with Paraglider")
 
     def test_a_frame_that_stays_taken_does_not_hold_the_item(self):
         # Seen in play: in the heat, the warning kept the tip frame; the item waited.

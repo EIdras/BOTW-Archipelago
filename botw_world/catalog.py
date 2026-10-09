@@ -74,6 +74,16 @@ FILLER = {
 }
 PLATEAU_RUNES = {name: row["runes"] for name, row in LOGIC.items()
                  if name in ("Oman Au Shrine", "Ja Baij Shrine", "Owa Daim Shrine", "Keh Namut Shrine")}
+# The map of each region but the Great Plateau, an item: {region: item}. A tower
+# reveals the area of the game's map named after it (tools/map_regions.py); with
+# tower_maps on region_keys, a region's locations are in logic once its map is in.
+MAPS = {row["name"][:-len(" Map")]: row["name"] for row in ITEMS if "Map" in row.get("category", ())}
+# Regions whose locations need no map: the Plateau, where the game starts, and
+# Hyrule Castle (Ganon), which the sanctum's own options gate.
+MAPLESS_REGIONS = frozenset({"Great Plateau", "Hyrule Castle"})
+# The maps a starting_map of "gentle" draws from: the regions the game itself
+# leads to first, from the Plateau to Kakariko, Hateno and Lake Hylia.
+GENTLE_REGIONS = ("Dueling Peaks", "Hateno", "Lake", "Faron")
 
 
 def categories(row: dict) -> set[str]:
@@ -97,8 +107,18 @@ def requirements(row: dict) -> tuple[tuple[tuple[str, ...], int], ...]:
                (RUNES if runes == "all" else () if runes in ("", "none") else runes.split("|"))]
     for item in filter(None, logic["extra"].split("|")):
         names, _, count = item.partition(":")
-        groups.append((tuple(names.split("/")), int(count or 1)))
+        if names not in MAPS.values():          # maps: map_keys()
+            groups.append((tuple(names.split("/")), int(count or 1)))
     return tuple(groups)
+
+
+def map_keys(row: dict) -> tuple[str, ...]:
+    """The maps a location asks for when the maps are region keys: its region's,
+    but for a tower and the mapless regions, then any its logic.csv extra names
+    (a quest that goes through another region)."""
+    own = () if row["region"] in MAPLESS_REGIONS or "Tower" in categories(row) else (MAPS[row["region"]],)
+    extra = tuple(name for name in LOGIC[row["name"]]["extra"].split("|") if name in MAPS.values())
+    return own + tuple(name for name in extra if name not in own)
 
 
 def required_items(row: dict) -> set[str]:
@@ -114,8 +134,13 @@ def _check_logic() -> None:
                          f"{sorted(set(LOGIC) ^ names)[:5]}")
     items = {row["name"] for row in ITEMS}
     events = {f"Freed - {row['name']}" for row in LOCATIONS if "Divine Beast" in categories(row)}
+    regions = {row["region"] for row in LOCATIONS}
+    if set(MAPS) != regions - MAPLESS_REGIONS:
+        raise ValueError(f"the maps differ from the regions: {sorted(set(MAPS) ^ (regions - MAPLESS_REGIONS))}")
     for row in LOCATIONS:
         logic = LOGIC[row["name"]]
+        if logic["region"] != row["region"]:
+            raise ValueError(f"{row['name']}: data/logic.csv says {logic['region']}, the locations {row['region']}")
         if logic["climate"] not in CLIMATES:
             raise ValueError(f"{row['name']}: unknown climate {logic['climate']!r}")
         runes = logic["runes"]

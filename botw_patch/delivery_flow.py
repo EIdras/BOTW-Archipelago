@@ -124,13 +124,25 @@ VESSEL_ACTIONS = {"Obj_HeartUtuwa_A_01": "Demo_IncreasePlayerMaxHeart",
                   "Obj_StaminaUtuwa_A_01": "Demo_IncreasePlayerMaxStamina"}
 
 
+# A tower's map, as the tower's event ends (Demo004_0, Demo004_0_Common then C11):
+# IsDownloadDemo on (Event545), the map's opening (Event284, Starter<
+# Demo_StartMapOpenDemo>), 240 frames (Event593), the Slate's line "Regional map
+# extracted." (Event672, Text026), the menu closed (Event591), Link puts the
+# Slate away (Demo041_0<SheikPadSetOff>). Measured from the client (09/10): the
+# opening plays once IsDownloadDemo is set and the map rests, then the map stays
+# open until the menu is closed. Without a tower near its actor (EventSystemActor)
+# the opening takes the tower the client wrote (tools/build_tower_maps_native.py).
+MAP_OPEN_FRAMES = 240
+MAP_MESSAGE = "DemoMsg/Demo004_0:Demo004_0_Text026"
+
+
 def quiet_step(plan: DeliveryStep) -> DeliveryStep | None:
     """The same step without the game's get window, when there is one: pouch
     items granted directly, champion powers without their window (pouch,
     equipment, flag), rupees by the game's own Demo_IncreaseRupee (a bare
     GameData counter write does not give them; quests use this action), heart
     containers and stamina vessels by the Horned Statue's action (a bare counter
-    write does not give them either). A rune's twin sets its flag only. A trap's
+    write does not give them either). A rune's or a map's twin sets its flag only. A trap's
     twin has no effect: given back after a reload, a trap is spent, not suffered
     again."""
     traps = [m for m in plan.mutations
@@ -145,10 +157,11 @@ def quiet_step(plan: DeliveryStep) -> DeliveryStep | None:
     if any(m.kind in (MutationKind.COOK, MutationKind.POUCH_SLOT) for m in plan.mutations):
         # The same dish or slot, without its window (the builder reads `quiet`).
         return plan
-    if any(m.kind is MutationKind.RUNE_DOWNLOAD for m in plan.mutations):
+    if any(m.kind in (MutationKind.RUNE_DOWNLOAD, MutationKind.MAP_OPEN) for m in plan.mutations):
         return replace(plan, mutations=tuple(
             DeliveryMutation(MutationKind.SET_BOOL, m.target, True, value_type="bool")
-            if m.kind is MutationKind.RUNE_DOWNLOAD else m for m in plan.mutations))
+            if m.kind in (MutationKind.RUNE_DOWNLOAD, MutationKind.MAP_OPEN) else m
+            for m in plan.mutations))
     rupees = [m for m in plan.mutations if m.kind is MutationKind.GET_DEMO_ACTOR
               and m.target in RUPEE_VALUES]
     if rupees and len(plan.mutations) == 1:
@@ -187,10 +200,10 @@ def drop_step(plan: DeliveryStep) -> DeliveryStep | None:
 
 def shows_window(plan: DeliveryStep) -> bool:
     """The step opens the game's window (GetDemo, champion powers, the rune
-    download screen)."""
+    download screen, the map's opening)."""
     return any(m.kind in (MutationKind.GET_DEMO_ACTOR, MutationKind.CHAMPION_ACTOR,
                           MutationKind.RUNE_DOWNLOAD, MutationKind.GET_DEMO_BUNDLE,
-                          MutationKind.COOK, MutationKind.POUCH_SLOT)
+                          MutationKind.COOK, MutationKind.POUCH_SLOT, MutationKind.MAP_OPEN)
                for m in plan.mutations)
 
 
@@ -541,12 +554,15 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
     if runes:
         action_names += ('Demo_OpenItemDownloadDemo', 'Demo_CloseItemMenu')
     kinds = {m.kind for spec in specs for m in spec.plan.mutations}
+    maps = MutationKind.MAP_OPEN in kinds
     if MutationKind.INCREASE_PORCH in kinds:
         action_names += ('Demo_IncreasePorchItem',)
     if MutationKind.COOK in kinds:
         action_names += ('Demo_SetCookItem', 'Demo_WaitFrame')
     if MutationKind.POUCH_SLOT in kinds:
         action_names += ('Demo_OpenPouchAddStockNum', 'Demo_ClosePouchAddStockNum', 'Demo_WaitFrame')
+    if maps:
+        action_names += ('Demo_StartMapOpenDemo', 'Demo_CloseItemMenu')
     actions = {name: holder(system.actions, name) for name in action_names}
     queries = {"CheckAddPorchItem": holder(
         system.queries, "CheckAddPorchItem")}
@@ -597,7 +613,7 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
         chart.events.append(event)
         return event
 
-    if runes:
+    if runes or maps:
         waiter = actor_of(SLATE_WAITER, ACTOR_PARAMS)
         voice = actor_of(SLATE_VOICE, SLATE_VOICE_PARAMS)
         player = actor_of(PLAYER, PLAYER_PARAMS)
@@ -762,6 +778,29 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
                     check = switch(mut + f"_Check{number:02d}", "CheckFlag", {"FlagName": flag},
                                    check, mark)
                 nxt = check
+            elif mutation.kind is MutationKind.MAP_OPEN:
+                # As a tower's event ends (see MAP_OPEN_FRAMES); IsDownloadDemo
+                # off last, should no opening have consumed it.
+                mut = stem + f"_Mut{index}"
+                clear = action(mut + "_Clear", "Demo_FlagOFF", {
+                    "FlagName": DOWNLOAD_FLAG, "IsWaitFinish": True}, nxt)
+                after = acted(mut + "_After", waiter, "Demo_WaitFrame", {
+                    "IsWaitFinish": True, "Frame": AFTER_SLATE}, clear)
+                idle = acted(mut + "_Idle", player, "Demo_PlayASAdapt", dict(DEMO_WAIT), after)
+                away = acted(mut + "_Away", player, "Demo_PlayASAdapt", dict(SLATE_AWAY), idle)
+                close = action(mut + "_Close", "Demo_CloseItemMenu", {"IsWaitFinish": True}, away)
+                voiced = acted(mut + "_Voice", voice, "Demo_OpenMessageDialog",
+                               {**SLATE_MESSAGE, "MessageId": MAP_MESSAGE}, close)
+                wait = acted(mut + "_Wait", waiter, "Demo_WaitFrame", {
+                    "IsWaitFinish": True, "Frame": MAP_OPEN_FRAMES}, voiced)
+                opening = action(mut + "_Open", "Demo_StartMapOpenDemo", {
+                    "IsWaitFinish": True, "IsPlayerClose": False}, wait)
+                settle = acted(mut + "_Settle", waiter, "Demo_WaitFrame", {
+                    "IsWaitFinish": True, "Frame": DOWNLOAD_SETTLE}, opening)
+                download = action(mut + "_Download", "Demo_FlagON", {
+                    "FlagName": DOWNLOAD_FLAG, "IsWaitFinish": True}, settle)
+                nxt = action(mut, "Demo_FlagON", {
+                    "FlagName": mutation.target, "IsWaitFinish": True}, download)
             elif mutation.kind is MutationKind.INCREASE_RUPEE:
                 # Not waited for: the counter's animation then runs after the
                 # event instead of freezing the player.

@@ -28,6 +28,9 @@ class NativeWorldTests(unittest.TestCase):
 
     def make_world(self, seed=0, players=1, **options):
         from BaseClasses import MultiWorld, CollectionState
+        # The logic of the locations themselves: the maps as region keys are
+        # botw_world/test/test_maps.py's.
+        options.setdefault("tower_maps", 0)
         from worlds.botw import BotwWorld
         mw = MultiWorld(players)
         mw.set_seed(seed, name=f"BOTW-test-{seed}")

@@ -71,8 +71,8 @@ def code(name: str) -> str:
 # --- Items --------------------------------------------------------------------
 
 # Items shown, in rows: (name, icon label, colour). Fillers and traps are not.
-RUNE, ARMOR, CHAMPION, GEAR, LIFE, EVENT = ("#2f6fae", "#3d7a3f", "#b08a2e", "#6b6f7d",
-                                           "#a8323a", "#6d4a9c")
+RUNE, ARMOR, CHAMPION, GEAR, LIFE, EVENT, MAP_COLOUR = ("#2f6fae", "#3d7a3f", "#b08a2e", "#6b6f7d",
+                                                       "#a8323a", "#6d4a9c", "#c07a2a")
 ROWS = [
     [("Paraglider", "GLD", GEAR), ("Magnesis", "MAG", RUNE), ("Remote Bomb", "BOMB", RUNE),
      ("Stasis", "STA", RUNE), ("Cryonis", "CRY", RUNE), ("Sheikah Sensor", "SNS", RUNE)],
@@ -87,6 +87,15 @@ ROWS = [
     [("Heart Container", "HC", LIFE), ("Stamina Vessel", "STAM", LIFE),
      ("Champion's Tunic", "TUN", GEAR), ("Ancient Bridle", "BRDL", GEAR),
      ("Ancient Saddle", "SADL", GEAR)],
+]
+# The tower maps (the world's tower_maps option), in the order of their towers.
+MAP_ROWS = [
+    [("Hebra Map", "HEB", MAP_COLOUR), ("Tabantha Map", "TAB", MAP_COLOUR), ("Gerudo Map", "GER", MAP_COLOUR),
+     ("Wasteland Map", "WST", MAP_COLOUR), ("Woodland Map", "WOOD", MAP_COLOUR), ("Central Map", "CEN", MAP_COLOUR),
+     ("Dueling Peaks Map", "DUEL", MAP_COLOUR)],
+    [("Lake Map", "LAKE", MAP_COLOUR), ("Eldin Map", "ELD", MAP_COLOUR), ("Akkala Map", "AKK", MAP_COLOUR),
+     ("Lanayru Map", "LAN", MAP_COLOUR), ("Hateno Map", "HAT", MAP_COLOUR), ("Faron Map", "FAR", MAP_COLOUR),
+     ("Ridgeland Map", "RDG", MAP_COLOUR)],
 ]
 BEAST_ROW = [("Freed - Divine Beast Vah Ruta", "RUTA"), ("Freed - Divine Beast Vah Rudania", "RUDA"),
              ("Freed - Divine Beast Vah Medoh", "MEDO"), ("Freed - Divine Beast Vah Naboris", "NABO")]
@@ -369,7 +378,7 @@ def items(cat, icons: dict[str, bytes] | None = None) -> tuple[list, dict, dict]
     def image(path, key, label, colour):
         images[path] = icons.get(key) if key in icons else icon(label, colour)
 
-    for name, label, colour in [entry for row in ROWS for entry in row]:
+    for name, label, colour in [entry for row in ROWS + MAP_ROWS for entry in row]:
         item = rows[name]
         item_code = code(name)
         ids[item["id"]] = item_code
@@ -441,6 +450,18 @@ def world_requirements(cat, row: dict) -> tuple:
     return tuple(dict.fromkeys(out))
 
 
+def world_map_keys(cat, row: dict) -> tuple[str, ...]:
+    """map_keys(row), and those of the Divine Beast an event names, as
+    world_requirements counts the beast."""
+    rows = {other["name"]: other for other in cat.LOCATIONS}
+    keys = list(cat.map_keys(row))
+    for names, _count in cat.requirements(row):
+        for name in names:
+            if name.startswith("Freed - "):
+                keys += world_map_keys(cat, rows[name[len("Freed - "):]])
+    return tuple(dict.fromkeys(keys))
+
+
 def crop_box(positions: dict) -> tuple[int, int, int, int]:
     """(left, top, right, bottom) of the map shown, in pixels of the whole map."""
     xs, ys = zip(*(maptex.pixel(x, z, SCALE) for x, z in positions.values()))
@@ -449,10 +470,11 @@ def crop_box(positions: dict) -> tuple[int, int, int, int]:
             min(width, max(xs) + MARGIN), min(height, max(ys) + MARGIN))
 
 
-def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[list, dict, dict]:
-    """locations.json, the AP id -> section path map, and the Lua requirement table."""
+def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[list, dict, dict, dict]:
+    """locations.json, the AP id -> section path map, the Lua requirement table,
+    and the maps each location asks for when the maps are region keys."""
     places: dict[str, dict] = {}
-    sections, requirements = {}, {}
+    sections, requirements, maps = {}, {}, {}
     for row in cat.LOCATIONS:
         name = row["name"]
         kinds = set(row["category"].split("|"))
@@ -475,12 +497,18 @@ def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[l
             section["access_rules"] = [[f"$botw_access|{row['id']}"]]
             requirements[row["id"]] = world_requirements(cat, row)
             sections[row["id"]] = f"@{key}/{name}"
+            keys = world_map_keys(cat, row)
+            if keys:
+                # Optional, in brackets: without its maps, a location is a
+                # sequence break (yellow), not out of reach (botw_maps).
+                section["access_rules"][0].append(f"[$botw_maps|{row['id']}]")
+                maps[row["id"]] = keys
         if kinds & {"Shop", "Stall"}:
             # Shown when the seed has it (one of a place's items is enough).
             section["visibility_rules"] = [[f"$botw_in_seed|{row['id']}"]]
             place.setdefault("visibility_rules", []).append([f"$botw_in_seed|{row['id']}"])
         place["sections"].append(section)
-    return list(places.values()), sections, requirements
+    return list(places.values()), sections, requirements, maps
 
 
 def lua_value(value) -> str:
@@ -495,7 +523,7 @@ def lua_value(value) -> str:
     return "{" + ", ".join(lua_value(v) for v in value) + "}"
 
 
-def data_lua(cat, item_ids: dict, sections: dict, requirements: dict) -> str:
+def data_lua(cat, item_ids: dict, sections: dict, requirements: dict, maps: dict | None = None) -> str:
     def groups(value):
         return [[[code(name) for name in names], count] for names, count in value]
 
@@ -510,6 +538,9 @@ def data_lua(cat, item_ids: dict, sections: dict, requirements: dict) -> str:
              "REQUIREMENTS = {"]
     lines += [f"  [{location_id}] = {lua_value(groups(value))},"
               for location_id, value in sorted(requirements.items())]
+    lines += ["}", "MAP_KEYS = {"]
+    lines += [f"  [{location_id}] = {lua_value([code(name) for name in names])},"
+              for location_id, names in sorted((maps or {}).items())]
     lines += ["}",
               f"GOAL_REQUIREMENTS = {lua_value(groups(cat.requirements(goal)))}",
               # Not an AP location: cleared by the slot's goal status.
@@ -523,6 +554,7 @@ def data_lua(cat, item_ids: dict, sections: dict, requirements: dict) -> str:
 def layouts() -> dict:
     grid = [[code(name) for name, _label, _colour in row] for row in ROWS]
     grid.append([code(name) for name, _ in BEAST_ROW] + ["shrines_cleared"])
+    grid += [[code(name) for name, _label, _colour in row] for row in MAP_ROWS]
     return {
         "item_grid": {"type": "itemgrid", "item_margin": "3,3", "item_size": "40,40",
                       "h_alignment": "center", "rows": grid},
@@ -576,8 +608,8 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
     found = {**ui_icons(update_content()), **game_icons(icons)}
     item_entries, images, item_ids = items(cat, found)
     left, top, right, bottom = crop_box(positions)
-    place_entries, sections, requirements = locations(cat, positions, (left, top))
-    files["scripts/data.lua"] = data_lua(cat, item_ids, sections, requirements).encode()
+    place_entries, sections, requirements, maps = locations(cat, positions, (left, top))
+    files["scripts/data.lua"] = data_lua(cat, item_ids, sections, requirements, maps).encode()
     for kind, colour in DOT.items():
         images[f"images/dots/{code(kind)}.png"] = found.get(f"dot_{code(kind)}", dot(colour, True))
     images["images/dots/opened.png"] = dot("#777777", False)

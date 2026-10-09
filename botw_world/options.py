@@ -96,6 +96,41 @@ class WeaponOrder(Choice):
     default = 2
 
 
+class TowerMaps(Choice):
+    """The map of each region, revealed in the game by its tower.
+    vanilla: as in the game, a tower reveals its region's map.
+    items: the 14 maps (all but the Great Plateau's) are items: a map received
+    reveals its region with the game's own animation, and a tower no longer
+    reveals it (climbing a tower still counts as its location, and opens its
+    travel point). The logic does not change.
+    region_keys: the maps are items, and a region's locations are in the logic once
+    its map is received, as are the locations whose quest goes through another
+    region with that region's map too. Nothing is locked in the game: a location
+    done without its map counts all the same. The towers, the Great Plateau and
+    Calamity Ganon need no map."""
+    display_name = "Tower Maps"
+    option_vanilla = 0
+    option_items = 1
+    option_region_keys = 2
+    default = 2
+
+
+class StartingMap(Choice):
+    """With Tower Maps on items or region_keys, a map Link starts with.
+    none: no map; until one comes, the towers are all the logic outside the Great
+    Plateau.
+    gentle: one of the regions the game leads to first: Dueling Peaks, Hateno,
+    Lake or Faron.
+    any: any of the 14 maps.
+    A given map is started with by start_inventory instead (for example
+    "Hateno Map": 1), with Starting Map on none."""
+    display_name = "Starting Map"
+    option_none = 0
+    option_gentle = 1
+    option_any = 2
+    default = 1
+
+
 class TrapPercentage(Range):
     """Share of the filler (arrows, elixirs, weapons, gems and rupees) that becomes traps,
     chosen among the traps of Trap Weights. 0: no trap. A trap strikes when it is
@@ -133,6 +168,8 @@ class BotwOptions(PerGameCommonOptions):
     stall_items: StallItems
     death_link: DeathLink
     weapon_order: WeaponOrder
+    tower_maps: TowerMaps
+    starting_map: StartingMap
     trap_percentage: TrapPercentage
     trap_weights: TrapWeights
 
@@ -143,6 +180,7 @@ OPTION_GROUPS = [
                 [SanctumDivineBeasts, SanctumShrines, SanctumMasterSword, SanctumRunes]),
     OptionGroup("Shops", [BeedleShopItems, StallItems]),
     OptionGroup("Weapons", [WeaponOrder]),
+    OptionGroup("Maps", [TowerMaps, StartingMap]),
     OptionGroup("Traps", [TrapPercentage, TrapWeights]),
 ]
 

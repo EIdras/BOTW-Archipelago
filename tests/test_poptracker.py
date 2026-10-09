@@ -69,6 +69,25 @@ class PackTests(unittest.TestCase):
             for item in re.findall(r'"([a-z0-9_]+)"', group):
                 self.assertIn(item, codes)
 
+    def test_a_region_without_its_map_is_a_sequence_break(self):
+        sections = {section["name"]: section for place in self.json("locations/locations.json")
+                    for section in place["sections"]}
+        rows = {row["name"]: row for row in self.cat.LOCATIONS}
+        self.assertEqual(sections["Rin Oyaa Shrine"]["access_rules"],
+                         [[f"$botw_access|{rows['Rin Oyaa Shrine']['id']}",
+                           f"[$botw_maps|{rows['Rin Oyaa Shrine']['id']}]"]])
+        for name in ("Hebra Tower", "Oman Au Shrine"):
+            self.assertEqual(sections[name]["access_rules"], [[f"$botw_access|{rows[name]['id']}"]])
+        data = self.pack.read("scripts/data.lua").decode()
+        keys = dict(re.findall(r'\[(\d+)\] = (\{"[a-z_]+_map"[^}]*\})', data.split("MAP_KEYS")[1]))
+        self.assertEqual(keys[str(rows["Tarrey Town - Arrow Stall Item 1"]["id"])],
+                         '{"akkala_map", "eldin_map", "wasteland_map", "tabantha_map"}')
+        codes = {entry["codes"] for entry in self.json("items/items.json") if "codes" in entry}
+        self.assertLessEqual({poptracker.code(name) for name in self.cat.MAPS.values()}, codes)
+        logic = self.pack.read("scripts/logic.lua").decode()
+        self.assertIn("function botw_maps(id)", logic)
+        self.assertIn("SLOT_DATA.tower_maps", logic)
+
     def test_the_manifest_asks_for_archipelago_auto_tracking(self):
         manifest = self.json("manifest.json")
         self.assertEqual(manifest["game_name"], "Breath of the Wild")

@@ -55,6 +55,11 @@ class MutationKind(str, Enum):
     # target its actor, value its mane, saddle and bridle. The stables full, the
     # client creates it by Link instead and the entry's drop twin commits.
     REGISTER_HORSE = "register_horse"
+    # A tower's map: its MapTower_NN flag, which the game's map reads, then the
+    # map's own opening animation, as a tower plays it once activated (Demo004_0,
+    # Starter<Demo_StartMapOpenDemo>; EventSystemActor has the action too). Its
+    # silent twin sets the flag only.
+    MAP_OPEN = "map_open"
     SET_BOOL = "set_bool"
     SET_S32 = "set_s32"
     INCREMENT = "increment"
@@ -168,6 +173,9 @@ def compile_delivery_plan(item_name: str, received_before: int = 0,
     if kind == "pouch_slot":
         return ItemDeliveryPlan(item_name, (DeliveryStep((DeliveryMutation(
             MutationKind.POUCH_SLOT, delivery["pouch"], 1),)),))
+    if kind == "map":
+        return ItemDeliveryPlan(item_name, (DeliveryStep((DeliveryMutation(
+            MutationKind.MAP_OPEN, delivery["flag"], True, value_type="bool"),)),))
     if kind == "getdemo_actor":
         return ItemDeliveryPlan(item_name, (
             DeliveryStep((DeliveryMutation(

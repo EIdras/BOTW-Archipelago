@@ -28,6 +28,8 @@ your own server.
   the Master Sword, the runes; Easy, Medium and Hard presets), and the journal says what is missing.
 - **Logic**: each shrine asks only for the runes its trial needs; the burning zones of Eldin, Gerudo Town and the
   waterfalls of Vah Ruta ask for their armor.
+- **Region maps**: each region's map is an item, revealed with the game's own animation; a region is in the logic
+  once its map is received (an option), and the trackers show the rest as possible but out of logic.
 - **Checks never lost**: locations are the game's own saved flags, sent at the next connection when done offline.
 - **DeathLink** (option): when Link dies, the other DeathLink players die; when one of them dies, Link dies, as he
   would of a lethal blow (Mipha's Grace and fairies still save him).

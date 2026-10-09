@@ -94,6 +94,14 @@ without committing stops the client (possible mutation).
   window, because granting the DLC power through `GetDemo` outside the Ballad crashes the game: in that rare case the
   journal line is the only presentation.
 - **Runes**: the Sheikah Slate's download screen, see below.
+- **Region maps**: as a tower's event ends (`Demo004_0`): the map's flag, `IsDownloadDemo` (the menu consumes it as
+  it opens and runs its download states), 10 frames for the map to rest, the map's opening
+  (`EventSystemActor<Demo_StartMapOpenDemo>`), the tower's 240 frames, the Slate's line "Regional map extracted."
+  (`Demo004_0_Text026`), the menu closed, then Link puts the Slate away; `IsDownloadDemo` off last. The game's action
+  opens the map of the tower nearest to its actor, which a tower's event is; in a delivery, the native patch
+  (`tools/build_tower_maps_native.py`) makes it take the tower the client writes in the cave (`apMapTower`) just
+  before. Like a rune, it waits for the pause menu (map and inventory) to be loaded. Before the Great Plateau's
+  tower, the Slate has no map: the map is then revealed by its silent twin.
 - **Without a game window** (Sheikah Sensor, Ancient Bridle, Ancient Saddle): the entry is hosted in `OperationGuide`
   with `QUIET_EVENT_INFO`, like the quiet twins below, so that it neither pauses the game nor makes the HUD blink. The
   step names its flowchart in the catalog (`flow`, from `delivery_flow.host_of`). An Archipelago window names the item
