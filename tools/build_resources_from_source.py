@@ -30,7 +30,7 @@ from tools import build_plateau_sensor_candidate as sensor
 from tools import build_master_sword_candidate as sword
 from tools import build_ballad_condition_candidate as ballad
 from tools.build_ballad_upgrade_delivery import champion_entries, transform_for as upgrade_delivery
-from botw_patch import (beast_heart, death_link, ganon_gate, gerudo_outfit, goron_armor,
+from botw_patch import (beast_heart, death_link, downpour, ganon_gate, gerudo_outfit, goron_armor,
                         horses, hud_layout, loading_icon, pedestal, traps)
 from botw_patch.status_item import INPUT_HASHES as STATUS_INPUTS
 
@@ -79,7 +79,7 @@ SOURCE_FILES = (
     "botw_client/items.py", "data/item_map.json", "assets/wiiu/Item_AP.sbitemico",
     "botw_patch/hud_layout.py", "tools/bitemico.py", "botw_patch/death_link.py",
     "botw_patch/loading_icon.py", "botw_patch/traps.py", "botw_patch/melee_weapons.py",
-    "botw_patch/horses.py",
+    "botw_patch/horses.py", "botw_patch/downpour.py",
     *gerudo_outfit.SOURCE_FILES, *ganon_gate.SOURCE_FILES, *beast_heart.SOURCE_FILES,
     *goron_armor.SOURCE_FILES, *pedestal.SOURCE_FILES,
 )
@@ -223,6 +223,11 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
     changes.extend(edits)
     files, edits = patch_stage(files, BOOTUP, {ganon_gate.GAMEDATA: ganon_gate.add_flags})
     changes.extend(edits)
+    # The Downpour trap's mark (botw_patch/downpour.py): down again, a save was
+    # loaded, and the client ends the downpour.
+    files, edits = patch_stage(files, BOOTUP, {downpour.GAMEDATA: downpour.add_flag})
+    changes.extend(edits)
+    catalog["downpour"] = {"flag": downpour.FLAG}
     catalog["ganon_gate"] = {"open": ganon_gate.OPEN, "refused": ganon_gate.REFUSED}
     catalog["pedestal"] = {"entry": pedestal.ENTRY, "flow": pedestal.FLOW_NAME, "flags": list(pedestal.FLAGS)}
     catalog["death_link"] = {"entry": death_link.ENTRY, "flow": death_link.FLOW_NAME,

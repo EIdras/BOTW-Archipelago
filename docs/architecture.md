@@ -77,9 +77,10 @@ slot file alone, without reaching any server.
   then requests the pack's entry `OperationGuide<APDeathLink>`, the game's own damage action with a lethal value
   ([death_link.md](reference/death_link.md)).
 - **Traps**: a received trap item is delivered like any other, by a guarded entry that commits, then calls the trap's
-  own entry as a sub-flow; the journal says what it did. Cucco Swarm has no entry of its own: the client plays it once
-  it has seen the commit, through the game's actor creation (`cucco_swarm.py`). Given back by a reload, a trap is spent
-  without effect ([traps.md](reference/traps.md)).
+  own entry as a sub-flow; the journal says what it did. Cucco Swarm, Yiga Ambush, Paranoia and Downpour have no entry
+  of their own: the client plays them once it has seen the commit, through the game's actor creation
+  (`cucco_swarm.py`, `yiga_ambush.py`, `paranoia.py`) or the pack's weather hold (`downpour.py`, `tools/build_weather_native.py`). Given back by a
+  reload, a trap is spent without effect ([traps.md](reference/traps.md)).
 
 ## The player's Cemu (`tools/cemu_install.py`, `tools/cemu_profile.py`)
 

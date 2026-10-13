@@ -55,7 +55,7 @@ taken by traps instead, drawn by `trap_weights` (0 by default: no trap). What ea
 | Hasty, Electro, Tough, Hearty, Fireproof, Chilly, Spicy, Mighty, Sneaky, Energizing, Enduring Elixir, Fairy Tonic | drawn | the elixir, cooked by the game from its ingredients (`Demo_SetCookItem`, the Champions' Ballad's recipes or two critters and a Bokoblin Horn), then the cooking pot's own window (`GetDemo<ShowGetDemoCookResult>`), every time |
 | Blue Rupee (5), Red Rupee (20, `Rupee Bundle` in seeds generated before), Purple Rupee (50), Silver Rupee (100), Gold Rupee (300) | drawn | the rupees |
 | 83 weapons, bows and shields (below) | drawn | the weapon, with the game's get window every time; the pouch full, it falls at Link's feet |
-| Weapon Shatter, Blood Moon, Rupoor, Hearts Down, Strip Down, Cucco Swarm | none fixed | traps, see below |
+| Weapon Shatter, Blood Moon, Rupoor, Hearts Down, Strip Down, Cucco Swarm, Yiga Ambush, Paranoia, Downpour | none fixed | traps, see below |
 
 A received item is delivered by the game itself: its get window when it has one, the download screen for a rune,
 otherwise straight into the inventory. Given back after the reload of an older save, it returns quietly, then an

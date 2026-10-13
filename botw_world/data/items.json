@@ -1380,5 +1380,20 @@
     ],
     "useful": true,
     "id": 173
+  },
+  {
+    "name": "Downpour",
+    "trap": true,
+    "id": 174
+  },
+  {
+    "name": "Yiga Ambush",
+    "trap": true,
+    "id": 175
+  },
+  {
+    "name": "Paranoia",
+    "trap": true,
+    "id": 176
   }
 ]

@@ -125,7 +125,8 @@ class NativeWorldTests(unittest.TestCase):
         self.assertEqual(len(traps), 40)
         self.assertEqual(len(everything.itempool), len(mw.itempool))
         self.assertEqual(set(traps), {"Weapon Shatter", "Blood Moon", "Rupoor", "Hearts Down",
-                                      "Strip Down", "Cucco Swarm"})
+                                      "Strip Down", "Cucco Swarm", "Downpour", "Yiga Ambush",
+                                      "Paranoia"})
         weighted = self.make_world(seed=3, trap_percentage=100,
                                    trap_weights={"Hearts Down": 5, "Strip Down": 1})
         names = [i.name for i in weighted.itempool if i.classification == ItemClassification.trap]
@@ -154,7 +155,7 @@ class NativeWorldTests(unittest.TestCase):
                     self.assertTrue(trapped)
                     self.assertTrue(all(p["item_name"] in {
                         "Weapon Shatter", "Blood Moon", "Rupoor", "Hearts Down", "Strip Down",
-                        "Cucco Swarm"}
+                        "Cucco Swarm", "Downpour", "Yiga Ambush", "Paranoia"}
                         for p in trapped))
 
     def test_trap_weights_leave_no_trap_to_draw(self):

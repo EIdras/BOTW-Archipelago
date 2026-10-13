@@ -72,6 +72,9 @@
     {"name":"Hearts Down","delivery":{"kind":"trap","entry":"APTrapHeartsDown","text":"Two hearts drain away."},"display_actor":"Item_AP"},
     {"name":"Cucco Swarm","delivery":{"kind":"native_trap","effect":"cucco_swarm","text":"The cuccos want revenge!"},"display_actor":"Item_AP"},
     {"name":"Strip Down","delivery":{"kind":"trap","entry":"APTrapStripDown","text":"Your gear falls off."},"display_actor":"Item_AP"},
+    {"name":"Downpour","delivery":{"kind":"native_trap","effect":"downpour","text":"Dark clouds gather over Hyrule."},"display_actor":"Item_AP"},
+    {"name":"Yiga Ambush","delivery":{"kind":"native_trap","effect":"yiga_ambush","text":"The Yiga Clan strikes!"},"display_actor":"Item_AP"},
+    {"name":"Paranoia","delivery":{"kind":"native_trap","effect":"paranoia","text":"Something is watching you."},"display_actor":"Item_AP"},
 
     {"name":"Red Rupee","former_names":["Rupee Bundle"],"generated_filler":true,"delivery":{"kind":"getdemo_actor","actor":"PutRupee_Red"},"display_actor":"PutRupee_Red"},
 

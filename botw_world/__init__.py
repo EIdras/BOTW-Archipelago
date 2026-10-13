@@ -300,8 +300,9 @@ class BotwWorld(World):
         # 9: Epona, registered at the stables, and the Master Cycle Zero selected only when no
         #    rune is, which one of 8 cannot.
         # 10: the tower maps, as items, which one of 9 cannot deliver nor tell from the towers.
+        # 11: the Downpour, Yiga Ambush and Paranoia traps, which one of 10 cannot play.
         # stall_locations: the stalls drawn by the seed, for Universal Tracker.
-        return {"client_schema": 10, "world_schema": 4, "world_version": WORLD_VERSION,
+        return {"client_schema": 11, "world_schema": 4, "world_version": WORLD_VERSION,
                 "death_link": bool(self.options.death_link.value),
                 **self.options.as_dict(*self.SLOT_OPTIONS),
                 "stall_locations": sorted(location_id for location_id in self.shop_prices

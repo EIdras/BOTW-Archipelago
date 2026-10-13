@@ -39,8 +39,8 @@ your own server.
 - **Weapons**: 83 of the game's weapons, bows and shields in the filler, the weaker first and the amiibo's
   treasures last (option); with a full pouch, a weapon falls at Link's feet.
 - **Traps** (option): a share of the filler turns into Weapon Shatter, Blood Moon, Rupoor, Hearts Down, Strip
-  Down and Cucco Swarm, which strike when received. Only the cuccos can kill, and a trap given back by a reload is
-  spent, not suffered twice.
+  Down, Cucco Swarm, Yiga Ambush, Paranoia and Downpour, which strike when received. The cuccos, the Yiga and the storm's
+  lightning can kill, and a trap given back by a reload is spent, not suffered twice.
 
 ## Requirements
 

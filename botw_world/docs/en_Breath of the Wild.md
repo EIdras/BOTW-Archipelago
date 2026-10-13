@@ -153,7 +153,8 @@ cutscene, a menu or a loading screen.
 
 With the `trap_percentage` option, that share of the filler (arrows, elixirs, weapons, gems and rupees) becomes traps, drawn
 by the `trap_weights` option (a trap of weight 0 or left out never comes up). A trap strikes when it is received,
-at a safe moment, and the Archipelago journal says what it did. Only the cuccos can kill Link.
+at a safe moment, and the Archipelago journal says what it did. The cuccos, the Yiga and the storm's lightning can
+kill Link.
 
 | Trap | What it does |
 |---|---|
@@ -162,7 +163,10 @@ at a safe moment, and the Archipelago journal says what it did. Only the cuccos 
 | Rupoor | Takes up to 100 rupees: the largest of 100, 50, 20, 10, 5 or 1 the purse holds. |
 | Hearts Down | Takes up to two hearts, never the last quarter. |
 | Strip Down | Link's weapon, shield, bow and armor go back in the pouch, to equip again. |
-| Cucco Swarm | The angry cuccos' swarm rushes at Link from every side for 10 s. It can kill; such a death is not sent as a DeathLink. |
+| Cucco Swarm | The angry cuccos' swarm rushes at Link from every side for 10 s. It can kill. |
+| Yiga Ambush | Two Yiga Footsoldiers and a Yiga archer appear around Link and attack. |
+| Paranoia | A Guardian takes aim at Link from behind, beeping, and vanishes just before it fires. |
+| Downpour | Rain for 2 minutes (the walls get slippery), or a thunderstorm for 90 s (its lightning strikes metal). Nothing shows in a shrine; a death or a reload ends it. |
 
 A trap given back after loading an older save is spent without effect: the save forgot the trap's effect with the
 rest, and a trap is not suffered twice.

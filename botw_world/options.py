@@ -138,8 +138,10 @@ class TrapPercentage(Range):
     received: Weapon Shatter breaks the weapon in Link's hand, Blood Moon calls a
     Blood Moon at once, Rupoor takes up to 100 rupees, Hearts Down takes up
     to two hearts (never the last quarter), Strip Down puts Link's weapon, shield,
-    bow and armor back in the pouch, and Cucco Swarm sends the angry cuccos' swarm,
-    which can kill (such a death is not sent as a DeathLink)."""
+    bow and armor back in the pouch, Cucco Swarm sends the angry cuccos' swarm, Yiga
+    Ambush two Yiga Footsoldiers and a Yiga archer, Paranoia a Guardian that takes
+    aim at Link and vanishes before it fires, and Downpour rain for 2 minutes or a
+    thunderstorm for 90 s. The cuccos, the Yiga and the lightning can kill."""
     display_name = "Trap Percentage"
     range_start = 0
     range_end = 100

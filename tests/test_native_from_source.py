@@ -106,6 +106,9 @@ print(a.name)
                     # And the map opening's fallback of the tower maps, in every pack.
                     from tools.build_tower_maps_native import patch_injection as tower_maps
                     composed = tower_maps(composed, icons=False)
+                    # And the Downpour trap's weather hold, in every pack.
+                    from tools.build_weather_native import patch_injection as weather
+                    composed = weather(composed)
                     self.assertEqual(code(raw.decode('utf-8')), code(composed))
                 else:
                     self.assertEqual(digest(raw), manifest['native_files'][Path(name).name])

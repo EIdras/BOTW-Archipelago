@@ -64,7 +64,7 @@ class DataTests(unittest.TestCase):
         flagged = {row["name"] for row in items if row.get("trap")}
         native = {name for name, entry in mapping.items()
                   if entry["delivery"]["kind"] == "native_trap"}
-        self.assertEqual(native, {"Cucco Swarm"})
+        self.assertEqual(native, {"Cucco Swarm", "Downpour", "Yiga Ambush", "Paranoia"})
         self.assertEqual(flagged, {trap.item for trap in traps.TRAPS} | native)
         for trap in traps.TRAPS:
             delivery = mapping[trap.item]["delivery"]
@@ -335,8 +335,37 @@ class TrapRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.runtime._discover_received()
         await self.runtime._apply_one_received_native()
         self.assertEqual(self.runtime._native_traps, ["cucco_swarm"])
+        # Named once it has struck: its lines wait for the client to play it.
+        self.assertEqual(self.runtime._journal_notes, [])
+        self.assertEqual(self.runtime._native_trap_notes,
+                         [["{0}Cucco Swarm{/}: The cuccos want revenge!"]])
+
+    async def test_a_native_trap_is_named_once_it_has_struck(self):
+        self.runtime._native_traps.append("downpour")
+        self.runtime._native_trap_notes.append(["{2}Alice{/} sent {1}Downpour{/} to {2}Bob{/}",
+                                                "{0}Downpour{/}: Dark clouds gather over Hyrule."])
+        self.runtime.deliveries = SimpleNamespace(backend=SimpleNamespace(downpour=lambda kind, frames: True))
+        await self.runtime._native_trap_tick()
+        self.assertEqual([line for line, _tag in self.runtime._journal_notes],
+                         ["{2}Alice{/} sent {1}Downpour{/} to {2}Bob{/}",
+                          "{0}Downpour{/}: Dark clouds gather over Hyrule."])
+
+    async def test_the_server_line_kept_for_the_trap_comes_with_its_effect(self):
+        self.runtime._trap_lines[0] = "{2}Alice{/} sent {1}Rupoor{/} to {2}Bob{/}"
+        self.runtime._discover_received()
+        await self.runtime._apply_one_received_native()
         self.assertEqual(self.runtime._journal_notes,
-                         [("{0}Cucco Swarm{/}: The cuccos want revenge!", None)])
+                         [("{2}Alice{/} sent {1}Rupoor{/} to {2}Bob{/}", None),
+                          ("{0}Rupoor{/}: Rupees slip through your fingers.", None)])
+        self.assertEqual(self.runtime._trap_lines, {})
+
+    async def test_nothing_announces_a_trap_before_it_strikes(self):
+        self.runtime.tips = object()
+        self.runtime.game.item_map = {"Rupoor": {"delivery": {"kind": "trap"}}}
+        self.runtime._received_line = lambda index, item, wait=True: "{2}Alice{/} sent {1}Rupoor{/}"
+        self.assertEqual(self.runtime._received_announcement(0), "skip")
+        self.assertEqual(self.runtime._journal_notes, [])
+        self.assertEqual(self.runtime._trap_lines, {0: "{2}Alice{/} sent {1}Rupoor{/}"})
 
     async def test_a_native_trap_given_back_is_not_played(self):
         step = {"step": 0, "quiet_entry": "APD_Y_00Q", "mutations": [{

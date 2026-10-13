@@ -1,10 +1,12 @@
 # Traps
 
-Six Archipelago items that hurt: how each one acts in the game, how a received trap is delivered, and how to add
+Nine Archipelago items that hurt: how each one acts in the game, how a received trap is delivered, and how to add
 one. Five are the game's own EventFlow actions and queries, in one entry of the resident `OperationGuide`, or of
 `Demo007_1` for the Blood Moon ([`botw_patch/traps.py`](../../botw_patch/traps.py)); nothing in the executable is
-touched. All five were seen working in the game. The sixth, Cucco Swarm, is played by the client through the game's own
-functions, as no EventFlow action can do it ([below](#cucco-swarm)).
+touched. All five were seen working in the game. The other four are played by the client through the game's own
+functions, as no EventFlow action can do them: Cucco Swarm ([below](#cucco-swarm)), Yiga Ambush
+([below](#yiga-ambush)), Paranoia ([below](#paranoia)), and Downpour, whose weather the pack holds
+([below](#downpour)).
 
 ## The traps
 
@@ -16,6 +18,9 @@ functions, as no EventFlow action can do it ([below](#cucco-swarm)).
 | Hearts Down | `APTrapHeartsDown` | takes up to two hearts, never the last quarter |
 | Strip Down | `APTrapStripDown` | weapon, shield, bow and armor go back in the pouch |
 | Cucco Swarm | none: the client's | the angry cuccos' swarm on Link, for 10 s |
+| Yiga Ambush | none: the client's | two Yiga Footsoldiers and a Yiga archer fall on Link |
+| Downpour | none: the client's and the pack's | rain for 2 minutes, or a thunderstorm for 90 s |
+| Paranoia | none: the client's | a Guardian takes aim at Link from behind, and vanishes before it fires |
 
 **Weapon Shatter.** The game's flows delete an item by name (`EventSystemActor.Demo_DeletePorchItemInEquip
 {PorchItemName, DeleteNum}`: `Demo604_0` takes `Weapon_Sword_502`, `Demo622_0` a champion's power), and ask what Link
@@ -70,9 +75,12 @@ short after its commit is spent, never suffered twice. The entries are added fir
 (`traps.add_entries`), and the delivery builder refuses a trap whose entry is missing. The trap's entry can also be
 requested alone.
 
-- **No window.** The Archipelago journal announces the item as any ("Alice sent Rupoor to Bob"), 2 s later the trap
-  strikes, and the journal says what it did ("Rupoor: Rupees slip through your fingers."). The text is the item's
-  `delivery.text` in [`data/item_map.json`](../../data/item_map.json).
+- **No window, no warning.** Nothing announces a trap: the server's line ("Alice sent Rupoor to Bob") is kept
+  until the trap has struck (`BotwClientRuntime._received_announcement`), then the journal shows it, with what the
+  trap did ("Rupoor: Rupees slip through your fingers."). Seen in play: announced first, the journal named Paranoia
+  before its Guardian came. A trap of the entries is named at its commit; one the client plays, once it has struck:
+  Cucco Swarm and Paranoia when they are over, Yiga Ambush when its Yiga are there, Downpour when its weather is
+  held. The text is the item's `delivery.text` in [`data/item_map.json`](../../data/item_map.json).
 - **Safe moments only.** The delivery gate is the usual one: no menu, event, cutscene or loading. A trap never runs
   while Link is dead.
 - **Not suffered twice.** Loading an older save moves the cursor back and the client gives items back quietly. A
@@ -94,6 +102,10 @@ generator, so a seed is reproducible. Their classification is `trap`.
 3. A builder and a `Trap(item, entry, builder)` in `botw_patch/traps.py`. The builder chains events with `Builder.action`
    and `Builder.switch`, from the last event to the first, and returns the first.
 4. Tests in `tests/test_traps.py`: walk the entry's graph with the queries answered, as `EntryTests` do.
+
+A trap the client plays itself: `"delivery": {"kind": "native_trap", "effect": "<effect>", "text": ...}` in the item map
+(step 2), the effect in `botw_client/items.py` (`NATIVE_EFFECTS`) and played by `BotwClientRuntime._native_trap_tick`;
+no entry (step 3). A new effect needs a new `client_schema`: an older client cannot play it.
 
 ## Cucco Swarm
 
@@ -131,13 +143,93 @@ holds its events (presentations, deliveries, the key item, a received DeathLink)
 The swarm stops when Link dies, and the loop, when it leaves, stops the swarm and waits for it before closing the game
 connection.
 
-**It can kill.** The vanilla swarm does damage, and Link with few hearts can die of it. Such a death is not sent as a
-DeathLink: while the swarm's attackers may be around (its 10 s, their lifetime and 3 s more), a death whose last
-attacker (the actor name the game keeps, as for the DeathLink's cause) is `Kokko_Simple` is the trap's.
+**It can kill.** The vanilla swarm does damage, and Link with few hearts can die of it. Such a death is a death like
+any other: with DeathLink on, it is sent ([death_link.md](death_link.md)).
+
+## Yiga Ambush
+
+The Yiga Clan's squad: two Yiga Footsoldiers (`Enemy_Assassin_Junior`) and a Yiga archer
+(`Enemy_Assassin_Shooter_Junior`), created by the client at 6 to 8 m around Link, evenly spread from a random
+bearing ([`botw_client/yiga_ambush.py`](../../botw_client/yiga_ambush.py)). The creation is the swarm's
+(`ActorCreator::requestCreateActor` with a place, `@P`), without a handle: the Yiga are the game's, with their own AI,
+and nothing else is asked of them. Each one has a block of memory of its own: without a handle, nothing says when the
+creator is done with its name and its place, so no block is ever reused.
+
+Measured (lab probe 19, 09/10): they come with the Yiga's appearing effect, fight with their weapons, flips and warps,
+drop their loot (bananas, rupees) when defeated, and vanish if Link runs far away. A Yiga Blademaster
+(`Enemy_Assassin_Middle`) was also created, without an appearing effect: not in the squad.
+
+**Delivery.** As the swarm's: its entry only commits, then the client creates the squad, in one turn of the invoker,
+once Link is in the world (no menu, entry or loading). A squad committed while Link was leaving the world waits for
+him, two minutes at most. The Yiga can kill: such a death is a death like any other.
+
+## Paranoia
+
+A Decayed Guardian (`Enemy_Guardian_A_Fixed_Moss`) appears 15 m behind Link, turned towards him: the game's own Guardian
+sees him at once, beeps, plays its music and points its red laser at him. 6.8 s after its waking, before its shot,
+the client deletes it: it vanishes at once, its music fades out
+([`botw_client/paranoia.py`](../../botw_client/paranoia.py)).
+
+**What the client calls**, from the cave's per-frame invoker, one turn of it per step:
+
+1. The swarm's creation, with a handle and an `InstParamPack` holding the place (`@P`) and the rotation (`@R`: a
+   Vec3, type 4, in radians, as the game's own creations add it; its yaw turns the Guardian's +Z towards Link).
+2. Once the handle says it is ready, the proc is woken (`BaseProc::wakeUp`, `0x0378a540`): created with a handle, it
+   sleeps until then.
+3. Its link is read at once, as the swarm reads Link's: its id (`+0x50`) and its `BaseProcLinkData` (`+0x58`), which
+   holds the id followed by the proc while the proc lives, and is reused under another id once it is gone.
+4. 6.8 s after the wake, while the link data still holds it: `BaseProc::deleteLater(proc, 2)` (`0x0378a374`).
+
+**Why not through the handle.** `BaseProcHandle::deleteProc` deletes the proc its unit holds. Measured: within 2 s of
+the wake, the game itself unlinks the unit (no handle, no proc in it), and the call deleted nothing; the Guardian
+stayed and fired again and again. Through its link, measured: the proc's state is "deleted" within 0.1 s, the link
+still valid at 0.4 s, reused at 1 s.
+
+**The time.** Measured: the Guardian fires about 7.1 s after its waking; deleted at 7.1 s, it had just begun to fire,
+and the shot never left. 6.8 s is counted on the clock: a slower or paused game only spends less of its own time.
+
+**Safety.** A Guardian whose link cannot be found is deleted through its handle before its wake, while the unit still
+holds it: it never wakes. One gone before its time (defeated, or its area unloaded) is left alone. When Link dies, or
+the client stops, it is deleted at once. Over uneven ground, the Guardian, which does not fall, may stand in a slope
+or above it; behind a hill, it may not see Link.
+
+## Downpour
+
+Rain for 2 minutes, or a thunderstorm for 90 s (drawn by the client, [`botw_client/downpour.py`](../../botw_client/downpour.py)).
+The rain wets the walls: Link slides down them. The thunderstorm brings its lightning, which strikes Link if he carries
+metal, and can kill.
+
+**The game's weather.** The flows' `WorldManagerControl.Demo_EventSetWeather` (class `EventSetWeather`, trigger
+`0x021c2d50`) calls the weather setter once: `setWeatherType(*0x1047be88, type, 1, 0, 0)` (`0x03679688`), which sets
+the type (`+0x649`) and a timer of 4 (`+0x60c`). Every frame of the world, the manager counts the timer down, and at 0
+gives the type back to `0xff`, the climate's weather (`0x03677f84`; zeldaret/botw `worldManager.cpp`). One request is
+thus 4 frames of weather; the game's weather zones (`ChangeWeatherTag`, Faron's storm) call the setter as long as Link
+is in them. Types: 0 Bluesky, 1 Cloudy, 2 Rain, 3 HeavyRain, 4 Snow, 5 HeavySnow, 6 ThunderStorm, 7 ThunderRain,
+8 BlueskyRain (zeldaret/botw `worldDefines.h`).
+
+**The pack holds it.** Every pack calls the setter from the per-frame hook, at the head of the per-frame invoker's
+block, as long as the cave's `apWeatherFrames` lasts ([`tools/build_weather_native.py`](../../tools/build_weather_native.py)).
+The frames are the world's: one is counted when the manager's timer went below 4 since the last call, so that a
+menu, which stops the world, does not shorten the weather (to be seen in the game). Another caller of the setter in
+the same frame (a weather zone, a Wizzrobe) would keep the timer at 4 and the count still: the hook's passes
+(`apWeatherPasses`, three times the frames) end the hold in any case. The client writes the type, the passes, then
+the frames (`Cave.force_weather`, [`tools/cemu/mailbox.py`](../../tools/cemu/mailbox.py)).
+
+**A death or a reload ends it.** Held by the pack, the weather would outlive a death and the save loaded after it.
+The client marks the downpour with a volatile GameData flag, `APDownpour` (declared by the pack,
+[`botw_patch/downpour.py`](../../botw_patch/downpour.py)): not saved, it goes back to false whenever a save is loaded,
+and keeps its value across a fast travel, which loads none. While a downpour lasts, the client gives the game its
+weather back (0 frames) when Link dies, or when the flag is down.
+
+Measured with the setter called 30 times a second (lab probe 19, 09/10): the rain sets in within 5 to 10 s and the
+walls get slippery; in the desert at night, the thunderstorm first looked like a sandstorm, then brought lightning and
+rain; it held across a fast travel; the climate's weather came back within a few seconds. Inside a shrine, nothing
+shows.
 
 ## What EventFlow cannot do
 
 Traps that put something in the world (an ambush) are not possible from an entry: what an event creates belongs to it
-(see Cucco Swarm). The `AutoPlacement*` flows, which place the ecosystem's enemies, run on map actors and ask
+(see Cucco Swarm, and Yiga Ambush, which the client plays). The `AutoPlacement*` flows, which place the ecosystem's enemies, run on map actors and ask
 `AutoPlacement` queries (`GroundMat`, `WaterDepth`, `EcoAreaActorName`...) that an entry has no actor to answer. Such a
-trap would be played by the client, as Cucco Swarm is.
+trap is played by the client, as Cucco Swarm and Yiga Ambush are. Nor can an entry hold the weather: its action asks
+for 4 frames of it (see Downpour).

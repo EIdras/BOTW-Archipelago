@@ -36,7 +36,8 @@ Breath of the Wild:
   early_map: gentle
   # Share of the filler (arrows, elixirs, weapons, gems, rupees) that becomes traps, 0 to 100, and how likely each is
   # compared with the others (a trap left out never comes up): Weapon Shatter, Blood Moon,
-  # Rupoor, Hearts Down, Strip Down, Cucco Swarm. Only the cuccos can kill Link.
+  # Rupoor, Hearts Down, Strip Down, Cucco Swarm, Yiga Ambush, Paranoia, Downpour. The cuccos, the Yiga
+  # and the storm's lightning can kill Link.
   trap_percentage: 0
   trap_weights:
     Weapon Shatter: 1
@@ -45,4 +46,7 @@ Breath of the Wild:
     Hearts Down: 1
     Strip Down: 1
     Cucco Swarm: 1
+    Yiga Ambush: 1
+    Paranoia: 1
+    Downpour: 1
   start_inventory_from_pool: {}

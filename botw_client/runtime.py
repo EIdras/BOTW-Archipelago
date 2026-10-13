@@ -46,14 +46,18 @@ DEATHLINK_LEAD_SECONDS = 3.0
 DEATHLINK_ECHO_SECONDS = 5.0
 DEATHLINK_FLAG_SECONDS = 60.0
 DEATHLINK_EXPIRY_SECONDS = 120.0
+# A Yiga Ambush committed while Link was leaving the world (a menu opened in
+# between) waits for him; after this long, it is given up.
+NATIVE_TRAP_PATIENCE_SECONDS = 120.0
 STATE_PATH = DATA / "client-state.json"
 GOAL_LOCATION = "Defeat Calamity Ganon"
 STATE_SCHEMA = 3
 CLIENT_SCHEMA = 2
 # The client schemas of BOTW seeds this client plays: 4 added the Gerudo Set, 5 the
 # goal and the sanctum's requirements, 6 the new filler, 7 the weapons, 8 the travel items,
-# 9 Epona and the Master Cycle Zero selected only when no rune is, 10 the tower maps.
-BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10)
+# 9 Epona and the Master Cycle Zero selected only when no rune is, 10 the tower maps,
+# 11 the Downpour, Yiga Ambush and Paranoia traps.
+BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11)
 # The mutations that present the item themselves: no AP window before them.
 VANILLA_WINDOWS = ("get_demo_actor", "champion_actor", "rune_download", "trap", "native_trap",
                    "get_demo_bundle", "cook", "pouch_slot", "map_open")
@@ -216,6 +220,10 @@ class BotwClientRuntime:
         self._journal_times: dict[int, float] = {}
         self._journal_waiting: dict[int, float] = {}
         self._journal_queued_at: dict[int, float] = {}
+        # A received trap's server line, kept until the trap has struck: nothing
+        # announces a trap before it (seen in play: the journal named Paranoia
+        # before its Guardian came).
+        self._trap_lines: dict[int, str] = {}
         self._journal_current = None
         self._journal_retry_after = 0.0
         self._journal_started = time.time()
@@ -277,18 +285,21 @@ class BotwClientRuntime:
         self._deathlink_retry_after = 0.0
         self._deathlink_announced_at = None
         self._death_requested_at = None
-        # Native traps (botw_client/cucco_swarm.py): the committed ones waiting
-        # to be played, the one playing, and, once it is over, how long its
-        # attackers may still be around (in game time: it stands still out of
-        # the world), during which a death by them is the trap's, not sent as
-        # a DeathLink.
+        # Native traps (botw_client/cucco_swarm.py, yiga_ambush.py, downpour.py):
+        # the committed ones waiting to be played, since when the first one
+        # waits for Link, and the swarm playing.
         self._native_traps: list[str] = []
+        # Their journal lines, in the same order, shown once each has struck.
+        self._native_trap_notes: list[list[str]] = []
+        self._native_trap_task_notes: list[str] = []
+        self._native_trap_since: float | None = None
+        # A downpour this client started, watched until it ends: at a death or
+        # a reload, the client ends it (the pack would hold it on).
+        self._downpour_active = False
         # Pickup notifications of fillers received again, shown once their
         # delivery has committed and Link is back in the world.
         self._pickups: list[tuple[str, int]] = []
         self._native_trap_task = None
-        self._swarm_left = 0.0
-        self._swarm_clock = 0.0
         self._swarm_stop = threading.Event()
         self._next_delivery_wait_log = 0.0
         self._native_delivery_retry_after = 0.0
@@ -847,14 +858,22 @@ class BotwClientRuntime:
             trap = next((m for m in steps[step].get("mutations", ())
                          if m.get("kind") in ("trap", "native_trap")), None)
             if trap is not None:
+                announcement = self._trap_announcement(index)
                 if not silent:
-                    # The trap has no window: the journal says what it did. Given
-                    # back after a reload, it is spent without effect and without a word.
+                    # The trap has no window, and nothing announced it: once it
+                    # has struck, the journal names it (the server's line) and
+                    # says what it did. Given back after a reload, it is spent
+                    # without effect and without a word.
                     from .ap_journal import trap_line
-                    self._journal_note(trap_line(name, trap["value"]))
+                    notes = [line for line in (announcement, trap_line(name, trap["value"])) if line]
                     if trap["kind"] == "native_trap":
-                        # Committed: the client plays it (_native_trap_tick).
+                        # Committed: the client plays it (_native_trap_tick), and
+                        # names it once it has struck.
                         self._native_traps.append(trap["target"])
+                        self._native_trap_notes.append(notes)
+                    else:
+                        for line in notes:
+                            self._journal_note(line)
             elif silent and step == 0:
                 # Given back, or sent by a release, without its window: named
                 # in one AP summary.
@@ -1324,8 +1343,6 @@ class BotwClientRuntime:
                 and self._last_dead is False):
             if await self._killed_by_death_link():
                 self.log("Link died of the received DeathLink: not sent back")
-            elif await self._killed_by_trap():
-                self.log("Link died of a Cucco Swarm trap: not sent as a DeathLink")
             else:
                 cause = await self._death_cause()
                 if self.ap.connected:
@@ -1378,19 +1395,6 @@ class BotwClientRuntime:
         self._death_requested_at = time.monotonic()
         self.log(f"DeathLink applied: {event['source']}")
 
-    async def _killed_by_trap(self) -> bool:
-        """Did a Cucco Swarm the client played kill Link? While its attackers may
-        be around, a death whose last attacker is one of them is the trap's."""
-        if not self._swarming() and self._swarm_left <= 0:
-            return False
-        from .cucco_swarm import ATTACKER
-        ask = getattr(getattr(self.deliveries, "backend", None), "last_attacker", None)
-        try:
-            killer = await asyncio.to_thread(ask) if ask is not None else None
-        except Exception:  # noqa: BLE001 - unreadable: a death like any other
-            killer = None
-        return killer == ATTACKER
-
     def _pickup_actor(self, name: str) -> str | None:
         """The actor of the game's pickup notification for this item, if the
         item map opts in ("pickup": rupees have their counter)."""
@@ -1417,57 +1421,126 @@ class BotwClientRuntime:
 
     async def _native_trap_tick(self):
         """Plays the committed native traps, one at a time. Not kept across a
-        restart of the client: a trap committed but not played is spent."""
-        from .cucco_swarm import ALIVE
+        restart of the client: a trap committed but not played is spent. The
+        swarm and the Paranoia's Guardian play on a thread of their own; the
+        ambush and the downpour at once."""
         task = self._native_trap_task
-        if task is None and self._swarm_left > 0:
-            await self._swarm_window_tick()
         if task is not None:
             if not task.done():
                 return
             self._native_trap_task = None
             try:
-                self.log(f"Cucco Swarm played: {task.result()}")
+                self.log(f"{task.get_name()} played: {task.result()}")
             except Exception as exc:  # noqa: BLE001 - a trap never stops the client
-                self.log(f"Cucco Swarm failed: {exc!r}")
-            self._swarm_left, self._swarm_clock = ALIVE + 3.0, time.monotonic()
+                self.log(f"{task.get_name()} failed: {exc!r}")
+            self._native_trap_struck(self._native_trap_task_notes)
+            self._native_trap_task_notes = []
             return
         if not self._native_traps:
             return
-        play = getattr(getattr(self.deliveries, "backend", None), "cucco_swarm", None)
-        if play is None:
-            self._native_traps.clear()
-            return
-        # No safety check of its own: the trap is queued at its commit, which
-        # happened at a safe moment.
-        effect = self._native_traps.pop(0)
-        if effect != "cucco_swarm":
+        backend = getattr(self.deliveries, "backend", None)
+        effect = self._native_traps[0]
+        if effect == "cucco_swarm":
+            play = getattr(backend, "cucco_swarm", None)
+            self._native_traps.pop(0)
+            notes = self._native_trap_notes.pop(0) if self._native_trap_notes else []
+            if play is None:
+                self._native_trap_struck(notes)
+                return
+            self._native_trap_task_notes = notes
+            # No safety check of its own: the trap is queued at its commit,
+            # which happened at a safe moment; the swarm waits out the menus.
+            self._swarm_stop.clear()
+            self._native_trap_task = asyncio.create_task(
+                asyncio.to_thread(play, self._swarm_should_stop), name="Cucco Swarm")
+        elif effect == "paranoia":
+            play = getattr(backend, "paranoia", None)
+            self._native_traps.pop(0)
+            notes = self._native_trap_notes.pop(0) if self._native_trap_notes else []
+            if play is None:
+                self._native_trap_struck(notes)
+                return
+            self._native_trap_task_notes = notes
+            # Its Guardian deleted at once if Link dies or the client stops.
+            self._swarm_stop.clear()
+            self._native_trap_task = asyncio.create_task(
+                asyncio.to_thread(play, self._swarm_should_stop), name="Paranoia")
+        elif effect == "yiga_ambush":
+            play = getattr(backend, "yiga_ambush", None)
+            result = await asyncio.to_thread(play) if play is not None else None
+            if isinstance(result, str):
+                # Link out of the world, an entry running, the invoker busy:
+                # asked again, for a while.
+                if self._native_trap_since is None:
+                    self._native_trap_since = time.monotonic()
+                if time.monotonic() - self._native_trap_since < NATIVE_TRAP_PATIENCE_SECONDS:
+                    return
+                self.log(f"Yiga Ambush given up: {result}")
+            elif result is not None:
+                self.log(f"Yiga Ambush played: {result}")
+            self._native_traps.pop(0)
+            self._native_trap_since = None
+            self._native_trap_struck(self._native_trap_notes.pop(0) if self._native_trap_notes else [])
+        elif effect == "downpour":
+            self._native_traps.pop(0)
+            self._native_trap_struck(self._native_trap_notes.pop(0) if self._native_trap_notes else [])
+            play = getattr(backend, "downpour", None)
+            if play is None:
+                return
+            from .downpour import choose, name
+            kind, frames = choose()
+            if await asyncio.to_thread(play, kind, frames):
+                self._downpour_active = True
+                self.log(f"Downpour played: {name(kind)} for {frames} frames")
+            else:
+                self.log("Downpour not played: this pack has no weather hold; "
+                         "rebuild it with tools/play_seed.py")
+        else:
+            self._native_traps.pop(0)
+            self._native_trap_struck(self._native_trap_notes.pop(0) if self._native_trap_notes else [])
             self.log(f"native trap without an effect in this client: {effect}")
-            return
-        self._swarm_stop.clear()
-        self._native_trap_task = asyncio.create_task(
-            asyncio.to_thread(play, self._swarm_should_stop), name="Cucco Swarm")
 
-    async def _swarm_window_tick(self):
-        """The last attackers' time runs out only while Link is in the world:
-        in a menu they stand still, and may still kill once it closes."""
-        now, before = time.monotonic(), self._swarm_clock
-        self._swarm_clock = now
-        playing = getattr(getattr(self.deliveries, "backend", None), "playing", None)
+    def _native_trap_struck(self, notes: list[str]) -> None:
+        """A trap the client played has struck (or could not): its journal lines."""
+        for line in notes:
+            self._journal_note(line)
+
+    async def _downpour_tick(self):
+        """A death or a reload ends the downpour: Link dead, or its mark down (a
+        loaded save resets it; a fast travel does not)."""
+        if not self._downpour_active:
+            return
+        backend = getattr(self.deliveries, "backend", None)
+        state = getattr(backend, "downpour_state", None)
+        if state is None:
+            self._downpour_active = False
+            return
         try:
-            in_world = await asyncio.to_thread(playing) if playing is not None else True
-        except Exception:  # noqa: BLE001 - unreadable (loading): time stands still
-            in_world = False
-        if in_world:
-            self._swarm_left -= now - before
+            frames, mark = await asyncio.to_thread(state)
+        except Exception:  # noqa: BLE001 - unreadable (a loading): next tick
+            return
+        if frames == 0:
+            self._downpour_active = False       # over by itself
+            return
+        try:
+            dead = bool(await asyncio.to_thread(self.game.is_dead))
+        except Exception:  # noqa: BLE001 - health unreadable: the mark decides
+            dead = False
+        if not dead and mark is not False:
+            return
+        await asyncio.to_thread(backend.end_downpour)
+        self._downpour_active = False
+        self.log("Downpour ended: " + ("Link died" if dead else "a save was loaded"))
 
     def _swarming(self) -> bool:
-        """A swarm is playing: it has the invoker, the loop's events wait."""
+        """A swarm (or the Paranoia's Guardian) is playing: it has the invoker,
+        the loop's events wait."""
         task = self._native_trap_task
         return task is not None and not task.done()
 
     def _swarm_should_stop(self) -> bool:
-        """Asked by the swarm's thread before each attacker."""
+        """Asked by the swarm's thread before each attacker, and by the
+        Paranoia's while its Guardian waits: stopped, it is deleted at once."""
         if self.stop_event.is_set() or self._swarm_stop.is_set():
             return True
         try:
@@ -1476,8 +1549,9 @@ class BotwClientRuntime:
             return False
 
     async def _end_swarm(self):
-        """The loop leaves: the swarm stops at its next attacker, and is waited
-        for, so that it never uses a game connection being closed."""
+        """The loop leaves: the swarm stops at its next attacker, the Paranoia's
+        Guardian is deleted, and either is waited for, so that it never uses a
+        game connection being closed."""
         task = self._native_trap_task
         if task is None:
             return
@@ -1683,6 +1757,15 @@ class BotwClientRuntime:
             return 'skip'
         if self.tips is None:
             return 'pending'
+        if self._is_trap(item):
+            # Its line waits for the trap to strike (the commit, or the end of
+            # a trap the client plays): taken now, so that nothing else shows it.
+            if index not in self._trap_lines:
+                line = self._received_line(index, item)
+                if line is None:
+                    return 'pending'      # the server's line may still come
+                self._trap_lines[index] = line
+            return 'skip'
         if index not in self.state.setdefault("journal_announced", []):
             if index not in self._journal_queued:
                 line = self._received_line(index, item)
@@ -1703,11 +1786,11 @@ class BotwClientRuntime:
             return 'pending'
         return 'skip' if self._vanilla_window(index) or self._repeat_filler(index) else 'present'
 
-    def _received_line(self, index: int, item) -> str | None:
+    def _received_line(self, index: int, item, *, wait: bool = True) -> str | None:
         """The server's own line for this item (PrintJSON ItemSend), taken out
         of the queue; after JOURNAL_SERVER_WAIT_SECONDS without one (items
-        received offline, console /send), the same sentence in the server's
-        format."""
+        received offline, console /send), or at once without `wait`, the same
+        sentence in the server's format."""
         from .ap_journal import coloured, matches_item
         queue = self.state["message_queue"]
         for position, entry in enumerate(queue):
@@ -1716,7 +1799,7 @@ class BotwClientRuntime:
                 self.state_store.save()
                 return coloured(entry, self.ap.render_node)
         first = self._journal_waiting.setdefault(index, time.monotonic())
-        if time.monotonic() - first < JOURNAL_SERVER_WAIT_SECONDS:
+        if wait and time.monotonic() - first < JOURNAL_SERVER_WAIT_SECONDS:
             return None
         name = self.ap.item_name(item) or f"#{item.item}"
         me = self.ap.players.get(self.ap.slot, self.ap.slot_name)
@@ -1935,6 +2018,23 @@ class BotwClientRuntime:
             self.state_store.save()
             self.log(f"items of a release or a collect, given quietly: {len(bulk)}")
 
+    def _is_trap(self, item) -> bool:
+        item_map = getattr(getattr(self, "game", None), "item_map", None) or {}
+        delivery = item_map.get(self.ap.item_name(item), {}).get("delivery", {})
+        return delivery.get("kind") in ("trap", "native_trap")
+
+    def _trap_announcement(self, index: int) -> str | None:
+        """The trap's received line, kept by _received_announcement; failing
+        that (a client restarted in between), the server's line or its sentence."""
+        line = self._trap_lines.pop(index, None)
+        if line is not None:
+            return line
+        item = self.ap.received_items.get(index)
+        try:
+            return self._received_line(index, item, wait=False) if item is not None else None
+        except Exception:  # noqa: BLE001 - the effect's line is enough
+            return None
+
     def _keeps_presentation(self, item) -> bool:
         """A trap or a rune: never given quietly with a release."""
         name = self.ap.item_name(item)
@@ -2070,6 +2170,8 @@ class BotwClientRuntime:
                         await self._ganon_gate_tick()
                         await self._native_trap_tick()
                         await self._deathlink_tick()
+                    # Even out of the session: a reload back to an unbound save.
+                    await self._downpour_tick()
                 elif not self.native_presentations:
                     displayed = await self._show_one_location_reward()
                     if not displayed:

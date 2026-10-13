@@ -328,6 +328,9 @@ Archipelago affiche les noms anglais du jeu. Voici leurs équivalents dans le je
 | Hearts Down | Cœurs en moins (piège) |
 | Cucco Swarm | Nuée de cocottes (piège) |
 | Strip Down | Déshabillage (piège) |
+| Downpour | Averse (piège) |
+| Yiga Ambush | Embuscade yiga (piège) |
+| Paranoia | Paranoïa (piège) |
 | Red Rupee | Rubis rouge |
 | 10 Arrows | 10 flèches en bois |
 | 10 Fire Arrows | 10 flèches de feu |

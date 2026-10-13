@@ -9,7 +9,7 @@ v208 executable.
 | [hud_indicator.md](hud_indicator.md) | The Archipelago logo in the HUD and on the loading screen: layout, textures, how to change them |
 | [shops.md](shops.md) | Beedle's shops and the village stalls as Archipelago locations |
 | [death_link.md](death_link.md) | DeathLink: how Link is killed, and how a real death is recognized |
-| [traps.md](traps.md) | The six traps: what each does in the game, how the items are delivered, how to add one |
+| [traps.md](traps.md) | The nine traps: what each does in the game, how the items are delivered, how to add one |
 | [item_catalog.md](item_catalog.md) | The item pool and what each item does in the game |
 | [poptracker.md](poptracker.md) | The PopTracker pack: the game's map, the logic, auto-tracking |
 

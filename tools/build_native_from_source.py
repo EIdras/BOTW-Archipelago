@@ -27,6 +27,7 @@ SOURCE_FILES = (
     'tools/build_event_request_trace.py', 'tools/build_ui_lifecycle.py',
     'tools/build_request_reject_trace.py', 'tools/build_tip_channel.py',
     'botw_client/tip_protocol.py', 'tools/build_tower_maps_native.py',
+    'tools/build_weather_native.py',
 )
 
 
@@ -41,7 +42,8 @@ def encode(data):
 def generate(*, resource_gate=False, event_gate=False, tower_maps=False):
     """Pure native assembly generation; no dump, candidate or Cemu access.
     tower_maps: the seed's maps are items, the towers' icons read APTower_NN
-    (tools/build_tower_maps_native.py; the map opening's fallback is in every pack)."""
+    (tools/build_tower_maps_native.py; the map opening's fallback is in every pack).
+    The weather hold of the Downpour trap is in every pack (tools/build_weather_native.py)."""
     from tools.build_scoped_text import scoped_source
     from tools.build_owned_presentation import patch_native, owner_source
     from tools.build_rune_selection_sync import patch_injection as rune
@@ -65,6 +67,9 @@ def generate(*, resource_gate=False, event_gate=False, tower_maps=False):
     injection = tip_channel(injection)
     from tools.build_tower_maps_native import patch_injection as tower_maps_stage
     injection = tower_maps_stage(injection, icons=tower_maps)
+    # The Downpour trap's weather, held frame after frame (in every pack).
+    from tools.build_weather_native import patch_injection as weather_stage
+    injection = weather_stage(injection)
     from tools.patch_lint import lint
     problems = lint(injection)
     if problems:

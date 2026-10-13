@@ -35,7 +35,9 @@ OWN_ITEMS = {"Weapon Shatter": "Arme brisée (piège)", "Rupoor": "Rubis maudit 
              "Bow Pouch Upgrade": "Emplacement d'arc en plus (Noïa)",
              "Shield Pouch Upgrade": "Emplacement de bouclier en plus (Noïa)"}
 # Traps named after something of the game: (actor or label, suffix).
-GAME_TRAPS = {"Blood Moon": "Lune de sang (piège)", "Cucco Swarm": "Nuée de cocottes (piège)"}
+GAME_TRAPS = {"Blood Moon": "Lune de sang (piège)", "Cucco Swarm": "Nuée de cocottes (piège)",
+              "Downpour": "Averse (piège)", "Yiga Ambush": "Embuscade yiga (piège)",
+              "Paranoia": "Paranoïa (piège)"}
 
 
 def plain(text: str) -> str:

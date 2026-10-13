@@ -74,10 +74,10 @@ class TestEveryFillerATrap(BotwTestBase):
         traps = [item for item in self.multiworld.itempool if item.trap]
         self.assertEqual(len(traps), FILLER_SLOTS)
         # Drawn at random, of equal weights: every kind may not come up in 26
-        # draws (one in twenty misses one), but nearly always four of them.
+        # draws, but nearly always four of them.
         names = {item.name for item in traps}
         self.assertLessEqual(names, {"Weapon Shatter", "Blood Moon", "Rupoor", "Hearts Down", "Strip Down",
-                                     "Cucco Swarm"})
+                                     "Cucco Swarm", "Downpour", "Yiga Ambush", "Paranoia"})
         self.assertGreaterEqual(len(names), 4)
         self.assertEqual(len(pool), 152)
 

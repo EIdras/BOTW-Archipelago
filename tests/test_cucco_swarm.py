@@ -200,11 +200,10 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
                                           connected=True, slot_name="Player",
                                           send_death=AsyncMock())
         self.played = []
-        self.attacker = "Kokko_Simple"
         self.runtime.deliveries = SimpleNamespace(backend=SimpleNamespace(
             cucco_swarm=lambda stop: self.played.append(stop) or {"ok": 30},
-            last_attacker=lambda: self.attacker, killed_by_death_link=lambda: False,
-            death_cause=lambda slot: f"{slot} was slain"))
+            killed_by_death_link=lambda: False,
+            death_cause=lambda slot: f"{slot} was slain by a Cucco"))
 
     async def play(self):
         self.runtime._native_traps.append("cucco_swarm")
@@ -217,44 +216,13 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(self.played), 1)
         self.assertEqual(self.runtime._native_traps, [])
         self.assertIsNone(self.runtime._native_trap_task)
-        self.assertGreater(self.runtime._swarm_left, 0.0)
 
-    async def death(self):
+    async def test_a_death_by_the_swarm_is_a_death_like_any_other(self):
+        await self.play()
         await self.runtime._deathlink_tick()
         self.game.dead = True
         await self.runtime._deathlink_tick()
-
-    async def test_a_death_by_the_swarm_is_not_sent(self):
-        await self.play()
-        await self.death()
-        self.runtime.ap.send_death.assert_not_awaited()
-
-    async def test_a_death_by_something_else_during_the_swarm_is_sent(self):
-        self.attacker = "Enemy_Bokoblin_Junior"
-        await self.play()
-        await self.death()
-        self.runtime.ap.send_death.assert_awaited_once()
-
-    async def test_a_death_by_a_cucco_once_the_swarm_is_over_is_sent(self):
-        await self.play()
-        self.runtime._swarm_left = 0.0
-        await self.death()
-        self.runtime.ap.send_death.assert_awaited_once()
-
-    async def test_the_attackers_time_stands_still_out_of_the_world(self):
-        in_world = [False]
-        self.runtime.deliveries.backend.playing = lambda: in_world[0]
-        await self.play()
-        left = self.runtime._swarm_left
-        self.runtime._swarm_clock -= 60.0           # a menu open for a minute
-        await self.runtime._native_trap_tick()
-        self.assertEqual(self.runtime._swarm_left, left)
-        await self.death()                          # the menu closes, a cucco kills
-        self.runtime.ap.send_death.assert_not_awaited()
-        in_world[0] = True
-        self.runtime._swarm_clock -= 60.0           # a minute of play
-        await self.runtime._native_trap_tick()
-        self.assertLessEqual(self.runtime._swarm_left, 0.0)
+        self.runtime.ap.send_death.assert_awaited_once_with("Player was slain by a Cucco")
 
     async def start_blocking_swarm(self):
         """A swarm that plays until it is told to stop."""

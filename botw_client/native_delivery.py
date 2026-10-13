@@ -111,6 +111,11 @@ class NativeDeliveryCatalog:
         value = self.data.get("death_link")
         return str(value["flag"]) if isinstance(value, dict) and value.get("flag") else None
 
+    def downpour_flag(self) -> str | None:
+        """The volatile flag that marks a downpour (botw_patch/downpour.py)."""
+        value = self.data.get("downpour")
+        return str(value["flag"]) if isinstance(value, dict) and value.get("flag") else None
+
     def attacker_names(self) -> dict[str, str]:
         """{actor: English name} of what can kill Link, from the player's game files."""
         value = self.data.get("death_link")
@@ -484,17 +489,6 @@ class CemuNativeDeliveryBackend:
         raw = self._call(dc.DEAD_CAUSE_RAW, actor) if actor is not None else None
         return dc.death_text(slot, cause, raw, killer, self.catalog.attacker_names())
 
-    def last_attacker(self) -> str | None:
-        """The name of the last actor that hurt Link (botw_client/death_cause.py)."""
-        from . import death_cause as dc
-        process, cave = self.game.process, self.game.cave
-
-        def read(guest, size):
-            return process.read(cave.base + guest, size)
-
-        actor = dc.player(read)
-        return dc.attacker(read, actor) if actor is not None else None
-
     def playing(self) -> bool:
         """Link in the world: no menu, inventory, dialogue, event or loading
         (the stateless guard of the presentations and the journal)."""
@@ -523,6 +517,68 @@ class CemuNativeDeliveryBackend:
         return CuccoSwarm(read, write, self._call,
                           turn=lambda: lock_factory(pid) if lock_factory else nullcontext(),
                           playing=self.playing).run(stop)
+
+    def paranoia(self, stop=lambda: False) -> str:
+        """Play the Paranoia trap (botw_client/paranoia.py): its outcome."""
+        from .paranoia import Paranoia
+        process, cave = self.game.process, self.game.cave
+        _request, lock_factory = self._dependencies()
+        pid = int(process.pid)
+
+        def read(guest, size):
+            return process.read(cave.base + guest, size)
+
+        def write(guest, data):
+            if not process.write(cave.base + guest, data):
+                raise RuntimeError(f"memory write failed at {guest:#x}")
+
+        return Paranoia(read, write, self._call,
+                        turn=lambda: lock_factory(pid) if lock_factory else nullcontext(),
+                        playing=self.playing).run(stop)
+
+    def yiga_ambush(self) -> dict[str, int] | str:
+        """Play the Yiga Ambush trap (botw_client/yiga_ambush.py), in one turn of
+        the invoker: {outcome: count}, or why not now (Link out of the world)."""
+        from .yiga_ambush import ambush
+        reason = self._drop_blocked()
+        if reason:
+            return reason
+        outcome: dict[str, int] = {}
+
+        def work(read, write):
+            outcome.update(ambush(read, write, self._call))
+            return "ok"
+        status = self._in_one_turn(work)
+        return outcome if status == "ok" else status
+
+    def downpour(self, kind: int, frames: int) -> bool:
+        """Hold the weather `kind` for `frames` frames of the world (the Downpour
+        trap, botw_client/downpour.py), and mark it in the game (APDownpour, down
+        again at the next loaded save): False on a pack without the weather hold."""
+        if not self.game.cave.force_weather(kind, frames):
+            return False
+        self._downpour_mark(True)
+        return True
+
+    def downpour_state(self) -> tuple[int | None, bool | None]:
+        """The frames the downpour still lasts, and its mark (None: unreadable)."""
+        return self.game.cave.weather_left(), self._downpour_mark()
+
+    def end_downpour(self) -> bool:
+        """The game's weather back at once."""
+        return bool(self.game.cave.force_weather(0, 0))
+
+    def _downpour_mark(self, value: bool | None = None) -> bool | None:
+        """Read APDownpour, or write it; None when the pack or the game has none."""
+        flag = self.catalog.downpour_flag()
+        live = getattr(self.game, "live", None)
+        if flag is None or live is None:
+            return None
+        key = zlib.crc32(flag.encode()) & 0xFFFFFFFF
+        if value is not None and not live.set(key, value, "bool"):
+            return None
+        mark = live.get(key, "bool")
+        return None if mark is None else bool(mark)
 
     def drop_item(self, actor: str, **place) -> str:
         """Create `actor` at Link's feet (botw_client/item_drop.py): 'ok' once

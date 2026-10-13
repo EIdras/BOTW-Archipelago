@@ -513,6 +513,12 @@ class Cave:
         # tower index the next map opening takes when no tower is near.
         self.map_magic = version_addr + 9292
         self.map_tower = version_addr + 9296
+        # The Downpour trap's weather (tools/build_weather_native.py), after
+        # apTowerName ("APTower_", 9 bytes, aligned to 12).
+        self.weather_magic = version_addr + 9312
+        self.weather_type = version_addr + 9316
+        self.weather_frames = version_addr + 9320
+        self.weather_passes = version_addr + 9324
         # The twelve levels of the call chain, probed at once.
         # Each level: N, r3, r4, r5, r6, r7, Lr -- 7 words.
         self.lvl0 = version_addr + 8568
@@ -1114,6 +1120,34 @@ class Cave:
         if not self.map_ready():
             return False
         return bool(self.p.write(self.map_tower, (int(index) & 0xFFFFFFFF).to_bytes(4, "big")))
+
+    WEATHER_MAGIC = 0x57544831  # "WTH1", written by tools/build_weather_native.py
+
+    def weather_ready(self):
+        """Has the loaded patch the weather hold? (the magic word, as map_ready)"""
+        return be(self.p.read(self.weather_magic, 4)) == self.WEATHER_MAGIC
+
+    WEATHER_CEILING = 3          # the hook's passes at most, per frame of the world asked
+
+    def force_weather(self, kind, frames):
+        """Hold the weather `kind` (0..8) for `frames` frames of the world, and at
+        most WEATHER_CEILING times as many passes of the hook; 0 frames gives the
+        game its weather back. The type and the ceiling first, then the frames: the
+        hook never holds a type not yet written. False on a patch without the hold."""
+        if not self.weather_ready():
+            return False
+        frames = max(int(frames), 0)
+        return bool(self.p.write(self.weather_type, (int(kind) & 0xFFFFFFFF).to_bytes(4, "big"))
+                    and self.p.write(self.weather_passes,
+                                     (frames * self.WEATHER_CEILING).to_bytes(4, "big"))
+                    and self.p.write(self.weather_frames, frames.to_bytes(4, "big")))
+
+    def weather_left(self):
+        """The world's frames the weather hold still lasts; None on a patch without it."""
+        if not self.weather_ready():
+            return None
+        raw = self.p.read(self.weather_frames, 4)
+        return be(raw) if raw and len(raw) == 4 else None
 
     def request_rune_selection(self, rune_type, timeout=1.0):
         """Have the game call 0x02A2D6D4(*(0x10463798), type).

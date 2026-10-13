@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parent.parent
 ITEMS_JSON = ROOT / "botw_world" / "data" / "items.json"
 MAP_JSON = ROOT / "data" / "item_map.json"
 # The traps the client plays itself (native_trap), by effect name.
-NATIVE_EFFECTS = {"cucco_swarm"}
+NATIVE_EFFECTS = {"cucco_swarm", "downpour", "paranoia", "yiga_ambush"}
 
 
 class ItemMapError(RuntimeError):
