@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import AsyncMock, Mock, patch
 
-from botw_client.presentation_session import NativePresentationSession
+from botw_client.presentation_session import HELD, RENEW_SECONDS, NativePresentationSession
 from botw_client.runtime import BotwClientRuntime, StateStore, FatalClientError
 from botw_client.game import BotwGame
 
@@ -178,6 +178,106 @@ class SessionTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.advance(), ('uncertain', False))  # Old-session proof rejected.
         self.assertEqual(self.state['presentation_completed'], [])
         self.assertEqual(self.session.store.queue.snapshot()['entries'][1]['status'], 'queued')
+
+    def with_summary(self, factory=None):
+        """An AP summary ahead of received/0; factory() -> the renewed adapter."""
+        self.session.close()
+        self.session = NativePresentationSession(self.path, ('seed',0,1,'package'), self.game,
+                                                 backend=self.backend, backend_factory=factory)
+        self.addCleanup(self.session.close)
+        self.state['summary_queue'] = [{'key': 'summary/1', 'title': 'Items restored',
+                                        'lines': ['Zora Set']}]
+
+    def summary_left_uncertain(self):
+        """The summary accepted, then never finished: its adapter stops."""
+        self.assertEqual(self.advance(), ('accepted', False))
+        self.assertEqual(self.backend.submit.call_args.args[0], 'summary/1')
+        self.backend.poll.side_effect = RuntimeError('Native completion uncertain or timed out')
+        self.backend.stopped = True
+        self.assertEqual(self.advance(), ('passed', True))
+
+    @staticmethod
+    def adapter(free=True):
+        fresh = Mock(stopped=False)
+        fresh.owner_free.return_value = free
+        fresh.ready.return_value = True
+        fresh.submit.return_value = dict(status='accepted', session='fresh', generation=2)
+        fresh.poll.return_value = dict(status='finished', session='fresh', generation=2)
+        return fresh
+
+    def test_an_uncertain_summary_is_passed_and_the_next_window_follows_on_a_new_adapter(self):
+        fresh = self.adapter()
+        self.with_summary(lambda: fresh)
+        self.summary_left_uncertain()
+        self.assertEqual(self.state['summary_queue'], [])
+        self.assertEqual(self.session.passed,
+                         [('summary/1', 'uncertain', 'Native completion uncertain or timed out')])
+        self.assertIsNone(self.session.blocked_head())
+        self.assertEqual(self.advance(), ('accepted', False))
+        self.assertIs(self.session.backend, fresh)
+        self.assertEqual(fresh.submit.call_args.args[0], 'received/0')
+        self.assertEqual(self.advance(), ('completed', True))
+        self.assertEqual(self.state['presentation_completed'], [0])
+        self.assertEqual(self.backend.submit.call_count, 1)       # the summary, never again
+        self.assertEqual(fresh.submit.call_count, 1)
+
+    def test_a_held_native_owner_keeps_the_windows_waiting_until_it_is_free(self):
+        fresh = self.adapter(free=False)
+        self.with_summary(lambda: fresh)
+        self.summary_left_uncertain()
+        clock = 'botw_client.presentation_session.time.monotonic'
+        with patch(clock, return_value=1000.0):
+            self.assertEqual(self.advance(), ('waiting_ready', False))
+        self.assertEqual(self.backend.wait_reason, HELD)
+        fresh.owner_free.side_effect = RuntimeError('Native generation/protocol changed or faulted')
+        with patch(clock, return_value=1000.0 + RENEW_SECONDS):
+            self.assertEqual(self.advance(), ('waiting_ready', False))
+        fresh.owner_free.side_effect, fresh.owner_free.return_value = None, True
+        with patch(clock, return_value=1001.0 + RENEW_SECONDS):      # not yet asked again
+            self.assertEqual(self.advance(), ('waiting_ready', False))
+        fresh.submit.assert_not_called()
+        with patch(clock, return_value=1000.0 + 2 * RENEW_SECONDS):
+            self.assertEqual(self.advance(), ('accepted', False))
+        self.assertEqual(fresh.submit.call_args.args[0], 'received/0')
+
+    def test_without_a_new_adapter_the_windows_wait_for_a_restart(self):
+        self.with_summary()
+        self.summary_left_uncertain()
+        self.assertEqual(self.advance(), ('waiting_ready', False))
+        self.assertEqual(self.backend.wait_reason, HELD)
+        self.assertEqual(self.backend.submit.call_count, 1)
+
+    def test_a_refused_summary_is_passed_and_the_same_adapter_goes_on(self):
+        self.with_summary()
+        self.backend.submit.return_value = dict(status='refused')
+        self.assertEqual(self.advance(), ('passed', True))
+        self.backend.submit.return_value = dict(status='accepted', session='native', generation=2)
+        self.assertEqual(self.advance(), ('accepted', False))
+        self.assertEqual(self.backend.submit.call_args.args[0], 'received/0')
+
+    def test_a_summary_recovered_uncertain_after_a_restart_is_passed(self):
+        self.with_summary()
+        self.advance()                                  # summary/1 accepted, then the client stops
+        self.with_summary()
+        self.assertEqual(self.advance(), ('passed', True))
+        self.assertEqual(self.advance(), ('accepted', False))
+        self.assertEqual(self.backend.submit.call_args.args[0], 'received/0')
+
+    async def test_a_passed_summary_is_logged_without_asking_for_a_replay(self):
+        self.with_summary()
+        log = Mock()
+        runtime = BotwClientRuntime('localhost:1', 'test', state_path=self.path,
+            game_factory=lambda:self.game, native_presentations=True, log=log)
+        runtime.state, runtime.ap, runtime.presentations = self.state, self.ap, self.session
+        runtime._ap_session_ready = True
+        runtime.state_store = self.state_store
+        self.backend.submit.return_value = dict(status='refused')
+        await runtime._native_presentation_tick()
+        lines = [c.args[0] for c in log.call_args_list]
+        self.assertIn('AP summary passed unshown (summary/1, refused: Explicit native refusal; '
+                      'no automatic retry); the next AP windows follow', lines)
+        self.assertFalse(any('/ap-replay' in line for line in lines))
+        self.assertEqual(self.session.passed, [])
 
     async def test_console_recovery_is_committed_by_worker_not_console(self):
         self.advance()

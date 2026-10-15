@@ -2104,6 +2104,11 @@ class BotwClientRuntime:
                 self.state_store.save()
             except Exception as exc:
                 raise FatalClientError(f'presentation projection not saved: {exc}') from exc
+        passed = getattr(session, 'passed', None)
+        while isinstance(passed, list) and passed:
+            request_id, was, detail = passed.pop(0)
+            self.log(f'AP summary passed unshown ({request_id}, {was}: {detail}); '
+                     'the next AP windows follow')
         head = session.blocked_head() if status in ('uncertain', 'refused') else None
         notice = ((status, head['id'], head.get('attempts'),
                    head.get('replay_after_incarnation')) if head else None)

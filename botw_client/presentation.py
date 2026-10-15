@@ -9,7 +9,9 @@ from copy import deepcopy
 
 
 class PresentationQueue:
-    STATES={'queued','dispatching','accepted','completed','uncertain','refused'}
+    STATES={'queued','dispatching','accepted','completed','uncertain','refused','passed'}
+    # Over for the FIFO: shown (native proof), or passed unshown by the caller.
+    TERMINAL=('completed','passed')
 
     def __init__(self, namespace, commit, snapshot=None):
         if not isinstance(namespace,str) or not namespace:
@@ -47,9 +49,9 @@ class PresentationQueue:
             self._payload(e.get('title'),e.get('description'))
             if e.get('status') not in self.STATES:
                 raise ValueError('Unknown presentation state')
-            if e['status']=='completed' and nonterminal:
+            if e['status'] in self.TERMINAL and nonterminal:
                 raise ValueError('Completion out of FIFO order')
-            if e['status']!='completed':
+            if e['status'] not in self.TERMINAL:
                 if nonterminal and e['status']!='queued':
                     raise ValueError('Multiple in-flight requests')
                 nonterminal=True
@@ -68,6 +70,10 @@ class PresentationQueue:
 
     def snapshot(self):
         return deepcopy(self.state)
+
+    def _head(self):
+        """The first request not over (TERMINAL), or None."""
+        return next((e for e in self.state['entries'] if e['status'] not in self.TERMINAL),None)
 
     def _save(self):
         try:
@@ -104,7 +110,7 @@ class PresentationQueue:
         """
         if self.broken:
             raise RuntimeError('Journal unavailable; queue stopped')
-        entry=next((e for e in self.state['entries'] if e['status']!='completed'),None)
+        entry=self._head()
         if entry is None:
             return 'idle'
         status=entry['status']
@@ -170,12 +176,31 @@ class PresentationQueue:
         """Explicit caller decision, only for a proven refusal; never uncertainty."""
         if self.broken:
             raise RuntimeError('Journal unavailable; queue stopped')
-        entry=next((e for e in self.state['entries'] if e['status']!='completed'),None)
+        entry=self._head()
         if entry is None or entry['id']!=request_id or entry['status']!='refused':
             raise ValueError('Only the explicitly refused head can be retried')
         if 'replay_after_incarnation' in entry:
             raise ValueError('Authorized recovery requires a fresh Cemu process')
         entry.update(status='queued')
+        self._save()
+
+    def pass_head(self,request_id):
+        """Explicit caller decision: the blocked head (uncertain or refused) is
+        left unshown, and the requests behind it go on. Never a replay: it is
+        never submitted again, and nothing says it was shown."""
+        if self.broken:
+            raise RuntimeError('Journal unavailable; queue stopped')
+        entry=self._head()
+        if entry is None or entry['id']!=request_id or entry['status'] not in ('uncertain','refused'):
+            raise ValueError('Only the blocked FIFO head can be passed')
+        entry.setdefault('recovery_history',[]).append({
+            'decision':'passed_unshown',
+            'previous_status':entry['status'], 'attempts':entry['attempts'],
+            'ticket':deepcopy(entry.get('ticket')), 'detail':entry.get('detail'),
+            'replay_after_incarnation':entry.pop('replay_after_incarnation',None),
+        })
+        entry.pop('ticket',None)
+        entry.update(status='passed',detail='Passed unshown; never submitted again')
         self._save()
 
     def authorize_replay(self,request_id,incarnation):
@@ -186,7 +211,7 @@ class PresentationQueue:
         """
         if self.broken:
             raise RuntimeError('Journal unavailable; queue stopped')
-        entry=next((e for e in self.state['entries'] if e['status']!='completed'),None)
+        entry=self._head()
         if entry is None or entry['id']!=request_id or entry['status'] not in ('uncertain','refused'):
             raise ValueError('Only the blocked FIFO head can be authorized for replay')
         if not isinstance(incarnation,str) or not incarnation:
@@ -200,7 +225,7 @@ class PresentationQueue:
         """Caller must establish readiness in a fresh Cemu process first."""
         if self.broken:
             raise RuntimeError('Journal unavailable; queue stopped')
-        entry=next((e for e in self.state['entries'] if e['status']!='completed'),None)
+        entry=self._head()
         if not entry or 'replay_after_incarnation' not in entry:
             return False
         if not isinstance(incarnation,str) or not incarnation:

@@ -1,11 +1,25 @@
-"""Companion projection of the durable presentation journal, separate from grants."""
+"""Companion projection of the durable presentation journal, separate from grants.
+
+An AP summary (the items a reload gave back, or a release's) is only a recap:
+left uncertain or refused, it is passed unshown, never replayed, and the
+windows behind it go on (seen in play: an "Items restored" window accepted
+right after a reload never ran, and held every later window until
+/ap-replay and a restart of Cemu). Any other window keeps its /ap-replay.
+"""
 import hashlib
 import json
+import time
 from types import SimpleNamespace
 
+from .presentation import PresentationQueue
 from .presentation_store import PresentationStore
 from .presentation_cemu import CemuPresentationBackend
 from .message_text import clip_units
+
+# How often a stopped adapter is renewed while the native owner stays held.
+RENEW_SECONDS = 2.0
+HELD = ('native presentation held by a passed AP summary that never ran; '
+        'close and reopen Cemu to get the AP windows back')
 
 
 def clipped(text, units):
@@ -28,40 +42,70 @@ def snapshot_ap(ap):
 
 
 class NativePresentationSession:
-    def __init__(self, state_path, identity, game, *, backend=None):
+    def __init__(self, state_path, identity, game, *, backend=None, backend_factory=None):
+        """backend: the adapter (tests); backend_factory() -> a new one, for
+        the renewal after a passed summary (by default, on the game's Cemu;
+        none with a given backend and no factory)."""
         if not identity or not identity[0] or identity[0] == 'unknown-seed':
             raise ValueError('A known AP session is required for persistent presentation')
         namespace = json.dumps(identity, ensure_ascii=False)
         digest = hashlib.sha256(namespace.encode()).hexdigest()
         path = state_path.parent / (state_path.name + '.presentations') / (digest + '.json')
         self.store = PresentationStore(path, namespace)
+        self.passed = []                # (id, status, detail) of the summaries passed, for the log
+        self._renew_at = 0.0
         try:
-            if backend is not None:
-                self.backend = backend
-            else:
-                from tools.cemu.presentation_ready import diagnose, flag_reader, ready, summary
-                flags = flag_reader(game.process, game.cave)
-                live_gate = getattr(game, "safe_for_delivery", None)
-                allow_hudless = callable(live_gate)
-                guard = lambda: ready(
-                    game.process, game.cave, flags, allow_hudless=allow_hudless)
-                explain = lambda: summary(diagnose(
-                    game.process, game.cave, flags, allow_hudless=allow_hudless))
-                options = {"guard": guard, "explain": explain}
-                import os
-                evidence_path = os.environ.get('BOTW_PRESENTATION_EVIDENCE')
-                cemu_log = os.environ.get('BOTW_CEMU_LOG')
-                if evidence_path and cemu_log:
-                    from .presentation_evidence import PresentationEvidence
-                    options['evidence'] = PresentationEvidence(
-                        evidence_path, game.process, game.cave, cemu_log)
-                if allow_hudless:
-                    options["stability_guard"] = live_gate
-                self.backend = CemuPresentationBackend(
-                    game.process, game.cave, **options)
+            if backend_factory is None and backend is None:
+                backend_factory = self._cemu_backends(game)
+            self._new_backend = backend_factory
+            self.backend = backend if backend is not None else backend_factory()
         except BaseException:
             self.store.close()
             raise
+
+    @staticmethod
+    def _cemu_backends(game):
+        """() -> a new adapter on the game's Cemu; its guards (the GameData
+        index among them) are built once."""
+        from tools.cemu.presentation_ready import diagnose, flag_reader, ready, summary
+        flags = flag_reader(game.process, game.cave)
+        live_gate = getattr(game, "safe_for_delivery", None)
+        allow_hudless = callable(live_gate)
+        guard = lambda: ready(
+            game.process, game.cave, flags, allow_hudless=allow_hudless)
+        explain = lambda: summary(diagnose(
+            game.process, game.cave, flags, allow_hudless=allow_hudless))
+        options = {"guard": guard, "explain": explain}
+        import os
+        evidence_path = os.environ.get('BOTW_PRESENTATION_EVIDENCE')
+        cemu_log = os.environ.get('BOTW_CEMU_LOG')
+        if evidence_path and cemu_log:
+            from .presentation_evidence import PresentationEvidence
+            options['evidence'] = PresentationEvidence(
+                evidence_path, game.process, game.cave, cemu_log)
+        if allow_hudless:
+            options["stability_guard"] = live_gate
+        return lambda: CemuPresentationBackend(game.process, game.cave, **options)
+
+    def _backend_usable(self):
+        """After a passed summary, the adapter that saw its uncertainty is
+        stopped: a new one once the native owner is free again (an accepted
+        window that never ran holds it until it runs, or until Cemu restarts)."""
+        if getattr(self.backend, 'stopped', False) is not True:
+            return True
+        self.backend.wait_reason = HELD
+        now = time.monotonic()
+        if self._new_backend is None or now < self._renew_at:
+            return False
+        self._renew_at = now + RENEW_SECONDS
+        try:
+            backend = self._new_backend()
+            free = backend.owner_free() is True
+        except Exception:  # noqa: BLE001 - a faulted or unreadable owner: still held
+            free = False
+        if free:
+            self.backend = backend
+        return free
 
     def close(self):
         self.store.close()
@@ -74,8 +118,9 @@ class NativePresentationSession:
         self.store.queue.authorize_replay(request_id, self.backend.recovery_incarnation())
 
     def blocked_head(self):
-        head = next((e for e in self.store.queue.snapshot()['entries']
-                     if e['status'] != 'completed'), None)
+        queue = self.store.queue
+        head = next((e for e in queue.snapshot()['entries']
+                     if e['status'] not in PresentationQueue.TERMINAL), None)
         return head if head and head['status'] in ('uncertain', 'refused') else None
 
     @staticmethod
@@ -176,10 +221,19 @@ class NativePresentationSession:
                 else:
                     received_payload(index, item, key)
 
-        head = next((e for e in queue.snapshot()['entries'] if e['status'] != 'completed'), None)
-        status = ('waiting_ready' if head and head['status'] == 'queued' and not allow_submit
+        head = next((e for e in queue.snapshot()['entries'] if e['status'] not in PresentationQueue.TERMINAL), None)
+        status = ('waiting_ready' if head and head['status'] == 'queued'
+                  and (not allow_submit or not self._backend_usable())
                   else queue.tick(self.backend))
-        completed = {e['id'] for e in queue.snapshot()['entries'] if e['status'] == 'completed'}
+        blocked = self.blocked_head()
+        if blocked and blocked['id'].startswith('summary/'):
+            queue.pass_head(blocked['id'])
+            self.passed.append((blocked['id'], blocked['status'], blocked.get('detail')))
+            status = 'passed'
+        snapshot = queue.snapshot()['entries']
+        completed = {e['id'] for e in snapshot if e['status'] == 'completed'}
+        # A passed summary leaves the summaries to show, as a shown one.
+        passed = {e['id'] for e in snapshot if e['status'] == 'passed' and e['id'].startswith('summary/')}
         changed = False
 
         def mark(value, pending, shown, confirmed, native):
@@ -202,7 +256,7 @@ class NativePresentationSession:
         for location_id in skipped_locations:
             mark(location_id, 'location_display_queue', 'location_shown',
                  'location_presentation_completed', True)
-        for key in completed:
+        for key in completed | passed:
             kind, raw = key.split('/')
             if kind == 'summary':
                 pending = [s for s in state.get('summary_queue', []) if s['key'] != key]

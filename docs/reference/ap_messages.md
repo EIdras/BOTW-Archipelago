@@ -149,6 +149,12 @@ apart: its items come one by one, as usual. The journal says once that they are 
 way"). A step after a silent twin waits `QUIET_SETTLE_FRAMES` (20) instead of `SETTLE_FRAMES`: a silent twin neither
 pauses nor opens a window, and is over a few frames after its commit.
 
+These two windows are only a recap. One the game refuses, or accepts and never shows (seen once: an "Items restored"
+asked for right after a reload), is **passed unshown** (`PresentationQueue.pass_head`): it is never asked for again,
+and the windows behind it go on. Any other window left that way still holds the ones behind it until `/ap-replay` and
+a restart of Cemu. A window accepted that never ran keeps the game's presentation owner busy: the windows behind it
+wait until it runs, and the client log says to close and reopen Cemu (the client resumes on its own afterwards).
+
 - **Rupees**: the quiet twin of a rupee bundle is the game's own action `Demo_IncreaseRupee {Value, IsWaitFinish}`,
   the one of quest rewards (for example `Npc_Goron018` Event179, `Demo035_0` Event136), with the value of the bundle's
   `GetDemo` actor (`PutRupee_Red` = 20). `IsWaitFinish` is false, so the counter animation does not freeze the player.

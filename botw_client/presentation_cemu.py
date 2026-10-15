@@ -109,6 +109,14 @@ class CemuPresentationBackend:
             raise RuntimeError('Native generation/protocol changed or faulted')
         return state, join
 
+    def owner_free(self):
+        """The native owner can take a new request: no earlier one holds it (a
+        window accepted that never ran holds it until it runs, or until Cemu
+        restarts). Raises, as every read, on a faulted or foreign owner."""
+        state, join = self._state()
+        return not state['busy'] and (state['phase'] in ('idle', 'refused')
+                                      or self.native.finished(state, join))
+
     def ready(self):
         state, join = self._state()
         if self.clock() < self.retry_after:

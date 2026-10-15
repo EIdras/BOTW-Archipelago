@@ -200,6 +200,46 @@ class QueueTests(unittest.TestCase):
         self.assertEqual(q.snapshot()['entries'][0]['replay_after_incarnation'],'old')
         with self.assertRaises(ValueError): q.retry_refused('received/0')
 
+    def test_a_passed_head_is_never_submitted_again_and_the_fifo_goes_on(self):
+        q,j,b=self.make()
+        b.poll.side_effect=RuntimeError('Native completion uncertain or timed out')
+        q.tick(b)
+        self.assertEqual(q.tick(b),'uncertain')
+        q.authorize_replay('received/0','old')
+        q.pass_head('received/0')
+        entry=j[-1]['entries'][0]
+        self.assertEqual(entry['status'],'passed')
+        self.assertNotIn('ticket',entry)
+        self.assertNotIn('replay_after_incarnation',entry)
+        self.assertEqual(entry['recovery_history'][-1]['decision'],'passed_unshown')
+        self.assertEqual(entry['recovery_history'][-1]['previous_status'],'uncertain')
+        self.assertFalse(q.replay_after_restart('new'))
+        b.poll.side_effect=None
+        b.submit.return_value=dict(status='accepted',session='process-instance',generation=2)
+        b.poll.return_value=dict(status='finished',session='process-instance',generation=2)
+        recovered=PresentationQueue('seed/slot',lambda _: None,q.snapshot())
+        self.assertEqual(recovered.tick(b),'accepted')
+        self.assertEqual(recovered.tick(b),'completed')
+        self.assertEqual([c.args[0] for c in b.submit.call_args_list],['received/0','received/1'])
+        self.assertEqual(recovered.tick(b),'idle')
+
+    def test_only_the_blocked_head_can_be_passed(self):
+        q,j,b=self.make()
+        with self.assertRaises(ValueError): q.pass_head('received/0')      # queued
+        b.submit.return_value=dict(status='refused')
+        q.tick(b)
+        with self.assertRaises(ValueError): q.pass_head('received/1')      # not the head
+        q.pass_head('received/0')
+        with self.assertRaises(ValueError): q.pass_head('received/0')      # already passed
+        self.assertEqual(q.snapshot()['entries'][1]['status'],'queued')
+
+    def test_a_passed_entry_after_a_waiting_one_is_out_of_fifo_order(self):
+        q,j,b=self.make()
+        state=q.snapshot()
+        state['entries'][1]['status']='passed'
+        with self.assertRaisesRegex(ValueError,'FIFO'):
+            PresentationQueue('seed/slot',lambda _: None,state)
+
 
 if __name__=='__main__':
     unittest.main()

@@ -146,6 +146,20 @@ class AdapterTests(unittest.TestCase):
         self.queue.enqueue('1', 'A', 'B')
         self.queue.enqueue('2', 'C', 'D')
 
+    def test_owner_free_only_when_no_earlier_request_holds_it(self):
+        self.make()
+        self.assertTrue(self.backend.owner_free())
+        self.state.update(phase='accepted')          # a window accepted that never ran
+        self.assertFalse(self.backend.owner_free())
+        self.state.update(phase='refused')
+        self.assertTrue(self.backend.owner_free())
+        self.state.update(phase='idle', busy=1)
+        self.assertFalse(self.backend.owner_free())
+        self.state.update(busy=0, fault=1)
+        with self.assertRaises(RuntimeError):
+            self.backend.owner_free()
+        self.native.request.assert_not_called()
+
     def send(self):
         for value in (0., .11):
             self.now = value
