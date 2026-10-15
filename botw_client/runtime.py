@@ -301,6 +301,8 @@ class BotwClientRuntime:
         self._pickups: list[tuple[str, int]] = []
         self._native_trap_task = None
         self._swarm_stop = threading.Event()
+        # Set by the swarm or the Guardian once on Link: their journal lines then.
+        self._native_trap_strike = threading.Event()
         self._next_delivery_wait_log = 0.0
         self._native_delivery_retry_after = 0.0
         self._native_session_bound = False
@@ -862,10 +864,10 @@ class BotwClientRuntime:
                 if not silent:
                     # The trap has no window, and nothing announced it: once it
                     # has struck, the journal names it (the server's line) and
-                    # says what it did. Given back after a reload, it is spent
-                    # without effect and without a word.
-                    from .ap_journal import trap_line
-                    notes = [line for line in (announcement, trap_line(name, trap["value"])) if line]
+                    # says what it did, in one tip. Given back after a reload,
+                    # it is spent without effect and without a word.
+                    from .ap_journal import trap_note
+                    notes = [trap_note(announcement, name, trap["value"])]
                     if trap["kind"] == "native_trap":
                         # Committed: the client plays it (_native_trap_tick), and
                         # names it once it has struck.
@@ -1422,11 +1424,15 @@ class BotwClientRuntime:
     async def _native_trap_tick(self):
         """Plays the committed native traps, one at a time. Not kept across a
         restart of the client: a trap committed but not played is spent. The
-        swarm and the Paranoia's Guardian play on a thread of their own; the
-        ambush and the downpour at once."""
+        swarm and the Paranoia's Guardian play on a thread of their own, and
+        are named in the journal as they strike (their first attacker, the
+        Guardian taking aim), not once over; the ambush and the downpour at once."""
         task = self._native_trap_task
         if task is not None:
             if not task.done():
+                if self._native_trap_strike.is_set() and self._native_trap_task_notes:
+                    self._native_trap_struck(self._native_trap_task_notes)
+                    self._native_trap_task_notes = []
                 return
             self._native_trap_task = None
             try:
@@ -1451,8 +1457,10 @@ class BotwClientRuntime:
             # No safety check of its own: the trap is queued at its commit,
             # which happened at a safe moment; the swarm waits out the menus.
             self._swarm_stop.clear()
+            self._native_trap_strike.clear()
             self._native_trap_task = asyncio.create_task(
-                asyncio.to_thread(play, self._swarm_should_stop), name="Cucco Swarm")
+                asyncio.to_thread(play, self._swarm_should_stop, self._native_trap_strike.set),
+                name="Cucco Swarm")
         elif effect == "paranoia":
             play = getattr(backend, "paranoia", None)
             self._native_traps.pop(0)
@@ -1463,8 +1471,10 @@ class BotwClientRuntime:
             self._native_trap_task_notes = notes
             # Its Guardian deleted at once if Link dies or the client stops.
             self._swarm_stop.clear()
+            self._native_trap_strike.clear()
             self._native_trap_task = asyncio.create_task(
-                asyncio.to_thread(play, self._swarm_should_stop), name="Paranoia")
+                asyncio.to_thread(play, self._swarm_should_stop, self._native_trap_strike.set),
+                name="Paranoia")
         elif effect == "yiga_ambush":
             play = getattr(backend, "yiga_ambush", None)
             result = await asyncio.to_thread(play) if play is not None else None

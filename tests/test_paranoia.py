@@ -24,7 +24,7 @@ def word(value: float) -> int:
 class Game:
     """The guest memory and the game's functions the trap calls."""
 
-    def __init__(self, *, ready_after=2, link=True, gone=False):
+    def __init__(self, *, ready_after=2, link=True, gone=False, fps=None, delta=None):
         self.words = {PLAYER_INFO: 0x2000, 0x2030: 0x3000, CREATOR: 0x4000, HEAP_HOLDER: 0x5000,
                       0x5010: 0x6000, PROC + pa.LINK_ID: IDENT, PROC + pa.LINK_DATA: DATA}
         for axis, value in enumerate((100.0, 50.0, 200.0)):         # Link's place
@@ -33,7 +33,9 @@ class Game:
             self.words[0x3000 + pa.FORWARD + 0x10 * axis] = word(value)
         if link:
             self.words[DATA + 0x3C], self.words[DATA + 0x40] = IDENT, PROC
-        self.gone, self.ready_after = gone, ready_after
+        if delta is not None:                                     # the frame-rate manager
+            self.words[pa.VFR], self.words[0x48000000 + pa.VFR_DELTA] = 0x48000000, word(delta)
+        self.gone, self.ready_after, self.fps = gone, ready_after, fps
         self.written, self.calls, self.now = {}, [], 0.0
 
     def read(self, guest, size):
@@ -57,6 +59,10 @@ class Game:
 
     def clock(self):
         return self.now
+
+    def frame(self):
+        """The cave's frame counter: `fps` frames a second of wall time."""
+        return int(self.now * self.fps + 1e-6) & 0xFFFFFFFF
 
     def sleep(self, seconds):
         self.now += seconds
@@ -82,11 +88,12 @@ class PlaceTests(unittest.TestCase):
 
 class TrapTests(unittest.TestCase):
     def play(self, game, stop=lambda: False):
-        return pa.Paranoia(game.read, game.write, game.call, clock=game.clock, sleep=game.sleep).run(stop)
+        return pa.Paranoia(game.read, game.write, game.call, clock=game.clock, sleep=game.sleep,
+                           frames=game.frame if game.fps else None).run(stop)
 
     def test_created_with_place_and_rotation_woken_and_deleted_at_its_time(self):
         game = Game()
-        self.assertEqual(self.play(game), "deleted")
+        self.assertTrue(self.play(game).startswith("deleted after "))
         (request,) = game.called(REQUEST_CREATE)
         base = 0x30000000
         self.assertEqual(request, (0x4000, base + pa.NAME, 0x6000, base + pa.HANDLE, base, 0, 1))
@@ -106,6 +113,15 @@ class TrapTests(unittest.TestCase):
         self.assertGreaterEqual(game.now, pa.LIFETIME)
         self.assertLess(pa.LIFETIME, 7.1)
 
+    def test_it_strikes_once_woken_and_never_without_its_link(self):
+        for game, strikes in ((Game(), 1), (Game(link=False), 0), (Game(ready_after=10_000), 0)):
+            seen = []
+            pa.Paranoia(game.read, game.write, game.call, clock=game.clock, sleep=game.sleep).run(
+                struck=lambda: seen.append(game.called(pa.WAKE)))
+            self.assertEqual(len(seen), strikes)
+            if seen:
+                self.assertEqual(seen[0], [(PROC, 0)])           # after its waking
+
     def test_a_guardian_without_its_link_is_deleted_before_it_wakes(self):
         game = Game(link=False)
         self.assertEqual(self.play(game), "no link")
@@ -114,7 +130,7 @@ class TrapTests(unittest.TestCase):
 
     def test_a_guardian_gone_before_its_time_is_left_alone(self):
         game = Game(gone=True)
-        self.assertEqual(self.play(game), "gone")
+        self.assertTrue(self.play(game).startswith("gone after "))
         self.assertEqual(game.called(pa.DELETE_LATER), [])
 
     def test_stopped_the_guardian_is_deleted_at_once(self):
@@ -125,7 +141,7 @@ class TrapTests(unittest.TestCase):
             if game.called(pa.WAKE) and not woken:
                 woken.append(game.now)
             return bool(woken)
-        self.assertEqual(self.play(game, stop), "deleted")
+        self.assertTrue(self.play(game, stop).startswith("deleted after "))
         self.assertLess(game.now - woken[0], pa.LIFETIME)
 
     def test_never_ready_it_is_deleted_through_its_handle(self):
@@ -133,6 +149,39 @@ class TrapTests(unittest.TestCase):
         self.assertEqual(self.play(game), "not ready")
         self.assertEqual(game.called(pa.WAKE), [])
         self.assertEqual(game.called(pa.HANDLE_DELETE), [(0x30000000 + pa.HANDLE,)])
+
+    def woken_for(self, game):
+        """The wall time from its waking to its deletion, and the outcome."""
+        outcome = self.play(game)
+        order = [a for a, _ in game.calls]
+        self.assertLess(order.index(pa.WAKE), order.index(pa.DELETE_LATER))
+        return game.now, outcome
+
+    def test_its_time_is_the_games_in_a_turbo(self):
+        # Paced on a vsync three times faster: 90 frames a second at a delta of 1.
+        now, outcome = self.woken_for(Game(fps=90, delta=1.0))
+        self.assertLess(now, pa.LIFETIME / 3 + 0.2)
+        self.assertIn("speed x1.00", outcome)
+
+    def test_its_time_is_the_wall_clock_under_fps_plus_plus(self):
+        # 60 frames a second, each worth half a frame of 1/30 s.
+        now, outcome = self.woken_for(Game(fps=60, delta=0.5))
+        self.assertGreaterEqual(now, pa.LIFETIME - 0.1)
+        self.assertLess(now, pa.LIFETIME + 0.2)
+        self.assertIn("speed x0.50", outcome)
+
+    def test_a_slow_game_is_cut_by_the_wall_clock(self):
+        # 15 frames a second at a delta read as 1: half the game time; the wall decides.
+        now, outcome = self.woken_for(Game(fps=15, delta=1.0))
+        self.assertLess(now, pa.LIFETIME + 0.2)
+        self.assertTrue(outcome.startswith("deleted after 3."), outcome)
+
+    def test_an_unreadable_delta_counts_frames_of_1_30_s(self):
+        now, outcome = self.woken_for(Game(fps=90))
+        self.assertLess(now, pa.LIFETIME / 3 + 0.2)
+        self.assertIn("delta unreadable", outcome)
+        for value in (0.0, 9.0):                    # out of its range: unreadable too
+            self.assertIn("delta unreadable", self.woken_for(Game(fps=90, delta=value))[1])
 
     def test_no_player_no_guardian(self):
         game = Game()
@@ -153,13 +202,13 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
         runtime.game = SimpleNamespace(is_dead=lambda: False)
         stops = []
         runtime.deliveries = SimpleNamespace(backend=SimpleNamespace(
-            paranoia=lambda stop: stops.append(stop) or "deleted"))
+            paranoia=lambda stop, struck: stops.append(stop) or "deleted"))
         runtime._native_traps.append("paranoia")
         await runtime._native_trap_tick()
         self.assertEqual(runtime._native_trap_task.get_name(), "Paranoia")
         await runtime._native_trap_task
         await runtime._native_trap_tick()
-        self.assertEqual(lines[-1], "Paranoia played: deleted")
+        self.assertEqual(lines[-1], "Paranoia played: deleted")      # as the backend says it
         self.assertEqual(stops, [runtime._swarm_should_stop])
 
 

@@ -52,6 +52,17 @@ def trap_line(item: str, text: str) -> str:
     return "{0}" + _plain(item) + "{/}: " + _plain(text)
 
 
+def trap_note(announcement: str | None, item: str, text: str) -> str:
+    """A received trap in one tip, once it has struck: the server's line, then
+    what the trap did ("Alice sent Rupoor to Bob. Rupees slip through your
+    fingers."). Two tips came one after the other, the journal showing one at a
+    time: the second long after the trap (seen in play). Without the server's
+    line, the trap named with what it did."""
+    if announcement:
+        return announcement + ". " + _plain(text)
+    return trap_line(item, text)
+
+
 def ganon_sealed_line(missing: list[tuple[str, int, int]]) -> str:
     """Why the sanctum sent Link back: what the seed still asks, (what, have, need)."""
     if not missing:

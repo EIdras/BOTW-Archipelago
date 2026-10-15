@@ -487,6 +487,11 @@ class CemuNativeDeliveryBackend:
         killer = dc.attacker(read, actor)
         cause = self._call(dc.DEAD_CAUSE_QUERY, 0)
         raw = self._call(dc.DEAD_CAUSE_RAW, actor) if actor is not None else None
+        if self._report:
+            # What the game said, in the client's log only: an attacker without
+            # a name (sent as "died in Hyrule") is told here.
+            self._report(f"Link's death as the game tells it: cause {cause}, "
+                         f"raw {'none' if raw is None else hex(raw)}, attacker {killer or 'none'}")
         return dc.death_text(slot, cause, raw, killer, self.catalog.attacker_names())
 
     def playing(self) -> bool:
@@ -498,8 +503,9 @@ class CemuNativeDeliveryBackend:
             self._playing_flags, self._playing_for = flag_reader(process, cave), process
         return ready(process, cave, self._playing_flags, allow_hudless=True)
 
-    def cucco_swarm(self, stop=lambda: False) -> dict[str, int]:
-        """Play the Cucco Swarm trap (botw_client/cucco_swarm.py): {outcome: count}."""
+    def cucco_swarm(self, stop=lambda: False, struck=lambda: None) -> dict[str, int]:
+        """Play the Cucco Swarm trap (botw_client/cucco_swarm.py): {outcome: count};
+        struck() once it is on Link."""
         from .cucco_swarm import CuccoSwarm
         process, cave = self.game.process, self.game.cave
         _request, lock_factory = self._dependencies()
@@ -516,10 +522,11 @@ class CemuNativeDeliveryBackend:
         # it, and never cut an attacker's calls in two (botw_client/invoker_turn.py).
         return CuccoSwarm(read, write, self._call,
                           turn=lambda: lock_factory(pid) if lock_factory else nullcontext(),
-                          playing=self.playing).run(stop)
+                          playing=self.playing).run(stop, struck)
 
-    def paranoia(self, stop=lambda: False) -> str:
-        """Play the Paranoia trap (botw_client/paranoia.py): its outcome."""
+    def paranoia(self, stop=lambda: False, struck=lambda: None) -> str:
+        """Play the Paranoia trap (botw_client/paranoia.py): its outcome; struck()
+        once its Guardian takes aim."""
         from .paranoia import Paranoia
         process, cave = self.game.process, self.game.cave
         _request, lock_factory = self._dependencies()
@@ -534,7 +541,7 @@ class CemuNativeDeliveryBackend:
 
         return Paranoia(read, write, self._call,
                         turn=lambda: lock_factory(pid) if lock_factory else nullcontext(),
-                        playing=self.playing).run(stop)
+                        playing=self.playing, frames=getattr(self.game, "frame_tick", None)).run(stop, struck)
 
     def yiga_ambush(self) -> dict[str, int] | str:
         """Play the Yiga Ambush trap (botw_client/yiga_ambush.py), in one turn of
@@ -543,6 +550,13 @@ class CemuNativeDeliveryBackend:
         reason = self._drop_blocked()
         if reason:
             return reason
+        # Not while the trap's event is closing: created a second after its
+        # commit, the armed Yiga vanished at once in a warp (seen in play, at
+        # normal speed and in a turbo); created with Link free, they stayed and
+        # fought (lab probe 21). As a delivery waits for the event before it.
+        since = self._frames_since_commit()
+        if since is not None and since < SETTLE_FRAMES:
+            return f"the trap's event closing ({since}/{SETTLE_FRAMES} frames)"
         outcome: dict[str, int] = {}
 
         def work(read, write):

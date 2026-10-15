@@ -31,6 +31,12 @@ DEAD_CAUSE_RAW = 0x02B72C30
 HEAT = 1                           # low 16 bits of the raw value
 GUEST = (0x10000000, 0x50000000)
 
+# Attackers without a name of their own in the game's texts, named as the actor
+# they stand for: the angry cuccos' attackers (the Cucco Swarm's too), the Yiga
+# archer (a Yiga Footsoldier in the game's texts).
+ALIASES = {"Kokko_Simple": "Animal_Kokko_A",
+           "Enemy_Assassin_Shooter_Junior": "Enemy_Assassin_Junior"}
+
 VERBS = {
     1: "froze to death", 2: "froze to death", 3: "was poisoned", 4: "burned to death",
     5: "was electrocuted", 6: "was struck by lightning", 7: "drowned",
@@ -75,7 +81,7 @@ def _article(name: str) -> str:
 def death_text(slot: str, cause: int | None, raw: int | None, killer: str | None,
                names: dict[str, str]) -> str:
     """The DeathLink cause sent for Link's death."""
-    name = names.get(killer) if killer else None
+    name = names.get(ALIASES.get(killer, killer)) if killer else None
     if cause == 9:
         if killer == "RemoteBomb":
             return f"{slot} was caught in their own bomb blast"

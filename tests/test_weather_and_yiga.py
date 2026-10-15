@@ -204,6 +204,21 @@ class AmbushTests(unittest.TestCase):
         self.assertEqual(yiga_ambush.ambush(memory.read, memory.write, memory.call), {"player": 1})
         self.assertEqual(memory.calls, [])
 
+    def test_not_while_the_traps_event_is_closing(self):
+        from botw_client.native_delivery import SETTLE_FRAMES, CemuNativeDeliveryBackend
+        backend = CemuNativeDeliveryBackend.__new__(CemuNativeDeliveryBackend)
+        frame = [1000]
+        backend.game = SimpleNamespace(frame_tick=lambda: frame[0])
+        backend._committed_at = 970                     # the trap's commit, 30 frames ago
+        backend._drop_blocked = lambda: None
+        turns = []
+        backend._in_one_turn = lambda work: turns.append(work) or "ok"
+        self.assertEqual(backend.yiga_ambush(), f"the trap's event closing (30/{SETTLE_FRAMES} frames)")
+        self.assertEqual(turns, [])
+        frame[0] = 970 + SETTLE_FRAMES
+        self.assertEqual(backend.yiga_ambush(), {})
+        self.assertEqual(len(turns), 1)
+
 
 class RuntimeTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):

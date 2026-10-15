@@ -68,6 +68,7 @@ INTERVAL = 5 / 30                  # CreateNewActorInterval
 ALIVE = 70 / 30                    # the attacker's AliveTime
 PAUSE_LIMIT = 120.0                # seconds out of the world before the swarm gives up
 HANDLES = 16                       # a handle whose attacker never came is never reused
+YIELD = 0.01                       # seconds between two attackers' turns, at least
 MEMORY = 0x400
 
 
@@ -165,8 +166,10 @@ class CuccoSwarm:
         self.call(HANDLE_RELEASE, handle)
         return "ok" if variable else "target"
 
-    def run(self, stop: Callable[[], bool] = lambda: False) -> dict[str, int]:
-        """The whole swarm: {outcome: count}, {'not_ready': 1} when it could not start."""
+    def run(self, stop: Callable[[], bool] = lambda: False,
+            struck: Callable[[], None] = lambda: None) -> dict[str, int]:
+        """The whole swarm: {outcome: count}, {'not_ready': 1} when it could not start.
+        struck() once its first attacker is born: the swarm is on Link."""
         if not self.prepare():
             return {"not_ready": 1}
         results: dict[str, int] = {}
@@ -194,9 +197,12 @@ class CuccoSwarm:
                     centre = self.link_position(player) if player else None
                     outcome = (self.attacker(birthplace(centre, self.rng)) if centre
                                else "player")
+            if outcome == "ok" and "ok" not in results:
+                struck()
             results[outcome] = results.get(outcome, 0) + 1
-            rest = INTERVAL - (self.clock() - began)
-            if rest > 0:
-                self.sleep(rest)
+            # An attacker takes longer than INTERVAL: without a pause, the turn
+            # is taken again at once, and the journal, waiting for it, shows
+            # the swarm's line only once it is over.
+            self.sleep(max(INTERVAL - (self.clock() - began), YIELD))
             played += self.clock() - began
         return results

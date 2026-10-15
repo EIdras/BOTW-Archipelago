@@ -76,11 +76,12 @@ short after its commit is spent, never suffered twice. The entries are added fir
 requested alone.
 
 - **No window, no warning.** Nothing announces a trap: the server's line ("Alice sent Rupoor to Bob") is kept
-  until the trap has struck (`BotwClientRuntime._received_announcement`), then the journal shows it, with what the
-  trap did ("Rupoor: Rupees slip through your fingers."). Seen in play: announced first, the journal named Paranoia
-  before its Guardian came. A trap of the entries is named at its commit; one the client plays, once it has struck:
-  Cucco Swarm and Paranoia when they are over, Yiga Ambush when its Yiga are there, Downpour when its weather is
-  held. The text is the item's `delivery.text` in [`data/item_map.json`](../../data/item_map.json).
+  until the trap has struck (`BotwClientRuntime._received_announcement`), then the journal shows it in one tip, with
+  what the trap did ("Alice sent Rupoor to Bob. Rupees slip through your fingers."; without the server's line,
+  "Rupoor: Rupees slip through your fingers."). Seen in play: announced first, the journal named Paranoia before its
+  Guardian came; in two tips, the second came long after the trap, the journal showing one tip at a time. A trap of the entries is named at its commit; one the client plays, as it strikes:
+  Cucco Swarm at its first attacker, Paranoia as its Guardian takes aim, Yiga Ambush when its Yiga are there,
+  Downpour when its weather is held (named once over, the swarm and the Guardian were long gone: seen in play). The text is the item's `delivery.text` in [`data/item_map.json`](../../data/item_map.json).
 - **Safe moments only.** The delivery gate is the usual one: no menu, event, cutscene or loading. A trap never runs
   while Link is dead.
 - **Not suffered twice.** Loading an older save moves the cursor back and the client gives items back quietly. A
@@ -139,7 +140,9 @@ or committed while the client was stopping, it is spent without effect.
 **Sharing the invoker.** The swarm plays on a thread of its own, while the client's loop goes on. Both use the cave's
 one request slot, in turns ([`botw_client/invoker_turn.py`](../../botw_client/invoker_turn.py)): each attacker is made
 in one turn, and the loop waits for it instead of finding the emulator's mutex busy. For the swarm's 10 s, the loop
-holds its events (presentations, deliveries, the key item, a received DeathLink); the journal and Link's death go on.
+holds its events (presentations, deliveries, the key item, a received DeathLink); the journal and Link's death go on:
+between two attackers, the swarm lets the turn go (`YIELD`), or the journal, waiting for it, would only name the
+swarm once it was over.
 The swarm stops when Link dies, and the loop, when it leaves, stops the swarm and waits for it before closing the game
 connection.
 
@@ -151,23 +154,30 @@ any other: with DeathLink on, it is sent ([death_link.md](death_link.md)).
 The Yiga Clan's squad: two Yiga Footsoldiers (`Enemy_Assassin_Junior`) and a Yiga archer
 (`Enemy_Assassin_Shooter_Junior`), created by the client at 6 to 8 m around Link, evenly spread from a random
 bearing ([`botw_client/yiga_ambush.py`](../../botw_client/yiga_ambush.py)). The creation is the swarm's
-(`ActorCreator::requestCreateActor` with a place, `@P`), without a handle: the Yiga are the game's, with their own AI,
-and nothing else is asked of them. Each one has a block of memory of its own: without a handle, nothing says when the
-creator is done with its name and its place, so no block is ever reused.
+(`ActorCreator::requestCreateActor` with a place, `@P`), without a handle: the Yiga are the game's, with their own AI.
+Each comes with its series' first weapon (`EquipItem1`, a string of type 5, as the game's own creations add it): the
+Vicious Sickle (`Weapon_Sword_053`), the Duplex Bow (`Weapon_Bow_040`), the Windcleaver (`Weapon_Lsword_074`); the level
+sensor raises it as the game goes on. Without it, a Yiga carries what the level sensor finds at the player's progress:
+nothing on a new game (seen in play: bare hands, light blows, an archer warping again and again). One time in ten, a
+Yiga Blademaster (`Enemy_Assassin_Middle`) comes alone instead. Each one has a block of memory of its own: without a
+handle, nothing says when the creator is done with its name and its place, so no block is ever reused.
 
-Measured (lab probe 19, 09/10): they come with the Yiga's appearing effect, fight with their weapons, flips and warps,
-drop their loot (bananas, rupees) when defeated, and vanish if Link runs far away. A Yiga Blademaster
-(`Enemy_Assassin_Middle`) was also created, without an appearing effect: not in the squad.
+Measured (lab probes 19 and 21): they come with the Yiga's appearing effect, fight with their weapons, flips and warps,
+the archer shoots, they drop their loot (bananas, rupees) when defeated, and vanish if Link runs far away. Two keys of
+the game's own creation of an enemy near Link (`0x0214ae5c`) must not be added: with `IsNearCreate` (bool, type 3) the
+squad came and went at once, unseen; with `@I` = 6 (int, type 0) nothing came.
 
 **Delivery.** As the swarm's: its entry only commits, then the client creates the squad, in one turn of the invoker,
-once Link is in the world (no menu, entry or loading). A squad committed while Link was leaving the world waits for
-him, two minutes at most. The Yiga can kill: such a death is a death like any other.
+once Link is in the world (no menu, entry or loading) and once the trap's event has closed (`SETTLE_FRAMES`, 90 frames
+after its commit, as a delivery waits before the next one): created a second after the commit, the armed Yiga left at
+once in a warp (seen in play). A squad committed while Link was leaving the world waits for him, two minutes at most.
+The Yiga can kill: such a death is a death like any other.
 
 ## Paranoia
 
 A Decayed Guardian (`Enemy_Guardian_A_Fixed_Moss`) appears 15 m behind Link, turned towards him: the game's own Guardian
-sees him at once, beeps, plays its music and points its red laser at him. 6.8 s after its waking, before its shot,
-the client deletes it: it vanishes at once, its music fades out
+sees him at once, beeps, plays its music and points its red laser at him. 6.9 s of the game's time after its waking,
+before its shot, the client deletes it: it vanishes at once, its music fades out
 ([`botw_client/paranoia.py`](../../botw_client/paranoia.py)).
 
 **What the client calls**, from the cave's per-frame invoker, one turn of it per step:
@@ -178,7 +188,7 @@ the client deletes it: it vanishes at once, its music fades out
    sleeps until then.
 3. Its link is read at once, as the swarm reads Link's: its id (`+0x50`) and its `BaseProcLinkData` (`+0x58`), which
    holds the id followed by the proc while the proc lives, and is reused under another id once it is gone.
-4. 6.8 s after the wake, while the link data still holds it: `BaseProc::deleteLater(proc, 2)` (`0x0378a374`).
+4. 6.9 s after the wake, while the link data still holds it: `BaseProc::deleteLater(proc, 2)` (`0x0378a374`).
 
 **Why not through the handle.** `BaseProcHandle::deleteProc` deletes the proc its unit holds. Measured: within 2 s of
 the wake, the game itself unlinks the unit (no handle, no proc in it), and the call deleted nothing; the Guardian
@@ -186,7 +196,13 @@ stayed and fired again and again. Through its link, measured: the proc's state i
 still valid at 0.4 s, reused at 1 s.
 
 **The time.** Measured: the Guardian fires about 7.1 s after its waking; deleted at 7.1 s, it had just begun to fire,
-and the shot never left. 6.8 s is counted on the clock: a slower or paused game only spends less of its own time.
+and the shot never left. The 6.9 s are the Guardian's own, the game's: the cave's frames, each worth the game's delta
+per frame, read from its frame-rate manager (`*0x1047c258 + 0x1c`: the vsyncs between two frames over the nominal,
+computed at `0x037932f0`; FPS++ writes 30/fps there). Measured: 1.0 at normal speed and on a vsync three times faster
+(a turbo), where the game runs three times faster; counted on the clock, the Guardian fired again and again there.
+The clock stays a ceiling: whichever comes first deletes it, so a slowed game, or a delta misread, only sees the
+Guardian leave early. The client's log says what was measured ("deleted after 6.9 s of game time (206 frames, speed
+x1.00), 2.2 s of wall time").
 
 **Safety.** A Guardian whose link cannot be found is deleted through its handle before its wake, while the unit still
 holds it: it never wakes. One gone before its time (defeated, or its area unloaded) is left alone. When Link dies, or

@@ -112,6 +112,26 @@ class BackendTests(unittest.TestCase):
             self.assertIs(backend.request_death(), True)
             self.assertEqual(calls, [("OperationGuide", "APDeathLink")])
 
+    def test_the_games_answer_is_told_in_the_clients_log(self):
+        memory = {0x10463F38: (0x20000000).to_bytes(4, "big"),
+                  0x20000030: (0x30000000).to_bytes(4, "big"),
+                  0x30000974: (0x31000000).to_bytes(4, "big"),
+                  0x31000000: b"Kokko_Simple\0"}
+        with tempfile.TemporaryDirectory() as directory:
+            backend, _ = self.backend(directory, {"death_link": {
+                "entry": "APDeathLink", "flow": "OperationGuide",
+                "attackers": {"Animal_Kokko_A": "Cucco"}}})
+            lines = []
+            backend._report = lines.append
+            backend.game.cave = SimpleNamespace(base=0)
+            backend.game.process = SimpleNamespace(
+                pid=1, read=lambda guest, size: memory.get(guest, b"")[:size] or None)
+            answers = {death_cause.DEAD_CAUSE_QUERY: 0, death_cause.DEAD_CAUSE_RAW: 0x20000}
+            backend._call = lambda address, *args: answers[address]
+            self.assertEqual(backend.death_cause("Zelda"), "Zelda was slain by a Cucco")
+        self.assertEqual(lines, ["Link's death as the game tells it: cause 0, raw 0x20000, "
+                                 "attacker Kokko_Simple"])
+
     def test_a_refused_request_is_asked_again_and_an_old_pack_has_none(self):
         with tempfile.TemporaryDirectory() as directory:
             backend, _ = self.backend(directory, {"death_link": {
@@ -140,7 +160,8 @@ class BackendTests(unittest.TestCase):
 
 class CauseTests(unittest.TestCase):
     NAMES = {"Enemy_Bokoblin_Junior": "Bokoblin", "Enemy_Octarock": "Octorok",
-             "Enemy_Lynel_Senior": "White-Maned Lynel"}
+             "Enemy_Lynel_Senior": "White-Maned Lynel", "Animal_Kokko_A": "Cucco",
+             "Enemy_Assassin_Junior": "Yiga Footsoldier"}
 
     def text(self, cause, raw=None, killer=None):
         return death_cause.death_text("Zelda", cause, raw, killer, self.NAMES)
@@ -150,6 +171,10 @@ class CauseTests(unittest.TestCase):
         self.assertEqual(self.text(0, 0, "Enemy_Octarock"), "Zelda was slain by an Octorok")
         self.assertEqual(self.text(0, 0, None), "Zelda died in Hyrule")
         self.assertEqual(self.text(0, 0, "Unknown_Actor"), "Zelda died in Hyrule")
+        # Named as the actor they stand for: the swarm's cuccos, the Yiga archer.
+        self.assertEqual(self.text(0, 0, "Kokko_Simple"), "Zelda was slain by a Cucco")
+        self.assertEqual(self.text(0, 0, "Enemy_Assassin_Shooter_Junior"),
+                         "Zelda was slain by a Yiga Footsoldier")
         self.assertEqual(self.text(0, 1, None), "Zelda died of the heat")
         self.assertEqual(self.text(4, 5), "Zelda burned to death")
         self.assertEqual(self.text(1, 2), "Zelda froze to death")

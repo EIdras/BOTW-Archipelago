@@ -286,6 +286,23 @@ class JournalTests(unittest.TestCase):
         self.assertEqual(trap_line("Rupoor", "Rupees slip through your fingers."),
                          "{0}Rupoor{/}: Rupees slip through your fingers.")
 
+    def test_every_trap_is_one_tip_with_its_senders_line(self):
+        from botw_client.ap_journal import trap_note
+        from botw_client.tip_channel import pages
+        traps_seen = 0
+        for row in json.loads((ROOT / "data/item_map.json").read_text(encoding="utf-8"))["items"]:
+            delivery = row.get("delivery", {})
+            if delivery.get("kind") not in ("trap", "native_trap"):
+                continue
+            traps_seen += 1
+            sender = "{2}Bartholomew0123{/} sent {1}" + row["name"] + "{/} to {2}Simon{/}"
+            note = trap_note(sender, row["name"], delivery["text"])
+            self.assertEqual(note, sender + ". " + delivery["text"])
+            self.assertEqual(len(pages(note)), 1, note)
+        self.assertEqual(traps_seen, 9)
+        self.assertEqual(trap_note(None, "Rupoor", "Rupees slip through your fingers."),
+                         "{0}Rupoor{/}: Rupees slip through your fingers.")
+
 
 class TrapRuntimeTests(unittest.IsolatedAsyncioTestCase):
     """A received trap: no window, the journal says what it did; given back after
@@ -350,13 +367,39 @@ class TrapRuntimeTests(unittest.IsolatedAsyncioTestCase):
                          ["{2}Alice{/} sent {1}Downpour{/} to {2}Bob{/}",
                           "{0}Downpour{/}: Dark clouds gather over Hyrule."])
 
+    async def test_the_swarm_and_the_guardian_are_named_as_they_strike(self):
+        import asyncio
+        import threading
+        for effect in ("cucco_swarm", "paranoia"):
+            with self.subTest(effect=effect):
+                self.runtime._journal_notes.clear()
+                on_link, release = threading.Event(), threading.Event()
+
+                def play(stop, struck):
+                    struck()
+                    on_link.set()
+                    release.wait(2.0)
+                    return "over"
+                self.runtime.deliveries = SimpleNamespace(backend=SimpleNamespace(**{effect: play}))
+                self.runtime._native_traps.append(effect)
+                self.runtime._native_trap_notes.append(["sent", "effect"])
+                await self.runtime._native_trap_tick()
+                await asyncio.to_thread(on_link.wait, 2.0)
+                await self.runtime._native_trap_tick()            # still playing: named now
+                self.assertEqual([line for line, _tag in self.runtime._journal_notes], ["sent", "effect"])
+                release.set()
+                await self.runtime._native_trap_task
+                await self.runtime._native_trap_tick()            # over: not named twice
+                self.assertEqual(len(self.runtime._journal_notes), 2)
+
     async def test_the_server_line_kept_for_the_trap_comes_with_its_effect(self):
         self.runtime._trap_lines[0] = "{2}Alice{/} sent {1}Rupoor{/} to {2}Bob{/}"
         self.runtime._discover_received()
         await self.runtime._apply_one_received_native()
+        # One tip: shown one after the other, the second came long after the trap.
         self.assertEqual(self.runtime._journal_notes,
-                         [("{2}Alice{/} sent {1}Rupoor{/} to {2}Bob{/}", None),
-                          ("{0}Rupoor{/}: Rupees slip through your fingers.", None)])
+                         [("{2}Alice{/} sent {1}Rupoor{/} to {2}Bob{/}. Rupees slip through your fingers.",
+                           None)])
         self.assertEqual(self.runtime._trap_lines, {})
 
     async def test_nothing_announces_a_trap_before_it_strikes(self):

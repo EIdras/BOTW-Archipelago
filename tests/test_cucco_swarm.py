@@ -114,8 +114,11 @@ class SwarmTests(unittest.TestCase):
 
         swarm = cs.CuccoSwarm(game.read, game.put, game.call, clock=clock,
                               sleep=lambda seconds: now.__setitem__(0, now[0] + seconds))
-        results = swarm.run()
+        strikes = []
+        results = swarm.run(struck=lambda: strikes.append(now[0]))
         self.assertEqual(set(results), {"ok"})
+        self.assertEqual(len(strikes), 1)                  # at its first attacker
+        self.assertLess(strikes[0], 2 * cs.INTERVAL)
         # One attacker every INTERVAL at most, for DURATION (the fake clock ticks per read).
         self.assertTrue(45 <= results["ok"] <= cs.DURATION / cs.INTERVAL + 1, results)
 
@@ -142,6 +145,32 @@ class SwarmTests(unittest.TestCase):
         self.assertEqual(results, {"ok": 2})
         self.assertEqual(turns.count(True), 2)
         self.assertTrue(held and all(held))
+
+    def test_an_attacker_longer_than_its_interval_still_lets_the_turn_go(self):
+        # The journal waits for the turn: between two attackers, the swarm pauses.
+        game = Game()
+        now, events = [0.0], []
+
+        def clock():
+            now[0] += 0.1                                # an attacker overruns INTERVAL
+            return now[0]
+
+        @contextmanager
+        def turn():
+            events.append("turn")
+            yield
+
+        def sleep(seconds):
+            events.append(seconds)
+            now[0] += seconds
+
+        stops = iter([False, False, False, True])
+        cs.CuccoSwarm(game.read, game.put, game.call, turn=turn, clock=clock,
+                      sleep=sleep).run(lambda: next(stops))
+        self.assertEqual(events.count("turn"), 3)
+        pauses = [e for e in events if e != "turn"]
+        self.assertEqual(len(pauses), 3)
+        self.assertTrue(all(pause >= cs.YIELD for pause in pauses), pauses)
 
     def fake_time(self):
         now = [0.0]
@@ -201,7 +230,7 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
                                           send_death=AsyncMock())
         self.played = []
         self.runtime.deliveries = SimpleNamespace(backend=SimpleNamespace(
-            cucco_swarm=lambda stop: self.played.append(stop) or {"ok": 30},
+            cucco_swarm=lambda stop, struck: self.played.append(stop) or {"ok": 30},
             killed_by_death_link=lambda: False,
             death_cause=lambda slot: f"{slot} was slain by a Cucco"))
 
@@ -228,7 +257,7 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
         """A swarm that plays until it is told to stop."""
         started, stopped = threading.Event(), threading.Event()
 
-        def swarm(stop):
+        def swarm(stop, struck):
             started.set()
             while not stop():
                 threading.Event().wait(0.01)

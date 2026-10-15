@@ -18,6 +18,12 @@ series' first weapon, the level sensor raises it as the game goes on
 
 One time in BLADEMASTER_CHANCE, a Yiga Blademaster comes alone instead.
 
+Two more keys of the game's own creation of an enemy near Link (0x0214ae5c)
+are left out, measured in lab probe 21 (15/10): with IsNearCreate (a bool of
+type 3) the squad came and went at once, unseen; with @I = 6 (an int of type 0)
+nothing came. The client creates the squad once the trap's event has closed
+(CemuNativeDeliveryBackend.yiga_ambush).
+
 Each Yiga has a block of memory of its own: without a handle, nothing says when
 the creator is done with its name and its place, so no block is ever reused.
 """
