@@ -69,7 +69,8 @@ console command `/ap-tip <text>` shows a line in the journal.
 - **Journal**: the connection is announced once, then **one** line per outage (not one per attempt), then "Reconnected
   to Archipelago after N s". The console command `/ap-disconnect [s]` simulates an outage of `s` seconds.
 - **The "Archipelago" key item** (`botw_patch/status_item.py`): a key item cloned from Hestu's maracas, with the
-  Archipelago logo. Its description gives the seed, the player (slot) and the goal. The entry
+  Archipelago logo. Its description gives the seed, the player (slot) and the goal; with the Ganon goal, a fourth line
+  says what opens his sanctum, only what the seed asks ("Sanctum: 2 Beasts, sword, runes"). The entry
   `Demo007_1<APStatusItem>` adds it only when the pouch lacks it (`HasPorchItem`); the client requests it once per
   connection to the game, after the pending deliveries. Every seed pack has it.
 - **HUD**: the Archipelago logo at the bottom left, in color when connected, grey otherwise:

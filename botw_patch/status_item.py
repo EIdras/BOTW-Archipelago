@@ -6,7 +6,7 @@ leaving the game. Everything is resources, built per seed:
     with no use): ActorInfo declaration, actor pack with its ActorLink
     renamed, the Archipelago icon (UI/StockItem/<actor>.sbitemico);
   * its name and description (English, in every EU language), the seed's fixed facts:
-    seed, slot, goal;
+    seed, slot, goal, and with the Ganon goal what opens his sanctum;
   * one idempotent EventFlow entry, Demo007_1<APStatusItem>: if the pouch
     does not hold the item, put it there. No cursor, no guard: granting it
     twice is impossible and missing it only waits for the next request. The
@@ -79,9 +79,26 @@ def texts(manifest: dict) -> tuple[str, str]:
     slot = f"{manifest['slot_name']} (slot {manifest['slot']})"
     lines = [f"Seed {manifest['seed']}", f"Player: {slot}",
              f"Goal: {goals[goal].format(**values)}"]
+    sanctum = sanctum_line(data) if goals is GOALS_5 and goal == 0 else None
+    if sanctum:
+        lines.append(sanctum)
     if len(lines) > DESCRIPTION_LINES or any(len(line) > DESCRIPTION_WIDTH for line in lines):
         raise ValueError(f"status description too long: {lines}")
     return "Archipelago", "\n".join(lines)
+
+
+def sanctum_line(data: dict) -> str | None:
+    """With the Ganon goal, what opens his sanctum (botw_patch/ganon_gate.py),
+    only what the seed asks: "Sanctum: 2 Beasts, 40 shrines, sword, runes"."""
+    parts = []
+    for key, one, many in (("sanctum_divine_beasts", "Beast", "Beasts"),
+                           ("sanctum_shrines", "shrine", "shrines")):
+        count = int(data.get(key, 0))
+        if count:
+            parts.append(f"{count} {one if count == 1 else many}")
+    parts += [name for key, name in (("sanctum_master_sword", "sword"), ("sanctum_runes", "runes"))
+              if data.get(key)]
+    return f"Sanctum: {', '.join(parts)}" if parts else None
 
 
 def item(manifest: dict) -> ApShopItem:

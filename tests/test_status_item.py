@@ -29,6 +29,24 @@ class TextTests(unittest.TestCase):
                                 ({"goal": 2, "goal_shrines": 70}, "complete 70 shrines")):
             self.assertEqual(texts({**MANIFEST, "slot_data": slot_data})[1].split("\n")[2], f"Goal: {goal}")
 
+    def test_the_ganon_goal_says_what_opens_the_sanctum(self):
+        sanctum = {"goal": 0, "sanctum_divine_beasts": 2, "sanctum_shrines": 0,
+                   "sanctum_master_sword": 1, "sanctum_runes": 1}
+        lines = texts({**MANIFEST, "slot_data": sanctum})[1].split("\n")
+        self.assertEqual(lines[2:], ["Goal: defeat Ganon", "Sanctum: 2 Beasts, sword, runes"])
+        widest = {**sanctum, "sanctum_divine_beasts": 4, "sanctum_shrines": 120}
+        self.assertEqual(texts({**MANIFEST, "slot_data": widest})[1].split("\n")[3],
+                         "Sanctum: 4 Beasts, 120 shrines, sword, runes")
+        single = {"goal": 0, "sanctum_divine_beasts": 1, "sanctum_shrines": 1,
+                  "sanctum_master_sword": 0, "sanctum_runes": 0}
+        self.assertEqual(texts({**MANIFEST, "slot_data": single})[1].split("\n")[3],
+                         "Sanctum: 1 Beast, 1 shrine")
+        open_sanctum = {**single, "sanctum_divine_beasts": 0, "sanctum_shrines": 0}
+        self.assertEqual(len(texts({**MANIFEST, "slot_data": open_sanctum})[1].split("\n")), 3)
+        # The other goals do not end at Ganon: no sanctum line.
+        for goal in (1, 2):
+            self.assertEqual(len(texts({**MANIFEST, "slot_data": {**widest, "goal": goal}})[1].split("\n")), 3)
+
     def test_a_description_too_long_is_refused(self):
         long = {**MANIFEST, "slot_name": "X" * 40}
         with self.assertRaises(ValueError):
