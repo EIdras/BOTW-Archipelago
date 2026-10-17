@@ -183,6 +183,23 @@ def ensure_play_account() -> dict:
             "account_dat_sha256": hashlib.sha256(target.read_bytes()).hexdigest()}
 
 
+def prune_packs(folder: Path, keep: str) -> list[str]:
+    """Remove the copies of other seed packs (PACK_PREFIX) from `folder`, all
+    but `keep`: a copy is made at each new pack and Cemu lists every one
+    (seen: 166 of them, 22 GB). One still in use (a Cemu open on it) stays.
+    The packs themselves are not touched. Returns the names removed."""
+    removed = []
+    for copy in sorted(folder.glob(PACK_PREFIX + "*")):
+        if copy.name == keep or not copy.is_dir():
+            continue
+        try:
+            shutil.rmtree(copy)
+        except OSError:
+            continue
+        removed.append(copy.name)
+    return removed
+
+
 def prepare_play(pack: Path) -> Path:
     """Install a verified seed pack as the profile's only graphic pack, on the
     play account. Returns the portable folder Cemu runs from."""
@@ -206,6 +223,7 @@ def prepare_play(pack: Path) -> Path:
         packs = ET.SubElement(root, "GraphicPack")
     packs.clear()
     destination = PORTABLE / "graphicPacks" / (PACK_PREFIX + pack.name)
+    prune_packs(destination.parent, destination.name)
     if not destination.exists():
         shutil.copytree(pack, destination)
     # An installed copy is checked like the pack itself: any change refuses it.

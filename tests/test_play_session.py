@@ -67,6 +67,22 @@ class ProfileTests(unittest.TestCase):
             self.assertEqual(enabled_packs(root),
                              ["graphicPacks/AP_Ledger_796aa895aad1ffff/rules.txt"])
 
+    def test_the_copies_of_other_seed_packs_are_removed(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            root = self.make_profile(Path(folder))
+            packs = root / "graphicPacks"
+            for name in ("AP_Ledger_0000000000000001", "AP_Ledger_0000000000000002"):
+                (packs / name).mkdir()
+                (packs / name / "rules.txt").write_bytes(b"[Definition]")
+            removed = cemu_profile.prune_packs(packs, "AP_Ledger_0000000000000002")
+            self.assertEqual(removed, ["AP_Ledger_0000000000000001", "AP_Ledger_796aa895aad1ffff"])
+            self.assertEqual(sorted(p.name for p in packs.iterdir()),
+                             ["AP_Ledger_0000000000000002", "OtherPack"])
+        import inspect
+        self.assertIn("prune_packs(destination.parent, destination.name)",
+                      inspect.getsource(cemu_profile.prepare_play))
+
     def test_the_session_refuses_a_profile_with_another_pack(self):
         import inspect
         from tools import play_session
