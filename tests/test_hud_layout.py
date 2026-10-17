@@ -89,7 +89,8 @@ class HudLayoutTests(unittest.TestCase):
         self.assertEqual(after[index + 1][0], b"pae1")
         part = after[index][1]
         self.assertEqual(struct.unpack_from(">ff", part, 0x24), hud.POSITION)
-        self.assertEqual(struct.unpack_from(">ff", part, 0x44), (hud.SIZE, hud.SIZE))
+        size = struct.unpack(">f", struct.pack(">f", hud.SIZE))[0]      # as a float32
+        self.assertEqual(struct.unpack_from(">ff", part, 0x44), (size, size))
         self.assertEqual(part[0x58:].split(b"\0")[0].decode(), hud.PART_LAYOUT)
         self.assertEqual(after[:index] + after[index + 1:], before)
         with self.assertRaises(ValueError):

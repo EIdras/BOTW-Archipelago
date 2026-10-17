@@ -99,10 +99,10 @@ def tree(path):
     return {p.relative_to(path).as_posix():p.read_bytes() for p in path.rglob('*') if p.is_file()}
 hashes = {n:digest(raw) for n,raw in tree(a).items() if n != 'manifest.json'}
 # Every installed file (metadata excluded): the native code, the resources,
-# the Archipelago key item (actor, icon, ActorInfo, texts in 7 languages), the sanctum's gate, the gifts of the Zora King and Kima,
-# Goron City's armor shop.
-assert len(hashes) == 40
-assert digest(encode(hashes)) == 'f3560b1a258ed0a9ada8e7201cc5897dbd4349d7876d7334b48d8fdf51e6f572', 'new pin: ' + digest(encode(hashes))
+# the Archipelago quest (QuestProduct, entries, ActorInfo, texts in 7 languages), the sanctum's gate, the gifts of the
+# Zora King and Kima, Goron City's armor shop.
+assert len(hashes) == 38
+assert digest(encode(hashes)) == 'e16be6245467e5c734d604e4b19088eeaac9810d992364e8d9c7fdd05371995d', 'new pin: ' + digest(encode(hashes))
 binding = load_seed(work/'analysis.json', 1, work/'seed.zip')
 verify_pack(a, binding)
 try:
@@ -142,7 +142,7 @@ print('Complete pack: exact payload, hermetic rebuild, integrity and diagnostics
             shutil.copyfile(REPORT, work / "analysis.json")
             shutil.copyfile(Path(report["archive"]), work / "seed.zip")
             shutil.copyfile(ROOT / "U-King.rpx", work / "input.rpx")
-            from botw_patch.status_item import INPUT_HASHES as STATUS_INPUTS
+            from botw_patch.ap_quest import INPUT_HASHES as STATUS_INPUTS
             for name in {**UPDATE_HASHES, **STATUS_INPUTS}:
                 path = work / "input" / name
                 path.parent.mkdir(parents=True, exist_ok=True)

@@ -21,8 +21,8 @@ your own server.
 - **Shops and stalls**: Archipelago items for sale at Beedle's 16 shops and on 14 village stalls, with their own icon,
   3D model, names and descriptions.
 - **Archipelago journal**: the server's messages (items sent and received, hints) in the game's tip frame.
-- **Connection status**: an Archipelago logo in the HUD, in color when connected, and an "Archipelago" key item with
-  the seed and slot.
+- **Connection status**: an Archipelago logo in the HUD, in color when connected, and an "Archipelago" main quest
+  in the Adventure Log with the seed, the slot and the goal, completed once the goal is reached.
 - **Goals**: defeat Ganon, free the four Divine Beasts, or clear a number of shrines.
 - **Sealed sanctum**: Ganon's sanctum opens only once the seed's requirements are met (Divine Beasts, shrines,
   the Master Sword, the runes; Easy, Medium and Hard presets), and the journal says what is missing.

@@ -48,7 +48,7 @@ class GateTests(unittest.TestCase):
         import oead
         from botw_patch.resources import unpack
         from botw_patch.shop_items import add_labels, read_labels
-        from botw_patch.status_item import LANGUAGES
+        from botw_patch.ap_quest import LANGUAGES
         self.assertEqual(set(gate.SEALED), set(LANGUAGES))
         for language in LANGUAGES:
             with self.subTest(language=language):

@@ -86,8 +86,16 @@ class NativeDeliveryCatalog:
         value = self.data.get("binding")
         return dict(value) if value is not None else None
 
+    def quest_entries(self) -> tuple[str, str] | None:
+        """(start, finish): the seed pack's entries of the Archipelago quest
+        (botw_patch/ap_quest.py), or None in a pack before it."""
+        value = self.data.get("quest")
+        if not isinstance(value, dict) or not value.get("start") or not value.get("finish"):
+            return None
+        return str(value["start"]), str(value["finish"])
+
     def status_entry(self) -> str | None:
-        """The seed pack's Archipelago key item entry (botw_patch/status_item.py)."""
+        """The Archipelago key item entry of a pack before the quest (0.1)."""
         value = self.data.get("status_item")
         return str(value["entry"]) if isinstance(value, dict) and value.get("entry") else None
 
@@ -433,6 +441,16 @@ class CemuNativeDeliveryBackend:
             return sync(equip).summary()
         except Exception as exc:  # noqa: BLE001 - the commit is already durable
             return f"rune selection not synchronized: {type(exc).__name__}: {exc}"
+
+    def request_quest(self, finish: bool = False) -> bool | None:
+        """Ask the quest's start (or finish) entry: True once the game took the
+        request, False when it is to be asked again later, None when the pack
+        has no quest. No cursor: each entry raises its flag only when it is
+        down, harmless twice."""
+        entries = self.catalog.quest_entries()
+        if entries is None:
+            return None
+        return self._request_once(self.catalog.data["flow"], entries[1 if finish else 0]) is not False
 
     def request_status_item(self) -> bool | None:
         """Ask the idempotent key item entry once: True once the game took the

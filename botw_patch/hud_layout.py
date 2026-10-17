@@ -3,7 +3,7 @@ hud_indicator.md).
 
 The HUD is Bootup.pack > Layout/Common.sblarc > blyt/MainScreen_00.bflyt, a
 set of 21 parts. One more part, Pa_APStatus_00, is placed under N_All_00 (it
-hides with the rest of the HUD), bottom left, and points to a layout of its
+hides with the rest of the HUD), bottom right, by the minimap, and points to a layout of its
 own, PaAPStatus_00:
   * two pictures of the Archipelago logo: P_APOffline_00 (grey, visible by
     default: with no client, nothing is connected) and P_APOnline_00 (in
@@ -38,8 +38,10 @@ SCREEN = "blyt/MainScreen_00.bflyt"
 TEMPLATE = "blyt/PaIconChallenge_00.bflyt"
 PARENT_LAST = "Pa_Time_00"                  # last child of N_All_00
 TEXTURES = {ONLINE: "Nt_APOnline_00^l.bflim", OFFLINE: "Nt_APOffline_00^l.bflim"}
-POSITION = (-590.0, -310.0)                 # bottom left of the 1280x720 HUD
-SIZE = 44.0
+# Bottom right of the 1280x720 HUD, beside the minimap's lower right corner, where
+# nothing else is drawn: placed by eye in the game (lab/tools/cemu/hud_place.py).
+POSITION = (609.0, -302.0)
+SIZE = 26.4
 TEXTURE_SIZE = 64
 FORMAT_RGBA8_SRGB = 20                      # FLIM format of the ^l textures
 TILE_MODE, SWIZZLE = 4, 2                   # as Nt_KeySmall_00^l (flags 0x44)

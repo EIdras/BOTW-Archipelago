@@ -1,6 +1,6 @@
 # Archipelago connection indicator in the HUD
 
-The Archipelago logo at the bottom left of the HUD: **in color** while the client is connected to the Archipelago
+The Archipelago logo at the bottom right of the HUD, beside the minimap: **in color** while the client is connected to the Archipelago
 server, **grey** otherwise (no client, connection lost, reconnecting). It hides with the rest of the HUD (menus,
 cutscenes).
 
@@ -39,14 +39,19 @@ Everything is at the top of `botw_patch/hud_layout.py`:
 
 | Setting | Constant | Current value |
 |---|---|---|
-| Position (center of the logo, 1280×720 frame, origin at the center of the screen, y up) | `POSITION` | `(-590.0, -310.0)`: bottom left |
-| Displayed size (pixels of the 1280×720 frame) | `SIZE` | `44.0` |
+| Position (center of the logo, 1280×720 frame, origin at the center of the screen, y up) | `POSITION` | `(609.0, -302.0)`: bottom right, beside the minimap |
+| Displayed size (pixels of the 1280×720 frame) | `SIZE` | `26.4` |
 | Texture resolution (an integer divisor of 512) | `TEXTURE_SIZE` | `64` |
 | Grey of the offline logo (0 = black, 1 = light grey) | `dim` parameter of `grey()` | `0.55` |
 | Parent in the HUD | `PARENT_LAST` (the part is inserted after this sibling) | `Pa_Time_00`, under `N_All_00` |
 
 Useful landmarks: the hearts are around (-434, 310), the champions' abilities at x = -557 (y from 40 to 190), the
-temperature gauge around (392, -222).
+temperature gauge around (392, -222), the noise meter at (392, -262), the clock at (342, -279). The minimap is not
+in this layout (it is `AppMap_00`, placed by the game's code): its place is found by eye.
+
+**Placing it live**: `lab/tools/cemu/hud_place.py` (laboratory) moves and resizes the logo in a running game and
+prints the values to write here. Measured: the pane keeps its translation at `+0x1c`, its scale at `+0x34`, its flags
+at `+0x44`, and its global matrix at `+0x48`, which the game recomputes only when bit `0x10` of the flags is up.
 
 **Changing the logo**: both textures are made from `assets/wiiu/Item_AP.sbitemico` (the project's 512 px logo, also
 used for the item icon in windows and shops). Changing this file changes them all. Its digest is checked by

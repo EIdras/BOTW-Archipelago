@@ -39,7 +39,7 @@ after the hash of its content), reproducible, and verified before every use (`ve
   - Beedle's stocks and the village stalls, with an Archipelago item actor, icon, 3D model and texts in every language
     (`botw_patch/shops.py`, `botw_patch/stalls.py`).
   - The Archipelago logo in the HUD (`botw_patch/hud_layout.py`) and on the loading screen
-    (`botw_patch/loading_icon.py`), and the "Archipelago" key item (`botw_patch/status_item.py`).
+    (`botw_patch/loading_icon.py`), and the "Archipelago" quest of the Adventure Log (`botw_patch/ap_quest.py`).
   - The DeathLink entry (`botw_patch/death_link.py`), and the traps' (`botw_patch/traps.py`).
   - The entry closing the Master Sword's pedestal as the pull does, when its sword was taken without the pull
     (`botw_patch/pedestal.py`): the client requests it once it sees the check.

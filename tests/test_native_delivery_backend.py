@@ -303,6 +303,29 @@ class NativeDeliveryBackendTests(unittest.TestCase):
         backend = self.backend(lambda *_a, **_k: self.fail("no request"))
         self.assertIsNone(backend.request_status_item())
 
+    def test_the_quest_is_started_and_completed_by_its_entries_without_cursor(self):
+        data = json.loads(self.path.read_text(encoding="utf-8"))
+        data["quest"] = {"start": "APQuestStart", "finish": "APQuestFinish"}
+        self.path.write_text(json.dumps(data), encoding="utf-8")
+        answers, calls = [0, 1, 1], []
+
+        def request(_process, _cave, _number, _checkpoint, **kwargs):
+            calls.append(kwargs["entry"])
+            return {"native_return": answers.pop(0)}
+
+        backend = self.backend(request)
+        cursor = self.values[flag("APReceivedCursor")]
+        self.assertFalse(backend.request_quest())             # refused: asked again
+        self.assertTrue(backend.request_quest())
+        self.assertTrue(backend.request_quest(finish=True))
+        self.assertEqual(calls, ["APQuestStart", "APQuestStart", "APQuestFinish"])
+        self.assertEqual(self.values[flag("APReceivedCursor")], cursor)
+
+    def test_a_pack_without_the_quest_asks_nothing(self):
+        backend = self.backend(lambda *_a, **_k: self.fail("no request"))
+        self.assertIsNone(backend.request_quest())
+        self.assertIsNone(backend.request_quest(finish=True))
+
     def test_a_dropped_item_is_committed_by_its_drop_entry(self):
         data = json.loads(self.path.read_text(encoding="utf-8"))
         data["items"]["Core"]["variants"]["default"][0].update(

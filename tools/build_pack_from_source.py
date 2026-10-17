@@ -219,7 +219,7 @@ def build(content: Path, rpx: Path, report: Path, slot: int, output: Path, *,
     }
     if shops:       # only then, so that seeds without shops keep their pack identity
         manifest["shops"] = rm["shops"]
-    manifest["status_item"] = rm["status_item"]
+    manifest["quest"] = rm["quest"]
     build_id = digest(encode(manifest))[:16]
     manifest["build_id"] = build_id
     files["manifest.json"] = encode(manifest)

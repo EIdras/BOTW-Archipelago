@@ -140,7 +140,7 @@ or committed while the client was stopping, it is spent without effect.
 **Sharing the invoker.** The swarm plays on a thread of its own, while the client's loop goes on. Both use the cave's
 one request slot, in turns ([`botw_client/invoker_turn.py`](../../botw_client/invoker_turn.py)): each attacker is made
 in one turn, and the loop waits for it instead of finding the emulator's mutex busy. For the swarm's 10 s, the loop
-holds its events (presentations, deliveries, the key item, a received DeathLink); the journal and Link's death go on:
+holds its events (presentations, deliveries, the quest, a received DeathLink); the journal and Link's death go on:
 between two attackers, the swarm lets the turn go (`YIELD`), or the journal, waiting for it, would only name the
 swarm once it was over.
 The swarm stops when Link dies, and the loop, when it leaves, stops the swarm and waits for it before closing the game

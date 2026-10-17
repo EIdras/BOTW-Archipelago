@@ -20,7 +20,7 @@ MESSAGES = "ActorType/Horse.msbt"
 
 def names(content: Path) -> dict[str, dict[str, str]]:
     """{actor: {language: name}} from the update's message archives."""
-    from botw_patch.status_item import INPUT_HASHES, LANGUAGES
+    from botw_patch.ap_quest import INPUT_HASHES, LANGUAGES
     out: dict[str, dict[str, str]] = {actor: {} for actor in HORSES}
     for language in LANGUAGES:
         name = f"Pack/Bootup_{language}.pack"

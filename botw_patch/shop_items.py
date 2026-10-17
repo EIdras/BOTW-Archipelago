@@ -42,7 +42,7 @@ DELETE_ACTION = "Demo_DeletePorchItemInEquip"
 @dataclass(frozen=True)
 class ApShopItem:
     actor: str
-    price: int
+    price: int | None           # None: an actor that is no item (no buying price)
     name: str
     description: str
     model_actor: str = "Item_Ore_F"
@@ -90,7 +90,8 @@ def add_declarations(raw: bytes, items: list[ApShopItem]) -> tuple[bytes, dict]:
         for key in model.keys():
             clone[key] = model[key]
         clone["name"] = item.actor
-        clone["itemBuyingPrice"] = oead.S32(item.price)
+        if item.price is not None:
+            clone["itemBuyingPrice"] = oead.S32(item.price)
         if item.model_folder:
             clone["bfres"] = item.model_folder
         if item.model_unit:

@@ -115,7 +115,7 @@ def set_price(msbt: bytes, prices: dict[str, str], shown: str) -> tuple[bytes, d
 
 def text_inputs() -> dict[str, str]:
     """The message archives read (the same versions as the shop stage's)."""
-    from botw_patch.status_item import INPUT_HASHES, LANGUAGES
+    from botw_patch.ap_quest import INPUT_HASHES, LANGUAGES
     return {f"Pack/Bootup_{language}.pack": INPUT_HASHES[f"Pack/Bootup_{language}.pack"]
             for language in LANGUAGES}
 
@@ -123,7 +123,7 @@ def text_inputs() -> dict[str, str]:
 def generate_texts(files: dict[str, bytes], content: Path) -> tuple[dict[str, bytes], list[dict]]:
     """Vilia's lines at her new price, in every language of the overlay being
     built (after the stages that already changed the message archives)."""
-    from botw_patch.status_item import LANGUAGES
+    from botw_patch.ap_quest import LANGUAGES
     hashes = text_inputs()
     table = "System/Resource/ResourceSizeTable.product.srsizetable"
     if table not in files:

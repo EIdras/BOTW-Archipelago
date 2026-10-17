@@ -2,12 +2,12 @@
 
 oead's writer gives identical containers one shared node: the game's
 Quest/QuestProduct.sbquestpack, read and written again unchanged, went from
-883444 to 466736 bytes. The game does not take such a file: with it (and our
-quest added, or not even started), the Shrine of Resurrection's pedestal, then
-every tower and shrine terminal, offered no interaction (seen in play, 16/10,
-lab probe 24). Its own file shares no container. This writer keeps them apart,
-as the game's: the hash keys and the strings in their two sorted tables, then
-the nodes, each container once per place it holds, its children after it.
+883444 to 466736 bytes; the game's own file shares none. Whether the game minds
+is not known (the terminals the quest pack blocked, 16-17/10, were the quest
+steps' AttentionOff, botw_patch/ap_quest.py, not this): the file is written as
+the game writes it, rather than trusted to a reader. This writer keeps the
+containers apart: the hash keys and the strings in their two sorted tables,
+then the nodes, each container once per place it holds, its children after it.
 
 Only the value types such files hold: hash, array, string, bool, S32, U32, F32.
 """

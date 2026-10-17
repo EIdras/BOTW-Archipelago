@@ -32,7 +32,7 @@ from tools import build_ballad_condition_candidate as ballad
 from tools.build_ballad_upgrade_delivery import champion_entries, transform_for as upgrade_delivery
 from botw_patch import (beast_heart, death_link, downpour, ganon_gate, gerudo_outfit, goron_armor,
                         horses, hud_layout, loading_icon, pedestal, traps)
-from botw_patch.status_item import INPUT_HASHES as STATUS_INPUTS
+from botw_patch.ap_quest import INPUT_HASHES as STATUS_INPUTS
 
 TITLE = "Pack/TitleBG.pack"
 BOOTUP = "Pack/Bootup.pack"
@@ -55,7 +55,7 @@ REWARD_PACKS = {
     "Event/SanrokuMini_Lizard.sbeventpack": "9f0348baa67d638ae3a542d82fb22054cacf3d0cf2ad4e95383d269d203bddcf",
 }
 # The English texts, for the names of what can kill Link (DeathLink); the
-# same version as the Archipelago key item's.
+# same version as the Archipelago quest's (botw_patch/ap_quest.py).
 DEATH_LINK_MESSAGES = {death_link.MESSAGES: STATUS_INPUTS[death_link.MESSAGES]}
 UPDATE_HASHES = {
     **INPUT_HASHES, **REWARD_PACKS, sensor.PACK: sensor.EXPECTED_SOURCE_SHA,
@@ -110,7 +110,7 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
              status: dict | None = None, aoc: Path | None = None
              ) -> tuple[dict[str, bytes], dict, list[dict]]:
     """shops: botw_patch.shops.ShopPlacement list of the seed (none: no shop stage).
-    status: the slot manifest, for the Archipelago key item (none: no item)."""
+    status: the slot manifest, for the Archipelago quest (none: no quest)."""
     if type(binding_token) is not int or not 0 < binding_token <= 0x7FFFFFFF:
         raise ValueError("binding token must be a positive signed s32")
     # Verify every consumed update archive before constructing any output.
@@ -253,10 +253,11 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
                                            aoc=aoc if aoc is not None else default_aoc(content))
         changes.extend(edits)
     if status:
-        from botw_patch import status_item
-        files, edits = status_item.generate(files, content, status)
+        # The Archipelago quest of the Adventure Log (botw_patch/ap_quest.py).
+        from botw_patch import ap_quest
+        files, edits = ap_quest.generate(files, content, status)
         changes.extend(edits)
-        catalog["status_item"] = {"entry": status_item.ENTRY, "actor": status_item.ACTOR}
+        catalog["quest"] = {"start": ap_quest.START, "finish": ap_quest.FINISH}
     if tower_maps(status):
         # The maps are items: the towers keep their own flag (botw_patch/tower_maps.py).
         from botw_patch import tower_maps as tower_stage
@@ -308,11 +309,11 @@ def build(content: Path, output: Path, *, binding_token: int, shops: list | None
             manifest["source_hashes"].update({name: digest((ROOT / name).read_bytes())
                                               for name in stalls.SOURCE_FILES})
     if status:
-        from botw_patch import status_item
-        manifest["status_item"] = {"seed": status["seed"], "slot": status["slot"]}
-        manifest["input_hashes"] = {**manifest["input_hashes"], **status_item.INPUT_HASHES}
+        from botw_patch import ap_quest
+        manifest["quest"] = {"seed": status["seed"], "slot": status["slot"]}
+        manifest["input_hashes"] = {**manifest["input_hashes"], **ap_quest.INPUT_HASHES}
         manifest["source_hashes"].update({name: digest((ROOT / name).read_bytes())
-                                          for name in status_item.SOURCE_FILES})
+                                          for name in ap_quest.SOURCE_FILES})
     if tower_maps(status):
         # Only for seeds whose maps are items, so that the others keep their identity.
         from botw_patch import stalls, tower_maps as tower_stage

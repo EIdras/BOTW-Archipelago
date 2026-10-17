@@ -260,14 +260,15 @@ class BotwClientRuntime:
         self._reconnect_delay = 1.0
         # Start of the current AP outage (monotonic), announced once.
         self._offline_since = None
-        # The Archipelago key item is asked once per game connection.
-        self._status_item_done = False
+        # The Archipelago quest (botw_patch/ap_quest.py) is started once per
+        # game connection, and completed once the goal is sent.
+        self._quest_started = self._quest_finished = False
         # The HUD's AP logo (botw_client/hud_indicator.py): colour when
         # connected, grey otherwise.
         self.hud = None
         self._hud_next = 0.0
         self._hud_error = None
-        self._status_item_retry_after = 0.0
+        self._quest_retry_after = 0.0
         # The Master Sword's pedestal to close (botw_patch/pedestal.py): its
         # flags while it is to be checked, the request made, the next try.
         self._pedestal_flags = None
@@ -421,7 +422,7 @@ class BotwClientRuntime:
         self._ap_session_ready = True
 
     async def _connect_game(self):
-        self._status_item_done = False
+        self._quest_started = self._quest_finished = False
         connect_task = asyncio.create_task(asyncio.to_thread(self.game.connect, self.log))
         try:
             await asyncio.shield(connect_task)
@@ -601,7 +602,7 @@ class BotwClientRuntime:
                 if self._native_session_bound:
                     self.log("BOTW save reloaded from before its binding: binding it again")
                 self._native_session_bound = False
-                self._status_item_done = False      # the key item is gone with it
+                self._quest_started = self._quest_finished = False    # the quest is gone with it
                 return
             if (checkpoint.seed, checkpoint.slot) != expected:
                 raise FatalClientError(
@@ -1657,21 +1658,39 @@ class BotwClientRuntime:
         if done and before is None:
             self.log("HUD indicator: " + ("connected" if online else "offline"))
 
-    async def _status_item_tick(self):
-        """Once per game connection, after the deliveries: the pack's
-        Archipelago key item (seed, slot, goal) if the pouch lacks it."""
-        if (self._status_item_done or self.deliveries is None or self.state is None
-                or self.state["apply_queue"]
-                or time.monotonic() < self._status_item_retry_after):
+    async def _quest_tick(self):
+        """After the deliveries: the pack's Archipelago quest (seed, slot, goal)
+        started once per game connection, and completed once the goal is sent
+        (each entry raises its flag only when it is down). A pack before the
+        quest gives its key item instead, if the pouch lacks it."""
+        if (self.deliveries is None or self.state is None or self.state["apply_queue"]
+                or time.monotonic() < self._quest_retry_after):
             return
-        ask = getattr(self.deliveries.backend, "request_status_item", None)
-        result = await asyncio.to_thread(ask) if ask is not None else None
+        backend = self.deliveries.backend
+        ask = getattr(backend, "request_quest", None)
+        if not self._quest_started:
+            result = await asyncio.to_thread(ask) if ask is not None else None
+            said = "Archipelago quest (seed, slot, goal) checked in the Adventure Log"
+            if result is None:
+                old = getattr(backend, "request_status_item", None)
+                result = await asyncio.to_thread(old) if old is not None else None
+                said = "Archipelago key item (seed, slot, goal) checked in the inventory"
+            if result is False:
+                self._quest_retry_after = time.monotonic() + 2.0
+                return
+            self._quest_started = True
+            if result:
+                self.log(said)
+            return
+        if self._quest_finished or not self.state.get("goal_sent") or ask is None:
+            return
+        result = await asyncio.to_thread(ask, True)
         if result is False:
-            self._status_item_retry_after = time.monotonic() + 2.0
+            self._quest_retry_after = time.monotonic() + 2.0
             return
-        self._status_item_done = True
+        self._quest_finished = True
         if result:
-            self.log("Archipelago key item (seed, slot, goal) checked in the inventory")
+            self.log("Archipelago quest completed in the Adventure Log")
 
     # --- AP journal (tip frame) ------------------------------------------------
 
@@ -2165,7 +2184,7 @@ class BotwClientRuntime:
                     # A reload back to an unbound save unbinds the session.
                     session_bound = not self.native_delivery or self._native_session_bound
                 # A swarm playing has the invoker for its 10 s: the events
-                # (presentations, deliveries, the key item, a received
+                # (presentations, deliveries, the quest, a received
                 # DeathLink) wait for its end; the journal and the death of
                 # Link do not.
                 swarming = self._swarming()
@@ -2180,7 +2199,7 @@ class BotwClientRuntime:
                             await self._apply_one_received_native()
                             await self._pickup_tick()
                             self._log_delivery_wait()
-                            await self._status_item_tick()
+                            await self._quest_tick()
                             await self._pedestal_tick()
                         await self._ganon_gate_tick()
                         await self._native_trap_tick()

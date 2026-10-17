@@ -49,9 +49,9 @@ class ContentTests(unittest.TestCase):
     def test_the_pack_sources_are_all_shipped(self):
         # A pack records the hash of each source it is built from: each must be in the release.
         from tools import build_native_from_source, build_resources_from_source
-        from botw_patch import shops, stalls, status_item
+        from botw_patch import ap_quest, shops, stalls
         sources = {*build_native_from_source.SOURCE_FILES, *build_resources_from_source.SOURCE_FILES,
-                   *shops.SOURCE_FILES, *stalls.SOURCE_FILES, *status_item.SOURCE_FILES,
+                   *shops.SOURCE_FILES, *stalls.SOURCE_FILES, *ap_quest.SOURCE_FILES,
                    "tools/build_pack_from_source.py", "botw_client/session.py"}
         self.assertLessEqual(sources, set(build_release.project_files()))
 

@@ -146,7 +146,7 @@ def generate_texts(files: dict[str, bytes], content: Path) -> tuple[dict[str, by
     of the overlay being built (after the stages that already changed the
     message archives)."""
     from botw_patch.shop_items import add_labels
-    from botw_patch.status_item import INPUT_HASHES, LANGUAGES
+    from botw_patch.ap_quest import INPUT_HASHES, LANGUAGES
     table = "System/Resource/ResourceSizeTable.product.srsizetable"
     inputs = {}
     for language in LANGUAGES:

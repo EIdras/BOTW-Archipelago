@@ -72,7 +72,7 @@ MODEL_REFERENCE = {
               "summary": {"version": 67436547, "models": [], "textures": _AMBER_TEXTURES}},
 }
 # The shops' and stalls' items: the jewel, as their model shows it (its render,
-# assets/models/ap_item/build_ap_item.py). The HUD and the key item keep the logo.
+# assets/models/ap_item/build_ap_item.py). The HUD keeps the logo.
 ICON = ROOT / "assets/wiiu/Item_AP_Jewel.sbitemico"
 ICON_TABLE_MARGIN = 8192
 STOCK = 1                                   # one of each AP item

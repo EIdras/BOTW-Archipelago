@@ -68,12 +68,16 @@ console command `/ap-tip <text>` shows a line in the journal.
 
 - **Journal**: the connection is announced once, then **one** line per outage (not one per attempt), then "Reconnected
   to Archipelago after N s". The console command `/ap-disconnect [s]` simulates an outage of `s` seconds.
-- **The "Archipelago" key item** (`botw_patch/status_item.py`): a key item cloned from Hestu's maracas, with the
-  Archipelago logo. Its description gives the seed, the player (slot) and the goal; with the Ganon goal, a fourth line
-  says what opens his sanctum, only what the seed asks ("Sanctum: 2 Beasts, sword, runes"). The entry
-  `Demo007_1<APStatusItem>` adds it only when the pouch lacks it (`HasPorchItem`); the client requests it once per
-  connection to the game, after the pending deliveries. Every seed pack has it.
-- **HUD**: the Archipelago logo at the bottom left, in color when connected, grey otherwise:
+- **The "Archipelago" quest** (`botw_patch/ap_quest.py`): a main quest of the Adventure Log, built per seed. Its
+  place reads "Multiworld: <slot name>", its giver "BOTW Archipelago <world version>" (the version of this world, not Archipelago's); its text says what ends the game
+  (with the Ganon goal, what opens his sanctum, only what the seed asks), then the seed and the player (slot). It
+  starts at the first connection to the game (the game's "Main Quest" banner), and is completed once the goal is sent
+  (the "Quest Complete" banner; the quest greyed, with its closing text). It rides on flags the game declares for a
+  test quest it never shipped (`TurnTestQuest_Activated`, `_Finish`: saved, one-trigger): two entries,
+  `Demo007_1<APQuestStart>` and `<APQuestFinish>`, raise each only when it is down; the client asks the first once per
+  connection, after the pending deliveries, and the second once the goal is sent. Every seed pack has it. Packs
+  before 0.2.0 had an "Archipelago" key item instead (`Demo007_1<APStatusItem>`), still given to them.
+- **HUD**: the Archipelago logo at the bottom right, by the minimap, in color when connected, grey otherwise:
   [hud_indicator.md](hud_indicator.md).
 
 ## Item deliveries
