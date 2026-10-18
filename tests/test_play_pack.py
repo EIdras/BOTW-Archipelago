@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 import zipfile
 
 from botw_client import regions
@@ -166,7 +166,7 @@ class PreparationTests(unittest.TestCase):
                 result = play_seed.prepare(archive, content=root / "dump", rpx=root / "game.rpx")
                 build.assert_called_once_with(root / "dump", root / "game.rpx", report, 1,
                                                play_seed.PACKS,
-                                               resource_gate=True, event_gate=True)
+                                               resource_gate=True, event_gate=True, progress=ANY)
                 select.assert_called_once_with(folder, root / "pack")
                 self.assertEqual(result, (report, root / "pack"))
             self.assertEqual(report.read_bytes(), original)

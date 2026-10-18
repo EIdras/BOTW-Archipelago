@@ -109,14 +109,29 @@ def tower_maps(status: dict | None) -> bool:
     return bool(status and status.get("slot_data", {}).get("tower_maps"))
 
 
+def stage_names(shops: list | None = None, status: dict | None = None) -> list[str]:
+    """What generate() goes through, in order, as its `progress` names it."""
+    return ["checking the game's files", "the item deliveries", "the rewards and gifts",
+            "DeathLink, traps and the HUD", *(["the shops"] if shops else []),
+            *(["the Archipelago quest"] if status else []), *(["the region maps"] if tower_maps(status) else []),
+            "the texts"]
+
+
 def generate(content: Path, binding_token: int, shops: list | None = None,
-             status: dict | None = None, aoc: Path | None = None
+             status: dict | None = None, aoc: Path | None = None, progress=None
              ) -> tuple[dict[str, bytes], dict, list[dict]]:
     """shops: botw_patch.shops.ShopPlacement list of the seed (none: no shop stage).
-    status: the slot manifest, for the Archipelago quest (none: no quest)."""
+    status: the slot manifest, for the Archipelago quest (none: no quest).
+    progress: called with the name of each stage (stage_names()) as it starts."""
     if type(binding_token) is not int or not 0 < binding_token <= 0x7FFFFFFF:
         raise ValueError("binding token must be a positive signed s32")
+    names = iter(stage_names(shops, status))
+
+    def stage():
+        if progress is not None:
+            progress(next(names))
     # Verify every consumed update archive before constructing any output.
+    stage()
     inputs = {}
     region = regions.of_content(content)
     for name, expected in regions.inputs(UPDATE_HASHES, content).items():
@@ -124,6 +139,7 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
         if vanilla_digest(raw) != expected:
             raise ValueError(f"unexpected Wii U update resource: {name}")
         inputs[name] = raw
+    stage()
     files, changes = generate_presentation(content, "owned_marker")
     title = oead.Sarc(unpack(inputs[TITLE]))
     def donor(name):
@@ -163,6 +179,7 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
 
     # Search by member identity, as in the original resource compiler. Reject
     # unexpected copies instead of silently leaving a source reward active.
+    stage()
     found, packs = set(), set()
     for path in sorted((content / "Event").glob("*.sbeventpack")):
         name = path.relative_to(content).as_posix()
@@ -214,6 +231,7 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
                                         if item.endswith(" (quiet)")}, host=QUIET_FLOW),
     })
     changes.extend(edits)
+    stage()
     # DeathLink (botw_patch/death_link.py): in every pack, requested only when
     # the seed has DeathLink on.
     files, edits = patch_stage(files, TITLE, {QUIET_MEMBER: death_link.add_entry},
@@ -256,21 +274,25 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
     files, edits = patch_stage(files, BOOTUP, {hud_layout.ARCHIVE: indicator})
     changes.extend(edits)
     if shops:
+        stage()
         from botw_patch import shops as shop_stage
         files, edits = shop_stage.generate(files, content, shops,
                                            aoc=aoc if aoc is not None else default_aoc(content))
         changes.extend(edits)
     if status:
+        stage()
         # The Archipelago quest of the Adventure Log (botw_patch/ap_quest.py).
         from botw_patch import ap_quest
         files, edits = ap_quest.generate(files, content, status)
         changes.extend(edits)
         catalog["quest"] = {"start": ap_quest.START, "finish": ap_quest.FINISH}
     if tower_maps(status):
+        stage()
         # The maps are items: the towers keep their own flag (botw_patch/tower_maps.py).
         from botw_patch import tower_maps as tower_stage
         files, edits = tower_stage.generate(files, aoc if aoc is not None else default_aoc(content))
         changes.extend(edits)
+    stage()
     # Vilia's lines at the price she now asks (botw_patch/gerudo_outfit.py).
     files, edits = gerudo_outfit.generate_texts(files, content)
     changes.extend(edits)
@@ -287,8 +309,8 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
 
 
 def build(content: Path, output: Path, *, binding_token: int, shops: list | None = None,
-          status: dict | None = None, aoc: Path | None = None) -> Path:
-    files, catalog, changes = generate(content.resolve(), binding_token, shops, status, aoc)
+          status: dict | None = None, aoc: Path | None = None, progress=None) -> Path:
+    files, catalog, changes = generate(content.resolve(), binding_token, shops, status, aoc, progress)
     region = regions.of_content(content)
     manifest = {
         "schema": 1, "component": "complete_play_resources", "status": "not_installable",

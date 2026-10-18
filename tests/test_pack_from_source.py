@@ -90,11 +90,14 @@ def audit(event, args):
 sys.addaudithook(audit)
 from tools.build_pack_from_source import build, verify_pack, load_seed, RUNTIME, DIAGNOSTICS
 from tools.build_resources_from_source import digest, encode
-def create(output, diagnostics=True):
+def create(output, diagnostics=True, progress=None):
     return build(work/'input', work/'input.rpx', work/'analysis.json', 1, output,
-                 archive=work/'seed.zip', diagnostics=diagnostics)
+                 archive=work/'seed.zip', diagnostics=diagnostics, progress=progress)
 # The pin below proves the build reproducible: no second build.
-a = create(work/'a')
+steps = []
+a = create(work/'a', progress=lambda step, total, name: steps.append((step, total)))
+# Every step of the build is announced once, in order.
+assert steps == [(n, len(steps)) for n in range(1, len(steps) + 1)] and len(steps) >= 8, steps
 def tree(path):
     return {p.relative_to(path).as_posix():p.read_bytes() for p in path.rglob('*') if p.is_file()}
 hashes = {n:digest(raw) for n,raw in tree(a).items() if n != 'manifest.json'}

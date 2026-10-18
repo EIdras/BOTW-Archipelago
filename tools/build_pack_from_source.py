@@ -176,7 +176,8 @@ def verify_pack(pack: Path, binding: dict | None = None) -> dict:
 
 def build(content: Path, rpx: Path, report: Path, slot: int, output: Path, *,
           archive: Path | None = None, diagnostics: bool = True,
-          resource_gate: bool = False, event_gate: bool = False) -> Path:
+          resource_gate: bool = False, event_gate: bool = False, progress=None) -> Path:
+    """progress: called with (step, steps, name) as each step of the build starts."""
     binding, slot_data = _verified_seed(report, slot, archive)
     from botw_patch.shops import plan_from_manifest
     shops = plan_from_manifest(slot_data)
@@ -184,12 +185,19 @@ def build(content: Path, rpx: Path, report: Path, slot: int, output: Path, *,
         raise ValueError("incompatible RPX: provide the verified Wii U EUR v208 dump")
     # A file the antivirus still holds may outlive the build here: the system's
     # temporary folder takes it, rather than failing the pack.
+    names = ["the native code", *resources.stage_names(shops, slot_data), "writing the pack"]
+    steps = iter(range(1, len(names) + 1))
+
+    def step(name):
+        if progress is not None:
+            progress(next(steps), len(names), name)
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp:
         work = Path(temp)
+        step(names[0])
         native_dir = native.build(rpx, work / "native", resource_gate=resource_gate, event_gate=event_gate,
                                   tower_maps=bool(slot_data.get("slot_data", {}).get("tower_maps")))
         resource_dir = resources.build(content, work / "resources", binding_token=binding["token"],
-                                       shops=shops, status=slot_data)
+                                       shops=shops, status=slot_data, progress=step)
         nm = json.loads((native_dir / "manifest.json").read_text(encoding="utf-8"))
         rm = json.loads((resource_dir / "manifest.json").read_text(encoding="utf-8"))
         files = {resources.pack_path(name): (resource_dir / resources.pack_path(name)).read_bytes()
@@ -200,6 +208,7 @@ def build(content: Path, rpx: Path, report: Path, slot: int, output: Path, *,
         files["delivery_catalog.json"] = (resource_dir / "delivery_catalog.json").read_bytes()
     region = regions.by_key(rm["revision"].split()[0])
     files["rules.txt"] = rules(region)
+    step(names[-1])
     sources = {**nm["source_hashes"], **rm["source_hashes"]}
     for name in ("tools/build_pack_from_source.py", "botw_client/session.py"):
         sources[name] = digest((ROOT / name).read_bytes())

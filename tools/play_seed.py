@@ -39,6 +39,7 @@ import os
 from pathlib import Path
 import shutil
 import sys
+import warnings
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -145,7 +146,10 @@ def read_seed(path: Path, slot_name: str | None = None) -> tuple[dict, dict]:
     team, players = 0, None
     whole = path.suffix.lower() == ".zip" and archipelago_here()
     if whole:
-        from MultiServer import Context
+        with warnings.catch_warnings():
+            # Archipelago's compiled speedups are not built here: its Python fallback serves.
+            warnings.filterwarnings("ignore", message="_speedups not available")
+            from MultiServer import Context
         with zipfile.ZipFile(path) as archive:
             multidata = Context.decompress(archive.read(
                 next(n for n in archive.namelist() if n.endswith(".archipelago"))))
@@ -218,8 +222,8 @@ def prepare(source: Path, *, content: Path | None = None, rpx: Path | None = Non
                 "archive": str(archive), "archive_sha256": sha(archive),
                 "audit": audit, "delivery": {"sessions": {str(slot): identity}}}
         report.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    pack = build(content, rpx, report, slot, PACKS,
-                 resource_gate=True, event_gate=True)
+    pack = build(content, rpx, report, slot, PACKS, resource_gate=True, event_gate=True,
+                 progress=lambda step, steps, name: print(f"  [{step}/{steps}] {name}", flush=True))
     select_pack(folder, pack)
     from botw_client.gamedata_table import build as build_gamedata_table
     build_gamedata_table(content)
