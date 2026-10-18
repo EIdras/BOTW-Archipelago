@@ -9,6 +9,7 @@ import zlib
 
 import oead
 
+from botw_client import gamedata_table
 from botw_client.delivery_plan import MutationKind, compile_delivery_plan
 from botw_client.locations import LocationTarget, LocationTracker, load_targets, tower_activation_flag
 from botw_patch import tower_maps
@@ -19,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 UPDATE = Path.home() / "AppData/Roaming/Cemu/mlc01/usr/title/0005000e/101c9500/content"
 AOC = UPDATE.parents[2] / "0005000c/101c9500/content/0010"
 HAS_DLC = (AOC / "Map/MainField").is_dir()
+NEEDS_TABLE = unittest.skipUnless(gamedata_table.available(), "the GameData flag table is read from the game")
 
 
 def save_flags(raw: bytes) -> dict[int, str]:
@@ -36,6 +38,7 @@ class CatalogueTests(unittest.TestCase):
                          {number: region for number, region in towers.items() if number != "07"})
         self.assertEqual(tower_maps.FLAGS, tuple(f"APTower_{number}" for number in tower_maps.TOWERS))
 
+    @NEEDS_TABLE
     def test_the_towers_flags_take_no_hash_of_the_game(self):
         from botw_client.gamedata_table import load
         taken = {int(key) & 0xFFFFFFFF for key in load()}
@@ -48,6 +51,7 @@ class CatalogueTests(unittest.TestCase):
 
 
 class TrackerTests(unittest.TestCase):
+    @NEEDS_TABLE
     def test_towers_but_the_plateaus_may_be_tracked_by_their_own_flag(self):
         targets = {target.name: target for target in load_targets()}
         self.assertEqual(targets["Hebra Tower"].pack_flag, "APTower_01")
