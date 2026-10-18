@@ -33,7 +33,8 @@ import tempfile
 import oead
 
 from botw_patch.events import graph_snapshot, read_flow, write_flow
-from botw_patch.resources import ResourceBuilder, digest, unpack
+from botw_client import regions
+from botw_patch.resources import ResourceBuilder, digest, unpack, vanilla_digest
 
 PACK = "Event/HyruleCastle.sbeventpack"
 PACKS = {PACK: "18a747e4ec97bceb0e6c39e36282c84ebb7fd48c9a218c54c7671ef73eb42db2"}
@@ -60,11 +61,12 @@ SEALED = {
     "EUit": "Un sigillo protegge ancora questo\nsantuario. Torna quando avrai\ncompiuto la tua missione.",
     "EUnl": "Een zegel beschermt dit heiligdom nog.\nKeer terug wanneer je taak\nvoltooid is.",
     "EUru": "Святилище всё ещё запечатано.\nВозвращайся, когда завершишь\nсвоё задание.",
+    "JPja": "この聖域は まだ封印に守られている\n使命を果たしてから 再びここへ来なさい",
 }
 
 
 def transform(raw: bytes) -> tuple[bytes, list[str]]:
-    if digest(raw) != FLOW_SHA:
+    if vanilla_digest(raw) != FLOW_SHA:
         raise ValueError("HyruleCastle flow changed")
     flow = read_flow(raw)
     before = graph_snapshot(flow)
@@ -146,16 +148,17 @@ def generate_texts(files: dict[str, bytes], content: Path) -> tuple[dict[str, by
     of the overlay being built (after the stages that already changed the
     message archives)."""
     from botw_patch.shop_items import add_labels
-    from botw_patch.ap_quest import INPUT_HASHES, LANGUAGES
+    from botw_patch.ap_quest import INPUT_HASHES
     table = "System/Resource/ResourceSizeTable.product.srsizetable"
+    hashes, languages = regions.inputs(INPUT_HASHES, content), regions.of_content(content).languages
     inputs = {}
-    for language in LANGUAGES:
+    for language in languages:
         name = f"Pack/Bootup_{language}.pack"
         if name in files:           # already changed by an earlier stage
             inputs[name] = files[name]
             continue
         raw = (content / name).read_bytes()
-        if digest(raw) != INPUT_HASHES[name]:
+        if vanilla_digest(raw) != hashes[name]:
             raise ValueError(f"unexpected update resource: {name}")
         inputs[name] = raw
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp:
@@ -165,12 +168,12 @@ def generate_texts(files: dict[str, bytes], content: Path) -> tuple[dict[str, by
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(raw)
         builder = ResourceBuilder(stage)
-        for language in LANGUAGES:
+        for language in languages:
             def messages(raw, language=language):
                 archive = oead.Sarc(unpack(raw))
                 writer = oead.SarcWriter.from_sarc(archive)
                 writer.files[MSBT], detail = add_labels(bytes(archive.get_file(MSBT).data),
-                                                        {LABEL: SEALED[language]}, MODEL_LABEL)
+                                                        {LABEL: regions.localized(SEALED, language)}, MODEL_LABEL)
                 packed = bytes(writer.write()[1])
                 return (bytes(oead.yaz0.compress(packed)) if raw[:4] == b"Yaz0" else packed), detail
 

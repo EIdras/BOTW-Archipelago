@@ -16,6 +16,13 @@ def digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def vanilla_digest(data: bytes) -> str:
+    """digest() of a game resource as the European version's file names it, from
+    any supported version (botw_client/regions.py): what the build's pins compare."""
+    from botw_client.regions import vanilla_digest
+    return vanilla_digest(data)
+
+
 def canonical(name: str) -> str:
     path = Path(name)
     ext = path.suffix

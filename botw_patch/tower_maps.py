@@ -24,7 +24,7 @@ import tempfile
 import oead
 
 from botw_client.locations import tower_activation_flag
-from botw_patch.resources import ResourceBuilder, digest, unpack
+from botw_patch.resources import ResourceBuilder, digest, unpack, vanilla_digest
 from botw_patch.stalls import AOC_PREFIX, TABLE_PREFIX
 
 BOOTUP = "Pack/Bootup.pack"
@@ -116,7 +116,7 @@ def generate(files: dict[str, bytes], aoc: Path) -> tuple[dict[str, bytes], list
         builder = ResourceBuilder(stage)
         for cell, numbers in sorted(cells.items()):
             vanilla = (aoc / unit(cell)).read_bytes()
-            if digest(vanilla) != MAP_HASHES[cell]:
+            if vanilla_digest(vanilla) != MAP_HASHES[cell]:
                 raise ValueError(f"unexpected DLC map: {unit(cell)}")
             source = files.get(AOC_PREFIX + unit(cell), vanilla)
             new, detail = patch_map(source, numbers)

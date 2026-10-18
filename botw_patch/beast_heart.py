@@ -25,7 +25,7 @@ from evfl.event import ActionEvent, Event, SwitchEvent
 from evfl.util import Index, make_rindex
 
 from botw_patch.events import graph_snapshot, read_flow, write_flow
-from botw_patch.resources import digest
+from botw_patch.resources import digest, vanilla_digest
 
 FLOW = "EventFlow/GetDemo.bfevfl"
 FLOW_SHA = "af201d87d582f218ee5898ef3efa97f482fbd564e487385793b1efe7066817c8"
@@ -38,7 +38,7 @@ SOURCE_FILES = ("botw_patch/beast_heart.py",)
 
 
 def transform(raw: bytes) -> tuple[bytes, list[str]]:
-    if digest(raw) != FLOW_SHA:
+    if vanilla_digest(raw) != FLOW_SHA:
         raise ValueError("GetDemo flow changed")
     flow = read_flow(raw)
     before = graph_snapshot(flow)

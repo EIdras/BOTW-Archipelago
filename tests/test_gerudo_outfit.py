@@ -83,8 +83,14 @@ class ViliaTests(unittest.TestCase):
         import oead
         from botw_patch.resources import unpack
         from botw_patch.shop_items import read_labels
+        from botw_client import regions
         for language, shown in go.SHOWN_PRICE.items():
-            boot = oead.Sarc(unpack((UPDATE / f"Pack/Bootup_{language}.pack").read_bytes()))
+            # Each language in the update of its version (the Japanese one, when installed).
+            region = next(r for r in regions.REGIONS if language in r.languages)
+            update = UPDATE.parents[1] / region.title / "content"
+            if not (update / f"Pack/Bootup_{language}.pack").is_file():
+                continue
+            boot = oead.Sarc(unpack((update / f"Pack/Bootup_{language}.pack").read_bytes()))
             messages = oead.Sarc(unpack(bytes(boot.get_file(
                 f"Message/Msg_{language}.product.ssarc").data)))
             for member, prices in go.PRICE_LINES.items():

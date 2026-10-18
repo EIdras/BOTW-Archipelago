@@ -6,14 +6,15 @@ l'émulateur Cemu : l'installation, rejoindre une salle et, pour la personne qui
 ## Ce qu'il faut
 
 - Windows 10 ou 11.
-- [Cemu](https://cemu.info/) 2.x, avec **Breath of the Wild, Wii U, version européenne (EUR)**, depuis votre propre
-  console :
+- [Cemu](https://cemu.info/) 2.x, avec **Breath of the Wild, Wii U, version européenne (EUR), américaine (USA) ou
+  japonaise (JPN)**, depuis votre propre console :
   - le jeu dans la liste des jeux de Cemu ;
   - sa mise à jour **v208** (1.5.0) et le **DLC** installés dans Cemu (Fichier > Installer un titre, une mise à jour
     ou un DLC).
 
-  Lancez le jeu une fois dans Cemu. Les autres versions du jeu (US, JP, Switch) ne sont pas prises en charge :
-  l'intégration est construite pour cet exécutable précis.
+  Lancez le jeu une fois dans Cemu. La version Switch n'est pas prise en charge : l'intégration est construite
+  pour cet exécutable précis. Avec plusieurs versions dans Cemu, le lanceur joue la version européenne, sinon
+  l'américaine.
 - Environ 5 Go d'espace disque libre, et 140 Mo de plus par seed.
 - La salle qui héberge la partie : sa page sur archipelago.gg propose votre **fichier de slot** (`.apbotw`,
   « Download Patch File... » à côté de votre nom) et affiche l'**adresse de la salle**.

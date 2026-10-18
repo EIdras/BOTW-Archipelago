@@ -44,8 +44,9 @@ your own server.
 
 ## Requirements
 
-- Windows, Cemu 2.x, Breath of the Wild **Wii U EUR, update v208 (1.5.0) and DLC**, from your own console, installed
-  in Cemu: the native code of the integration is built for this exact executable.
+- Windows, Cemu 2.x, Breath of the Wild **Wii U, European (EUR), American (USA) or Japanese (JPN) version, update
+  v208 (1.5.0) and DLC**, from your own console, installed in Cemu: the native code of the integration is built for
+  this exact executable, the same in the three versions.
 - To generate or host a seed, [Archipelago 0.6.7](https://github.com/ArchipelagoMW/Archipelago/releases) with this
   world, `botw.apworld`.
 
@@ -67,7 +68,8 @@ The French names of every location and item, as the French game shows them: [nom
 
 ## Limitations
 
-- Only the European Wii U version, update v208, in Cemu on Windows.
+- Only the Wii U version, update v208, in Cemu on Windows. The texts the integration adds are in English, but for
+  the sealed sanctum's line; a DeathLink sent from the Japanese version names no killer.
 - The game pack is built for one seed: Archipelago's website cannot generate a seed with this world, which is
   generated with Archipelago on a computer (then hosted anywhere).
 

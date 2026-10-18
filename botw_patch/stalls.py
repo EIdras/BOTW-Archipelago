@@ -27,7 +27,7 @@ import zlib
 import oead
 
 from botw_client.stall_catalog import StallLocation
-from botw_patch.resources import digest, unpack
+from botw_patch.resources import digest, unpack, vanilla_digest
 from botw_patch.shop_items import add_purchase_record
 
 AOC_PREFIX = "aoc/0010/"          # files at the pack root, under aoc/
@@ -182,7 +182,7 @@ def generate(builder, files: dict[str, bytes], content, aoc, locations: list[Sta
         units.setdefault(location.merchant.map_unit, []).append(location)
     for unit, located in sorted(units.items()):
         raw = (aoc / unit).read_bytes()
-        if digest(raw) != MAP_HASHES[unit]:
+        if vanilla_digest(raw) != MAP_HASHES[unit]:
             raise ValueError(f"unexpected DLC map: {unit}")
         new, detail = patch_map(raw, located, jewel)
         builder.account(TABLE_PREFIX + unit, new, raw)
@@ -205,7 +205,7 @@ def stage_inputs(content) -> dict[str, bytes]:
     out = {}
     for name, expected in INPUT_HASHES.items():
         raw = (content / name).read_bytes()
-        if digest(raw) != expected:
+        if vanilla_digest(raw) != expected:
             raise ValueError(f"unexpected update resource: {name}")
         out[name] = raw
     return out

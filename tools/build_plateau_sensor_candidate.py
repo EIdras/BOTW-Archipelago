@@ -24,7 +24,7 @@ sys.path[:] = [str(ROOT)] + [p for p in sys.path
 import oead  # noqa: E402
 
 from botw_patch.events import graph_snapshot, read_flow, wait_instead, write_flow  # noqa: E402
-from botw_patch.resources import ResourceBuilder, digest, unpack  # noqa: E402
+from botw_patch.resources import ResourceBuilder, digest, unpack, vanilla_digest  # noqa: E402
 from evfl.util import make_rindex  # noqa: E402
 from tools.build_seed_bound_candidate import verified_files  # noqa: E402
 
@@ -96,7 +96,7 @@ def build(source: Path = SOURCE, output: Path = OUTPUT, update: Path = UPDATE) -
         raise ValueError("source is not a verified native candidate without the sensor stage")
     files = verified_files(source, manifest)
     raw_pack = (update / PACK).read_bytes()
-    if digest(raw_pack) != EXPECTED_SOURCE_SHA:
+    if vanilla_digest(raw_pack) != EXPECTED_SOURCE_SHA:
         raise ValueError("mounted Plateau tower source changed")
     stage = output / "_input"
     (stage / "Event").mkdir(parents=True, exist_ok=True)

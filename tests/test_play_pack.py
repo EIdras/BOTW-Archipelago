@@ -5,6 +5,7 @@ import unittest
 from unittest.mock import patch
 import zipfile
 
+from botw_client import regions
 from botw_client.session import session_token
 from tests.test_pack_from_source import write_seed
 from tools import build_pack_from_source, play_seed, play_pack
@@ -241,7 +242,18 @@ class VersionTests(unittest.TestCase):
             sources = {"botw_client/session.py": digest((play_pack.ROOT / "botw_client/session.py").read_bytes()),
                        "botw_client/items.py": "0" * 64}
             (pack / "manifest.json").write_text(json.dumps({"source_hashes": sources}))
-            self.assertEqual(play_pack.outdated(pack), ["botw_client/items.py"])
+            with patch("tools.cemu_profile.region", lambda: regions.EUR):
+                self.assertEqual(play_pack.outdated(pack), ["botw_client/items.py"])
+
+    def test_a_pack_of_another_version_than_the_profiles_is_built_again(self):
+        with tempfile.TemporaryDirectory() as temp:
+            pack = Path(temp)
+            (pack / "manifest.json").write_text(json.dumps({"revision": "EUR v208", "source_hashes": {}}))
+            with patch("tools.cemu_profile.region", lambda: regions.USA):
+                self.assertEqual(play_pack.outdated(pack), ["built for the EUR version"])
+            (pack / "manifest.json").write_text(json.dumps({"revision": "USA v208", "source_hashes": {}}))
+            with patch("tools.cemu_profile.region", lambda: regions.USA):
+                self.assertEqual(play_pack.outdated(pack), [])
 
     def test_a_refreshed_seed_drops_the_pack_no_seed_uses(self):
         with tempfile.TemporaryDirectory() as temp:

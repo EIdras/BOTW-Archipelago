@@ -7,7 +7,7 @@ from pathlib import Path
 import oead
 import rstb
 
-from botw_patch.resources import ResourceBuilder, unpack
+from botw_patch.resources import ResourceBuilder, unpack, vanilla_digest
 from tools.build_pack_from_source import verify_pack
 from tools.build_resources_from_source import digest, encode, pack_path, TITLE, TABLE
 from tools.build_plateau_speed import faster_animation
@@ -34,7 +34,7 @@ def variant(source: Path, speed: float, output: Path) -> Path:
     builder = ResourceBuilder(source / 'content')
 
     def player(raw):
-        if digest(raw) != VANILLA_SHA:
+        if vanilla_digest(raw) != VANILLA_SHA:
             raise ValueError('base player actor is not vanilla; multiplier refused')
         archive = oead.Sarc(unpack(raw))
         writer = oead.SarcWriter.from_sarc(archive)

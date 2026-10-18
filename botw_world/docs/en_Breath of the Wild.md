@@ -179,7 +179,7 @@ jewel, with the item's name and its recipient.
 
 ## Current limitations
 
-- Only the European Wii U version, update v208, in Cemu on Windows, is supported.
+- Only the Wii U version (European, American or Japanese), update v208, in Cemu on Windows, is supported.
 - Each player's launcher builds a game pack for their seed, from their slot file (`.apbotw`, on the room's page
   or in the seed's zip). The seed is generated with Archipelago on a computer, then hosted anywhere, archipelago.gg
   included.

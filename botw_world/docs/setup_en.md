@@ -6,12 +6,13 @@ Cemu emulator: installing, joining a room, and, for the person who hosts it, gen
 ## What you need
 
 - Windows 10 or 11.
-- [Cemu](https://cemu.info/) 2.x, with **Breath of the Wild, Wii U, European version (EUR)**, from your own console:
+- [Cemu](https://cemu.info/) 2.x, with **Breath of the Wild, Wii U, European (EUR), American (USA) or Japanese (JPN)
+  version**, from your own console:
   - the game in Cemu's game list;
   - its update **v208** (1.5.0) and the **DLC** installed in Cemu (File > Install game title, update or DLC).
 
-  Start the game once in Cemu. Other versions of the game (US, JP, Switch) are not supported: the integration is
-  built for this exact executable.
+  Start the game once in Cemu. The Switch version is not supported: the integration is built for this exact
+  executable. With several versions in Cemu, the launcher plays the European one, else the American one.
 - About 5 GB of free disk space, and 140 MB more for each seed.
 - The room the game is hosted in: its page on archipelago.gg offers your **slot file** (`.apbotw`, "Download Patch
   File..." next to your name), and shows the **address of the room**.

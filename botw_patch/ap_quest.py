@@ -47,7 +47,8 @@ from evfl.util import Index, make_rindex
 
 from botw_patch import byml_unshared
 from botw_patch.events import graph_snapshot, read_flow, write_flow
-from botw_patch.resources import ResourceBuilder, digest, unpack
+from botw_client import regions
+from botw_patch.resources import ResourceBuilder, digest, unpack, vanilla_digest
 from botw_patch.shop_items import ApShopItem, add_declarations, add_labels
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -272,12 +273,12 @@ def generate(files: dict[str, bytes], content: Path,
         if name not in files:
             raise ValueError(f"{name} expected in the overlay")
     inputs = {}
-    for name, expected in INPUT_HASHES.items():
+    for name, expected in regions.inputs(INPUT_HASHES, content).items():
         if name in files:           # already changed by an earlier stage
             inputs[name] = files[name]
             continue
         raw = (content / name).read_bytes()
-        if digest(raw) != expected:
+        if vanilla_digest(raw) != expected:
             raise ValueError(f"unexpected update resource: {name}")
         inputs[name] = raw
     quest = texts(manifest)
@@ -294,7 +295,7 @@ def generate(files: dict[str, bytes], content: Path,
         giver = ApShopItem(GIVER, None, quest["giver"], "", model_actor=GIVER_MODEL)
         builder.outputs[ACTOR_INFO], detail = add_declarations(inputs[ACTOR_INFO], [giver])
         changes.append({"resource": ACTOR_INFO, "declarations": detail})
-        for language in LANGUAGES:
+        for language in regions.of_content(content).languages:
             builder.patch_archive(f"Pack/Bootup_{language}.pack", {
                 f"Message/Msg_{language}.product.ssarc": lambda raw: messages(raw, quest)})
         builder.patch_archive(TITLE, {QUEST_PACK: add_quest,

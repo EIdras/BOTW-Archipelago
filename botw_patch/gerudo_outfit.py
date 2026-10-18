@@ -19,7 +19,8 @@ import tempfile
 import oead
 
 from botw_patch.events import graph_snapshot, read_flow, write_flow
-from botw_patch.resources import ResourceBuilder, digest, unpack
+from botw_client import regions
+from botw_patch.resources import ResourceBuilder, digest, unpack, vanilla_digest
 
 # The purse holds 999,999 rupees at most.
 UNPAYABLE = 1_000_000
@@ -40,17 +41,19 @@ SOURCE_FILES = ("botw_patch/gerudo_outfit.py",)
 PRICE_LINES = {"EventFlowMsg/Drag_Hero.msbt": {"Npc_SmallOasis008_S1_002": "600"},
                "EventFlowMsg/Npc_SmallOasis008.msbt": {"talk09": "200", "talk10": "200",
                                                        "talk11": "200"}}
-# 1,000,000 as each language writes its numbers.
+# 1,000,000 as each language writes its numbers (the American version's English,
+# French and Spanish write them as the European ones; Japanese without
+# separators, "50000ルピー": measured, 18/10).
 SHOWN_PRICE = {"EUde": "1.000.000", "EUen": "1,000,000", "EUes": "1.000.000",
                "EUfr": "1 000 000", "EUit": "1.000.000", "EUnl": "1.000.000",
-               "EUru": "1 000 000"}
+               "EUru": "1 000 000", "JPja": "1000000"}
 
 
 def transform_for(member: str):
     expected_digest, prices = FLOWS[member]
 
     def transform(raw: bytes) -> tuple[bytes, list[str]]:
-        if digest(raw) != expected_digest:
+        if vanilla_digest(raw) != expected_digest:
             raise ValueError(f"Vilia's flow changed: {member}")
         flow = read_flow(raw)
         before = graph_snapshot(flow)
@@ -123,19 +126,18 @@ def text_inputs() -> dict[str, str]:
 def generate_texts(files: dict[str, bytes], content: Path) -> tuple[dict[str, bytes], list[dict]]:
     """Vilia's lines at her new price, in every language of the overlay being
     built (after the stages that already changed the message archives)."""
-    from botw_patch.ap_quest import LANGUAGES
-    hashes = text_inputs()
+    hashes, languages = regions.inputs(text_inputs(), content), regions.of_content(content).languages
     table = "System/Resource/ResourceSizeTable.product.srsizetable"
     if table not in files:
         raise ValueError(f"{table} expected in the overlay")
     inputs = {}
-    for language in LANGUAGES:
+    for language in languages:
         name = f"Pack/Bootup_{language}.pack"
         if name in files:           # already changed by an earlier stage
             inputs[name] = files[name]
             continue
         raw = (content / name).read_bytes()
-        if digest(raw) != hashes[name]:
+        if vanilla_digest(raw) != hashes[name]:
             raise ValueError(f"unexpected update resource: {name}")
         inputs[name] = raw
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp:
@@ -145,14 +147,14 @@ def generate_texts(files: dict[str, bytes], content: Path) -> tuple[dict[str, by
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(raw)
         builder = ResourceBuilder(stage)
-        for language in LANGUAGES:
+        for language in languages:
             def messages(raw, language=language):
                 archive = oead.Sarc(unpack(raw))
                 writer = oead.SarcWriter.from_sarc(archive)
                 detail = {}
                 for member, prices in PRICE_LINES.items():
                     writer.files[member], detail[member] = set_price(
-                        bytes(archive.get_file(member).data), prices, SHOWN_PRICE[language])
+                        bytes(archive.get_file(member).data), prices, regions.localized(SHOWN_PRICE, language))
                 packed = bytes(writer.write()[1])
                 return (bytes(oead.yaz0.compress(packed)) if raw[:4] == b"Yaz0" else packed), detail
 

@@ -160,10 +160,11 @@ def plain(text: str) -> str:
     return "".join(out).strip()
 
 
-def attacker_names(messages_pack: bytes) -> dict[str, str]:
-    """{actor: English name} of every actor named in NAME_FILES."""
+def attacker_names(messages_pack: bytes, language: str = "EUen") -> dict[str, str]:
+    """{actor: English name} of every actor named in NAME_FILES, from the
+    English message archive of the game's version (`language`)."""
     archive = oead.Sarc(unpack(bytes(oead.Sarc(unpack(messages_pack)).get_file(
-        MESSAGE_ARCHIVE).data)))
+        f"Message/Msg_{language}.product.ssarc").data)))
     names = {}
     for name in NAME_FILES:
         member = archive.get_file(f"ActorType/{name}.msbt")

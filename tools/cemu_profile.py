@@ -2,12 +2,14 @@
 
     python tools/cemu_profile.py --cemu <Cemu.exe> [--user-data <Cemu user folder>]
 
-Creating it copies, once, the Cemu executable, the BOTW EUR update and DLC, the
+Creating it copies, once, the Cemu executable, the BOTW update and DLC, the
 BOTW saves and the accounts of an existing Cemu installation, found and checked
 by tools/cemu_install.py, into cemu-validation/ of the data folder
 (botw_client/paths.py): nothing links back to the installation, which is never
 modified. An existing profile is never reset. The base game is not copied:
-Cemu launches it where it is.
+Cemu launches it where it is. The profile plays one version of the game
+(botw_client/regions.py, recorded in isolation.json): --region switches it to
+another, whose titles and saves it then copies too.
 
 A play session (tools/play_session.py) then uses its own Cemu account
 (PLAY_ACCOUNT), derived from the copied one (SOURCE_ACCOUNT), so that a new
@@ -29,6 +31,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from botw_client import regions  # noqa: E402
 from botw_client.paths import DATA  # noqa: E402
 from tools import cemu_install  # noqa: E402
 from tools.cemu_install import CemuInstall  # noqa: E402
@@ -37,7 +40,6 @@ PROFILE = DATA / "cemu-validation"
 PORTABLE = PROFILE / "portable"
 SOURCE_ACCOUNT = 0x80000001     # the account copied from the Cemu installation
 PLAY_ACCOUNT = 0x80000003       # the account of play sessions
-SAVES = PORTABLE / "mlc01/usr/save/00050000/101c9500/user"
 ACCOUNTS = PORTABLE / "mlc01/usr/save/system/act"
 PACK_PREFIX = "AP_Ledger_"
 CONTROLLER = "controllerProfiles/controller0.xml"     # player 1's controller, set in Cemu's input settings
@@ -56,9 +58,8 @@ def create(executable: Path, install: CemuInstall | None = None, target: Path = 
     mlc, user_data = install.mlc, install.user_data
     # The update and DLC wherever Cemu has them, the game's saves and the
     # accounts (the play account is derived from the first one) from mlc01.
-    copies = {install.update: "usr/title/0005000e/101c9500", install.dlc: "usr/title/0005000c/101c9500",
-              mlc / "usr/save/00050000/101c9500": "usr/save/00050000/101c9500",
-              mlc / "usr/save/system/act": "usr/save/system/act", mlc / "sys": "sys"}
+    copies = {**_title_copies(install), mlc / "usr/save/system/act": "usr/save/system/act",
+              mlc / "sys": "sys"}
     portable = target / "portable"
     portable.mkdir(parents=True)
     shutil.copy2(executable, target / "Cemu.exe")
@@ -83,9 +84,10 @@ def create(executable: Path, install: CemuInstall | None = None, target: Path = 
     if packs is not None:
         packs.clear()
     settings.write(portable / "settings.xml", encoding="utf-8", xml_declaration=True)
-    saves = mlc / "usr/save/00050000/101c9500"
+    saves = mlc / "usr/save/00050000" / install.region.title
     manifest = {"schema": 1, "source_cemu": str(executable.resolve()),
                 "source_user_data": str(user_data.resolve()), "game": str(install.game),
+                "title": install.region.title,
                 "source_save_hashes": {
                     path.relative_to(saves).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
                     for path in sorted(saves.rglob("*")) if path.is_file()}}
@@ -97,33 +99,76 @@ def create(executable: Path, install: CemuInstall | None = None, target: Path = 
     return target
 
 
+def _title_copies(install: CemuInstall) -> dict[Path, str]:
+    """What the profile copies of a version: its update, DLC and saves."""
+    title = install.region.title
+    return {install.update: f"usr/title/0005000e/{title}", install.dlc: f"usr/title/0005000c/{title}",
+            install.mlc / f"usr/save/00050000/{title}": f"usr/save/00050000/{title}"}
+
+
+def _manifest() -> dict:
+    return json.loads((PROFILE / "isolation.json").read_text(encoding="utf-8"))
+
+
+def region() -> regions.Region:
+    """The version the profile plays (profiles made before it was recorded: EUR)."""
+    try:
+        title = _manifest().get("title", regions.EUR.title)
+    except (OSError, ValueError):
+        return regions.EUR
+    return regions.by_title(title) or regions.EUR
+
+
+def switch(install: CemuInstall) -> Path:
+    """Play the version of `install` in the existing profile: its update, DLC
+    and saves are copied in the first time (never over what is there)."""
+    manifest = _manifest()
+    for source, name in _title_copies(install).items():
+        if source.exists() and not (PORTABLE / "mlc01" / name).exists():
+            print(f"Copying {name}...", flush=True)
+            shutil.copytree(source, PORTABLE / "mlc01" / name)
+    manifest.update({"game": str(install.game), "title": install.region.title})
+    (PROFILE / "isolation.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    print(f"The profile now plays the {install.region.name} version: {install.game}")
+    return PROFILE
+
+
 def game() -> Path:
     """What Cemu launches: the game found when the profile was made, else
     found again in the installation it was copied from."""
-    manifest = json.loads((PROFILE / "isolation.json").read_text(encoding="utf-8"))
+    manifest = _manifest()
     recorded = manifest.get("game")
     if recorded and Path(recorded).exists():
         return Path(recorded)
-    return cemu_install.base_game(Path(manifest["source_user_data"]))
+    return cemu_install.base_game(Path(manifest["source_user_data"]), region())
 
 
 def update() -> Path:
     """The profile's copy of the update, which packs are built from."""
-    return PORTABLE / "mlc01/usr/title/0005000e/101c9500"
+    return PORTABLE / "mlc01/usr/title/0005000e" / region().title
 
 
-# Cemu's console languages (settings.xml console_language) the EUR game has
-# texts for; any other one, as the game, falls back to English.
-CONSOLE_LANGUAGES = {1: "EUen", 2: "EUfr", 3: "EUde", 4: "EUit", 5: "EUes", 8: "EUnl", 10: "EUru"}
+def saves() -> Path:
+    """The game's saves in the profile, one folder per account."""
+    return PORTABLE / "mlc01/usr/save/00050000" / region().title / "user"
+
+
+def __getattr__(name: str):
+    # SAVES follows the profile's version, which a switch changes.
+    if name == "SAVES":
+        return saves()
+    raise AttributeError(name)
 
 
 def console_language(settings: Path | None = None) -> str:
-    """The game's language in the profile's Cemu, as its message archives name it."""
+    """The game's language in the profile's Cemu, as its message archives name
+    it: one the version has texts for, else, as the game, its English."""
+    version = region()
     try:
         value = ET.parse(settings or PORTABLE / "settings.xml").getroot().findtext("console_language")
-        return CONSOLE_LANGUAGES.get(int(value), "EUen")
+        return version.console.get(int(value), version.main)
     except (OSError, ET.ParseError, TypeError, ValueError):
-        return "EUen"
+        return version.main
 
 
 def check_isolated() -> None:
@@ -240,9 +285,15 @@ if __name__ == "__main__":
     parser.add_argument("--user-data", type=Path,
                         help="Cemu's user folder (the one holding settings.xml), when it is not found")
     parser.add_argument("--output", type=Path, default=PROFILE)
+    parser.add_argument("--region", choices=[r.key for r in regions.REGIONS],
+                        help="the version to play, when Cemu has several; with a profile, switch it to it")
     arguments = parser.parse_args()
     try:
-        found = cemu_install.detect(arguments.cemu, arguments.user_data)
+        found = cemu_install.detect(arguments.cemu, arguments.user_data,
+                                    region=regions.by_key(arguments.region) if arguments.region else None)
     except cemu_install.CemuInstallError as exc:
         raise SystemExit(str(exc))
-    create(arguments.cemu, found, arguments.output)
+    if arguments.region and arguments.output == PROFILE and (PROFILE / "isolation.json").is_file():
+        switch(found)
+    else:
+        create(arguments.cemu, found, arguments.output)

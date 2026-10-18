@@ -49,7 +49,7 @@ class GateTests(unittest.TestCase):
         from botw_patch.resources import unpack
         from botw_patch.shop_items import add_labels, read_labels
         from botw_patch.ap_quest import LANGUAGES
-        self.assertEqual(set(gate.SEALED), set(LANGUAGES))
+        self.assertEqual(set(gate.SEALED), set(LANGUAGES) | {"JPja"})
         for language in LANGUAGES:
             with self.subTest(language=language):
                 boot = oead.Sarc(unpack((UPDATE / f"Pack/Bootup_{language}.pack").read_bytes()))

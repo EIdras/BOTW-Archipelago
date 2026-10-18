@@ -9,7 +9,7 @@ from evfl.event import ActionEvent, Event, SwitchEvent, SubFlowEvent
 from evfl.util import make_rindex
 
 from .events import graph_snapshot, read_flow, write_flow
-from .resources import digest
+from .resources import digest, vanilla_digest
 from .resources import unpack
 import oead
 
@@ -29,7 +29,7 @@ def patch_delivery_event_info(data):
     This is separate from bfevfl links: EventInfo supplies loading metadata.
     Keep every other field/entry intact, including the campfire sub-entry.
     """
-    if digest(data) != EVENT_INFO_HASH:
+    if vanilla_digest(data) != EVENT_INFO_HASH:
         raise ValueError("unsupported vanilla EventInfo dependency metadata")
     info = oead.byml.from_binary(unpack(data))
     entry = info["Demo007_1<Demo007_1>"]
@@ -43,7 +43,7 @@ def patch_delivery_event_info(data):
 
 
 def patch_campfire(data):
-    if digest(data) != CAMPFIRE_HASH:
+    if vanilla_digest(data) != CAMPFIRE_HASH:
         raise ValueError("unsupported vanilla campfire flow; no patch applied")
     flow = read_flow(data)
     chart = flow.flowchart
@@ -143,7 +143,7 @@ def patch_campfire_guarded_delivery(data, guard_donor, *,
         raise ValueError("guarded delivery requires the two ledger fields")
     if not isinstance(hold_frames, int) or not 0 <= hold_frames <= 3600:
         raise ValueError("hold_frames must be between 0 and 3600")
-    if digest(data) == CAMPFIRE_HASH:
+    if vanilla_digest(data) == CAMPFIRE_HASH:
         patched, _ = patch_campfire_delivery(data)
     else:
         # build_delivery_control starts from one immutable build in which this

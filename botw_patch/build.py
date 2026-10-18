@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import oead
 from .events import suppress_terminal_rewards, suppress_reward, suppress_champion_rewards, suppress_gift
-from .resources import ResourceBuilder, digest, unpack
+from .resources import ResourceBuilder, digest, unpack, vanilla_digest
 
 RECIPES = {
     "Demo003_0": suppress_terminal_rewards,
@@ -49,7 +49,7 @@ def build(content: Path, output_root: Path) -> Path:
             if member.name != f"EventFlow/{name}.bfevfl" or name not in RECIPES:
                 continue
             def checked(data, name=name):
-                if digest(data) != SOURCE_HASHES[name]:
+                if vanilla_digest(data) != SOURCE_HASHES[name]:
                     raise ValueError(f"unsupported or already modified vanilla flow: {name}")
                 return RECIPES[name](data)
             transforms[member.name] = checked

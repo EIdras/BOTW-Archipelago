@@ -47,9 +47,12 @@ def selections(seeds: Path) -> set[Path]:
 
 def outdated(pack: Path) -> list[str]:
     """The sources that changed since the pack was built from them: a new
-    version of the project builds it again."""
+    version of the project builds it again; so does a profile switched to
+    another version of the game (tools/cemu_profile.py --region)."""
+    from tools import cemu_profile
     manifest = json.loads((pack / "manifest.json").read_text(encoding="utf-8"))
-    changed = []
+    built_for = manifest.get("revision", "EUR v208").split()[0]
+    changed = [] if built_for == cemu_profile.region().key else [f"built for the {built_for} version"]
     for name, recorded in sorted(manifest.get("source_hashes", {}).items()):
         path = ROOT / name
         if not path.is_file() or digest(path.read_bytes()) != recorded:

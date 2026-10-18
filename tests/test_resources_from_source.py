@@ -27,6 +27,9 @@ class ResourcesFromSourceTests(unittest.TestCase):
             root = Path(temp)
             (root / "input/Pack").mkdir(parents=True)
             (root / "input/Pack/Bootup.pack").write_bytes(b"another dump")
+            with self.assertRaisesRegex(ValueError, "not the update of a supported version"):
+                build(root / "input", root / "out", binding_token=417391497)
+            (root / "input/Pack/Bootup_EUen.pack").write_bytes(b"another dump")
             with self.assertRaisesRegex(ValueError, "unexpected Wii U update resource"):
                 build(root / "input", root / "out", binding_token=417391497)
             self.assertFalse((root / "out").exists())

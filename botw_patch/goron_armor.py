@@ -20,7 +20,7 @@ from evfl.event import SubFlowEvent
 from evfl.util import Index
 
 from botw_patch.events import add_action_after, graph_snapshot, read_flow, write_flow
-from botw_patch.resources import digest
+from botw_patch.resources import digest, vanilla_digest
 
 PACK = "Event/Npc_goron004.sbeventpack"
 PACKS = {PACK: "bb7fc521a7e0d36940c84faac55cd491e1891ff52f4daa0fb9acab5b489c8b5e"}
@@ -35,7 +35,7 @@ SOURCE_FILES = ("botw_patch/goron_armor.py",)
 
 
 def transform(raw: bytes) -> tuple[bytes, list[str]]:
-    if digest(raw) != FLOW_SHA:
+    if vanilla_digest(raw) != FLOW_SHA:
         raise ValueError("Goron City's armor shop flow changed")
     flow = read_flow(raw)
     before = graph_snapshot(flow)

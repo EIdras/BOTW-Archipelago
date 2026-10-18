@@ -18,7 +18,7 @@ sys.path[:] = [str(ROOT)] + [p for p in sys.path
                             if Path(p).resolve() != ROOT / "tools"]
 
 from botw_patch.ledger_experiment import patch_campfire_delivery  # noqa: E402
-from botw_patch.resources import ResourceBuilder, digest, unpack  # noqa: E402
+from botw_patch.resources import ResourceBuilder, digest, unpack, vanilla_digest  # noqa: E402
 from tools.build_delivery_control import presentation_call  # noqa: E402
 from tools.build_game_data_mod import modify_gamedata, modify_saveformat, verify  # noqa: E402
 from tools.build_ui_close_trace import wait_for_message_close  # noqa: E402
@@ -41,7 +41,7 @@ ICON_SHA256 = "09c6057c14ecd01abb42df9d2975034c931bc93b95188599e866a6f211f24cd3"
 def generate(content: Path) -> tuple[dict[str, bytes], list[dict]]:
     """Return the three overlay resources without reading prior candidates."""
     for name, expected in INPUT_HASHES.items():
-        if digest((content / name).read_bytes()) != expected:
+        if vanilla_digest((content / name).read_bytes()) != expected:
             raise ValueError(f"unexpected Wii U update resource: {name}")
     builder = ResourceBuilder(content)
     builder.patch_archive("Pack/Bootup.pack", {
@@ -86,7 +86,7 @@ def generate_presentation(content: Path, stage: str = "presentation") -> tuple[d
     files, changes = generate(content)
     vanilla = oead.Sarc(unpack((content / "Pack/TitleBG.pack").read_bytes()))
     donor = bytes(vanilla.get_file("EventFlow/GetDemo.bfevfl").data)
-    if digest(donor) != "af201d87d582f218ee5898ef3efa97f482fbd564e487385793b1efe7066817c8":
+    if vanilla_digest(donor) != "af201d87d582f218ee5898ef3efa97f482fbd564e487385793b1efe7066817c8":
         raise ValueError("unexpected vanilla GetDemo donor")
     name = "Pack/TitleBG.pack"
     member = "EventFlow/Demo007_1.bfevfl"

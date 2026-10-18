@@ -30,7 +30,8 @@ import oead
 
 from botw_client.shop_catalog import BY_ID as SHOP_BY_ID, LOCATIONS, MERCHANTS, KEPT, ShopLocation
 from botw_client.stall_catalog import BY_ID as STALL_BY_ID, StallLocation
-from botw_patch.resources import ResourceBuilder, digest, unpack
+from botw_client import regions
+from botw_patch.resources import ResourceBuilder, digest, unpack, vanilla_digest
 from botw_patch.shop_items import (DESCRIPTION_LINES, DESCRIPTION_WIDTH, MODEL_PARTS, MSBT,
                                    ApShopItem, add_declarations, add_item_texts,
                                    add_purchase_record, arrange_stock, check_model,
@@ -223,16 +224,17 @@ def generate(files: dict[str, bytes], content: Path,
         if name not in files:
             raise ValueError(f"{name} expected in the overlay")
     inputs = {}
-    for name, expected in INPUT_HASHES.items():
+    languages = regions.of_content(content).languages
+    for name, expected in regions.inputs(INPUT_HASHES, content).items():
         if name in files:
             raise ValueError(f"the overlay already replaces {name}")
         raw = (content / name).read_bytes()
-        if digest(raw) != expected:
+        if vanilla_digest(raw) != expected:
             raise ValueError(f"unexpected update resource: {name}")
         inputs[name] = raw
     title_raw = files.get(TITLE) or (content / TITLE).read_bytes()
     source_title = (content / TITLE).read_bytes()
-    if digest(source_title) != TITLE_SHA256:
+    if vanilla_digest(source_title) != TITLE_SHA256:
         raise ValueError(f"unexpected update resource: {TITLE}")
     title = oead.Sarc(unpack(source_title))
     model = model if model is not None else model_files()
@@ -315,8 +317,8 @@ def generate(files: dict[str, bytes], content: Path,
             builder.outputs[pack] = packed
             changes.append({"resource": pack, "stock": detail})
 
-        # Names and descriptions, the same English text in every EU language.
-        for language in LANGUAGES:
+        # Names and descriptions, the same English text in every language.
+        for language in languages:
             language_items = shop_items
 
             def messages(raw, language_items=language_items):
@@ -359,7 +361,7 @@ def generate(files: dict[str, bytes], content: Path,
         })
         changes.extend(builder.changes)
         outputs = builder.finish()
-    expected = {ACTOR_INFO, TABLE, BOOTUP, *(f"Pack/Bootup_{l}.pack" for l in LANGUAGES),
+    expected = {ACTOR_INFO, TABLE, BOOTUP, *(f"Pack/Bootup_{l}.pack" for l in languages),
                 *(f"Event/{m.actor}.sbeventpack" for m in (MERCHANTS if beedle else ())),
                 *(f"Event/{l.merchant.actor}.sbeventpack" for l in stall),
                 *(f"Actor/Pack/{m.actor}.sbactorpack" for m, locs in by_merchant.items() if locs),

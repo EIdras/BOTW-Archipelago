@@ -7,6 +7,7 @@ import unittest
 from unittest import mock
 import xml.etree.ElementTree as ET
 
+from botw_client import regions
 from tools import cemu_install as ci
 from tools import cemu_profile
 
@@ -59,6 +60,24 @@ class Install:
         (self.mlc / "usr/save/system/act/80000001/account.dat").write_text("PersistentId=80000001\n")
         ET.ElementTree(titles).write(self.user / "title_list_cache.xml")
 
+    def region_titles(self, region: str) -> Path:
+        """Another version's base game, update v208 and DLC, listed beside the first."""
+        titles = ET.parse(self.user / "title_list_cache.xml").getroot()
+        base = self.base.parent / f"BOTW-{region}"
+        (base / "code").mkdir(parents=True)
+        (base / "code/U-King.rpx").write_bytes(b"base")
+        self.title(titles, ci.BASE + region, base, ci.FOLDER, 0)
+        update = self.mlc / "usr/title" / ci.UPDATE / region
+        (update / "content/Pack").mkdir(parents=True)
+        (update / "code").mkdir(parents=True)
+        (update / "code/U-King.rpx").write_bytes(RPX)
+        meta(update, 208)
+        dlc = self.mlc / "usr/title" / ci.DLC / region
+        (dlc / "content").mkdir(parents=True)
+        meta(dlc, 80)
+        ET.ElementTree(titles).write(self.user / "title_list_cache.xml")
+        return update
+
     @staticmethod
     def title(parent, title_id, path, form, version):
         entry = ET.SubElement(parent, "title", titleId=title_id.upper(), version=str(version))
@@ -74,13 +93,31 @@ def detect(install: Install):
 class ConsoleLanguageTests(unittest.TestCase):
     def test_the_games_language_follows_cemus_console(self):
         # The name a stable gives Epona is the one in the game's language.
-        with tempfile.TemporaryDirectory() as temp:
+        with tempfile.TemporaryDirectory() as temp, mock.patch.object(cemu_profile, "region", lambda: regions.EUR):
             settings = Path(temp) / "settings.xml"
             for value, expected in (("2", "EUfr"), ("1", "EUen"), ("10", "EUru"), ("0", "EUen"), ("x", "EUen")):
                 settings.write_text(f"<content><console_language>{value}</console_language></content>",
                                     encoding="utf-8")
                 self.assertEqual(cemu_profile.console_language(settings), expected, value)
             self.assertEqual(cemu_profile.console_language(Path(temp) / "missing.xml"), "EUen")
+
+    def test_the_american_version_has_three_languages(self):
+        with tempfile.TemporaryDirectory() as temp:
+            settings = Path(temp) / "settings.xml"
+            with mock.patch.object(cemu_profile, "region", lambda: regions.USA):
+                for value, expected in (("2", "USfr"), ("1", "USen"), ("5", "USes"), ("3", "USen"), ("x", "USen")):
+                    settings.write_text(f"<content><console_language>{value}</console_language></content>",
+                                        encoding="utf-8")
+                    self.assertEqual(cemu_profile.console_language(settings), expected, value)
+
+    def test_the_japanese_version_has_one_language(self):
+        with tempfile.TemporaryDirectory() as temp:
+            settings = Path(temp) / "settings.xml"
+            with mock.patch.object(cemu_profile, "region", lambda: regions.JPN):
+                for value in ("0", "1", "x"):
+                    settings.write_text(f"<content><console_language>{value}</console_language></content>",
+                                        encoding="utf-8")
+                    self.assertEqual(cemu_profile.console_language(settings), "JPja", value)
 
 
 class UserFolderTests(unittest.TestCase):
@@ -111,11 +148,32 @@ class DetectionTests(unittest.TestCase):
             install = Install(Path(temp), base_format=ci.WUA)
             self.assertEqual(detect(install).game, install.base)
 
-    def test_another_region_is_named(self):
+    def test_the_japanese_version_is_found(self):
+        with tempfile.TemporaryDirectory() as temp:
+            install = Install(Path(temp), region="101c9300")
+            self.assertIs(detect(install).region, regions.JPN)
+
+    def test_the_american_version_is_found(self):
         with tempfile.TemporaryDirectory() as temp:
             install = Install(Path(temp), region="101c9400")
-            with self.assertRaisesRegex(ci.CemuInstallError, "American .* only the European"):
-                detect(install)
+            found = detect(install)
+            self.assertIs(found.region, regions.USA)
+            self.assertEqual((found.update, found.dlc), (install.update, install.dlc))
+
+    def test_with_both_versions_the_european_one_unless_named(self):
+        with tempfile.TemporaryDirectory() as temp:
+            install = Install(Path(temp))
+            us = Install.region_titles(install, "101c9400")
+            self.assertIs(detect(install).region, regions.EUR)
+            with mock.patch("tools.build_native_from_source.RPX_SHA256", hashlib.sha256(RPX).hexdigest()):
+                found = ci.detect(user_data=install.user, region=regions.USA)
+            self.assertEqual((found.region, found.update), (regions.USA, us))
+
+    def test_a_complete_version_before_one_without_its_update(self):
+        with tempfile.TemporaryDirectory() as temp:
+            install = Install(Path(temp), update=None)
+            Install.region_titles(install, "101c9400")
+            self.assertIs(detect(install).region, regions.USA)
 
     def test_a_game_cemu_does_not_list(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -199,6 +257,35 @@ class ProfileTests(unittest.TestCase):
                     target = cemu_profile.create(exe, detect(install), root / "data/profile")
                 self.assertEqual((target / "portable" / cemu_profile.CONTROLLER).is_file(), controller)
                 self.assertEqual("no controller set up" in output.getvalue(), not controller)
+
+    def test_a_profile_plays_its_version_and_switches_to_another(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            install = Install(root)
+            Install.region_titles(install, "101c9400")
+            exe = root / "Cemu.exe"
+            exe.write_bytes(b"cemu")
+            data = root / "data"
+            with mock.patch.object(cemu_profile, "DATA", data),                     mock.patch.object(cemu_profile, "PROFILE", data / "profile"),                     mock.patch.object(cemu_profile, "PORTABLE", data / "profile/portable"):
+                cemu_profile.create(exe, detect(install), data / "profile")
+                self.assertIs(cemu_profile.region(), regions.EUR)
+                self.assertEqual(cemu_profile.update(), data / "profile/portable/mlc01/usr/title/0005000e/101c9500")
+                self.assertEqual(cemu_profile.SAVES,
+                                 data / "profile/portable/mlc01/usr/save/00050000/101c9500/user")
+                with mock.patch("tools.build_native_from_source.RPX_SHA256", hashlib.sha256(RPX).hexdigest()):
+                    cemu_profile.switch(ci.detect(user_data=install.user, region=regions.USA))
+                self.assertIs(cemu_profile.region(), regions.USA)
+                self.assertEqual(cemu_profile.update(), data / "profile/portable/mlc01/usr/title/0005000e/101c9400")
+                self.assertTrue((cemu_profile.update() / "code/U-King.rpx").is_file())
+                self.assertTrue((data / "profile/portable/mlc01/usr/title/0005000e/101c9500").is_dir())
+                self.assertEqual(cemu_profile.game(), root / "games/BOTW-101c9400/code/U-King.rpx")
+
+    def test_a_profile_made_before_the_version_was_recorded_is_european(self):
+        with tempfile.TemporaryDirectory() as temp:
+            profile = Path(temp)
+            (profile / "isolation.json").write_text(json.dumps({"game": "x"}))
+            with mock.patch.object(cemu_profile, "PROFILE", profile):
+                self.assertIs(cemu_profile.region(), regions.EUR)
 
     def test_the_game_is_found_again_when_it_moved(self):
         with tempfile.TemporaryDirectory() as temp:

@@ -47,7 +47,7 @@ after the hash of its content), reproducible, and verified before every use (`ve
 - **Native code** (`tools/build_native_from_source.py`): Cemu patches (`patch_apInject.asm` and companions) assembled
   from `native/cemu/` and a chain of transformations (`tools/build_*.py`). They install a code cave with a mailbox the
   client writes to, and a per-frame hook that runs the client's requests on the game's own thread: requesting an
-  EventFlow entry, showing a line in the tip frame, selecting a rune. The pack refuses any RPX other than the EUR v208
+  EventFlow entry, showing a line in the tip frame, selecting a rune. The pack refuses any RPX other than the v208
   one it was built for (SHA-256).
 
 The pack is bound to its seed: a token derived from the seed, team, slot and data package is written into the pack
@@ -86,10 +86,25 @@ slot file alone, without reaching any server.
 
 Cemu's user folder (the `portable` folder next to `Cemu.exe`, else `%APPDATA%\Cemu`) holds its settings and the list
 of the games it found; the update and the DLC are installed in its `mlc01` folder. `cemu_install` finds the three
-titles of the European version there and checks them: update v208 as a folder, its `U-King.rpx` the expected
-executable, DLC 3.0. `cemu_profile` copies the update, the DLC, the saves and the accounts into an isolated profile
-in the data folder, and records where the base game is; packs are built from that copy of the update, the one the
-game runs from.
+titles of a supported version there (the European one first, then the American and the Japanese ones) and checks them: update v208
+as a folder, its `U-King.rpx` the expected executable, DLC 3.0. `cemu_profile` copies the update, the DLC, the saves
+and the accounts into an isolated profile in the data folder, and records the version and where the base game is;
+packs are built from that copy of the update, the one the game runs from. `cemu_profile.py --region USA` switches an
+existing profile to another version.
+
+## The versions of the game (`botw_client/regions.py`)
+
+The European (EUR, `101C9500`), American (USA, `101C9400`) and Japanese (JPN, `101C9300`) updates v208 run the same
+`U-King.rpx`, and their update and DLC hold the same resources once Yaz0 is undone and archives are opened, apart from
+their languages: seven message archives (`Pack/Bootup_EU<xx>.pack`) in the European version, three in the American one
+(`USen`, `USes`, `USfr`), one in the Japanese one (`JPja`). Nintendo compressed each version apart, so the files' bytes
+differ. The build pins the European file of every resource it reads; `data/region_hashes.json`, written by
+`tools/measure_region.py` from each version and the European one, gives the other version's file holding the same
+resource, which `vanilla_digest()` names by its European hash, and pins its language archives. A text added in a
+language is its own when the build has one (the sanctum's line and Vilia's price in Japanese), else its European
+counterpart's (USfr takes EUfr's). The killers a DeathLink names go into English sentences: the Japanese version,
+without English texts, names none. The pack's `rules.txt` names the version's title, and a European pack is byte for
+byte the one it was before.
 
 ## The launcher (`tools/launcher.py`, `BOTW Archipelago.cmd`)
 

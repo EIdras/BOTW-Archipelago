@@ -931,7 +931,8 @@ class BotwClientRuntime:
         actor = mutation["target"]
         mane, saddle, reins = mutation["value"]
         names = getattr(getattr(backend, "catalog", None), "data", {}).get("horses", {}).get(actor, {})
-        horse_name = names.get(self.game_language) or names.get("EUen") or name
+        english = next((text for language, text in names.items() if language.endswith("en")), None)
+        horse_name = names.get(self.game_language) or english or name
         outcome = await asyncio.to_thread(backend.register_horse, actor, horse_name, mane, saddle, reins)
         if outcome == "registered":
             self.log(f"{name} registered at the stables as {horse_name}")

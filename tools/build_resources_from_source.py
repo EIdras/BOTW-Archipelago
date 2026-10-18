@@ -23,7 +23,8 @@ from botw_patch.build import RECIPES, SOURCE_HASHES
 from botw_patch.delivery_flow import (
     BIND_ENTRY, QUIET_FLOW, compile_native_entries, delivery_catalog, patch_delivery_event_info,
     patch_delivery_flow, patch_session_binding)
-from botw_patch.resources import digest, unpack
+from botw_client import regions
+from botw_patch.resources import digest, unpack, vanilla_digest
 from tools.build_resource_base_from_source import INPUT_HASHES, generate_presentation, patch_stage
 from tools.build_game_data_mod import modify_gamedata_flags
 from tools import build_plateau_sensor_candidate as sensor
@@ -66,6 +67,8 @@ UPDATE_HASHES = {
     **ganon_gate.PACKS,
     **{ballad.pack(name): spec[1] for name, spec in ballad.FLOWS.items()},
 }
+# What a pack of another version than the European one is also built from.
+REGION_SOURCES = ("botw_client/regions.py", "data/region_hashes.json")
 SOURCE_FILES = (
     "tools/build_resources_from_source.py", "tools/build_resource_base_from_source.py",
     "tools/build_game_data_mod.py", "tools/build_delivery_control.py",
@@ -115,9 +118,10 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
         raise ValueError("binding token must be a positive signed s32")
     # Verify every consumed update archive before constructing any output.
     inputs = {}
-    for name, expected in UPDATE_HASHES.items():
+    region = regions.of_content(content)
+    for name, expected in regions.inputs(UPDATE_HASHES, content).items():
         raw = (content / name).read_bytes()
-        if digest(raw) != expected:
+        if vanilla_digest(raw) != expected:
             raise ValueError(f"unexpected Wii U update resource: {name}")
         inputs[name] = raw
     files, changes = generate_presentation(content, "owned_marker")
@@ -171,7 +175,7 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
             flow = Path(member.name).stem
             if flow not in RECIPES or member.name != f"EventFlow/{flow}.bfevfl":
                 continue
-            if name not in REWARD_PACKS or digest(bytes(member.data)) != SOURCE_HASHES[flow]:
+            if name not in REWARD_PACKS or vanilla_digest(bytes(member.data)) != SOURCE_HASHES[flow]:
                 raise ValueError(f"unexpected source reward copy: {name}/{member.name}")
             transforms[member.name] = RECIPES[flow]
             found.add(flow)
@@ -230,9 +234,13 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
     catalog["downpour"] = {"flag": downpour.FLAG}
     catalog["ganon_gate"] = {"open": ganon_gate.OPEN, "refused": ganon_gate.REFUSED}
     catalog["pedestal"] = {"entry": pedestal.ENTRY, "flow": pedestal.FLOW_NAME, "flags": list(pedestal.FLAGS)}
+    # The killers' names go into English sentences (botw_client/death_cause.py):
+    # a version without English texts (the Japanese one) names none.
     catalog["death_link"] = {"entry": death_link.ENTRY, "flow": death_link.FLOW_NAME,
                              "flag": death_link.FLAG,
-                             "attackers": death_link.attacker_names(inputs[death_link.MESSAGES])}
+                             "attackers": death_link.attacker_names(
+                                 inputs[f"Pack/Bootup_{region.main}.pack"], region.main)
+                             if region.main.endswith("en") else {}}
     # The names a stable gives the horses AP delivers, in every language
     # (botw_patch/horses.py): the client writes the one of the game's.
     catalog["horses"] = horses.names(content)
@@ -281,9 +289,10 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
 def build(content: Path, output: Path, *, binding_token: int, shops: list | None = None,
           status: dict | None = None, aoc: Path | None = None) -> Path:
     files, catalog, changes = generate(content.resolve(), binding_token, shops, status, aoc)
+    region = regions.of_content(content)
     manifest = {
         "schema": 1, "component": "complete_play_resources", "status": "not_installable",
-        "platform": "wiiu", "revision": "EUR v208", "installed": False,
+        "platform": "wiiu", "revision": f"{region.key} v208", "installed": False,
         "binding_token": binding_token, "gameplay_aids": False,
         "minimum_allocations": MINIMUM_ALLOCATIONS,
         "input_hashes": UPDATE_HASHES,
@@ -322,6 +331,11 @@ def build(content: Path, output: Path, *, binding_token: int, shops: list | None
             stalls.AOC_PREFIX + tower_stage.unit(cell): sha for cell, sha in tower_stage.MAP_HASHES.items()}}
         manifest["source_hashes"].update({name: digest((ROOT / name).read_bytes())
                                           for name in tower_stage.SOURCE_FILES})
+    if region is not regions.EUR:
+        # Only for the other versions, so that the European packs keep their identity.
+        manifest["input_hashes"] = regions.inputs(manifest["input_hashes"], content)
+        manifest["source_hashes"].update({name: digest((ROOT / name).read_bytes())
+                                          for name in REGION_SOURCES})
     build_id = digest(encode(manifest))[:16]
     manifest["build_id"] = build_id
     outputs = {pack_path(name): raw for name, raw in files.items()}

@@ -50,7 +50,7 @@ import oead  # noqa: E402
 from botw_patch.events import (  # noqa: E402
     action_instead, add_action_after, graph_snapshot, read_flow, wait_instead,
     write_flow)
-from botw_patch.resources import ResourceBuilder, digest, unpack  # noqa: E402
+from botw_patch.resources import ResourceBuilder, digest, unpack, vanilla_digest  # noqa: E402
 from tools.build_seed_bound_candidate import verified_files  # noqa: E402
 
 SOURCE = ROOT / ".build/world-heart-withhold-candidates/46e4845b7b518949"
@@ -79,7 +79,7 @@ KEPT = {"Event213": "Demo_SuccessGet", "Event67": "Demo_FlagON",
 
 
 def transform(raw: bytes) -> tuple[bytes, list[str]]:
-    if digest(raw) != EXPECTED_FLOW_SHA:
+    if vanilla_digest(raw) != EXPECTED_FLOW_SHA:
         raise ValueError("Master Sword flow changed")
     flow = read_flow(raw)
     before = graph_snapshot(flow)
@@ -160,7 +160,7 @@ def build(source: Path = SOURCE, output: Path = OUTPUT, update: Path = UPDATE) -
     raw_packs = {}
     for pack, expected in PACKS.items():
         raw_packs[pack] = (update / pack).read_bytes()
-        if digest(raw_packs[pack]) != expected:
+        if vanilla_digest(raw_packs[pack]) != expected:
             raise ValueError(f"mounted Master Sword source changed: {pack}")
     stage = output / "_input"
     (stage / "Event").mkdir(parents=True, exist_ok=True)

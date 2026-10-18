@@ -13,6 +13,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:] = [str(ROOT)] + [p for p in sys.path if Path(p).resolve() != ROOT / "tools"]
 
+from botw_client import regions
 from botw_client.paths import DATA
 from botw_client.session import session_token
 from tools import build_native_from_source as native
@@ -28,6 +29,16 @@ RULES = (
 # Packs built before the description changed stay valid.
 EARLIER_RULES = RULES.replace(b"The game pack of one Archipelago seed",
                               b"Native delivery and source reward replacement validation")
+
+
+def rules(region: regions.Region = regions.EUR) -> bytes:
+    """The pack's rules.txt, for the game of its version (botw_client/regions.py)."""
+    return RULES.replace(regions.EUR.title_id().encode(), region.title_id().encode())
+
+
+def _region(manifest: dict) -> regions.Region:
+    """The version a pack was built for, by its manifest's revision ("EUR v208")."""
+    return regions.by_key(manifest.get("revision", "EUR v208").split()[0])
 RUNTIME = {"patch_apInject.asm", "patch_event_request.asm"}
 DIAGNOSTICS = {"patch_ui_close_trace.asm", "patch_ui_lifecycle.asm", "patch_request_reject_trace.asm"}
 
@@ -157,7 +168,8 @@ def verify_pack(pack: Path, binding: dict | None = None) -> dict:
     catalog = json.loads((pack / "delivery_catalog.json").read_text(encoding="utf-8"))
     if catalog["binding"]["seed_token"] != manifest["seed_binding"]["token"]:
         raise ValueError("pack catalog binding mismatch")
-    if (pack / "rules.txt").read_bytes() not in (RULES, EARLIER_RULES):
+    accepted = (RULES, EARLIER_RULES) if _region(manifest) is regions.EUR else (rules(_region(manifest)),)
+    if (pack / "rules.txt").read_bytes() not in accepted:
         raise ValueError("pack rules mismatch")
     return manifest
 
@@ -186,13 +198,14 @@ def build(content: Path, rpx: Path, report: Path, slot: int, output: Path, *,
             if name.startswith("runtime/") or diagnostics:
                 files[Path(name).name] = (native_dir / name).read_bytes()
         files["delivery_catalog.json"] = (resource_dir / "delivery_catalog.json").read_bytes()
-    files["rules.txt"] = RULES
+    region = regions.by_key(rm["revision"].split()[0])
+    files["rules.txt"] = rules(region)
     sources = {**nm["source_hashes"], **rm["source_hashes"]}
     for name in ("tools/build_pack_from_source.py", "botw_client/session.py"):
         sources[name] = digest((ROOT / name).read_bytes())
     manifest = {
         "schema": 1, "component": "seed_bound_play_pack", "status": "requires_in_game_validation",
-        "platform": "wiiu", "revision": "EUR v208", "installed": False,
+        "platform": "wiiu", "revision": rm["revision"], "installed": False,
         "production_native_enabled": False, "seed_binding": binding,
         "input_hashes": {**rm["input_hashes"], "U-King.rpx": nm["rpx_sha256"]},
         "source_hashes": sources,
@@ -205,7 +218,7 @@ def build(content: Path, rpx: Path, report: Path, slot: int, output: Path, *,
         "presentation_event_gate_enabled": event_gate,
         "diagnostic_files": sorted(DIAGNOSTICS) if diagnostics else [],
         "gameplay_aids": False, "minimum_allocations": rm["minimum_allocations"],
-        "rules_sha256": digest(RULES),
+        "rules_sha256": digest(files["rules.txt"]),
         "native_delivery_catalog_sha256": digest(files["delivery_catalog.json"]),
         "native_delivery_entries": True,
         "native_delivery_entry_count": sum(len(steps) for item in

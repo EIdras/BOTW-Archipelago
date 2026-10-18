@@ -38,7 +38,7 @@ sys.path[:] = [str(ROOT)] + [p for p in sys.path
 import oead  # noqa: E402
 
 from botw_patch.events import graph_snapshot, guard_with_query, read_flow, write_flow  # noqa: E402
-from botw_patch.resources import ResourceBuilder, digest, unpack  # noqa: E402
+from botw_patch.resources import ResourceBuilder, digest, unpack, vanilla_digest  # noqa: E402
 from tools.build_seed_bound_candidate import verified_files  # noqa: E402
 
 # 28bda513736cc12e = 396e8197caa8ff65 + the removal of the two actors the
@@ -111,7 +111,7 @@ def transform_for(flow_name: str):
     race, _pack_sha, flow_sha = FLOWS[flow_name]
 
     def transform(raw: bytes) -> tuple[bytes, list[str]]:
-        if digest(raw) != flow_sha:
+        if vanilla_digest(raw) != flow_sha:
             raise ValueError(f"{flow_name} flow changed")
         flow = read_flow(raw)
         before = graph_snapshot(flow)
@@ -155,7 +155,7 @@ def build(source: Path = SOURCE, output: Path = OUTPUT, update: Path = UPDATE) -
     raw_packs = {}
     for flow, (_race, pack_sha, _flow_sha) in FLOWS.items():
         raw_packs[flow] = (update / pack(flow)).read_bytes()
-        if digest(raw_packs[flow]) != pack_sha:
+        if vanilla_digest(raw_packs[flow]) != pack_sha:
             raise ValueError(f"mounted Ballad source changed: {pack(flow)}")
     stage = output / "_input"
     (stage / "Event").mkdir(parents=True, exist_ok=True)
