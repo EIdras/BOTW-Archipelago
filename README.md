@@ -8,7 +8,7 @@ the village stalls become locations of the multiworld. The paraglider, the runes
 heart containers and stamina vessels are shuffled into it, and arrive in your game while you play, presented by the
 game itself.
 
-**Status: version 0.1, in testing.** Solo seeds and multiworlds with other games, hosted on archipelago.gg or on
+**Status: in testing.** Solo seeds and multiworlds with other games, hosted on archipelago.gg or on
 your own server.
 
 ## Features
