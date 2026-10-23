@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import ssl
 import time
 import uuid
 from dataclasses import dataclass
@@ -81,6 +82,16 @@ def server_urls(address: str) -> list[str]:
     return [server_url("wss://" + address), server_url("ws://" + address)]
 
 
+def tls_context() -> ssl.SSLContext:
+    """Windows' trusted roots and certifi's, as Archipelago's own client: a new
+    Windows holds few roots, fetching the others only for its own programs, so
+    the room's certificate was refused (measured, Windows Sandbox, 23/10)."""
+    import certifi
+    context = ssl.create_default_context()
+    context.load_verify_locations(cafile=certifi.where())
+    return context
+
+
 class ArchipelagoClient:
     def __init__(self, address: str, slot_name: str, password: str | None = None,
                  game: str = GAME_NAME, log=print):
@@ -151,21 +162,27 @@ class ArchipelagoClient:
         self._scout_expected.clear()
         self.refused_reason = None
         self.session = aiohttp.ClientSession()
-        failure = None
+        failures = []
         for url in self.urls:
             try:
                 # aiohttp otherwise defaults to compress=0 and emits AP's deprecation
                 # warning. 15 negotiates RFC 7692 permessage-deflate.
                 self.websocket = await self.session.ws_connect(
-                    url, heartbeat=30, compress=15, max_msg_size=64 * 1024 * 1024)
+                    url, heartbeat=30, compress=15, max_msg_size=64 * 1024 * 1024,
+                    ssl=tls_context())
             except (aiohttp.ClientError, OSError, asyncio.TimeoutError) as exc:
-                failure = exc
+                failures.append((url, exc))
                 continue
             # The scheme that answered is kept for the reconnections.
             self.url, self.urls = url, [url]
             break
         else:
-            raise failure
+            if len(failures) == 1:
+                raise failures[0][1]
+            # Each scheme's reason: a room refusing ws:// only says "Server
+            # disconnected", which hid why wss:// failed.
+            raise ConnectionError("; ".join(f"{url.split(':', 1)[0]}: {exc or type(exc).__name__}"
+                                            for url, exc in failures))
         self.reader_task = asyncio.create_task(self._reader(), name="AP reader")
         await asyncio.wait_for(self.connected_event.wait(), timeout)
         if self.refused_reason:

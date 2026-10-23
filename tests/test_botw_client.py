@@ -14,7 +14,7 @@ from botw_client.locations import (EXPECTED_LOCATION_COUNT, LocationTarget,
                                    LocationTracker, load_targets)
 from botw_client.protocol import (ArchipelagoClient, LocationInfo, NetworkItem,
                                   decode_location_info, decode_network_item,
-                                  server_url, server_urls)
+                                  server_url, server_urls, tls_context)
 from botw_client.runtime import (MESSAGE_MAX_CHARS, BotwClientRuntime, StateStore,
                                  event_settle_seconds)
 
@@ -165,6 +165,26 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
             {"item": 1, "location": 2, "player": 3}), NetworkItem(1, 2, 3, 0))
         self.assertEqual(decode_location_info([1, 2, 3, 4]),
                          LocationInfo(1, 2, 3, 4))
+
+    def test_secure_rooms_are_checked_against_certifis_roots_too(self):
+        import certifi
+        import ssl
+        bundle = Path(certifi.where()).read_text(encoding="ascii").count("BEGIN CERTIFICATE")
+        context = tls_context()
+        self.assertEqual((context.verify_mode, context.check_hostname), (ssl.CERT_REQUIRED, True))
+        self.assertGreaterEqual(context.cert_store_stats()["x509_ca"], bundle)
+
+    async def test_a_room_unreachable_by_both_schemes_names_each_reason(self):
+        import socket
+        with socket.socket() as probe:
+            probe.bind(("127.0.0.1", 0))
+            port = probe.getsockname()[1]       # closed again: nothing listens there
+        client = ArchipelagoClient(f"127.0.0.1:{port}", "Player", log=lambda _: None)
+        try:
+            with self.assertRaisesRegex(ConnectionError, r"^wss: .+; ws: .+"):
+                await client.connect(timeout=5)
+        finally:
+            await client.close()
 
     async def test_connected_accepts_archipelago_named_tuple_json(self):
         client = ArchipelagoClient("localhost:38281", "Player", log=lambda _: None)

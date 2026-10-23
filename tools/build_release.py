@@ -38,7 +38,7 @@ from botw_client.version import VERSION  # noqa: E402
 
 NAME = "BOTW-Archipelago"
 # What the player's tools import beyond the standard library (tests/test_release.py).
-PACKAGES = ("oead", "evfl", "rstb", "aiohttp", "numpy")
+PACKAGES = ("oead", "evfl", "rstb", "aiohttp", "certifi", "numpy")
 PINS = ROOT / "requirements-player.txt"
 PROJECT = ("botw_client", "botw_patch", "tools", "native", "data", "botw_world/data", "botw_world/docs",
            "botw_world/catalog.py",
