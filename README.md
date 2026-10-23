@@ -5,8 +5,8 @@ played in the [Cemu](https://cemu.info/) emulator.
 
 Shrines, towers, Great Fairies, Divine Beasts, the rune terminals, the Master Sword and, optionally, Beedle's shops and
 the village stalls become locations of the multiworld. The paraglider, the runes, the champions' abilities, armor,
-heart containers and stamina vessels are shuffled into it, and arrive in your game while you play, presented by the
-game itself.
+heart containers, stamina vessels, pouch upgrades, Epona, the region maps and weapons are shuffled into it, and arrive
+in your game while you play, presented by the game itself.
 
 **Status: in testing.** Solo seeds and multiworlds with other games, hosted on archipelago.gg or on
 your own server.
@@ -27,7 +27,8 @@ your own server.
 - **Sealed sanctum**: Ganon's sanctum opens only once the seed's requirements are met (Divine Beasts, shrines,
   the Master Sword, the runes; Easy, Medium and Hard presets), and the journal says what is missing.
 - **Logic**: each shrine asks only for the runes its trial needs; the burning zones of Eldin, Gerudo Town and the
-  waterfalls of Vah Ruta ask for their armor.
+  waterfalls of Vah Ruta ask for their armor; the Master Sword asks for 13 hearts, as in the game, and a few shrines
+  for the Divine Beast their quest follows.
 - **Region maps**: each region's map is an item, revealed with the game's own animation; a region is in the logic
   once its map is received (an option), and the trackers show the rest as possible but out of logic.
 - **Checks never lost**: locations are the game's own saved flags, sent at the next connection when done offline.

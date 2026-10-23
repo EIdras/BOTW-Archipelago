@@ -55,7 +55,10 @@ The launcher's steps are tools of their own:
   on the network too). Test aids, never in a release: `--speed` multiplies Link's run, sprint and climb speed;
   `--invincible` (hearts never drop), `--stamina` (endless), `--unbreakable` (weapons, bows, shields) and
   `--damage <x>` (weapons and bows hit x times harder, enemies wielding them too) each enable a graphic pack of
-  their own next to the seed's (`tools/play_aids.py`); `--cheats` enables the four, with `--damage 10`. A received
+  their own next to the seed's (`tools/play_aids.py`); `--cheats` enables the four, with `--damage 10`. `--turbo <x>` (2 to 8) runs the whole game x times faster,
+cutscenes, events and dialogues included, as far as the computer can emulate it: a pack that raises the vsync Cemu
+emulates, without any code patch; its presets (Cemu's graphic pack window, *Game speed*) go from x1 (off) to x8, and
+`--cheats` leaves it off. The session report records the factor given at launch, not a preset chosen in Cemu since. A received
   DeathLink may leave a protected Link alive; the client goes on all the same. `BOTW Archipelago.cmd` takes the same
   aids in a source checkout (`"BOTW Archipelago.cmd" --cheats --speed 3`); a release refuses them.
 

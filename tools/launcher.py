@@ -242,13 +242,13 @@ def choose_room(ui, seed: str) -> tuple[str | None, str | None]:
 
 def test_aids(argv: list[str]) -> tuple[list[str], dict]:
     """The test aids of a source checkout, as Play.cmd takes them (--speed, --cheats,
-    --invincible, --stamina, --unbreakable, --damage); the other arguments. A release
+    --invincible, --stamina, --unbreakable, --damage, --turbo); the other arguments. A release
     ships none of their modules (tools/build_release.py): there, they are refused."""
-    names = ("--speed", "--damage", "--cheats", "--invincible", "--stamina", "--unbreakable")
+    names = ("--speed", "--damage", "--cheats", "--invincible", "--stamina", "--unbreakable", "--turbo")
     if not any(arg.split("=")[0] in names for arg in argv):
         return argv, {}
     try:
-        from tools.play_aids import damage_argument
+        from tools.play_aids import damage_argument, turbo_argument
         from tools.play_speed import speed_argument
     except ImportError:
         raise ValueError("test aids are not part of a release: play from a source checkout") from None
@@ -256,13 +256,14 @@ def test_aids(argv: list[str]) -> tuple[list[str], dict]:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--speed", type=speed_argument, default=1.0)
     parser.add_argument("--damage", type=damage_argument, default=1)
+    parser.add_argument("--turbo", type=turbo_argument, default=1)
     for flag in ("--cheats", "--invincible", "--stamina", "--unbreakable"):
         parser.add_argument(flag, action="store_true")
     known, rest = parser.parse_known_args(argv)
     aids = [key for key, chosen in (("Invincible", known.invincible), ("Stamina", known.stamina),
                                     ("Unbreakable", known.unbreakable)) if chosen or known.cheats]
     damage = known.damage if known.damage > 1 or not known.cheats else 10
-    return rest, {"speed": known.speed, "aids": aids, "damage": damage}
+    return rest, {"speed": known.speed, "aids": aids, "damage": damage, "turbo": known.turbo}
 
 
 def main(argv: list[str], ui=None) -> int:

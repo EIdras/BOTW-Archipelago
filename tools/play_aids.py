@@ -1,6 +1,6 @@
 """Test aids for the play sessions of source checkouts, to get through the game fast:
-Link protected from damage, endless stamina, unbreakable gear, and weapons that hit
-harder. A release never ships them (tools/build_release.py).
+Link protected from damage, endless stamina, unbreakable gear, weapons that hit
+harder, and a turbo for the whole game. A release never ships them (tools/build_release.py).
 
 Each aid is a graphic pack of its own, enabled next to the seed's pack (which stays
 as it was verified):
@@ -8,7 +8,12 @@ as it was verified):
   * the damage aid ships a copy of every sword, spear, two-handed weapon and bow
     whose Attack.Power is multiplied. Each still fits its size in the seed pack's
     resource size table, which stays as it is (checked at every build).
-    Enemies wielding these weapons hit harder too: it goes with protected Link.
+    Enemies wielding these weapons hit harder too: it goes with protected Link;
+  * the turbo raises the frequency of the vsync Cemu emulates (rules.txt
+    [Control] vsyncFrequency, 60 Hz on the Wii U). The game paces its frames on
+    that vsync, so all of it runs faster, cutscenes, events and dialogues
+    included, as far as the computer can emulate it. No code of the game is
+    patched. Its presets offer the other factors in Cemu's graphic pack window.
 """
 from __future__ import annotations
 
@@ -34,6 +39,34 @@ PATCHES = {
 DAMAGE = "Damage"
 WEAPON_KINDS = ("Sword", "Lsword", "Spear", "Bow", "Goron")
 MAX_DAMAGE = 100
+TURBO = "Turbo"
+WII_U_VSYNC = 60
+MAX_TURBO = 8
+TURBO_PRESETS = (1, 2, 3, 4, 6, 8)
+
+
+def turbo_argument(value) -> int:
+    import argparse
+    try:
+        factor = int(value)
+    except (TypeError, ValueError):
+        raise argparse.ArgumentTypeError(f"turbo: a whole number from 2 to {MAX_TURBO}") from None
+    if not 2 <= factor <= MAX_TURBO:
+        raise argparse.ArgumentTypeError(f"turbo: a whole number from 2 to {MAX_TURBO}")
+    return factor
+
+
+def turbo_rules(factor: int) -> bytes:
+    """The turbo's rules.txt: one preset per factor, `factor` the default one."""
+    lines = [_rules(TURBO, "Turbo", f"The whole game x{factor}: emulated vsync at "
+                    f"{WII_U_VSYNC * factor} Hz. x1 turns it off.", 7).decode("utf-8"),
+             "[Default]", f"$turbo:int = {factor}", ""]
+    for preset in sorted({*TURBO_PRESETS, factor}):
+        lines += ["[Preset]", f"name = x{preset}" + (" (off)" if preset == 1 else ""),
+                  "category = Game speed", *(["default = 1"] if preset == factor else []),
+                  f"$turbo:int = {preset}", ""]
+    lines += ["[Control]", f"vsyncFrequency = {WII_U_VSYNC} * $turbo", ""]
+    return "\n".join(lines).encode("utf-8")
 
 
 def damage_argument(value) -> int:
@@ -114,12 +147,18 @@ def _rules(key: str, name: str, description: str, version: int) -> bytes:
             f"version = {version}\n").encode("utf-8")
 
 
-def install(graphic_packs: Path, keys: list[str], damage: int, update: Path, table: Path) -> list[dict]:
+def install(graphic_packs: Path, keys: list[str], damage: int, update: Path, table: Path,
+            turbo: int = 1) -> list[dict]:
     """Writes the chosen aids into the profile's graphic packs; returns one entry
     per pack (its rules.txt relative to the portable folder). `update` holds the
     game's weapons, `table` is the resource size table the game will load (the
     seed pack's)."""
     entries = []
+    if turbo > 1:
+        folder = graphic_packs / f"{PREFIX}{TURBO}"
+        entries.append({"aid": TURBO, "name": f"Turbo x{turbo}", "factor": turbo,
+                        "entry": f"graphicPacks/{folder.name}/rules.txt",
+                        "files": _write(folder, {"rules.txt": turbo_rules(turbo)})})
     for key in keys:
         name, author, patch = PATCHES[key]
         folder = graphic_packs / f"{PREFIX}{key}"
