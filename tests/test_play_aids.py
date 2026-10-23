@@ -35,14 +35,6 @@ class ArgumentTests(unittest.TestCase):
                 play_aids.damage_argument(wrong)
         self.assertEqual(play_aids.damage_argument("10"), 10)
 
-    def test_the_turbo_is_off_unless_asked_and_bounded(self):
-        self.assertEqual(self.run_main()["turbo"], 1)
-        self.assertEqual(self.run_main("--cheats")["turbo"], 1)
-        self.assertEqual(self.run_main("--turbo", "4")["turbo"], 4)
-        for wrong in ("1", "9", "x", "2.5"):
-            with self.assertRaises(argparse.ArgumentTypeError):
-                play_aids.turbo_argument(wrong)
-
 
 class PackTests(unittest.TestCase):
     def test_patch_aids_are_packs_of_their_own_enabled_after_the_seed(self):
@@ -61,26 +53,6 @@ class PackTests(unittest.TestCase):
             patch = (portable / "graphicPacks/AP_Aid_Invincible/patch_aid.asm").read_text(encoding="utf-8")
             self.assertIn("moduleMatches = 0x6267BFD0", patch)
             self.assertIn("0x02D452A4 = nop", patch)
-
-    def test_the_turbo_is_a_pack_of_vsync_only_its_factor_the_default_preset(self):
-        with tempfile.TemporaryDirectory() as folder:
-            portable = Path(folder)
-            (portable / "settings.xml").write_text(
-                '<?xml version="1.0"?><content><GraphicPack>'
-                '<Entry filename="graphicPacks/AP_Ledger_796aa895aad1ffff/rules.txt"/>'
-                "</GraphicPack></content>", encoding="utf-8")
-            entries = play_aids.install(portable / "graphicPacks", [], 1, UPDATE, TABLE, turbo=3)
-            play_aids.enable(portable, entries)
-            self.assertEqual(enabled_packs(portable)[1:], ["graphicPacks/AP_Aid_Turbo/rules.txt"])
-            self.assertEqual(sorted(p.name for p in (portable / "graphicPacks/AP_Aid_Turbo").iterdir()),
-                             ["rules.txt"])
-            rules = (portable / "graphicPacks/AP_Aid_Turbo/rules.txt").read_text(encoding="utf-8")
-        self.assertIn("[Control]\nvsyncFrequency = 60 * $turbo", rules)
-        self.assertIn("$turbo:int = 3\n", rules.split("[Preset]")[0])
-        presets = rules.split("[Preset]")[1:]
-        self.assertEqual([p.split("\n")[1] for p in presets],
-                         ["name = x1 (off)", "name = x2", "name = x3", "name = x4", "name = x6", "name = x8"])
-        self.assertEqual([p for p in presets if "default = 1" in p], [presets[2]])
 
     @unittest.skipUnless(TABLE.is_file(), "Wii U update absent")
     def test_a_weapon_changes_its_power_only_and_fits_its_size(self):

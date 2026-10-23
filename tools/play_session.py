@@ -2,7 +2,7 @@
 
     python tools/play_session.py [--seed <seed folder name>] [--connect <address> [--password <p>] | --host]
                                  [test aids of source checkouts: --speed <x> --invincible --stamina
-                                  --unbreakable --damage <x> --cheats --turbo <x>]
+                                  --unbreakable --damage <x> --cheats]
 
   * the pack bound to the seed's BOTW slot (tools/play_seed.py), the only
     graphic pack enabled in the isolated Cemu profile (tools/cemu_profile.py);
@@ -300,10 +300,9 @@ def main(argv: list[str] | None = None) -> None:
                             help="run/sprint/climb speed multiplier (0.1 to 10, default 1), for tests")
     try:
         # Test aids of source checkouts too (tools/play_aids.py).
-        from tools.play_aids import damage_argument, turbo_argument
+        from tools.play_aids import damage_argument
     except ImportError:
-        parser.set_defaults(invincible=False, stamina=False, unbreakable=False, damage=1, cheats=False,
-                            turbo=1)
+        parser.set_defaults(invincible=False, stamina=False, unbreakable=False, damage=1, cheats=False)
     else:
         aids = parser.add_argument_group("test aids")
         aids.add_argument("--invincible", action="store_true", help="Link's hearts never drop")
@@ -314,9 +313,6 @@ def main(argv: list[str] | None = None) -> None:
                                "enemies wielding them too")
         aids.add_argument("--cheats", action="store_true",
                           help="all of them: --invincible --stamina --unbreakable --damage 10")
-        aids.add_argument("--turbo", type=turbo_argument, default=1,
-                          help="the whole game, cutscenes and dialogues included, runs this many times "
-                               "faster (2 to 8), as far as the computer can emulate it")
     server = parser.add_mutually_exclusive_group()
     server.add_argument("--connect", metavar="ADDRESS",
                         help="join the room hosting the seed (archipelago.gg:38281...) "
@@ -334,12 +330,12 @@ def main(argv: list[str] | None = None) -> None:
     damage = arguments.damage if arguments.damage > 1 or not cheats else 10
     run(arguments.seed, pack=arguments.pack, prepare_only=arguments.prepare_only, speed=arguments.speed,
         connect=arguments.connect, password=arguments.password, host=arguments.host,
-        aids=aids, damage=damage, turbo=arguments.turbo)
+        aids=aids, damage=damage)
 
 
 def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = False, speed: float = 1.0,
         connect: str | None = None, password: str | None = None, host: bool = False,
-        aids: list[str] = (), damage: int = 1, turbo: int = 1) -> None:
+        aids: list[str] = (), damage: int = 1) -> None:
     """A session of the prepared seed `seed`, until Cemu closes."""
     folder, report, pack = find_seed(seed, pack)
     from tools.play_seed import hostable
@@ -357,11 +353,11 @@ def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = Fals
     account = profile.ensure_play_account()
     portable = profile.prepare_play(pack)
     aid_packs = []
-    if aids or damage > 1 or turbo > 1:
+    if aids or damage > 1:
         from tools import play_aids
         aid_packs = play_aids.install(
             portable / "graphicPacks", list(aids), damage, profile.update() / "content",
-            pack / "content/System/Resource/ResourceSizeTable.product.srsizetable", turbo)
+            pack / "content/System/Resource/ResourceSizeTable.product.srsizetable")
         play_aids.enable(portable, aid_packs)
     packs = enabled_packs(portable)
     if packs != [f"graphicPacks/{profile.PACK_PREFIX}{pack.name}/rules.txt",

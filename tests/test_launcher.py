@@ -211,9 +211,7 @@ class TestAidTests(unittest.TestCase):
         self.assertEqual(launcher.test_aids(["seed.zip"]), (["seed.zip"], {}))
         rest, aids = launcher.test_aids(["seed.zip", "--cheats", "--speed", "3"])
         self.assertEqual(rest, ["seed.zip"])
-        self.assertEqual(aids, {"speed": 3.0, "aids": ["Invincible", "Stamina", "Unbreakable"], "damage": 10,
-                                "turbo": 1})
-        self.assertEqual(launcher.test_aids(["seed.zip", "--turbo", "4"])[1]["turbo"], 4)
+        self.assertEqual(aids, {"speed": 3.0, "aids": ["Invincible", "Stamina", "Unbreakable"], "damage": 10})
 
     def test_a_release_refuses_them(self):
         with mock.patch.dict("sys.modules", {"tools.play_aids": None}):
