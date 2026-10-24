@@ -1,3 +1,4 @@
+from copy import deepcopy
 import json
 from pathlib import Path
 import tempfile
@@ -117,6 +118,24 @@ class LoadingDiagnosticTests(unittest.TestCase):
             mutated = deepcopy(state)
             mutated['screens'][index].update(change)
             self.assertFalse(presentation_ready.presentation_gameplay_state(mutated)['ready'], (index, change))
+
+    def test_the_screens_holding_link_are_named(self):
+        # Every screen that makes the catalog not gameplay, the HUD apart, is named with what it shows.
+        state = self.catalog()
+        self.assertEqual(presentation_ready.unexpected_screens(state), [])
+        for index, change in [(78, {'activity': 1}), (84, {'state_94': 0x01000300}), (85, {'pointer': 1}),
+                              (74, {'pointer': 1}), (44, {'activity': 1}), (46, {'activity': 1}),
+                              (47, {'pointer': 1}), (68, {'state_94': 0x01000300})]:
+            mutated = deepcopy(state)
+            mutated['screens'][index].update(change)
+            named = presentation_ready.unexpected_screens(mutated)
+            self.assertEqual(len(named), 1, (index, named))
+            self.assertIn(f"(screen {index})", named[0])
+        state['screens'][78].update(activity=1, state_94=0x01000300)
+        self.assertIn("loading (screen 78): present, activity 1, state 0x1000300",
+                      presentation_ready.summary({"reasons": ["screen_catalog_not_gameplay"],
+                                                  "unexpected_screens": presentation_ready.unexpected_screens(state),
+                                                  "gameplay": {"screens": [state['screens'][42]]}}))
 
     def test_wait_requires_loading_then_three_ready_samples(self):
         busy = self.catalog()

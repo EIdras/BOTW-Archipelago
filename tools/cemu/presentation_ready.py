@@ -61,11 +61,41 @@ def ready(process, cave, read_flags, *, allow_hudless=False):
     return all(flags[name] == 0 for name in PROTECTIONS)
 
 
+# What each screen of the catalog shows while Link plays (menu_diagnostic,
+# loading_diagnostic): (name, present, activity, states); None: not checked.
+CLOSED = (0x01000000, 0x01fc0000)
+GAMEPLAY_SCREENS = {
+    44: ("map", True, 255, CLOSED), 46: ("menu", True, 255, CLOSED), 47: ("inventory", False, 255, None),
+    68: ("menu 68", True, 255, CLOSED), 78: ("loading", True, 255, CLOSED),
+    84: ("loading 84", True, 255, (0x01000000,)), 85: ("loading 85", False, 255, None),
+    74: ("dialogue", False, 255, None),
+}
+
+
+def unexpected_screens(catalog) -> list[str]:
+    """The screens of the catalog not as they are while Link plays, with what
+    they show (the HUD apart: summary() gives it)."""
+    out, rows = [], catalog.get("screens") or []
+    for index, (name, present, activity, states) in GAMEPLAY_SCREENS.items():
+        if index >= len(rows):
+            continue
+        row = rows[index]
+        state = row["state_94"]
+        if (bool(row["pointer"]) != present or row["activity"] != activity
+                or (states is not None and state not in states)):
+            out.append(f"{name} (screen {index}): {'present' if row['pointer'] else 'absent'}, "
+                       f"activity {row['activity']}" + (f", state {state:#x}" if isinstance(state, int) else ""))
+    return out
+
+
 def summary(diagnosis: dict) -> str:
-    """One line of diagnose(): what holds the presentations, and the HUD screen's state."""
+    """One line of diagnose(): what holds the presentations, the screens not as
+    while Link plays, and the HUD screen's state."""
     hud = (diagnosis.get("gameplay", {}).get("screens") or [{}])[0]
     state = hud.get("state_94")
+    screens = diagnosis.get("unexpected_screens") or []
     return (", ".join(diagnosis.get("reasons", ())) or "ready") + (
+        f" ({'; '.join(screens)})" if screens else "") + (
         f"; HUD {'present' if hud.get('pointer') else 'absent'}, activity {hud.get('activity')}, "
         f"state {state:#x}" if isinstance(state, int) else "")
 
@@ -97,6 +127,7 @@ def diagnose(process, cave, read_flags, *, allow_hudless=False):
         "reasons": reasons,
         "getdemo": ui_summary,
         "gameplay": gameplay,
+        "unexpected_screens": unexpected_screens(catalog),
         "flags": flags,
     }
 
