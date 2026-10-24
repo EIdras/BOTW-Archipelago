@@ -123,10 +123,13 @@ def text_inputs() -> dict[str, str]:
             for language in LANGUAGES}
 
 
-def generate_texts(files: dict[str, bytes], content: Path) -> tuple[dict[str, bytes], list[dict]]:
+def generate_texts(files: dict[str, bytes], content) -> tuple[dict[str, bytes], list[dict]]:
     """Vilia's lines at her new price, in every language of the overlay being
-    built (after the stages that already changed the message archives)."""
-    hashes, languages = regions.inputs(text_inputs(), content), regions.of_content(content).languages
+    built (after the stages that already changed the message archives).
+    content: the update folder, or the game's files (botw_patch/game_files.py)."""
+    from botw_patch.game_files import GameFiles
+    game = GameFiles.of(content)
+    hashes, languages = regions.inputs(text_inputs(), game.content), regions.of_content(game.content).languages
     table = "System/Resource/ResourceSizeTable.product.srsizetable"
     if table not in files:
         raise ValueError(f"{table} expected in the overlay")
@@ -136,7 +139,7 @@ def generate_texts(files: dict[str, bytes], content: Path) -> tuple[dict[str, by
         if name in files:           # already changed by an earlier stage
             inputs[name] = files[name]
             continue
-        raw = (content / name).read_bytes()
+        raw = game.read(name)
         if vanilla_digest(raw) != hashes[name]:
             raise ValueError(f"unexpected update resource: {name}")
         inputs[name] = raw

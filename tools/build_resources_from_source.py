@@ -24,6 +24,7 @@ from botw_patch.delivery_flow import (
     BIND_ENTRY, QUIET_FLOW, compile_native_entries, delivery_catalog, patch_delivery_event_info,
     patch_delivery_flow, patch_session_binding)
 from botw_client import regions
+from botw_patch.game_files import GameFiles
 from botw_patch.resources import digest, unpack, vanilla_digest
 from tools.build_resource_base_from_source import INPUT_HASHES, generate_presentation, patch_stage
 from tools.build_game_data_mod import modify_gamedata_flags
@@ -82,7 +83,7 @@ SOURCE_FILES = (
     "botw_client/items.py", "data/item_map.json", "assets/wiiu/Item_AP.sbitemico",
     "botw_patch/hud_layout.py", "tools/bitemico.py", "botw_patch/death_link.py",
     "botw_patch/loading_icon.py", "botw_patch/traps.py", "botw_patch/melee_weapons.py",
-    "botw_patch/horses.py", "botw_patch/downpour.py",
+    "botw_patch/horses.py", "botw_patch/downpour.py", "botw_patch/game_files.py",
     *gerudo_outfit.SOURCE_FILES, *ganon_gate.SOURCE_FILES, *beast_heart.SOURCE_FILES,
     *goron_armor.SOURCE_FILES, *pedestal.SOURCE_FILES,
 )
@@ -92,6 +93,15 @@ def pack_path(name: str) -> str:
     """Where a built resource goes in a pack: DLC files (aoc/0010/...) at the
     root, as Cemu reads a graphic pack's aoc folder; the rest in content/."""
     return name if name.startswith("aoc/") else "content/" + name
+
+
+def game_files(content, aoc: Path | None = None) -> GameFiles:
+    """The game's files of `content`: itself (botw_patch/game_files.py), or
+    the update folder it names, with the DLC `aoc` (by default the one next to it)."""
+    if isinstance(content, GameFiles):
+        return content
+    content = Path(content).resolve()
+    return GameFiles(content, aoc if aoc is not None else default_aoc(content))
 
 
 def default_aoc(content: Path) -> Path | None:
@@ -117,10 +127,11 @@ def stage_names(shops: list | None = None, status: dict | None = None) -> list[s
             "the texts"]
 
 
-def generate(content: Path, binding_token: int, shops: list | None = None,
+def generate(content, binding_token: int, shops: list | None = None,
              status: dict | None = None, aoc: Path | None = None, progress=None
              ) -> tuple[dict[str, bytes], dict, list[dict]]:
-    """shops: botw_patch.shops.ShopPlacement list of the seed (none: no shop stage).
+    """content: the update folder, or the game's files (game_files()).
+    shops: botw_patch.shops.ShopPlacement list of the seed (none: no shop stage).
     status: the slot manifest, for the Archipelago quest (none: no quest).
     progress: called with the name of each stage (stage_names()) as it starts."""
     if type(binding_token) is not int or not 0 < binding_token <= 0x7FFFFFFF:
@@ -130,14 +141,14 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
     def stage():
         if progress is not None:
             progress(next(names))
+    game = game_files(content, aoc)
     # Verify every consumed update archive before constructing any output.
     stage()
     inputs = {}
-    region = regions.of_content(content)
+    region = regions.of_content(game.content)
     unexpected = []
-    for name, expected in regions.inputs(UPDATE_HASHES, content).items():
-        path = content / name
-        raw = path.read_bytes() if path.is_file() else None
+    for name, expected in regions.inputs(UPDATE_HASHES, game.content).items():
+        raw = game.read(name) if game.exists(name) else None
         if raw is None or vanilla_digest(raw) != expected:
             unexpected.append(name if raw is not None else f"{name} (missing)")
             continue
@@ -145,11 +156,11 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
     if unexpected:
         raise ValueError(
             f"unexpected Wii U update resource: {', '.join(unexpected)}. These files of the update v208 "
-            f"({region.name} version, {content}) are not the game's own: a mod copied into the game's files "
+            f"({region.name} version, {game.content}) are not the game's own: a mod copied into the game's files "
             "changes them. Reinstall the update in Cemu from your console, then delete the launcher's "
             "profile (the cemu-validation folder of BOTW Archipelago's data) so that it copies it again.")
     stage()
-    files, changes = generate_presentation(content, "owned_marker")
+    files, changes = generate_presentation(game, "owned_marker")
     title = oead.Sarc(unpack(inputs[TITLE]))
     def donor(name):
         return bytes(title.get_file(f"EventFlow/{name}.bfevfl").data)
@@ -190,11 +201,10 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
     # unexpected copies instead of silently leaving a source reward active.
     stage()
     found, packs = set(), set()
-    for path in sorted((content / "Event").glob("*.sbeventpack")):
-        name = path.relative_to(content).as_posix()
+    for name in game.names("Event", "*.sbeventpack"):
         raw = inputs.get(name)
         if raw is None:
-            raw = path.read_bytes()
+            raw = game.read(name)
         archive = oead.Sarc(unpack(raw))
         transforms = {}
         for member in archive.get_files():
@@ -270,7 +280,7 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
                              if region.main.endswith("en") else {}}
     # The names a stable gives the horses AP delivers, in every language
     # (botw_patch/horses.py): the client writes the one of the game's.
-    catalog["horses"] = horses.names(content)
+    catalog["horses"] = horses.names(game)
     # The AP connection indicator of the HUD (botw_patch/hud_layout.py) and
     # the AP icon of the loading screen (botw_patch/loading_icon.py).
     icon = (ROOT / "assets/wiiu/Item_AP.sbitemico").read_bytes()
@@ -285,28 +295,28 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
     if shops:
         stage()
         from botw_patch import shops as shop_stage
-        files, edits = shop_stage.generate(files, content, shops,
-                                           aoc=aoc if aoc is not None else default_aoc(content))
+        files, edits = shop_stage.generate(files, game, shops,
+                                           aoc=game if game.aoc is not None else None)
         changes.extend(edits)
     if status:
         stage()
         # The Archipelago quest of the Adventure Log (botw_patch/ap_quest.py).
         from botw_patch import ap_quest
-        files, edits = ap_quest.generate(files, content, status)
+        files, edits = ap_quest.generate(files, game, status)
         changes.extend(edits)
         catalog["quest"] = {"start": ap_quest.START, "finish": ap_quest.FINISH}
     if tower_maps(status):
         stage()
         # The maps are items: the towers keep their own flag (botw_patch/tower_maps.py).
         from botw_patch import tower_maps as tower_stage
-        files, edits = tower_stage.generate(files, aoc if aoc is not None else default_aoc(content))
+        files, edits = tower_stage.generate(files, game)
         changes.extend(edits)
     stage()
     # Vilia's lines at the price she now asks (botw_patch/gerudo_outfit.py).
-    files, edits = gerudo_outfit.generate_texts(files, content)
+    files, edits = gerudo_outfit.generate_texts(files, game)
     changes.extend(edits)
     # The sealed sanctum's line (botw_patch/ganon_gate.py).
-    files, edits = ganon_gate.generate_texts(files, content)
+    files, edits = ganon_gate.generate_texts(files, game)
     changes.extend(edits)
     table = rstb.ResourceSizeTable(unpack(files[TABLE]), True)
     for name, minimum in MINIMUM_ALLOCATIONS.items():
@@ -317,10 +327,12 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
     return files, catalog, changes
 
 
-def build(content: Path, output: Path, *, binding_token: int, shops: list | None = None,
+def build(content, output: Path, *, binding_token: int, shops: list | None = None,
           status: dict | None = None, aoc: Path | None = None, progress=None) -> Path:
-    files, catalog, changes = generate(content.resolve(), binding_token, shops, status, aoc, progress)
-    region = regions.of_content(content)
+    """content: the update folder, or the game's files (game_files())."""
+    game = game_files(content, aoc)
+    files, catalog, changes = generate(game, binding_token, shops, status, progress=progress)
+    region = regions.of_content(game.content)
     manifest = {
         "schema": 1, "component": "complete_play_resources", "status": "not_installable",
         "platform": "wiiu", "revision": f"{region.key} v208", "installed": False,
@@ -364,7 +376,7 @@ def build(content: Path, output: Path, *, binding_token: int, shops: list | None
                                           for name in tower_stage.SOURCE_FILES})
     if region is not regions.EUR:
         # Only for the other versions, so that the European packs keep their identity.
-        manifest["input_hashes"] = regions.inputs(manifest["input_hashes"], content)
+        manifest["input_hashes"] = regions.inputs(manifest["input_hashes"], game.content)
         manifest["source_hashes"].update({name: digest((ROOT / name).read_bytes())
                                           for name in REGION_SOURCES})
     build_id = digest(encode(manifest))[:16]

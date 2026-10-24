@@ -18,6 +18,7 @@ from botw_client.paths import DATA
 from botw_client.session import session_token
 from tools import build_native_from_source as native
 from tools import build_resources_from_source as resources
+from botw_patch.game_files import GameFiles
 from tools.build_resources_from_source import digest, encode
 
 RULES = (
@@ -176,8 +177,12 @@ def verify_pack(pack: Path, binding: dict | None = None) -> dict:
 
 def build(content: Path, rpx: Path, report: Path, slot: int, output: Path, *,
           archive: Path | None = None, diagnostics: bool = True,
-          resource_gate: bool = False, event_gate: bool = False, progress=None) -> Path:
-    """progress: called with (step, steps, name) as each step of the build starts."""
+          resource_gate: bool = False, event_gate: bool = False, progress=None,
+          packs: tuple[Path, ...] = ()) -> Path:
+    """progress: called with (step, steps, name) as each step of the build starts.
+    packs: graphic pack folders laid over the update and the DLC, the winning
+    one first (botw_patch/game_files.py): the pack is built from what the game
+    loads with them."""
     binding, slot_data = _verified_seed(report, slot, archive)
     from botw_patch.shops import plan_from_manifest
     shops = plan_from_manifest(slot_data)
@@ -196,7 +201,10 @@ def build(content: Path, rpx: Path, report: Path, slot: int, output: Path, *,
         step(names[0])
         native_dir = native.build(rpx, work / "native", resource_gate=resource_gate, event_gate=event_gate,
                                   tower_maps=bool(slot_data.get("slot_data", {}).get("tower_maps")))
-        resource_dir = resources.build(content, work / "resources", binding_token=binding["token"],
+        game = resources.game_files(content)
+        if packs:
+            game = GameFiles(game.content, game.aoc, packs)
+        resource_dir = resources.build(game, work / "resources", binding_token=binding["token"],
                                        shops=shops, status=slot_data, progress=step)
         nm = json.loads((native_dir / "manifest.json").read_text(encoding="utf-8"))
         rm = json.loads((resource_dir / "manifest.json").read_text(encoding="utf-8"))
@@ -271,7 +279,9 @@ if __name__ == "__main__":
                         help="experimental native preflight: defer before submission when resource is unavailable")
     parser.add_argument("--event-gate", action="store_true", help="defer before submission while native event admission is blocked (requires --resource-gate)")
     parser.add_argument("--output", type=Path, default=DATA / "packs-from-source")
+    parser.add_argument("--pack", type=Path, action="append", default=[],
+                        help="a graphic pack laid over the update and the DLC (repeat, the winning one first)")
     args = parser.parse_args()
     print(build(args.content, args.rpx, args.report, args.slot, args.output,
                 archive=args.archive, diagnostics=not args.without_diagnostics,
-                resource_gate=args.resource_gate, event_gate=args.event_gate))
+                resource_gate=args.resource_gate, event_gate=args.event_gate, packs=tuple(args.pack)))

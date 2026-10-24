@@ -30,10 +30,13 @@ def canonical(name: str) -> str:
 
 
 class ResourceBuilder:
-    def __init__(self, content: Path, platform: str = "wiiu"):
+    def __init__(self, content, platform: str = "wiiu"):
+        """content: a content folder, or the game's files (botw_patch/game_files.py)."""
+        from .game_files import GameFiles
         if platform not in {"wiiu", "switch"}:
             raise ValueError(f"unknown platform: {platform}")
-        self.content = content.resolve()
+        self.game = GameFiles.of(content)
+        self.content = self.game.content
         self.platform = platform
         self.big_endian = platform == "wiiu"
         self.outputs: dict[str, bytes] = {}
@@ -43,10 +46,7 @@ class ResourceBuilder:
         self.calculator = rstb.SizeCalculator()
 
     def read(self, name: str) -> bytes:
-        path = (self.content / name).resolve()
-        if not path.is_relative_to(self.content):
-            raise ValueError("resource path escapes content root")
-        return path.read_bytes()
+        return self.game.read(name)
 
     def account(self, name: str, data: bytes, original: bytes | None = None):
         key = canonical(name)

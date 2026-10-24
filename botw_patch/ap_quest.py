@@ -265,19 +265,22 @@ def messages(raw: bytes, quest: dict[str, str]) -> tuple[bytes, dict]:
     return (bytes(oead.yaz0.compress(packed)) if raw[:4] == b"Yaz0" else packed), detail
 
 
-def generate(files: dict[str, bytes], content: Path,
+def generate(files: dict[str, bytes], content,
              manifest: dict) -> tuple[dict[str, bytes], list[dict]]:
     """Add the quest to an overlay being built (after the delivery and shop
-    stages: every resource they already changed is read from `files`)."""
+    stages: every resource they already changed is read from `files`).
+    content: the update folder, or the game's files (botw_patch/game_files.py)."""
+    from botw_patch.game_files import GameFiles
+    game = GameFiles.of(content)
     for name in (TITLE, BOOTUP, "System/Resource/ResourceSizeTable.product.srsizetable"):
         if name not in files:
             raise ValueError(f"{name} expected in the overlay")
     inputs = {}
-    for name, expected in regions.inputs(INPUT_HASHES, content).items():
+    for name, expected in regions.inputs(INPUT_HASHES, game.content).items():
         if name in files:           # already changed by an earlier stage
             inputs[name] = files[name]
             continue
-        raw = (content / name).read_bytes()
+        raw = game.read(name)
         if vanilla_digest(raw) != expected:
             raise ValueError(f"unexpected update resource: {name}")
         inputs[name] = raw
@@ -295,7 +298,7 @@ def generate(files: dict[str, bytes], content: Path,
         giver = ApShopItem(GIVER, None, quest["giver"], "", model_actor=GIVER_MODEL)
         builder.outputs[ACTOR_INFO], detail = add_declarations(inputs[ACTOR_INFO], [giver])
         changes.append({"resource": ACTOR_INFO, "declarations": detail})
-        for language in regions.of_content(content).languages:
+        for language in regions.of_content(game.content).languages:
             builder.patch_archive(f"Pack/Bootup_{language}.pack", {
                 f"Message/Msg_{language}.product.ssarc": lambda raw: messages(raw, quest)})
         builder.patch_archive(TITLE, {QUEST_PACK: add_quest,

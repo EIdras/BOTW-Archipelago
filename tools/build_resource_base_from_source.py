@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:] = [str(ROOT)] + [p for p in sys.path
                             if Path(p).resolve() != ROOT / "tools"]
 
+from botw_patch.game_files import GameFiles  # noqa: E402
 from botw_patch.ledger_experiment import patch_campfire_delivery  # noqa: E402
 from botw_patch.resources import ResourceBuilder, digest, unpack, vanilla_digest  # noqa: E402
 from tools.build_delivery_control import presentation_call  # noqa: E402
@@ -38,12 +39,14 @@ ICON = ROOT / "assets/wiiu/Item_AP.sbitemico"
 ICON_SHA256 = "09c6057c14ecd01abb42df9d2975034c931bc93b95188599e866a6f211f24cd3"
 
 
-def generate(content: Path) -> tuple[dict[str, bytes], list[dict]]:
-    """Return the three overlay resources without reading prior candidates."""
+def generate(content) -> tuple[dict[str, bytes], list[dict]]:
+    """Return the three overlay resources without reading prior candidates.
+    content: the update folder, or the game's files (botw_patch/game_files.py)."""
+    game = GameFiles.of(content)
     for name, expected in INPUT_HASHES.items():
-        if vanilla_digest((content / name).read_bytes()) != expected:
+        if vanilla_digest(game.read(name)) != expected:
             raise ValueError(f"unexpected Wii U update resource: {name}")
-    builder = ResourceBuilder(content)
+    builder = ResourceBuilder(game)
     builder.patch_archive("Pack/Bootup.pack", {
         "GameData/gamedata.ssarc": lambda raw: (
             modify_gamedata(raw, is_save=True), ["APReceivedCursor", "APSeedToken"]),
@@ -81,10 +84,11 @@ def patch_stage(files: dict[str, bytes], name: str, transforms: dict, *,
         return files, builder.changes
 
 
-def generate_presentation(content: Path, stage: str = "presentation") -> tuple[dict[str, bytes], list[dict]]:
+def generate_presentation(content, stage: str = "presentation") -> tuple[dict[str, bytes], list[dict]]:
     """Rebuild the presentation chain while preserving each stage's RSTB."""
-    files, changes = generate(content)
-    vanilla = oead.Sarc(unpack((content / "Pack/TitleBG.pack").read_bytes()))
+    game = GameFiles.of(content)
+    files, changes = generate(game)
+    vanilla = oead.Sarc(unpack(game.read("Pack/TitleBG.pack")))
     donor = bytes(vanilla.get_file("EventFlow/GetDemo.bfevfl").data)
     if vanilla_digest(donor) != "af201d87d582f218ee5898ef3efa97f482fbd564e487385793b1efe7066817c8":
         raise ValueError("unexpected vanilla GetDemo donor")

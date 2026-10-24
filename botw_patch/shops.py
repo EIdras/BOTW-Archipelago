@@ -207,33 +207,36 @@ def stock_entries(merchant, locations: list[ShopLocation]) -> list:
     return [*ap, *merchant.stock[:KEPT], *merchant.stock[KEPT + len(ap):]]
 
 
-def generate(files: dict[str, bytes], content: Path,
+def generate(files: dict[str, bytes], content,
              placements: list[ShopPlacement],
              model: dict[str, bytes] | None = None,
-             aoc: Path | None = None) -> tuple[dict[str, bytes], list[dict]]:
+             aoc=None) -> tuple[dict[str, bytes], list[dict]]:
     """Add the shops of `placements` to an overlay being built.
 
     `files` must already hold the size table and Bootup.pack (with the other AP
-    flags); every other input is read from the Wii U update `content` and
-    checked against INPUT_HASHES first. Returns the updated files and the
-    changes, one entry per resource.
+    flags); every other input is read from the game's files `content` (the
+    update folder, or botw_patch/game_files.py) and checked against
+    INPUT_HASHES first; `aoc`: the DLC folder (content/0010), or the game's
+    files. Returns the updated files and the changes, one entry per resource.
     """
+    from botw_patch.game_files import GameFiles
     if not placements:
         return files, []
+    game = GameFiles.of(content)
     for name in (TABLE, BOOTUP):
         if name not in files:
             raise ValueError(f"{name} expected in the overlay")
     inputs = {}
-    languages = regions.of_content(content).languages
-    for name, expected in regions.inputs(INPUT_HASHES, content).items():
+    languages = regions.of_content(game.content).languages
+    for name, expected in regions.inputs(INPUT_HASHES, game.content).items():
         if name in files:
             raise ValueError(f"the overlay already replaces {name}")
-        raw = (content / name).read_bytes()
+        raw = game.read(name)
         if vanilla_digest(raw) != expected:
             raise ValueError(f"unexpected update resource: {name}")
         inputs[name] = raw
-    title_raw = files.get(TITLE) or (content / TITLE).read_bytes()
-    source_title = (content / TITLE).read_bytes()
+    title_raw = files.get(TITLE) or game.read(TITLE)
+    source_title = game.read(TITLE)
     if vanilla_digest(source_title) != TITLE_SHA256:
         raise ValueError(f"unexpected update resource: {TITLE}")
     title = oead.Sarc(unpack(source_title))
@@ -253,7 +256,7 @@ def generate(files: dict[str, bytes], content: Path,
         for name in stall_stage.INPUT_HASHES:
             if name in files:
                 raise ValueError(f"the overlay already replaces {name}")
-        inputs.update(stall_stage.stage_inputs(content))
+        inputs.update(stall_stage.stage_inputs(game))
 
     # A file the antivirus still holds may outlive the build here: the system's
     # temporary folder takes it, rather than failing the pack.
@@ -344,7 +347,7 @@ def generate(files: dict[str, bytes], content: Path,
         if stall:
             # The jewel's size, from the model itself: it lies on the stalls.
             size = model_bounds(model[""])["size"]
-            changes.extend(stall_stage.generate(builder, aoc_files, content, aoc, stall,
+            changes.extend(stall_stage.generate(builder, aoc_files, game, aoc, stall,
                                                 jewel=(size[1], size[2])))
 
         # Saved flags.

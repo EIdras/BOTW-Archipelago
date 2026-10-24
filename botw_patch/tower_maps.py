@@ -93,10 +93,13 @@ def patch_map(raw: bytes, numbers: list[str]) -> tuple[bytes, dict]:
     return bytes(oead.yaz0.compress(out)), detail
 
 
-def generate(files: dict[str, bytes], aoc: Path) -> tuple[dict[str, bytes], list[dict]]:
+def generate(files: dict[str, bytes], aoc) -> tuple[dict[str, bytes], list[dict]]:
     """The towers' map units (onto the stalls' when a stall shares the unit),
-    their size in the table, and their flags in GameData and the save format."""
+    their size in the table, and their flags in GameData and the save format.
+    aoc: the DLC folder (content/0010), or the game's files (botw_patch/game_files.py)."""
     from tools.build_game_data_mod import modify_gamedata_flags, modify_saveformat
+    from botw_patch.game_files import dlc_reader
+    read_aoc = dlc_reader(aoc)
 
     for name in (TABLE, BOOTUP):
         if name not in files:
@@ -115,7 +118,7 @@ def generate(files: dict[str, bytes], aoc: Path) -> tuple[dict[str, bytes], list
             path.write_bytes(raw)
         builder = ResourceBuilder(stage)
         for cell, numbers in sorted(cells.items()):
-            vanilla = (aoc / unit(cell)).read_bytes()
+            vanilla = read_aoc(unit(cell))
             if vanilla_digest(vanilla) != MAP_HASHES[cell]:
                 raise ValueError(f"unexpected DLC map: {unit(cell)}")
             source = files.get(AOC_PREFIX + unit(cell), vanilla)

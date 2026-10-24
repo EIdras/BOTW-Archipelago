@@ -175,13 +175,16 @@ def generate(builder, files: dict[str, bytes], content, aoc, locations: list[Sta
              jewel: tuple[float, float]) -> list[dict]:
     """Map units and merchant flows of the seed's stall locations, into a
     ResourceBuilder whose stage holds `files`. Returns the changes; the map
-    units go to files[aoc/0010/...]."""
+    units go to files[aoc/0010/...]. aoc: the DLC folder (content/0010), or
+    the game's files (botw_patch/game_files.py)."""
+    from botw_patch.game_files import dlc_reader
+    read_aoc = dlc_reader(aoc)
     changes = []
     units: dict[str, list[StallLocation]] = {}
     for location in locations:
         units.setdefault(location.merchant.map_unit, []).append(location)
     for unit, located in sorted(units.items()):
-        raw = (aoc / unit).read_bytes()
+        raw = read_aoc(unit)
         if vanilla_digest(raw) != MAP_HASHES[unit]:
             raise ValueError(f"unexpected DLC map: {unit}")
         new, detail = patch_map(raw, located, jewel)
@@ -202,9 +205,11 @@ def generate(builder, files: dict[str, bytes], content, aoc, locations: list[Sta
 
 def stage_inputs(content) -> dict[str, bytes]:
     """The merchants' event packs, checked."""
+    from botw_patch.game_files import GameFiles
+    game = GameFiles.of(content)
     out = {}
     for name, expected in INPUT_HASHES.items():
-        raw = (content / name).read_bytes()
+        raw = game.read(name)
         if vanilla_digest(raw) != expected:
             raise ValueError(f"unexpected update resource: {name}")
         out[name] = raw

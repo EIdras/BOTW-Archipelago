@@ -7,8 +7,6 @@ console runs the game in: the delivery catalog carries every language's.
 """
 from __future__ import annotations
 
-from pathlib import Path
-
 import oead
 
 from botw_client import regions
@@ -19,14 +17,17 @@ HORSES = ("GameRomHorseEpona",)
 MESSAGES = "ActorType/Horse.msbt"
 
 
-def names(content: Path) -> dict[str, dict[str, str]]:
-    """{actor: {language: name}} from the update's message archives."""
+def names(content) -> dict[str, dict[str, str]]:
+    """{actor: {language: name}} from the game's message archives
+    (content: the update folder, or the game's files, botw_patch/game_files.py)."""
     from botw_patch.ap_quest import INPUT_HASHES
-    hashes = regions.inputs(INPUT_HASHES, content)
+    from botw_patch.game_files import GameFiles
+    game = GameFiles.of(content)
+    hashes = regions.inputs(INPUT_HASHES, game.content)
     out: dict[str, dict[str, str]] = {actor: {} for actor in HORSES}
-    for language in regions.of_content(content).languages:
+    for language in regions.of_content(game.content).languages:
         name = f"Pack/Bootup_{language}.pack"
-        raw = (content / name).read_bytes()
+        raw = game.read(name)
         if vanilla_digest(raw) != hashes[name]:
             raise ValueError(f"unexpected update resource: {name}")
         boot = oead.Sarc(unpack(raw))

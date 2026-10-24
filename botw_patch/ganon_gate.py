@@ -143,21 +143,24 @@ def add_flags(raw: bytes) -> tuple[bytes, list[str]]:
     return raw, [f"register saved bool {OPEN}", f"register volatile bool {REFUSED}"]
 
 
-def generate_texts(files: dict[str, bytes], content: Path) -> tuple[dict[str, bytes], list[dict]]:
+def generate_texts(files: dict[str, bytes], content) -> tuple[dict[str, bytes], list[dict]]:
     """The sealed sanctum's line, added to DemoMsg/Demo033_0 in every language
     of the overlay being built (after the stages that already changed the
-    message archives)."""
+    message archives). content: the update folder, or the game's files
+    (botw_patch/game_files.py)."""
     from botw_patch.shop_items import add_labels
     from botw_patch.ap_quest import INPUT_HASHES
+    from botw_patch.game_files import GameFiles
+    game = GameFiles.of(content)
     table = "System/Resource/ResourceSizeTable.product.srsizetable"
-    hashes, languages = regions.inputs(INPUT_HASHES, content), regions.of_content(content).languages
+    hashes, languages = regions.inputs(INPUT_HASHES, game.content), regions.of_content(game.content).languages
     inputs = {}
     for language in languages:
         name = f"Pack/Bootup_{language}.pack"
         if name in files:           # already changed by an earlier stage
             inputs[name] = files[name]
             continue
-        raw = (content / name).read_bytes()
+        raw = game.read(name)
         if vanilla_digest(raw) != hashes[name]:
             raise ValueError(f"unexpected update resource: {name}")
         inputs[name] = raw
