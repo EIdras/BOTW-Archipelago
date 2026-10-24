@@ -130,10 +130,19 @@ def stage_names(shops: list | None = None, status: dict | None = None) -> list[s
 def generate(content, binding_token: int, shops: list | None = None,
              status: dict | None = None, aoc: Path | None = None, progress=None
              ) -> tuple[dict[str, bytes], dict, list[dict]]:
-    """content: the update folder, or the game's files (game_files()).
+    """content: the update folder, or the game's files (game_files()): what a
+    graphic pack replaces is built on, but for the event flows rewritten here
+    (botw_patch/game_files.py, ModConflict).
     shops: botw_patch.shops.ShopPlacement list of the seed (none: no shop stage).
     status: the slot manifest, for the Archipelago quest (none: no quest).
     progress: called with the name of each stage (stage_names()) as it starts."""
+    game = game_files(content, aoc)
+    with game.active():
+        return _generate(game, binding_token, shops, status, progress)
+
+
+def _generate(game: GameFiles, binding_token: int, shops: list | None, status: dict | None, progress
+              ) -> tuple[dict[str, bytes], dict, list[dict]]:
     if type(binding_token) is not int or not 0 < binding_token <= 0x7FFFFFFF:
         raise ValueError("binding token must be a positive signed s32")
     names = iter(stage_names(shops, status))
@@ -141,18 +150,21 @@ def generate(content, binding_token: int, shops: list | None = None,
     def stage():
         if progress is not None:
             progress(next(names))
-    game = game_files(content, aoc)
     # Verify every consumed update archive before constructing any output.
     stage()
     inputs = {}
     region = regions.of_content(game.content)
     unexpected = []
     for name, expected in regions.inputs(UPDATE_HASHES, game.content).items():
-        raw = game.read(name) if game.exists(name) else None
-        if raw is None or vanilla_digest(raw) != expected:
-            unexpected.append(name if raw is not None else f"{name} (missing)")
+        # The update's own copy is checked; a graphic pack may replace it.
+        try:
+            own = game.original(name)
+        except FileNotFoundError:
+            own = None
+        if own is None or vanilla_digest(own) != expected:
+            unexpected.append(name if own is not None else f"{name} (missing)")
             continue
-        inputs[name] = raw
+        inputs[name] = game.read(name)
     if unexpected:
         raise ValueError(
             f"unexpected Wii U update resource: {', '.join(unexpected)}. These files of the update v208 "
@@ -161,7 +173,9 @@ def generate(content, binding_token: int, shops: list | None = None,
             "profile (the cemu-validation folder of BOTW Archipelago's data) so that it copies it again.")
     stage()
     files, changes = generate_presentation(game, "owned_marker")
-    title = oead.Sarc(unpack(inputs[TITLE]))
+    # The flows lent to the delivery entries: the update's own, whatever replaces them.
+    title_raw = unpack(game.original(TITLE))
+    title = oead.Sarc(title_raw)
     def donor(name):
         return bytes(title.get_file(f"EventFlow/{name}.bfevfl").data)
     specs, _unsupported = compile_native_entries()
@@ -212,6 +226,9 @@ def generate(content, binding_token: int, shops: list | None = None,
             if flow not in RECIPES or member.name != f"EventFlow/{flow}.bfevfl":
                 continue
             if name not in REWARD_PACKS or vanilla_digest(bytes(member.data)) != SOURCE_HASHES[flow]:
+                pack = game.provider(name)
+                if pack is not None:
+                    raise game.conflict(pack, name, member.name)
                 raise ValueError(f"unexpected source reward copy: {name}/{member.name}")
             transforms[member.name] = RECIPES[flow]
             found.add(flow)

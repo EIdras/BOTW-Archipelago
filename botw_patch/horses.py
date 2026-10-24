@@ -10,7 +10,7 @@ from __future__ import annotations
 import oead
 
 from botw_client import regions
-from botw_patch.resources import digest, unpack, vanilla_digest
+from botw_patch.resources import digest, unpack
 from botw_patch.shop_items import read_labels
 
 HORSES = ("GameRomHorseEpona",)
@@ -27,9 +27,7 @@ def names(content) -> dict[str, dict[str, str]]:
     out: dict[str, dict[str, str]] = {actor: {} for actor in HORSES}
     for language in regions.of_content(game.content).languages:
         name = f"Pack/Bootup_{language}.pack"
-        raw = game.read(name)
-        if vanilla_digest(raw) != hashes[name]:
-            raise ValueError(f"unexpected update resource: {name}")
+        raw = game.checked(name, hashes[name])
         boot = oead.Sarc(unpack(raw))
         archive = oead.Sarc(unpack(bytes(boot.get_file(f"Message/Msg_{language}.product.ssarc").data)))
         labels = read_labels(bytes(archive.get_file(MESSAGES).data))

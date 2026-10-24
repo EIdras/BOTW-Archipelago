@@ -231,12 +231,9 @@ def generate(files: dict[str, bytes], content,
     for name, expected in regions.inputs(INPUT_HASHES, game.content).items():
         if name in files:
             raise ValueError(f"the overlay already replaces {name}")
-        raw = game.read(name)
-        if vanilla_digest(raw) != expected:
-            raise ValueError(f"unexpected update resource: {name}")
-        inputs[name] = raw
+        inputs[name] = game.checked(name, expected)
     title_raw = files.get(TITLE) or game.read(TITLE)
-    source_title = game.read(TITLE)
+    source_title = game.original(TITLE)          # the amber lent to the AP items: the game's own
     if vanilla_digest(source_title) != TITLE_SHA256:
         raise ValueError(f"unexpected update resource: {TITLE}")
     title = oead.Sarc(unpack(source_title))

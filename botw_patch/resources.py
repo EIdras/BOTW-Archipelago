@@ -69,7 +69,9 @@ class ResourceBuilder:
         if sarc.get_endianness() != (oead.Endianness.Big if self.big_endian else oead.Endianness.Little):
             raise ValueError(f"archive platform mismatch: {name}")
         writer = oead.SarcWriter.from_sarc(sarc)
+        from .game_files import guard, own_member
         for member, transform in transforms.items():
+            guard(name, member)
             existing = sarc.get_file(member)
             if (existing is None) != (member in new_members):
                 raise ValueError(f"{name}: {member} " + (
@@ -77,7 +79,11 @@ class ResourceBuilder:
             previous = None if existing is None else bytes(existing.data)
             replacement, detail = transform(previous)
             writer.files[member] = replacement
-            self.account(member, replacement, previous)
+            # Growth is measured from the larger of a pack's member and the game's own.
+            own = own_member(name, member)
+            baseline = own if own is not None and previous is not None and \
+                len(own) > len(unpack(previous)) else previous
+            self.account(member, replacement, baseline)
             self.changes.append({"archive": name, "member": member,
                                  "before_sha256": None if previous is None else digest(previous),
                                  "after_sha256": digest(replacement), "edits": detail})

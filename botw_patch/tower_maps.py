@@ -24,7 +24,7 @@ import tempfile
 import oead
 
 from botw_client.locations import tower_activation_flag
-from botw_patch.resources import ResourceBuilder, digest, unpack, vanilla_digest
+from botw_patch.resources import ResourceBuilder, digest, unpack
 from botw_patch.stalls import AOC_PREFIX, TABLE_PREFIX
 
 BOOTUP = "Pack/Bootup.pack"
@@ -98,8 +98,8 @@ def generate(files: dict[str, bytes], aoc) -> tuple[dict[str, bytes], list[dict]
     their size in the table, and their flags in GameData and the save format.
     aoc: the DLC folder (content/0010), or the game's files (botw_patch/game_files.py)."""
     from tools.build_game_data_mod import modify_gamedata_flags, modify_saveformat
-    from botw_patch.game_files import dlc_reader
-    read_aoc = dlc_reader(aoc)
+    from botw_patch.game_files import dlc_checked
+    checked = dlc_checked(aoc)
 
     for name in (TABLE, BOOTUP):
         if name not in files:
@@ -118,9 +118,7 @@ def generate(files: dict[str, bytes], aoc) -> tuple[dict[str, bytes], list[dict]
             path.write_bytes(raw)
         builder = ResourceBuilder(stage)
         for cell, numbers in sorted(cells.items()):
-            vanilla = read_aoc(unit(cell))
-            if vanilla_digest(vanilla) != MAP_HASHES[cell]:
-                raise ValueError(f"unexpected DLC map: {unit(cell)}")
+            vanilla = checked(unit(cell), MAP_HASHES[cell])
             source = files.get(AOC_PREFIX + unit(cell), vanilla)
             new, detail = patch_map(source, numbers)
             builder.account(TABLE_PREFIX + unit(cell), new, vanilla)

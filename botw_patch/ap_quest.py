@@ -48,7 +48,7 @@ from evfl.util import Index, make_rindex
 from botw_patch import byml_unshared
 from botw_patch.events import graph_snapshot, read_flow, write_flow
 from botw_client import regions
-from botw_patch.resources import ResourceBuilder, digest, unpack, vanilla_digest
+from botw_patch.resources import ResourceBuilder, digest, unpack
 from botw_patch.shop_items import ApShopItem, add_declarations, add_labels
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -280,10 +280,7 @@ def generate(files: dict[str, bytes], content,
         if name in files:           # already changed by an earlier stage
             inputs[name] = files[name]
             continue
-        raw = game.read(name)
-        if vanilla_digest(raw) != expected:
-            raise ValueError(f"unexpected update resource: {name}")
-        inputs[name] = raw
+        inputs[name] = game.checked(name, expected)
     quest = texts(manifest)
     changes: list[dict] = []
     # A file the antivirus still holds may outlive the build here: the system's

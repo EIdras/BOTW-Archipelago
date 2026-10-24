@@ -44,8 +44,7 @@ def generate(content) -> tuple[dict[str, bytes], list[dict]]:
     content: the update folder, or the game's files (botw_patch/game_files.py)."""
     game = GameFiles.of(content)
     for name, expected in INPUT_HASHES.items():
-        if vanilla_digest(game.read(name)) != expected:
-            raise ValueError(f"unexpected Wii U update resource: {name}")
+        game.checked(name, expected, "unexpected Wii U update resource")
     builder = ResourceBuilder(game)
     builder.patch_archive("Pack/Bootup.pack", {
         "GameData/gamedata.ssarc": lambda raw: (
@@ -88,7 +87,8 @@ def generate_presentation(content, stage: str = "presentation") -> tuple[dict[st
     """Rebuild the presentation chain while preserving each stage's RSTB."""
     game = GameFiles.of(content)
     files, changes = generate(game)
-    vanilla = oead.Sarc(unpack(game.read("Pack/TitleBG.pack")))
+    # The flow lent to the presentation: the update's own, whatever replaces it.
+    vanilla = oead.Sarc(unpack(game.original("Pack/TitleBG.pack")))
     donor = bytes(vanilla.get_file("EventFlow/GetDemo.bfevfl").data)
     if vanilla_digest(donor) != "af201d87d582f218ee5898ef3efa97f482fbd564e487385793b1efe7066817c8":
         raise ValueError("unexpected vanilla GetDemo donor")

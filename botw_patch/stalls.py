@@ -27,7 +27,7 @@ import zlib
 import oead
 
 from botw_client.stall_catalog import StallLocation
-from botw_patch.resources import digest, unpack, vanilla_digest
+from botw_patch.resources import digest, unpack
 from botw_patch.shop_items import add_purchase_record
 
 AOC_PREFIX = "aoc/0010/"          # files at the pack root, under aoc/
@@ -177,16 +177,14 @@ def generate(builder, files: dict[str, bytes], content, aoc, locations: list[Sta
     ResourceBuilder whose stage holds `files`. Returns the changes; the map
     units go to files[aoc/0010/...]. aoc: the DLC folder (content/0010), or
     the game's files (botw_patch/game_files.py)."""
-    from botw_patch.game_files import dlc_reader
-    read_aoc = dlc_reader(aoc)
+    from botw_patch.game_files import dlc_checked
+    checked = dlc_checked(aoc)
     changes = []
     units: dict[str, list[StallLocation]] = {}
     for location in locations:
         units.setdefault(location.merchant.map_unit, []).append(location)
     for unit, located in sorted(units.items()):
-        raw = read_aoc(unit)
-        if vanilla_digest(raw) != MAP_HASHES[unit]:
-            raise ValueError(f"unexpected DLC map: {unit}")
+        raw = checked(unit, MAP_HASHES[unit])
         new, detail = patch_map(raw, located, jewel)
         builder.account(TABLE_PREFIX + unit, new, raw)
         files[AOC_PREFIX + unit] = new
@@ -209,8 +207,5 @@ def stage_inputs(content) -> dict[str, bytes]:
     game = GameFiles.of(content)
     out = {}
     for name, expected in INPUT_HASHES.items():
-        raw = game.read(name)
-        if vanilla_digest(raw) != expected:
-            raise ValueError(f"unexpected update resource: {name}")
-        out[name] = raw
+        out[name] = game.checked(name, expected)
     return out

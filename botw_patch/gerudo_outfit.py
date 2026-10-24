@@ -139,10 +139,7 @@ def generate_texts(files: dict[str, bytes], content) -> tuple[dict[str, bytes], 
         if name in files:           # already changed by an earlier stage
             inputs[name] = files[name]
             continue
-        raw = game.read(name)
-        if vanilla_digest(raw) != hashes[name]:
-            raise ValueError(f"unexpected update resource: {name}")
-        inputs[name] = raw
+        inputs[name] = game.checked(name, hashes[name])
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp:
         stage = Path(temp)
         for name, raw in {**inputs, table: files[table]}.items():
