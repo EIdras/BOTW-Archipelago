@@ -20,6 +20,8 @@ from __future__ import annotations
 import struct
 import zlib
 
+from tools.cemu.guest import in_heap
+
 from .shop_catalog import BY_ACTOR, same_merchant
 from .stall_catalog import LOCATIONS as STALLS
 
@@ -53,13 +55,13 @@ def locate_string_flags(read, tp: int, hashes: dict[int, str]) -> dict:
         if not head or len(head) != 12:
             continue
         count, _capacity, array = struct.unpack(">III", head)
-        if not (0 < count < 60000) or not (0x10000000 <= array < 0x60000000):
+        if not (0 < count < 60000) or not in_heap(array):
             continue
         ptrs = read(array, count * 4)
         if not ptrs or len(ptrs) != count * 4:
             continue
         for obj in struct.unpack(f">{count}I", ptrs):
-            if not (0x10000000 <= obj < 0x60000000):
+            if not in_heap(obj):
                 continue
             raw = read(obj, OBJECT_BYTES)
             if not raw:

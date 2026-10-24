@@ -10,6 +10,7 @@ sys.path[:] = [str(ROOT)] + [p for p in sys.path
     if Path(p).resolve() not in (ROOT / "tools", ROOT / "tools/cemu")]
 from botw_patch.events import read_flow, write_flow, graph_snapshot
 from botw_patch.resources import ResourceBuilder
+from tools.cemu.guest import MEM2_END, below
 from tools.cemu.rpx import Rpx
 sys.path[:] = [str(ROOT)] + [p for p in sys.path
     if Path(p).resolve() not in (ROOT / "tools", ROOT / "tools/cemu")]
@@ -83,12 +84,16 @@ def resource_ready_guard(*, event_gate=False):
             "beq apOwnedDeferred"]
 
 
-def owner_source(version=1, *, retired_guard=False, resource_gate=True, event_gate=False):
+def owner_source(version=1, *, retired_guard=False, resource_gate=True, event_gate=False,
+                 mem2_end=MEM2_END):
+    # mem2_end: where the game's main memory ends (tools/cemu/guest.py), the
+    # bound of the pointers this code follows.
     if event_gate and not resource_gate:
         raise ValueError('event gate requires resource gate')
     if version == 2:
         from tools.native_presentation_join import extend
-        return extend(owner_source(resource_gate=resource_gate, event_gate=event_gate), retired_guard=retired_guard)
+        return extend(owner_source(resource_gate=resource_gate, event_gate=event_gate, mem2_end=mem2_end),
+                      retired_guard=retired_guard, mem2_end=mem2_end)
     if version != 1:
         raise ValueError('Unknown owner protocol version')
     # Header is 64 bytes. Generation is incremented by native submission, never
@@ -149,7 +154,7 @@ def owner_source(version=1, *, retired_guard=False, resource_gate=True, event_ga
             # Original r4 is action+0x1c. The game passes this SafeString to
             # native_open immediately next. Verify each byte, including NUL.
             lines += ["lwz r12, 0(r4)", "lis r10, 0x0100", "cmplw r12, r10",
-                      f"blt {label}Done", "lis r10, 0x6000", "cmplw r12, r10", f"bge {label}Done"]
+                      f"blt {label}Done", *below(mem2_end, "r12", "r10", f"{label}Done", margin=0x40)]
             for index, value in enumerate(MARKER.encode() + b"\0"):
                 lines += [f"lbz r0, {index}(r12)", f"cmpwi r0, {value}", f"bne {label}Done"]
             # Remap this resource marker only; no mutation of the action's

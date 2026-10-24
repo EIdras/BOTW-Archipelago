@@ -109,6 +109,16 @@ print(a.name)
                     # And the Downpour trap's weather hold, in every pack.
                     from tools.build_weather_native import patch_injection as weather
                     composed = weather(composed)
+                    # And the pointers it follows end with the game's main memory
+                    # (tools/cemu/guest.py), no longer at 0x60000000.
+                    from tools.cemu.guest import MEM2_END, below
+                    old_bind = 'lis r10, 0x6000\ncmplw r12, r10\nbge apOwnedBindDone'
+                    old_join = 'lis r0, 0x5fff\nori r0, r0, 0xffc0'
+                    self.assertEqual((composed.count(old_bind), composed.count(old_join)), (1, 2))
+                    composed = composed.replace(old_bind, '\n'.join(
+                        below(MEM2_END, 'r12', 'r10', 'apOwnedBindDone', margin=0x40)))
+                    composed = composed.replace(old_join, '\n'.join(
+                        below(MEM2_END, 'r12', 'r0', 'x', margin=0x40)[:2]))
                     self.assertEqual(code(raw.decode('utf-8')), code(composed))
                 else:
                     self.assertEqual(digest(raw), manifest['native_files'][Path(name).name])

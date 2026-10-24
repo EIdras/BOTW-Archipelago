@@ -2,6 +2,7 @@
 import re
 import struct
 from tools.build_event_request_trace import SITES, CAPACITY, STRIDE, MAGIC, trace_source
+from tools.cemu.guest import in_guest
 
 
 def locate(log):
@@ -10,7 +11,7 @@ def locate(log):
 
 
 def read_trace(process, base, address):
-    if address is None or not 0x01000000 <= address < 0x50000000:
+    if not in_guest(address):
         raise ValueError("event request trace not located")
     def read(offset, size):
         data = process.read(base + address + offset, size)

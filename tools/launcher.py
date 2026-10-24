@@ -126,17 +126,11 @@ def prepared_seeds() -> list[Prepared]:
 
 
 def fresh(ui, seed: str) -> str:
-    """The prepared seed, its pack built again when it is missing or was built
-    by another version of the project."""
-    from tools.play_pack import outdated, selected_pack
-    folder = play_seed.PLAY_SEEDS / seed
-    try:
-        stale = bool(outdated(selected_pack(folder)))
-    except (OSError, ValueError, RuntimeError, KeyError):
-        stale = True
-    if stale:
-        ui.say(f"Building the game pack of seed {seed} for this version (about a minute)...")
-        play_seed.refresh(folder)
+    """The prepared seed, its pack built again when it is missing, was built
+    by another version of the project, or over other mods than the player's
+    (tools/play_mods.py)."""
+    from tools import play_mods
+    play_mods.fresh_pack(play_seed.PLAY_SEEDS / seed, play_mods.prepare(ui.say), ui.say)
     warn_newer(ui, seed)
     return seed
 
@@ -173,8 +167,17 @@ def prepare_file(ui, path: Path) -> str:
     folder = play_seed.PLAY_SEEDS / seed
     if (folder / "analysis.json").is_file() and (folder / path.name).is_file()             and play_seed.sha(folder / path.name) == play_seed.sha(path):
         return fresh(ui, seed)
+    # Built over the player's own mods (tools/play_mods.py).
+    from botw_patch.game_files import ModConflict
+    from tools import play_mods
+    mods = play_mods.prepare(ui.say)
     ui.say(f"Building the game pack of seed {seed} for {slot} (about a minute)...")
-    play_seed.prepare(path, slot_name=slot if len(names) > 1 else None)
+    try:
+        play_seed.prepare(path, slot_name=slot if len(names) > 1 else None, layers=mods.layers,
+                          mem2_end=mods.mem2_end)
+    except ModConflict as conflict:
+        play_mods.leave_out(mods, conflict, ui.say)
+        play_mods.fresh_pack(folder, mods, ui.say)
     warn_newer(ui, seed)
     return seed
 

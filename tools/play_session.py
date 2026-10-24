@@ -71,7 +71,10 @@ def tree_hashes(folder: Path) -> dict[str, str]:
             for path in sorted(folder.rglob("*")) if path.is_file()}
 
 
-def find_seed(name: str | None, pack_path: Path | None = None) -> tuple[Path, dict, Path]:
+def find_seed(name: str | None, pack_path: Path | None = None, mods=None) -> tuple[Path, dict, Path]:
+    """The seed's folder, report and pack: `pack_path`, else its selected pack,
+    built again when out of date, over the player's mods `mods` when given
+    (tools/play_mods.py)."""
     seeds = sorted(path for path in PLAY_SEEDS.iterdir()
                    if (path / "analysis.json").is_file()) if PLAY_SEEDS.is_dir() else []
     if name:
@@ -90,6 +93,9 @@ def find_seed(name: str | None, pack_path: Path | None = None) -> tuple[Path, di
         pack_path = pack_path.resolve()
         verify_pack(pack_path, seed_binding(folder))
         return folder, report, pack_path
+    if mods is not None:
+        from tools.play_mods import fresh_pack
+        return folder, report, fresh_pack(folder, mods, say=lambda text: print(text, flush=True))
     from tools.play_pack import outdated, selected_pack
     try:
         stale = outdated(selected_pack(folder))
@@ -339,7 +345,11 @@ def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = Fals
         connect: str | None = None, password: str | None = None, host: bool = False,
         aids: list[str] = (), damage: int = 1) -> None:
     """A session of the prepared seed `seed`, until Cemu closes."""
-    folder, report, pack = find_seed(seed, pack)
+    # The graphic packs of the player's own Cemu, copied into the profile; the
+    # seed pack is built over them (tools/play_mods.py).
+    from tools import play_mods, player_packs
+    mods = play_mods.prepare()
+    folder, report, pack = find_seed(seed, pack, mods)
     from tools.play_seed import hostable
     if not connect and not hostable(report):
         raise SystemExit("This seed was prepared from its slot file only: a local server needs "
@@ -354,18 +364,7 @@ def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = Fals
     source_saves_before = tree_hashes(source_saves)
     account = profile.ensure_play_account()
     portable = profile.prepare_play(pack)
-    # The graphic packs of the player's own Cemu (tools/player_packs.py), copied
-    # into the profile, but those the seed pack cannot run with.
-    from tools import player_packs
-    try:
-        mods = player_packs.enabled(profile.source_user_data(), profile.region().title)
-    except (OSError, KeyError, ValueError) as exc:
-        mods = []
-        print(f"Your Cemu's graphic packs could not be read: {exc}", flush=True)
-    ours = player_packs.seed_pack(pack)
-    kept, left = player_packs.carried(mods, ours)
-    mirrored = player_packs.mirror(kept, portable / "graphicPacks")
-    player_packs.enable(portable, mirrored)
+    player_packs.enable(portable, mods.entries)
     aid_packs = []
     if aids or damage > 1:
         from tools import play_aids
@@ -375,7 +374,7 @@ def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = Fals
         play_aids.enable(portable, aid_packs)
     packs = enabled_packs(portable)
     if packs != [f"graphicPacks/{profile.PACK_PREFIX}{pack.name}/rules.txt",
-                 *(entry["entry"] for entry in mirrored), *(entry["entry"] for entry in aid_packs)]:
+                 *(entry["entry"] for entry in mods.entries), *(entry["entry"] for entry in aid_packs)]:
         raise RuntimeError(f"the play profile loads something else: {packs}")
     game = profile.game()
     print(f"Play profile ready: seed {folder.name}, pack {pack.name}, account "
@@ -383,7 +382,7 @@ def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = Fals
           flush=True)
     if aid_packs:
         print("Test aids: " + ", ".join(entry["name"] for entry in aid_packs) + ".", flush=True)
-    print("\n".join(player_packs.report(mods, ours, left)), flush=True)
+    print("\n".join(player_packs.report(mods.found, player_packs.seed_pack(pack), mods.left)), flush=True)
     if journal:
         print("AP journal in the tip frame; try it: /ap-tip <text>.", flush=True)
     else:
@@ -401,7 +400,8 @@ def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = Fals
               "native_tip_channel": journal,
               "account": account, "graphic_packs": packs,
               "player_packs": [{"entry": mod.entry, "priority": mod.priority,
-                                "carried": mod.entry not in left} for mod in mods],
+                                "carried": mod.entry not in mods.left} for mod in mods.found],
+              "added_packs": [mod.entry for mod in mods.added], "mem2_end": mods.mem2_end,
               "play_saves_before": tree_hashes(play_saves), "status": "running"}
     # A hard crash of this console must land in the report: faulthandler
     # catches native faults, the hooks catch Python errors, and stderr is

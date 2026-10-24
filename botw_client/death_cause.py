@@ -23,13 +23,14 @@ came before (it is recognized by its flag instead, botw_patch/death_link.py).
 """
 from __future__ import annotations
 
+from tools.cemu.guest import in_guest, in_heap
+
 PLAYER_INFO = 0x10463F38           # PlayerInfo*; its player at + PLAYER_OFFSET
 PLAYER_OFFSET = 0x30
 ATTACKER = 0x974
 DEAD_CAUSE_QUERY = 0x02A6BC18
 DEAD_CAUSE_RAW = 0x02B72C30
 HEAT = 1                           # low 16 bits of the raw value
-GUEST = (0x10000000, 0x50000000)
 
 # Attackers without a name of their own in the game's texts, named as the actor
 # they stand for: the angry cuccos' attackers (the Cucco Swarm's too), the Yiga
@@ -52,10 +53,10 @@ def player(read) -> int | None:
         return int.from_bytes(raw, "big") if raw and len(raw) == 4 else None
 
     info = u32(PLAYER_INFO)
-    if not info or not GUEST[0] <= info < GUEST[1]:
+    if not in_heap(info):
         return None
     actor = u32(info + PLAYER_OFFSET)
-    return actor if actor and GUEST[0] <= actor < GUEST[1] else None
+    return actor if in_heap(actor) else None
 
 
 def attacker(read, actor: int | None) -> str | None:
@@ -64,7 +65,7 @@ def attacker(read, actor: int | None) -> str | None:
         return None
     raw = read(actor + ATTACKER, 4)
     text = int.from_bytes(raw, "big") if raw and len(raw) == 4 else 0
-    if not 0x01000000 <= text < GUEST[1]:
+    if not in_guest(text):
         return None
     name = (read(text, 96) or b"").split(b"\0")[0]
     try:

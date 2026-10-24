@@ -7,6 +7,7 @@ from unittest import mock
 
 from tests.test_play_pack import slot_file
 from tools import cemu_install, launcher
+from tools.play_mods import Mods
 
 
 class Answers:
@@ -38,8 +39,10 @@ class Folder(unittest.TestCase):
         self.addCleanup(temp.cleanup)
         self.root = Path(temp.name)
         self.seeds = self.root / "play-seeds"
+        # The player's Cemu runs no mod (tools/play_mods.py).
         for patcher in (mock.patch.object(launcher.play_seed, "PLAY_SEEDS", self.seeds),
-                        mock.patch.object(launcher.cemu_profile, "PROFILE", self.root / "profile")):
+                        mock.patch.object(launcher.cemu_profile, "PROFILE", self.root / "profile"),
+                        mock.patch("tools.play_mods.prepare", side_effect=lambda say=None: Mods([], {}))):
             patcher.start()
             self.addCleanup(patcher.stop)
 
@@ -109,8 +112,8 @@ class SeedTests(Folder):
                     mock.patch.object(launcher.play_seed, "refresh") as refresh:
                 ui = Answers(answers=["1"])
                 self.assertEqual(launcher.choose_seed(ui, None), "111")
-            refresh.assert_called_once_with(self.seeds / "111")
-            self.assertIn("for this version", ui.text())
+            refresh.assert_called_once_with(self.seeds / "111", [], 0x50000000)
+            self.assertIn("Building the game pack of seed 111 again", ui.text())
 
     def test_a_seed_of_a_newer_world_is_played_with_a_warning(self):
         folder = self.seed("111")
@@ -127,7 +130,7 @@ class SeedTests(Folder):
         ui = Answers(answers=["2"], files=[path])
         with mock.patch.object(launcher.play_seed, "prepare") as prepare:
             self.assertEqual(launcher.choose_seed(ui, None), "test-seed")
-        prepare.assert_called_once_with(path.resolve(), slot_name=None)
+        prepare.assert_called_once_with(path.resolve(), slot_name=None, layers=[], mem2_end=0x50000000)
 
     def test_a_dropped_file_already_prepared_is_not_built_again(self):
         path = slot_file(self.root, name="Zelda")
@@ -148,7 +151,7 @@ class SeedTests(Folder):
         ui = Answers(answers=["2"])
         with mock.patch.object(launcher.play_seed, "prepare") as prepare:
             launcher.prepare_file(ui, archive)
-        prepare.assert_called_once_with(archive.resolve(), slot_name="Bob")
+        prepare.assert_called_once_with(archive.resolve(), slot_name="Bob", layers=[], mem2_end=0x50000000)
 
     def test_another_file_is_refused(self):
         other = self.root / "notes.json"

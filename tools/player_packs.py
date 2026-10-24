@@ -22,8 +22,9 @@ The play profile then runs them too: carried() picks those a seed pack can
 run with, mirror() copies them into the profile's graphicPacks/AP_Player/,
 under the path they have in the player's Cemu (so Cemu walks them in the
 same order, after our AP_ packs), and enable() turns them on there with
-their presets. A pack that replaces a file the seed pack changes is not
-carried yet: the seed pack must first be built on top of it.
+their presets. The seed pack is built on top of the copies holding game
+files (layers(); tools/play_mods.py), with a priority above theirs, so that
+the file both change is the seed pack's, made from the mod's.
 """
 from __future__ import annotations
 
@@ -38,6 +39,7 @@ import sys
 import xml.etree.ElementTree as ET
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from tools.cemu import guest  # noqa: E402
 
 FOLDER = "graphicPacks"
 DEFAULT_PRIORITY = 100          # GraphicPack2::m_fs_priority
@@ -62,6 +64,9 @@ class PlayerPack:
     patches: tuple[str, ...]    # patch_*.asm, or patches.txt
     code: bool                  # it replaces files of code/
     patched: frozenset[int]     # addresses its patches write in our executable
+    ram: tuple[tuple[int, int], ...] = ()   # its [RAM] mappings (start, end): Extended Memory's
+    enabled: bool = True        # Cemu runs it (installed() lists the others too)
+    order: int = 0              # its place in the order Cemu loads the packs
 
     @property
     def path(self) -> str:
@@ -80,32 +85,88 @@ def uncommented(line: str) -> str:
     return line
 
 
-def definition(rules: Path) -> dict[str, str] | None:
-    """The options of the [Definition] section, names in lower case, or None
-    when Cemu would not load the pack (no such first section, no or an
-    outdated version)."""
-    section, options = None, {}
+def sections(rules: Path) -> list[tuple[str, dict[str, str]]]:
+    """The sections of a rules.txt in order: (name, options), option names in
+    lower case, the first of each name kept (IniParser.FindOption)."""
+    found: list[tuple[str, dict[str, str]]] = []
     for raw in rules.read_text(encoding="utf-8", errors="replace").splitlines():
         line = uncommented(raw).strip()
         if not line:
             continue
-        if line.startswith("[") and line.endswith("]"):
-            if section is not None:
-                break
-            section = line[1:-1].strip()
-            if section.lower() != "definition":
-                return None
+        if line.startswith("["):
+            end = line.find("]")
+            found.append(((line[1:end] if end > 0 else line[1:]).strip(), {}))
             continue
-        if section is None or "=" not in line:
+        if not found or "=" not in line:
             continue
         key, value = line.split("=", 1)
-        options.setdefault(key.strip().lower(), value.strip().strip('"'))
+        found[-1][1].setdefault(key.strip().lower(), value.strip().strip('"'))
+    return found
+
+
+def definition(rules: Path) -> dict[str, str] | None:
+    """The options of the [Definition] section, names in lower case, or None
+    when Cemu would not load the pack (no such first section, no or an
+    outdated version)."""
+    found = sections(rules)
+    if not found or found[0][0].lower() != "definition":
+        return None
+    options = found[0][1]
     try:
         if int(options.get("version", "")) <= LEGACY_VERSION:
             return None
     except ValueError:
         return None
     return options
+
+
+def ram_mappings(rules: Path) -> tuple[tuple[int, int], ...] | None:
+    """The memory ranges a pack's [RAM] sections map (mapping0..31: start-end),
+    as GraphicPack2 reads them; None when Cemu refuses the pack for them
+    (before version 6, a bad syntax, an end not after the start, not aligned
+    to 0x1000)."""
+    options = definition(rules)
+    if options is None:
+        return None
+    mappings = []
+    for name, values in sections(rules):
+        if name.lower() != "ram":
+            continue
+        for index in range(32):
+            value = values.get(f"mapping{index}")
+            if value is None:
+                continue
+            if int(options["version"]) <= 5:
+                return None
+            found = re.fullmatch(r"(0[xX][0-9a-fA-F]+|\d+)\s*-\s*(0[xX][0-9a-fA-F]+|\d+)", value.strip())
+            if not found:
+                return None
+            start, end = int(found[1], 0), int(found[2], 0)
+            if end <= start or start & 0xFFF or end & 0xFFF:
+                return None
+            mappings.append((start, end))
+    return tuple(mappings)
+
+
+def mem2_end(packs: list[PlayerPack]) -> int:
+    """Where the game's main memory ends with `packs` running (in the order
+    Cemu activates them): a mapping from MEM2's start moves its end, the last
+    one wins, and one past the overlay area is refused (memory_mapForCurrentTitle)."""
+    end = guest.MEM2_END
+    for pack in packs:
+        for start, stop in pack.ram:
+            if start == guest.MEM2_START and stop <= guest.MEM2_MAX_END:
+                end = stop
+    return end
+
+
+def memory_pack(packs: list[PlayerPack]) -> PlayerPack | None:
+    """An installed pack, not enabled, that gives the game more main memory
+    (Extended Memory, of Cemu's community packs), the one named so first."""
+    found = [pack for pack in packs if not pack.enabled
+             and mem2_end([pack]) > guest.MEM2_END and not pack.code]
+    found.sort(key=lambda pack: (pack.name.lower() != "extended memory", pack.order))
+    return found[0] if found else None
 
 
 def settings_entries(settings: Path) -> dict[str, tuple[bool, tuple[tuple[str, str], ...]]]:
@@ -157,34 +218,56 @@ def files(folder: Path) -> tuple[str, ...]:
     return tuple(sorted(out))
 
 
+def addresses(text: str, module: int = MODULE) -> set[int]:
+    """The addresses a patch file writes, in its sections for `module` (moduleMatches)."""
+    found = set()
+    for section in re.split(r"^\s*\[[^\]\n]*\]\s*$", text, flags=re.MULTILINE)[1:]:
+        matches = re.search(r"^\s*moduleMatches\s*=\s*([^\n;#]+)", section, re.MULTILINE)
+        if not matches:
+            continue
+        modules = {int(value.strip(), 16) for value in matches.group(1).split(",") if value.strip()}
+        if module not in modules:
+            continue
+        body = "\n".join(uncommented(line) for line in section.splitlines())
+        found |= {int(value, 16) for value in PATCH_LINE.findall(body)}
+    return found
+
+
 def patched_addresses(folder: Path, module: int = MODULE) -> frozenset[int]:
-    """The addresses the patch_*.asm of `folder` write, in their sections for
-    `module` (moduleMatches)."""
+    """The addresses the patch_*.asm of `folder` write for `module`."""
     found = set()
     for path in sorted(folder.glob("patch_*.asm")):
-        text = path.read_text(encoding="utf-8", errors="replace")
-        for section in re.split(r"^\s*\[[^\]\n]*\]\s*$", text, flags=re.MULTILINE)[1:]:
-            matches = re.search(r"^\s*moduleMatches\s*=\s*([^\n;#]+)", section, re.MULTILINE)
-            if not matches:
-                continue
-            modules = {int(value.strip(), 16) for value in matches.group(1).split(",") if value.strip()}
-            if module not in modules:
-                continue
-            body = "\n".join(uncommented(line) for line in section.splitlines())
-            found |= {int(value, 16) for value in PATCH_LINE.findall(body)}
+        found |= addresses(path.read_text(encoding="utf-8", errors="replace"), module)
+    return frozenset(found)
+
+
+def our_addresses() -> frozenset[int]:
+    """Every address a seed pack's patches may write (all options: the tower
+    maps add hooks), from the project's native sources."""
+    from tools import build_native_from_source as native
+    found = set()
+    for text in native.generate(resource_gate=True, event_gate=True, tower_maps=True).values():
+        found |= addresses(text if isinstance(text, str) else text.decode("utf-8"))
     return frozenset(found)
 
 
 def enabled(user_data: Path, title: str) -> list[PlayerPack]:
     """The graphic packs Cemu runs for `title` (the game's eight-digit low title
     id, 101c9400), in the order it activates them."""
+    return [pack for pack in installed(user_data, title) if pack.enabled]
+
+
+def installed(user_data: Path, title: str) -> list[PlayerPack]:
+    """Every graphic pack Cemu loads for `title`, enabled or not, in the order
+    it walks them."""
     root = user_data / FOLDER
     title_id = int("00050000" + title, 16)
     entries = settings_entries(user_data / "settings.xml")
     packs = []
-    for folder in pack_folders(root):
+    for order, folder in enumerate(pack_folders(root)):
         options = definition(folder / "rules.txt")
-        if options is None:
+        ram = ram_mappings(folder / "rules.txt")
+        if options is None or ram is None:
             continue
         try:
             titles = {int(value.strip(), 16) for value in options.get("titleids", "").split(",") if value.strip()}
@@ -195,8 +278,6 @@ def enabled(user_data: Path, title: str) -> list[PlayerPack]:
         entry = f"{FOLDER}/{folder.relative_to(root).as_posix()}/rules.txt"
         default = options.get("default", "").lower() in ("true", "1")
         disabled, presets = entries.get(entry, (not default, ()))
-        if disabled:
-            continue
         try:
             priority = int(options.get("fspriority", DEFAULT_PRIORITY))
         except ValueError:
@@ -207,7 +288,8 @@ def enabled(user_data: Path, title: str) -> list[PlayerPack]:
             folder=folder, entry=entry, name=options.get("name", folder.name),
             virtual_path=options.get("path", ""), priority=priority, default=default, presets=presets,
             content=files(folder / "content"), aoc=files(folder / "aoc"), patches=patches,
-            code=(folder / "code").is_dir(), patched=patched_addresses(folder)))
+            code=(folder / "code").is_dir(), patched=patched_addresses(folder), ram=ram,
+            enabled=not disabled, order=order))
     return packs
 
 
@@ -216,17 +298,17 @@ def shared_files(pack: PlayerPack, ours: dict) -> list[str]:
     return sorted(replaced & set(ours["files"]))
 
 
-def carried(packs: list[PlayerPack], ours: dict) -> tuple[list[PlayerPack], dict[str, str]]:
-    """The packs the play profile runs next to the seed pack `ours`, and why
-    each other one is left out (by entry)."""
+def carried(packs: list[PlayerPack], patched: frozenset[int]) -> tuple[list[PlayerPack], dict[str, str]]:
+    """The packs the play profile runs next to a seed pack whose patches may
+    write `patched` (our_addresses()), and why each other one is left out (by
+    entry). Game files shared with the seed pack are no reason: the seed pack
+    is built on top of them (layers())."""
     keep, left = [], {}
     for pack in packs:
         if pack.code:
             left[pack.entry] = "it replaces the game's executable"
-        elif pack.patched & ours["patched"]:
+        elif pack.patched & patched:
             left[pack.entry] = "it patches code the Archipelago pack needs"
-        elif shared_files(pack, ours):
-            left[pack.entry] = "it replaces files the Archipelago pack changes (not supported yet)"
         else:
             keep.append(pack)
     return keep, left
@@ -273,10 +355,30 @@ def mirror(packs: list[PlayerPack], graphic_packs: Path) -> list[dict]:
             state[path] = source
         entries.append({"entry": f"{FOLDER}/{MIRROR}/{path}/rules.txt", "source": pack.entry,
                         "name": pack.virtual_path or pack.name, "priority": pack.priority,
-                        "presets": [list(preset) for preset in pack.presets]})
+                        "presets": [list(preset) for preset in pack.presets],
+                        "fingerprint": source["fingerprint"], "game_files": bool(pack.content or pack.aoc)})
     root.mkdir(parents=True, exist_ok=True)
     state_path.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return entries
+
+
+def layers(entries: list[dict], graphic_packs: Path) -> list[dict]:
+    """The copies (mirror()) a seed pack is built over: those with game files,
+    as Cemu lets them win a file, the highest fsPriority first, then the first
+    loaded (the order of `entries`). folder: the copy; pack, priority and
+    fingerprint: what the seed pack's identity records."""
+    ordered = sorted((entry for entry in entries if entry["game_files"]),
+                     key=lambda entry: (-entry["priority"], entries.index(entry)))
+    return [{"folder": graphic_packs.parent / entry["entry"][:-len("/rules.txt")],
+             "pack": entry["entry"][len(FOLDER) + 1:-len("/rules.txt")],
+             "priority": entry["priority"], "fingerprint": entry["fingerprint"]} for entry in ordered]
+
+
+def layer(folder: Path) -> dict:
+    """A graphic pack folder as a layer (layers()), named after the folder: for builds by hand."""
+    options = definition(folder / "rules.txt") or {}
+    return {"folder": folder, "pack": folder.name, "fingerprint": fingerprint(folder),
+            "priority": int(options.get("fspriority", DEFAULT_PRIORITY))}
 
 
 def enable(portable: Path, entries: list[dict]) -> None:
@@ -311,7 +413,7 @@ def report(packs: list[PlayerPack], ours: dict | None = None, left: dict[str, st
         if ours is not None:
             shared = shared_files(pack, ours)
             if shared:
-                lines.append(f"      replaces {len(shared)} file(s) the Archipelago pack changes: "
+                lines.append(f"      the Archipelago pack is built on its version of {len(shared)} file(s): "
                              + ", ".join(shared[:6]) + (" ..." if len(shared) > 6 else ""))
             taken = sorted(pack.patched & ours["patched"])
             if taken:
@@ -345,4 +447,4 @@ if __name__ == "__main__":
     print(f"Cemu user folder: {user_data}")
     found = enabled(user_data, cemu_profile.region().title)
     ours = seed_pack(arguments.pack) if arguments.pack else None
-    print("\n".join(report(found, ours, carried(found, ours)[1] if ours else None)))
+    print("\n".join(report(found, ours, carried(found, our_addresses())[1])))

@@ -39,6 +39,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from botw_client import tip_protocol as tp  # noqa: E402
+from tools.cemu.guest import MEM2_END, below  # noqa: E402
 
 SYNC = ".int 0x7c0004ac"
 MFCR_R12 = ".int 0x7d800026"
@@ -86,7 +87,7 @@ def data_source() -> list[str]:
     return lines
 
 
-def submit_source() -> list[str]:
+def submit_source(mem2_end: int = MEM2_END) -> list[str]:
     """apTipSubmit: r3 = 1 accepted, 0 refused by the game, 2 busy, -1 invalid."""
     d = 31
     lines = ["apTipSubmit:", "stwu r1, -32(r1)", "mflr r0", "stw r0, 36(r1)",
@@ -98,8 +99,8 @@ def submit_source() -> list[str]:
               f"cmplwi r0, {tp.TEXT_UNITS}", "bgt apTipSubmitInvalid",
               # the live flag object: a guest pointer whose hash is the tip's key
               f"lwz r12, {o('flag_object')}(r31)", "lis r0, 0x1000", "cmplw r12, r0",
-              "blt apTipSubmitInvalid", "lis r0, 0x6000", "cmplw r12, r0",
-              "bge apTipSubmitInvalid", f"lwz r0, {tp.BOOL_HASH}(r12)",
+              "blt apTipSubmitInvalid", *below(mem2_end, "r12", "r0", "apTipSubmitInvalid", margin=0x40),
+              f"lwz r0, {tp.BOOL_HASH}(r12)",
               f"lwz r11, {o('flag_hash')}(r31)", "cmpw r0, r11", "bne apTipSubmitInvalid",
               # no tip queued nor on screen, the game's included: forced over
               # one, ours evicts it, and a tip the game keeps asking for (the
@@ -178,8 +179,9 @@ def frame_observer() -> list[str]:
         "apTipFrameEnd:", f"lwz r12, {o('cr')}(r11)", MTCRF_R12]
 
 
-def compose(native: str) -> str:
-    """The channel over a generated injection source (LF line ends)."""
+def compose(native: str, mem2_end: int = MEM2_END) -> str:
+    """The channel over a generated injection source (LF line ends), for a game
+    whose main memory ends at mem2_end (tools/cemu/guest.py)."""
     if "apTipData:" in native:
         raise ValueError("tip channel already composed")
     for hook in (FRAME_HOOK, TEXT_HOOK):
@@ -191,4 +193,4 @@ def compose(native: str) -> str:
     for site, label in ((tp.FRAME_SITE, "apTipsProbe1"), (tp.TEXT_SITE, "apTipsSpy")):
         if out.count(f"{site:#010x} = bla {label}") != 1:
             raise ValueError(f"hook {label} not set at {site:#010x}")
-    return out + "\n".join(data_source() + submit_source()) + "\n"
+    return out + "\n".join(data_source() + submit_source(mem2_end)) + "\n"

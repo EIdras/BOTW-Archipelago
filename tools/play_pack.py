@@ -45,14 +45,23 @@ def selections(seeds: Path) -> set[Path]:
     return found
 
 
-def outdated(pack: Path) -> list[str]:
+def outdated(pack: Path, layers: list[dict] | None = None, mem2_end: int | None = None) -> list[str]:
     """The sources that changed since the pack was built from them: a new
     version of the project builds it again; so does a profile switched to
-    another version of the game (tools/cemu_profile.py --region)."""
+    another version of the game (tools/cemu_profile.py --region), and, given
+    the graphic packs it must be built over now (`layers`,
+    tools/player_packs.py), a change of them, or of the end of the game's
+    main memory they give (`mem2_end`, tools/cemu/guest.py)."""
+    from tools.cemu.guest import MEM2_END
     from tools import cemu_profile
     manifest = json.loads((pack / "manifest.json").read_text(encoding="utf-8"))
     built_for = manifest.get("revision", "EUR v208").split()[0]
     changed = [] if built_for == cemu_profile.region().key else [f"built for the {built_for} version"]
+    if layers is not None and manifest.get("game_packs", []) != [
+            {key: layer[key] for key in ("pack", "priority", "fingerprint")} for layer in layers]:
+        changed.append("the mods it is built on")
+    if mem2_end is not None and manifest.get("mem2_end", MEM2_END) != mem2_end:
+        changed.append("the game's memory")
     for name, recorded in sorted(manifest.get("source_hashes", {}).items()):
         path = ROOT / name
         if not path.is_file() or digest(path.read_bytes()) != recorded:

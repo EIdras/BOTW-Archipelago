@@ -28,7 +28,10 @@ REWRITTEN = (".bfevfl",)
 
 
 class ModConflict(ValueError):
-    pass
+    def __init__(self, message: str, pack: Path | None = None, member: str = ""):
+        super().__init__(message)
+        self.pack = pack            # the graphic pack folder that changes it
+        self.member = member
 
 
 def dlc_reader(aoc: GameFiles | Path) -> Callable[[str], bytes]:
@@ -178,7 +181,7 @@ class GameFiles:
     @staticmethod
     def conflict(pack: Path, archive: str, member: str) -> ModConflict:
         return ModConflict(f"the graphic pack {pack.name} changes {member} in {archive}, which Archipelago "
-                           "changes too: turn that mod off for the Archipelago game")
+                           "changes too: turn that mod off for the Archipelago game", pack, member)
 
     def read(self, name: str) -> bytes:
         found = self._locate(name, False)

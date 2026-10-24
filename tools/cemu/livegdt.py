@@ -45,6 +45,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from winmem import Process
 from mailbox import be, cemu_pid, find_cave, guest_base
 from gdt_index import load_flags
+from guest import in_heap
 
 GDT_MGR_PTR = 0x1046D5B0
 
@@ -88,7 +89,7 @@ class LiveGdt:
         self.p = p
         self.base = base
         mgr = read_u32(p, base + GDT_MGR_PTR, "GameDataMgr")
-        if not (0x10000000 <= mgr < 0x60000000):
+        if not in_heap(mgr):
             raise RuntimeError(f"invalid GameDataMgr ({mgr:#010x}) - is a save loaded?")
         self.mgr = mgr
         tp_ptr = read_u32(p, base + mgr + 0x710, "TriggerParam pointer")
@@ -106,13 +107,13 @@ class LiveGdt:
             array = read_u32(
                 self.p, self.base + self.tp + layout["array"],
                 f"{kind} array")
-            if not count or not (0x10000000 <= array < 0x60000000):
+            if not count or not in_heap(array):
                 continue
             raw = self.p.read(self.base + array, count * 4)
             if not raw or len(raw) != count * 4:
                 continue
             ptrs = struct.unpack(f">{count}I", raw)
-            valid = [q for q in ptrs if 0x10000000 <= q < 0x60000000]
+            valid = [q for q in ptrs if in_heap(q)]
             if not valid:
                 continue
             low, high = min(valid), max(valid) + layout["size"]

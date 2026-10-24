@@ -5,6 +5,7 @@ action leave, NEVER permission to reuse the text buffer or deliver another item.
 """
 from botw_patch.message_flow import MARKER
 from tools.build_owned_presentation import ints, lock, unlock
+from tools.cemu.guest import MEM2_END, below
 
 # All replaced instructions are non-linking except the leaf return, which is
 # replayed as a return after instrumentation. No existing AP hook is replaced.
@@ -41,8 +42,7 @@ def source():
             '.int 0x7c000026', 'stw r0, 28(r1)'] + pointer('apMessageData', 11)
         if kind == 'Bind':
             lines += ['lwz r12, 16(r26)', 'lis r10, 0x0100', 'cmplw r12, r10',
-                f'blt {label}Done', 'lis r10, 0x5fff', 'ori r10, r10, 0xffc0',
-                'cmplw r12, r10', f'bge {label}Done']
+                f'blt {label}Done', *below(MEM2_END, 'r12', 'r10', f'{label}Done', margin=0x40)]
             for i, byte in enumerate(MARKER.encode() + b'\0'):
                 lines += [f'lbz r0, {i}(r12)', f'cmpwi r0, {byte}', f'bne {label}Done']
             # Resolve a known vanilla carrier even when no request is armed.

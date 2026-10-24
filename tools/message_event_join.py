@@ -7,6 +7,7 @@ is composed by message_submission; companion integration remains required.
 """
 from botw_patch.message_flow import FLOW, ENTRY
 from tools.build_owned_presentation import lock, unlock
+from tools.cemu.guest import MEM2_END, below
 
 
 def pointer(label, reg=10):
@@ -36,8 +37,7 @@ def callbacks():
             lines += ['cmpwi r3, 0', f'beq {label}Done']
             for offset, text in ((0x24, FLOW), (0x70, ENTRY)):
                 lines += [f'lwz r12, {offset}(r30)', 'lis r0, 0x0100', 'cmplw r12, r0',
-                    f'blt {label}Done', 'lis r0, 0x5fff', 'ori r0, r0, 0xffc0',
-                    'cmplw r12, r0', f'bge {label}Done']
+                    f'blt {label}Done', *below(MEM2_END, 'r12', 'r0', f'{label}Done', margin=0x40)]
                 for i, byte in enumerate(text.encode() + b'\0'):
                     lines += [f'lbz r0, {i}(r12)', f'cmpwi r0, {byte}', f'bne {label}Done']
         else:

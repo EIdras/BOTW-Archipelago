@@ -22,6 +22,8 @@ from dataclasses import dataclass, field
 import time
 import zlib
 
+from tools.cemu.guest import in_heap
+
 SELECTION_GLOBAL = 0x10463798
 REQUEST_FUNCTION = 0x02A2D6D4
 FIELDS = {"flags_4c": 0x4C, "flags_50": 0x50, "requested": 0x1D0,
@@ -33,7 +35,6 @@ EQUIP_HASH = zlib.crc32(EQUIP_FLAG.encode()) & 0xFFFFFFFF
 # with it in hand, 07/10), selected only when no rune is (select_if_none).
 MOTORCYCLE = 6
 RUNE_TYPES = frozenset(range(5)) | {MOTORCYCLE}
-_HEAP = range(0x10000000, 0x50000000)
 
 
 def _signed(value: int) -> int:
@@ -85,7 +86,7 @@ def read_state(read_u32) -> SelectionState | None:
     """
     def once():
         pointer = read_u32(SELECTION_GLOBAL)
-        if pointer not in _HEAP:
+        if not in_heap(pointer):
             return None
         raw = {name: read_u32(pointer + offset) for name, offset in FIELDS.items()}
         return SelectionState(

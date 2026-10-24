@@ -6,6 +6,7 @@ import io
 import json
 from pathlib import Path
 import platform
+from typing import Sequence
 import sys
 import tempfile
 import zipfile
@@ -17,6 +18,7 @@ from botw_client import regions
 from botw_client.paths import DATA
 from botw_client.session import session_token
 from tools import build_native_from_source as native
+from tools.cemu.guest import MEM2_END
 from tools import build_resources_from_source as resources
 from botw_patch.game_files import GameFiles
 from tools.build_resources_from_source import digest, encode
@@ -27,14 +29,17 @@ RULES = (
     'description = The game pack of one Archipelago seed\n'
     'version = 7\nfsPriority = 2000\n'
 ).encode("utf-8")
+PRIORITY = 2000                 # RULES' fsPriority; above the player's packs a pack is built over
 # Packs built before the description changed stay valid.
 EARLIER_RULES = RULES.replace(b"The game pack of one Archipelago seed",
                               b"Native delivery and source reward replacement validation")
 
 
-def rules(region: regions.Region = regions.EUR) -> bytes:
-    """The pack's rules.txt, for the game of its version (botw_client/regions.py)."""
-    return RULES.replace(regions.EUR.title_id().encode(), region.title_id().encode())
+def rules(region: regions.Region = regions.EUR, priority: int = PRIORITY) -> bytes:
+    """The pack's rules.txt, for the game of its version (botw_client/regions.py),
+    at the fsPriority that wins the files it shares with the packs it is built over."""
+    return RULES.replace(regions.EUR.title_id().encode(), region.title_id().encode()).replace(
+        f"fsPriority = {PRIORITY}\n".encode(), f"fsPriority = {priority}\n".encode())
 
 
 def _region(manifest: dict) -> regions.Region:
@@ -169,7 +174,9 @@ def verify_pack(pack: Path, binding: dict | None = None) -> dict:
     catalog = json.loads((pack / "delivery_catalog.json").read_text(encoding="utf-8"))
     if catalog["binding"]["seed_token"] != manifest["seed_binding"]["token"]:
         raise ValueError("pack catalog binding mismatch")
-    accepted = (RULES, EARLIER_RULES) if _region(manifest) is regions.EUR else (rules(_region(manifest)),)
+    priority = manifest.get("fs_priority", PRIORITY)
+    accepted = (RULES, EARLIER_RULES) if _region(manifest) is regions.EUR and priority == PRIORITY \
+        else (rules(_region(manifest), priority),)
     if (pack / "rules.txt").read_bytes() not in accepted:
         raise ValueError("pack rules mismatch")
     return manifest
@@ -178,11 +185,15 @@ def verify_pack(pack: Path, binding: dict | None = None) -> dict:
 def build(content: Path, rpx: Path, report: Path, slot: int, output: Path, *,
           archive: Path | None = None, diagnostics: bool = True,
           resource_gate: bool = False, event_gate: bool = False, progress=None,
-          packs: tuple[Path, ...] = ()) -> Path:
+          layers: Sequence[dict] = (), mem2_end: int = MEM2_END) -> Path:
     """progress: called with (step, steps, name) as each step of the build starts.
-    packs: graphic pack folders laid over the update and the DLC, the winning
-    one first (botw_patch/game_files.py): the pack is built from what the game
-    loads with them."""
+    layers: the graphic packs laid over the update and the DLC, the winning one
+    first (tools/player_packs.py layers(): folder, pack, priority, fingerprint):
+    the pack is built from what the game loads with them
+    (botw_patch/game_files.py), wins the files it shares with them (its
+    fsPriority is above theirs) and records them in its identity.
+    mem2_end: where the game's main memory ends with the packs it runs with
+    (tools/cemu/guest.py): its code follows no pointer beyond."""
     binding, slot_data = _verified_seed(report, slot, archive)
     from botw_patch.shops import plan_from_manifest
     shops = plan_from_manifest(slot_data)
@@ -200,10 +211,11 @@ def build(content: Path, rpx: Path, report: Path, slot: int, output: Path, *,
         work = Path(temp)
         step(names[0])
         native_dir = native.build(rpx, work / "native", resource_gate=resource_gate, event_gate=event_gate,
-                                  tower_maps=bool(slot_data.get("slot_data", {}).get("tower_maps")))
+                                  tower_maps=bool(slot_data.get("slot_data", {}).get("tower_maps")),
+                                  mem2_end=mem2_end)
         game = resources.game_files(content)
-        if packs:
-            game = GameFiles(game.content, game.aoc, packs)
+        if layers:
+            game = GameFiles(game.content, game.aoc, [layer["folder"] for layer in layers])
         resource_dir = resources.build(game, work / "resources", binding_token=binding["token"],
                                        shops=shops, status=slot_data, progress=step)
         nm = json.loads((native_dir / "manifest.json").read_text(encoding="utf-8"))
@@ -215,7 +227,8 @@ def build(content: Path, rpx: Path, report: Path, slot: int, output: Path, *,
                 files[Path(name).name] = (native_dir / name).read_bytes()
         files["delivery_catalog.json"] = (resource_dir / "delivery_catalog.json").read_bytes()
     region = regions.by_key(rm["revision"].split()[0])
-    files["rules.txt"] = rules(region)
+    priority = max([PRIORITY, *(layer["priority"] + 1 for layer in layers)])
+    files["rules.txt"] = rules(region, priority)
     step(names[-1])
     sources = {**nm["source_hashes"], **rm["source_hashes"]}
     for name in ("tools/build_pack_from_source.py", "botw_client/session.py"):
@@ -250,6 +263,12 @@ def build(content: Path, rpx: Path, report: Path, slot: int, output: Path, *,
     if shops:       # only then, so that seeds without shops keep their pack identity
         manifest["shops"] = rm["shops"]
     manifest["quest"] = rm["quest"]
+    if layers:      # only then, so that packs built on the game alone keep their identity
+        manifest["game_packs"] = [{key: layer[key] for key in ("pack", "priority", "fingerprint")}
+                                  for layer in layers]
+        manifest["fs_priority"] = priority
+    if mem2_end != MEM2_END:    # only then, likewise: Extended Memory moves it
+        manifest["mem2_end"] = mem2_end
     build_id = digest(encode(manifest))[:16]
     manifest["build_id"] = build_id
     files["manifest.json"] = encode(manifest)
@@ -282,6 +301,8 @@ if __name__ == "__main__":
     parser.add_argument("--pack", type=Path, action="append", default=[],
                         help="a graphic pack laid over the update and the DLC (repeat, the winning one first)")
     args = parser.parse_args()
+    from tools.player_packs import layer
     print(build(args.content, args.rpx, args.report, args.slot, args.output,
                 archive=args.archive, diagnostics=not args.without_diagnostics,
-                resource_gate=args.resource_gate, event_gate=args.event_gate, packs=tuple(args.pack)))
+                resource_gate=args.resource_gate, event_gate=args.event_gate,
+                layers=[layer(folder) for folder in args.pack]))

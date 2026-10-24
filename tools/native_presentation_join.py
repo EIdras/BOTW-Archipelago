@@ -1,5 +1,6 @@
 """Native join of executor retirement and action leave, under the owner lock."""
 from tools.build_event_end_trace import SITES
+from tools.cemu.guest import MEM2_END, below
 
 
 def pointer(label, reg=10):
@@ -19,7 +20,7 @@ def finish(label):
     return lines
 
 
-def extend(source, *, retired_guard=False):
+def extend(source, *, retired_guard=False, mem2_end=MEM2_END):
     from tools.build_owned_presentation import lock, unlock, clear_text, phase
     source=source.replace('.int 0x41504f57\n.int 1', '.int 0x41504f57\n.int 2',1)
     anchor='lwz r9, 12(r31)\ncmpwi r9, -1'
@@ -50,7 +51,7 @@ def extend(source, *, retired_guard=False):
             lines += ['cmpwi r3, 0',f'beq {label}Done']
             for offset,text in ((0x24,'Demo007_1'),(0x70,'APDisplayStandalone')):
                 lines += [f'lwz r12, {offset}(r30)','lis r0, 0x0100','cmplw r12, r0',f'blt {label}Done',
-                    'lis r0, 0x5fff','ori r0, r0, 0xffc0','cmplw r12, r0',f'bge {label}Done']
+                    *below(mem2_end, 'r12', 'r0', f'{label}Done', margin=0x40)]
                 for n,byte in enumerate(text.encode()+b'\0'):
                     lines += [f'lbz r0, {n}(r12)',f'cmpwi r0, {byte}',f'bne {label}Done']
         else:

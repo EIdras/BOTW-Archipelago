@@ -17,6 +17,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:] = [str(ROOT)] + [p for p in sys.path
                             if Path(p).resolve() != ROOT / 'tools']
 
+from tools.cemu.guest import MEM2_END  # noqa: E402
+
 RPX_SHA256 = 'ba58da5b95ce929e005d058ceb08b9b2788d1ab2bbc8a6c189bbadca0bb34d30'
 SOURCE_FILES = (
     'native/cemu/legacy/patch_apInject.asm', 'native/cemu/ui_close_trace.asm',
@@ -27,7 +29,7 @@ SOURCE_FILES = (
     'tools/build_event_request_trace.py', 'tools/build_ui_lifecycle.py',
     'tools/build_request_reject_trace.py', 'tools/build_tip_channel.py',
     'botw_client/tip_protocol.py', 'tools/build_tower_maps_native.py',
-    'tools/build_weather_native.py',
+    'tools/build_weather_native.py', 'tools/cemu/guest.py',
 )
 
 
@@ -39,11 +41,13 @@ def encode(data):
     return (json.dumps(data, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode('utf-8')
 
 
-def generate(*, resource_gate=False, event_gate=False, tower_maps=False):
+def generate(*, resource_gate=False, event_gate=False, tower_maps=False, mem2_end=MEM2_END):
     """Pure native assembly generation; no dump, candidate or Cemu access.
     tower_maps: the seed's maps are items, the towers' icons read APTower_NN
     (tools/build_tower_maps_native.py; the map opening's fallback is in every pack).
-    The weather hold of the Downpour trap is in every pack (tools/build_weather_native.py)."""
+    The weather hold of the Downpour trap is in every pack (tools/build_weather_native.py).
+    mem2_end: where the game's main memory ends (tools/cemu/guest.py): the code follows
+    no pointer beyond (Extended Memory moves it, tools/player_packs.py mem2_end())."""
     from tools.build_scoped_text import scoped_source
     from tools.build_owned_presentation import patch_native, owner_source
     from tools.build_rune_selection_sync import patch_injection as rune
@@ -60,11 +64,12 @@ def generate(*, resource_gate=False, event_gate=False, tower_maps=False):
         raise ValueError('owner source is not unique')
     # The owner of the played packs (retired guard, optional gates).
     injection = injection.replace(current_owner,
-        owner_source(2, retired_guard=True, resource_gate=resource_gate, event_gate=event_gate))
+        owner_source(2, retired_guard=True, resource_gate=resource_gate, event_gate=event_gate,
+                     mem2_end=mem2_end))
     injection = restore(heart(rune(injection)))
     # The AP journal in the game's tip frame.
     from tools.build_tip_channel import compose as tip_channel
-    injection = tip_channel(injection)
+    injection = tip_channel(injection, mem2_end)
     from tools.build_tower_maps_native import patch_injection as tower_maps_stage
     injection = tower_maps_stage(injection, icons=tower_maps)
     # The Downpour trap's weather, held frame after frame (in every pack).
@@ -83,11 +88,13 @@ def generate(*, resource_gate=False, event_gate=False, tower_maps=False):
     }
 
 
-def build(rpx: Path, output: Path, *, resource_gate=False, event_gate=False, tower_maps=False) -> Path:
+def build(rpx: Path, output: Path, *, resource_gate=False, event_gate=False, tower_maps=False,
+          mem2_end=MEM2_END) -> Path:
     raw = rpx.read_bytes()
     if digest(raw) != RPX_SHA256:
         raise ValueError('incompatible RPX: provide the verified Wii U EUR v208 dump')
-    files = generate(resource_gate=resource_gate, event_gate=event_gate, tower_maps=tower_maps)
+    files = generate(resource_gate=resource_gate, event_gate=event_gate, tower_maps=tower_maps,
+                     mem2_end=mem2_end)
     source_hashes = {name: digest((ROOT / name).read_bytes()) for name in SOURCE_FILES}
     hashes = {name: digest(data) for name, data in sorted(files.items())}
     manifest = {
@@ -98,7 +105,7 @@ def build(rpx: Path, output: Path, *, resource_gate=False, event_gate=False, tow
         'options': {'owned_presentation': 2, 'retired_executor_guard': True,
                     'tip_channel': True,
                     'resource_gate': resource_gate, 'event_gate': event_gate, 'gameplay_aids': False,
-                    'tower_map_icons': tower_maps},
+                    'tower_map_icons': tower_maps, 'mem2_end': mem2_end},
         'runtime_files': sorted(n for n in files if n.startswith('runtime/')),
         'optional_diagnostics': sorted(n for n in files if n.startswith('diagnostics/')),
         'limits': ['resources_and_seed_binding_not_built',

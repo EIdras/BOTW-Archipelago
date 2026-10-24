@@ -166,7 +166,8 @@ class PreparationTests(unittest.TestCase):
                 result = play_seed.prepare(archive, content=root / "dump", rpx=root / "game.rpx")
                 build.assert_called_once_with(root / "dump", root / "game.rpx", report, 1,
                                                play_seed.PACKS,
-                                               resource_gate=True, event_gate=True, progress=ANY)
+                                               resource_gate=True, event_gate=True, layers=(),
+                                               mem2_end=0x50000000, progress=ANY)
                 select.assert_called_once_with(folder, root / "pack")
                 self.assertEqual(result, (report, root / "pack"))
             self.assertEqual(report.read_bytes(), original)
@@ -273,7 +274,8 @@ class VersionTests(unittest.TestCase):
                         patch("tools.play_pack.selections", return_value=used), \
                         patch.object(play_seed, "prepare", return_value=(None, new)) as prepare:
                     self.assertEqual(play_seed.refresh(folder), new)
-                    prepare.assert_called_once_with(folder / "AP.zip", slot_name="Zelda")
+                    prepare.assert_called_once_with(folder / "AP.zip", slot_name="Zelda", layers=(),
+                                                    mem2_end=0x50000000)
                     self.assertEqual(old.exists(), bool(used))
 
 

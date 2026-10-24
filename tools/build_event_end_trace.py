@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.build_ui_lifecycle import trace_source as lifecycle_source
 from tools.build_owned_presentation import Rpx
+from tools.cemu.guest import MEM2_END, below
 
 SOURCE = ROOT / '.build/ledger-validation/314914ec4d35a853'
 OWNER = 25187360  # Verified immutable 6aa layout; checked again on startup.
@@ -52,7 +53,7 @@ def trace_source():
             for field, dest in ((0x24 if index == 1 else 0x34,64), (0x70 if index == 1 else 0x80,128)):
                 done = f'{label}String{dest}Done'
                 extra += [f'lwz r12, {field}(r30)', 'lis r0, 0x0100', 'cmplw r12, r0', f'blt {done}',
-                          'lis r0, 0x5fff', 'ori r0, r0, 0xffc0', 'cmplw r12, r0', f'bge {done}']
+                          *below(MEM2_END, 'r12', 'r0', done, margin=0x40)]
                 for byte in range(63):
                     extra += [f'lbz r0, {byte}(r12)', f'stb r0, {dest+byte}(r10)', 'cmpwi r0, 0', f'beq {done}']
                 extra += [done+':']

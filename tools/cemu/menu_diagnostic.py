@@ -2,6 +2,7 @@
 import json
 import time
 from tools.cemu.getdemo_state import SCR_PTR
+from tools.cemu.guest import in_guest
 
 
 def inventory_state(catalog):
@@ -54,7 +55,7 @@ def wait_for_inventory(process, base, path, timeout=90, menu_kind=None):
 
 def screens(process, base):
     def read(address, size):
-        if not 0x01000000 <= address < 0x60000000:
+        if not in_guest(address):
             raise ValueError("invalid screen pointer")
         data = process.read(base + address, size)
         if data is None or len(data) != size:

@@ -52,6 +52,8 @@ import struct
 import time
 from typing import Callable
 
+from tools.cemu.guest import in_heap
+
 from .cucco_swarm import (CREATOR, HEAP_HOLDER, NEW_IN_HEAP, PACK_ADD, PACK_CTOR, PLAYER_INFO,
                           REQUEST_CREATE, SAFESTRING_VTABLE)
 
@@ -181,7 +183,7 @@ class Paranoia:
     def delta(self) -> float | None:
         """The game's delta per frame, in frames of 1/30 s, or None."""
         vfr = self.u32(VFR)
-        raw = self.read(vfr + VFR_DELTA, 4) if vfr and 0x10000000 <= vfr < 0x50000000 else None
+        raw = self.read(vfr + VFR_DELTA, 4) if in_heap(vfr) else None
         if not raw or len(raw) != 4:
             return None
         value = struct.unpack(">f", raw)[0]

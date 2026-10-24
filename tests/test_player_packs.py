@@ -105,7 +105,7 @@ class PlayerPacksTest(unittest.TestCase):
                                                 "patched": frozenset({0x031FA97C})})
         text = "\n".join(lines)
         self.assertIn("2 graphic pack(s)", text)
-        self.assertIn("replaces 1 file(s) the Archipelago pack changes: content/Pack/Bootup.pack", text)
+        self.assertIn("the Archipelago pack is built on its version of 1 file(s): content/Pack/Bootup.pack", text)
         self.assertIn("patches the same code as the Archipelago pack: 0x031FA97C", text)
         self.assertEqual(pp.report([]), ["Your Cemu runs no graphic pack for Breath of the Wild."])
 
@@ -121,14 +121,54 @@ class PlayerPacksTest(unittest.TestCase):
         for path in ("graphics", "mods", "fps", "exe"):
             self.cemu.entry(path)
         packs = self.cemu.enabled()
-        kept, left = pp.carried(packs, {"files": {"content/Pack/Bootup.pack"},
-                                        "patched": frozenset({0x031FA97C})})
-        self.assertEqual([pack.path for pack in kept], ["graphics"])
+        kept, left = pp.carried(packs, frozenset({0x031FA97C}))
+        # Game files are no reason: the seed pack is built on top of them.
+        self.assertEqual([pack.path for pack in kept], ["graphics", "mods"])
         self.assertEqual(left, {"graphicPacks/exe/rules.txt": "it replaces the game's executable",
-                                "graphicPacks/fps/rules.txt": "it patches code the Archipelago pack needs",
-                                "graphicPacks/mods/rules.txt":
-                                    "it replaces files the Archipelago pack changes (not supported yet)"})
-        self.assertIn("The Archipelago game runs 1 of them.", pp.report(packs, None, left))
+                                "graphicPacks/fps/rules.txt": "it patches code the Archipelago pack needs"})
+        self.assertIn("The Archipelago game runs 2 of them.", pp.report(packs, None, left))
+
+    def test_our_addresses_hold_the_per_frame_hook(self):
+        self.assertIn(0x031FA97C, pp.our_addresses())
+
+    def test_ram_mappings_as_cemu_reads_them(self):
+        memory = "[RAM]\nmapping0 = 0x10000000-0xA0000000 # extend MEM2\nmapping1 = 0xA0000000-0xE0000000\n"
+        self.cemu.pack("memory", version="6", extra="\n" + memory)
+        self.cemu.pack("old", version="5", extra="\n" + memory)                 # [RAM] needs version 6
+        self.cemu.pack("bad", extra="\n[RAM]\nmapping0 = 0x10000000 to 0xA0000000\n")
+        self.cemu.pack("unaligned", extra="\n[RAM]\nmapping0 = 0x10000000-0xA0000800\n")
+        self.cemu.pack("plain")
+        packs = {pack.folder.name: pack for pack in pp.installed(self.cemu.user, TITLE)}
+        self.assertEqual(sorted(packs), ["memory", "plain"])      # Cemu loads neither of the others
+        self.assertEqual(packs["memory"].ram, ((0x10000000, 0xA0000000), (0xA0000000, 0xE0000000)))
+        self.assertEqual((packs["memory"].enabled, packs["plain"].ram), (False, ()))
+
+    def test_where_main_memory_ends(self):
+        def ram(name, *mappings, enabled=True, order=0):
+            return pp.PlayerPack(folder=Path(name), entry=f"graphicPacks/{name}/rules.txt", name=name,
+                                 virtual_path="", priority=100, default=False, presets=(), content=(), aoc=(),
+                                 patches=(), code=False, patched=frozenset(), ram=mappings, enabled=enabled,
+                                 order=order)
+        self.assertEqual(pp.mem2_end([]), 0x50000000)
+        extended = ram("Extended Memory", (0x10000000, 0xA0000000), (0xA0000000, 0xE0000000))
+        self.assertEqual(pp.mem2_end([extended]), 0xA0000000)
+        self.assertEqual(pp.mem2_end([extended, ram("less", (0x10000000, 0x70000000))]), 0x70000000)  # last wins
+        self.assertEqual(pp.mem2_end([ram("overlap", (0x10000000, 0xB0000000))]), 0x50000000)   # refused
+        self.assertEqual(pp.mem2_end([ram("other", (0xA0000000, 0xE0000000))]), 0x50000000)
+        other = ram("Another", (0x10000000, 0x80000000), enabled=False, order=1)
+        off = ram("Extended Memory", (0x10000000, 0xA0000000), enabled=False, order=5)
+        self.assertIs(pp.memory_pack([other, off]), off)          # the community one, by its name
+        self.assertIs(pp.memory_pack([other]), other)
+        self.assertIsNone(pp.memory_pack([extended]))               # already running: nothing to add
+
+    def test_layers_as_cemu_lets_them_win(self):
+        root = Path(self.temp.name) / "profile/graphicPacks"
+        entry = lambda path, priority, files=True: {"entry": f"graphicPacks/AP_Player/{path}/rules.txt",
+                                                    "priority": priority, "fingerprint": path, "game_files": files}
+        entries = [entry("a", 100), entry("b", 9999), entry("c", 100), entry("graphics", 5000, files=False)]
+        self.assertEqual([(layer["pack"], layer["priority"]) for layer in pp.layers(entries, root)],
+                         [("AP_Player/b", 9999), ("AP_Player/a", 100), ("AP_Player/c", 100)])
+        self.assertEqual(pp.layers(entries, root)[0]["folder"], root / "AP_Player/b")
 
     def test_mirror_copies_keeps_and_cleans(self):
         source = self.cemu.pack("community/Graphics", files={"content/a.bin": b"1"})
@@ -140,7 +180,8 @@ class PlayerPacksTest(unittest.TestCase):
         self.assertEqual(entries, [{"entry": "graphicPacks/AP_Player/community/Graphics/rules.txt",
                                     "source": "graphicPacks/community/Graphics/rules.txt",
                                     "name": "BOTW/community/Graphics", "priority": pp.DEFAULT_PRIORITY,
-                                    "presets": [["Resolution", "2K"]]}])
+                                    "presets": [["Resolution", "2K"]], "fingerprint": pp.fingerprint(source),
+                                    "game_files": True}])
         self.assertEqual((target / "content/a.bin").read_bytes(), b"1")
         marker = target / "kept"                    # an unchanged source keeps its copy
         marker.write_bytes(b"")

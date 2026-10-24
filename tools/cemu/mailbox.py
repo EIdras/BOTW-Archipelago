@@ -15,6 +15,7 @@ import time
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from winmem import Process
+from guest import in_guest
 
 MAGIC = b"APMBOX01\x00"
 VERSION = 0x0BADF00E
@@ -1205,13 +1206,13 @@ class Cave:
             return None
         # the cave lives around 0x01800000, the game's heap at 0x10000000+:
         # accept both, otherwise a name given by ourselves is unreadable
-        if not (0x01000000 <= name_ptr < 0x50000000):
+        if not in_guest(name_ptr):
             return None
         raw = self.p.read(self.base + name_ptr, 4)
         if not raw:
             return None
         cstr = be(raw)
-        if not (0x01000000 <= cstr < 0x50000000):
+        if not in_guest(cstr):
             return None
         buf = self.p.read(self.base + cstr, 64)
         if not buf:

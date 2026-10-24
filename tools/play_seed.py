@@ -47,6 +47,7 @@ os.environ["SKIP_REQUIREMENTS_UPDATE"] = "1"
 sys.path.insert(0, str(ROOT))
 
 from botw_client.paths import BUILD, DATA  # noqa: E402
+from tools.cemu.guest import MEM2_END  # noqa: E402
 
 # The Archipelago runtime of a source checkout, to read a seed's zip.
 sys.path.insert(0, str(BUILD / "ap-runtime"))
@@ -193,7 +194,10 @@ def game_update() -> tuple[Path, Path]:
 
 
 def prepare(source: Path, *, content: Path | None = None, rpx: Path | None = None,
-            slot_name: str | None = None) -> tuple[Path, Path]:
+            slot_name: str | None = None, layers: list[dict] = (),
+            mem2_end: int = MEM2_END) -> tuple[Path, Path]:
+    # layers: the player's graphic packs the pack is built over, mem2_end: the end of the
+    # game's main memory with them (tools/play_mods.py, tools/cemu/guest.py).
     if (content is None) != (rpx is None):
         raise ValueError("name both --content and --rpx, or neither")
     if content is None:
@@ -222,7 +226,8 @@ def prepare(source: Path, *, content: Path | None = None, rpx: Path | None = Non
                 "archive": str(archive), "archive_sha256": sha(archive),
                 "audit": audit, "delivery": {"sessions": {str(slot): identity}}}
         report.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    pack = build(content, rpx, report, slot, PACKS, resource_gate=True, event_gate=True,
+    pack = build(content, rpx, report, slot, PACKS, resource_gate=True, event_gate=True, layers=layers,
+                 mem2_end=mem2_end,
                  progress=lambda step, steps, name: print(f"  [{step}/{steps}] {name}", flush=True))
     select_pack(folder, pack)
     from botw_client.gamedata_table import build as build_gamedata_table
@@ -230,9 +235,10 @@ def prepare(source: Path, *, content: Path | None = None, rpx: Path | None = Non
     return report, pack
 
 
-def refresh(folder: Path) -> Path:
+def refresh(folder: Path, layers: list[dict] = (), mem2_end: int = MEM2_END) -> Path:
     """Build the pack of a prepared seed again, from its own copy of the seed
-    and the current sources; the pack it replaces goes when no seed uses it."""
+    and the current sources, over the player's graphic packs `layers`
+    (tools/play_mods.py); the pack it replaces goes when no seed uses it."""
     from tools.play_pack import selected_pack, selections
     report = json.loads((folder / "analysis.json").read_text(encoding="utf-8"))
     try:
@@ -240,7 +246,7 @@ def refresh(folder: Path) -> Path:
     except (OSError, ValueError, RuntimeError):
         previous = None
     slot_name = report["audit"]["slots"][str(report.get("botw_slot", 1))]
-    _, pack = prepare(Path(report["archive"]), slot_name=slot_name)
+    _, pack = prepare(Path(report["archive"]), slot_name=slot_name, layers=layers, mem2_end=mem2_end)
     if (previous is not None and previous != pack and previous.parent == PACKS.resolve()
             and previous not in selections(PLAY_SEEDS)):
         shutil.rmtree(previous)

@@ -2,6 +2,7 @@
 import struct
 import time
 from tools.cemu.getdemo_state import snapshot
+from tools.cemu.guest import MEM2_MAX_END, in_guest
 
 HELPER = 0x02DDF744
 MANAGER_PTR = 0x1046D3AC  # lis 0x1047 + signed displacement -0x2c54; RPX relocation.
@@ -43,7 +44,7 @@ def inspect(process, base):
         raise ValueError("event wrapper signature mismatch")
     manager = int.from_bytes(process.read(base + MANAGER_PTR, 4), "big")
     return dict(helper=HELPER, manager_pointer=MANAGER_PTR, manager=manager, signature_verified=True,
-                manager_available=0x01000000 <= manager < 0x60000000)
+                manager_available=in_guest(manager))
 
 
 def manager_diagnostic(process, base):
@@ -57,7 +58,7 @@ def manager_diagnostic(process, base):
         return result
     manager = result['manager']
     def raw(offset, size):
-        if not 0x01000000 <= manager+offset < manager+offset+size <= 0x60000000:
+        if not in_guest(manager+offset) or manager+offset+size > MEM2_MAX_END:
             raise ValueError('event manager diagnostic outside guest range')
         data = process.read(base+manager+offset, size)
         if data is None or len(data) != size:

@@ -3,6 +3,7 @@
 This never opens/closes a screen or queues a native call. An unchanged name
 does not prove that no call occurred; polling may miss brief transitions.
 """
+from tools.cemu.guest import in_guest
 
 MGR_PTR = 0x1047B054
 SCR_PTR = 0x1047E650
@@ -15,7 +16,7 @@ def close_trace_address(log_text):
 
 
 def close_trace(process, base, address):
-    if address is None or not 0x01000000 <= address < 0x60000000:
+    if not in_guest(address):
         raise ValueError("close trace not located in Cemu log")
     data = process.read(base + address, 16)
     if data is None or len(data) != 16 or data[:8] != bytes.fromhex("4150554900000001"):
@@ -26,7 +27,7 @@ def close_trace(process, base, address):
 
 def snapshot(process, base):
     def raw(address, size):
-        if not 0x01000000 <= address < 0x60000000 or size < 1 or size > 64:
+        if not in_guest(address) or size < 1 or size > 64:
             raise ValueError(f"invalid UI read: {address:#x}, {size}")
         data = process.read(base + address, size)
         if data is None or len(data) != size:
