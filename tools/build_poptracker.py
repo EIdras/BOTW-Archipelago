@@ -635,7 +635,7 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
     files["manifest.json"] = json.dumps({
         "name": "Breath of the Wild Archipelago", "game_name": cat.GAME,
         "package_uid": PACK_NAME, "package_version": cat.WORLD_VERSION,
-        "platform": "wiiu", "author": "Simon", "min_poptracker_version": "0.26.2",
+        "platform": "wiiu", "author": "EIdras", "min_poptracker_version": "0.26.2",
         "variants": {"map": {"display_name": "Map tracker", "flags": ["ap"]}}}, indent=1).encode()
     output.mkdir(parents=True, exist_ok=True)
     target = output / f"{PACK_NAME}.zip"

@@ -31,10 +31,10 @@ class BotwWeb(WebWorld):
     tutorials = [
         Tutorial("Multiworld Setup Guide",
                  "Install the BOTW Archipelago release and play Breath of the Wild in Cemu in a multiworld.",
-                 "English", "setup_en.md", "setup/en", ["Simon"]),
+                 "English", "setup_en.md", "setup/en", ["EIdras"]),
         Tutorial("Guide de configuration multiworld",
                  "Installer la release BOTW Archipelago et jouer à Breath of the Wild dans Cemu en multiworld.",
-                 "Français", "setup_fr.md", "setup/fr", ["Simon"]),
+                 "Français", "setup_fr.md", "setup/fr", ["EIdras"]),
     ]
     option_groups = OPTION_GROUPS
     options_presets = PRESETS

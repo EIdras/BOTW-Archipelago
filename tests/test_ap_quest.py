@@ -11,7 +11,7 @@ from botw_patch.events import graph_snapshot, read_flow
 from botw_patch.resources import unpack
 
 CONTENT = Path.home() / "AppData/Roaming/Cemu/mlc01/usr/title/0005000e/101c9500/content"
-MANIFEST = {"seed": "56866616677933465054", "slot": 1, "slot_name": "Simon",
+MANIFEST = {"seed": "56866616677933465054", "slot": 1, "slot_name": "Zelda",
             "slot_data": {"goal": 0, "sanctum_divine_beasts": 2, "sanctum_shrines": 0,
                           "sanctum_master_sword": 1, "sanctum_runes": 1, "world_version": "0.2.0"}}
 
@@ -20,13 +20,13 @@ class TextTests(unittest.TestCase):
     def test_title_place_giver_and_the_seeds_facts(self):
         quest = texts(MANIFEST)
         self.assertEqual((quest["title"], quest["location"], quest["giver"]),
-                         ("Archipelago", "Multiworld: Simon", "BOTW Archipelago 0.2.0"))
+                         ("Archipelago", "Multiworld: Zelda", "BOTW Archipelago 0.2.0"))
         desc = quest["desc"].split("\n")
-        self.assertEqual(desc[-2:], ["Seed 56866616677933465054", "Player: Simon (slot 1)"])
+        self.assertEqual(desc[-2:], ["Seed 56866616677933465054", "Player: Zelda (slot 1)"])
         self.assertTrue(desc[0].startswith("A voice from beyond Hyrule"))
         self.assertIn("Defeat Calamity Ganon in Hyrule Castle.", " ".join(desc))
         self.assertTrue(quest["finish"].startswith("Your goal is reached."))
-        self.assertEqual(quest["finish"].split("\n")[-1], "Player: Simon (slot 1)")
+        self.assertEqual(quest["finish"].split("\n")[-1], "Player: Zelda (slot 1)")
         # A seed of an older world: no version.
         old = {**MANIFEST, "slot_data": {"goal": 1}}
         self.assertEqual(texts(old)["giver"], "BOTW Archipelago")
@@ -67,7 +67,7 @@ class TextTests(unittest.TestCase):
         with patch.object(ap_quest, "INTRO", "A voice speaks. " * 12):
             desc = texts(MANIFEST)["desc"]
         self.assertTrue(desc.startswith("Defeat Calamity Ganon"))
-        self.assertTrue(desc.endswith("Player: Simon (slot 1)"))
+        self.assertTrue(desc.endswith("Player: Zelda (slot 1)"))
 
 
 @unittest.skipUnless((CONTENT / "Pack/TitleBG.pack").is_file(), "requires the Wii U update")
@@ -126,7 +126,7 @@ class ResourceTests(unittest.TestCase):
         self.assertEqual(label(f"QuestMsg/QL_{QUEST}.msbt", f"QL_{QUEST}_Name"), "Archipelago")
         self.assertEqual(label(f"QuestMsg/QL_{QUEST}.msbt", f"QL_{QUEST}_Desc"), quest["desc"])
         self.assertEqual(label(f"QuestMsg/QL_{QUEST}.msbt", f"QL_{QUEST}_Finish"), quest["finish"])
-        self.assertEqual(label("StaticMsg/LocationMarker.msbt", LOCATION), "Multiworld: Simon")
+        self.assertEqual(label("StaticMsg/LocationMarker.msbt", LOCATION), "Multiworld: Zelda")
         self.assertEqual(label("ActorType/DemoNPC.msbt", f"{GIVER}_Name"), "BOTW Archipelago 0.2.0")
 
     def test_event_info_registers_the_entries_like_the_deliveries(self):

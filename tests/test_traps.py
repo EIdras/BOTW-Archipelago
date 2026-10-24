@@ -295,7 +295,7 @@ class JournalTests(unittest.TestCase):
             if delivery.get("kind") not in ("trap", "native_trap"):
                 continue
             traps_seen += 1
-            sender = "{2}Bartholomew0123{/} sent {1}" + row["name"] + "{/} to {2}Simon{/}"
+            sender = "{2}Bartholomew0123{/} sent {1}" + row["name"] + "{/} to {2}Zelda{/}"
             note = trap_note(sender, row["name"], delivery["text"])
             self.assertEqual(note, sender + ". " + delivery["text"])
             self.assertEqual(len(pages(note)), 1, note)
