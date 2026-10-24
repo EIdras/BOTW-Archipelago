@@ -37,6 +37,15 @@ class NativeSourceTests(unittest.TestCase):
         self.assertEqual(len(sites), 15)
 
     @unittest.skipUnless((ROOT / 'U-King.rpx').is_file(), 'requires verified RPX dump')
+    def test_the_per_frame_hook_replays_the_instruction_it_replaces(self):
+        from tools.cemu.rpx import Rpx
+        text = generate()['runtime/patch_apInject.asm'].decode()
+        self.assertEqual(text.count('\n0x031FA9B4 = bla apProbe\n'), 1)
+        # lwz r12, 0x0(r30), then the load it feeds: the probe replays it last.
+        self.assertEqual(Rpx().read(0x031FA9B4, 8), bytes.fromhex('819e0000800c0104'))
+        self.assertIn('\napDone:\n    lwz   r12, 0x0(r30)', text)
+
+    @unittest.skipUnless((ROOT / 'U-King.rpx').is_file(), 'requires verified RPX dump')
     def test_build_is_hermetic_reproducible_and_immutable(self):
         # Separate interpreter refuses reads/listings under .build and also
         # refuses the default RPX; only the explicitly copied input is allowed.
@@ -119,6 +128,14 @@ print(a.name)
                         below(MEM2_END, 'r12', 'r10', 'apOwnedBindDone', margin=0x40)))
                     composed = composed.replace(old_join, '\n'.join(
                         below(MEM2_END, 'r12', 'r0', 'x', margin=0x40)[:2]))
+                    # And the per-frame hook, moved off FPS++'s instruction (0x031FA97C):
+                    # the one it replaces now is replayed last.
+                    hook = ('apProbe:\n    stw   r0, 0x78(r30)\n', 'apDone:\n    blr\n',
+                            '0x031FA97C = bla apProbe\n')
+                    self.assertEqual([composed.count(old) for old in hook], [1, 1, 1])
+                    composed = (composed.replace(hook[0], 'apProbe:\n')
+                                .replace(hook[1], 'apDone:\n    lwz   r12, 0x0(r30)\n    blr\n')
+                                .replace(hook[2], '0x031FA9B4 = bla apProbe\n'))
                     self.assertEqual(code(raw.decode('utf-8')), code(composed))
                 else:
                     self.assertEqual(digest(raw), manifest['native_files'][Path(name).name])

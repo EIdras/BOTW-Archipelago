@@ -15,8 +15,8 @@ its [Definition] says default = true; for the profile's version of the game
 For each one: its fsPriority (the highest wins a file both replace), the
 presets chosen, the files of content/ and aoc/ it replaces, and the
 addresses its patches (patch_*.asm) write for our executable, which a seed
-pack's patches must not write too (FPS++ takes our per-frame hook,
-0x031FA97C).
+pack's patches must not write too: of two patches of one instruction,
+only one runs.
 
 The play profile then runs them too: carried() picks those a seed pack can
 run with, mirror() copies them into the profile's graphicPacks/AP_Player/,

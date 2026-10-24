@@ -129,7 +129,10 @@ class PlayerPacksTest(unittest.TestCase):
         self.assertIn("The Archipelago game runs 2 of them.", pp.report(packs, None, left))
 
     def test_our_addresses_hold_the_per_frame_hook(self):
-        self.assertIn(0x031FA97C, pp.our_addresses())
+        # FPS++ patches 0x031FA97C and 0x031FAAFC, in and next to the game's frame function.
+        ours = pp.our_addresses()
+        self.assertIn(0x031FA9B4, ours)
+        self.assertFalse(ours & {0x031FA97C, 0x031FAAFC})
 
     def test_ram_mappings_as_cemu_reads_them(self):
         memory = "[RAM]\nmapping0 = 0x10000000-0xA0000000 # extend MEM2\nmapping1 = 0xA0000000-0xE0000000\n"

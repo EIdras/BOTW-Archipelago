@@ -4,8 +4,11 @@ moduleMatches = 0x6267BFD0
 ; ---------------------------------------------------------------------------
 ; Archipelago -- give the player an item.
 ;
-; HOOK 1 : 0x031FA97C, per-frame (identified by the author of FPS++).
-;          original: stw r0, 0x78(r30)       CONFLICTS WITH FPS++
+; HOOK 1 : 0x031FA9B4, per-frame, in the game's frame function (0x031FA880),
+;          after its update callback and its frame timing.
+;          original: lwz r12, 0x0(r30), replayed LAST, by apDone, as it loads
+;          r12, which the probe uses. FPS++ patches 0x031FA97C, a few instructions
+;          earlier in the same function, where this hook was until 0.3.0.
 ;
 ; HOOK 2 : 0x02EB5400, in PauseMenuDataMgr::itemGet, after the mflr.
 ;          original: stw r0, 0x6c(r1)
@@ -3685,8 +3688,7 @@ apScrTable:
 .align 4
 
 apProbe:
-    stw   r0, 0x78(r30)         ; --- ORIGINAL hook 1 ---
-
+    ; hook 1: its original instruction is replayed at apDone
     lis   r11, apTick@ha
 
     lwz   r12, apTick@l(r11)
@@ -4682,6 +4684,7 @@ apCheckCall:
     stw   r12, apCallN@l(r11)
 
 apDone:
+    lwz   r12, 0x0(r30)         ; --- ORIGINAL hook 1, replayed last ---
     blr
 
 apItemGetSpy:
@@ -5561,7 +5564,7 @@ apGrantEnd:
 
 0x02b769d4 = bla apGrantSpy
 
-0x031FA97C = bla apProbe
+0x031FA9B4 = bla apProbe
 0x02EB5400 = bla apItemGetSpy
 
 ; --- PickUpWin probes ------------------------------------------------

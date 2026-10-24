@@ -289,7 +289,7 @@ def main():
             if title is not None or desc is not None:
                 c.sub_disarm()
             sys.exit("the cave did not answer: request CANCELLED, substitution "
-                     "disarmed.\n  Is the game running? Is FPS++ enabled?")
+                     "disarmed.\n  Is the game running?")
 
         buf = rd(p, c, mgr + 0x20)
         seen = c.cstr(buf, min(cap, 64)) if buf else None

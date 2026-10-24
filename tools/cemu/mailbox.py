@@ -19,7 +19,7 @@ from guest import in_guest
 
 MAGIC = b"APMBOX01\x00"
 VERSION = 0x0BADF00E
-HOOK_GUEST = 0x031FA97C          # guest address where our bla must be
+HOOK_GUEST = 0x031FA9B4          # guest address where our bla must be
 DEFAULT_LOG = pathlib.Path.home() / "AppData/Roaming/Cemu/log.txt"
 LOG = None   # explicit override; otherwise BOTW_CEMU_LOG, read at call time
 
@@ -107,9 +107,9 @@ def guest_base(p, cave_host):
     """Map guest addresses to host ones: host = guest + base.
 
     The base is checked on an instruction of the RPX that no pack patches, and
-    not on our own hook: another graphic pack may take the same address
-    (FPS++ patches 0x031FA97C), and checking our hook would then fail the
-    whole resolution although the base is right.
+    not on our own hook: another graphic pack may take the same address,
+    and checking our hook would then fail the whole resolution although
+    the base is right.
     """
     # 04/10: the log read may be another profile's, and another pack's code
     # cave (a test aid) moves ours: Cemu places them from CODECAVE_START, each
@@ -1291,7 +1291,7 @@ def main():
             elif not hook_is_ours(p, base, cave_g, owner):
                 print(f"  !! HOOK TAKEN: {HOOK_GUEST:#010x} jumps to {owner:#010x},")
                 print("     outside our cave. Another graphic pack patches the same")
-                print("     address -- FPS++ does. Disable it: without this hook,")
+                print("     address. Disable it: without this hook,")
                 print("     the mailbox no longer works.")
         else:
             print("  guest/host base not found")
