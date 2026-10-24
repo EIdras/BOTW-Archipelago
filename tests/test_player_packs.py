@@ -113,6 +113,61 @@ class PlayerPacksTest(unittest.TestCase):
         self.cemu.pack("by_default", extra="default = true")
         self.assertEqual([pack.folder.name for pack in pp.enabled(self.cemu.user, TITLE)], ["by_default"])
 
+    def test_what_the_play_profile_runs(self):
+        self.cemu.pack("graphics", files={"patch_res.asm": b"[R]\nmoduleMatches = 0x6267BFD0\n0x02000000 = nop\n"})
+        self.cemu.pack("mods", files={"content/Pack/Bootup.pack": b"x"})
+        self.cemu.pack("fps", files={"patch_speed.asm": b"[S]\nmoduleMatches = 0x6267BFD0\n0x031FA97C = nop\n"})
+        self.cemu.pack("exe", files={"code/U-King.rpx": b"rpx"})
+        for path in ("graphics", "mods", "fps", "exe"):
+            self.cemu.entry(path)
+        packs = self.cemu.enabled()
+        kept, left = pp.carried(packs, {"files": {"content/Pack/Bootup.pack"},
+                                        "patched": frozenset({0x031FA97C})})
+        self.assertEqual([pack.path for pack in kept], ["graphics"])
+        self.assertEqual(left, {"graphicPacks/exe/rules.txt": "it replaces the game's executable",
+                                "graphicPacks/fps/rules.txt": "it patches code the Archipelago pack needs",
+                                "graphicPacks/mods/rules.txt":
+                                    "it replaces files the Archipelago pack changes (not supported yet)"})
+        self.assertIn("The Archipelago game runs 1 of them.", pp.report(packs, None, left))
+
+    def test_mirror_copies_keeps_and_cleans(self):
+        source = self.cemu.pack("community/Graphics", files={"content/a.bin": b"1"})
+        self.cemu.entry("community/Graphics", presets=[("Resolution", "2K")])
+        (pack,) = self.cemu.enabled()
+        profile = Path(self.temp.name) / "profile"
+        target = profile / "graphicPacks" / pp.MIRROR / "community/Graphics"
+        entries = pp.mirror([pack], profile / "graphicPacks")
+        self.assertEqual(entries, [{"entry": "graphicPacks/AP_Player/community/Graphics/rules.txt",
+                                    "source": "graphicPacks/community/Graphics/rules.txt",
+                                    "name": "BOTW/community/Graphics", "priority": pp.DEFAULT_PRIORITY,
+                                    "presets": [["Resolution", "2K"]]}])
+        self.assertEqual((target / "content/a.bin").read_bytes(), b"1")
+        marker = target / "kept"                    # an unchanged source keeps its copy
+        marker.write_bytes(b"")
+        pp.mirror([pack], profile / "graphicPacks")
+        self.assertTrue(marker.exists())
+        (source / "content/a.bin").write_bytes(b"22")     # a changed one is copied again
+        pp.mirror([pack], profile / "graphicPacks")
+        self.assertFalse(marker.exists())
+        self.assertEqual((target / "content/a.bin").read_bytes(), b"22")
+        stray = profile / "graphicPacks" / pp.MIRROR / "old"
+        stray.mkdir()
+        (stray / "rules.txt").write_bytes(b"[Definition]")
+        pp.mirror([], profile / "graphicPacks")           # a pack turned off loses its copy
+        self.assertFalse(target.exists())
+        self.assertFalse(stray.exists())
+
+    def test_enable_keeps_the_presets(self):
+        portable = Path(self.temp.name) / "portable"
+        portable.mkdir()
+        (portable / "settings.xml").write_text(
+            '<?xml version="1.0"?><content><GraphicPack><Entry filename="graphicPacks/AP_Ledger_x/rules.txt"/>'
+            "</GraphicPack></content>", encoding="utf-8")
+        pp.enable(portable, [{"entry": "graphicPacks/AP_Player/g/rules.txt", "presets": [["Resolution", "2K"]]}])
+        entries = pp.settings_entries(portable / "settings.xml")
+        self.assertEqual(list(entries), ["graphicPacks/AP_Ledger_x/rules.txt", "graphicPacks/AP_Player/g/rules.txt"])
+        self.assertEqual(entries["graphicPacks/AP_Player/g/rules.txt"], (False, (("Resolution", "2K"),)))
+
 
 if __name__ == "__main__":
     unittest.main()

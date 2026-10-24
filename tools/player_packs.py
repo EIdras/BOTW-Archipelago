@@ -17,13 +17,23 @@ presets chosen, the files of content/ and aoc/ it replaces, and the
 addresses its patches (patch_*.asm) write for our executable, which a seed
 pack's patches must not write too (FPS++ takes our per-frame hook,
 0x031FA97C).
+
+The play profile then runs them too: carried() picks those a seed pack can
+run with, mirror() copies them into the profile's graphicPacks/AP_Player/,
+under the path they have in the player's Cemu (so Cemu walks them in the
+same order, after our AP_ packs), and enable() turns them on there with
+their presets. A pack that replaces a file the seed pack changes is not
+carried yet: the seed pack must first be built on top of it.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
+import json
 import os
 from pathlib import Path
 import re
+import shutil
 import sys
 import xml.etree.ElementTree as ET
 
@@ -34,6 +44,8 @@ DEFAULT_PRIORITY = 100          # GraphicPack2::m_fs_priority
 LEGACY_VERSION = 2              # GP_LEGACY_VERSION: packs up to it are not loaded
 MODULE = 0x6267BFD0             # moduleMatches of the v208 executable, in every version
 PATCH_LINE = re.compile(r"^\s*(0x[0-9a-fA-F]+)\s*=", re.MULTILINE)
+MIRROR = "AP_Player"            # the profile's copies, under its graphicPacks/
+MIRROR_STATE = "mirror.json"    # in MIRROR: the source of each copy, and its fingerprint
 
 
 @dataclass(frozen=True)
@@ -50,6 +62,11 @@ class PlayerPack:
     patches: tuple[str, ...]    # patch_*.asm, or patches.txt
     code: bool                  # it replaces files of code/
     patched: frozenset[int]     # addresses its patches write in our executable
+
+    @property
+    def path(self) -> str:
+        """Its folder, relative to graphicPacks/."""
+        return self.entry[len(FOLDER) + 1:-len("/rules.txt")]
 
 
 def uncommented(line: str) -> str:
@@ -194,10 +211,91 @@ def enabled(user_data: Path, title: str) -> list[PlayerPack]:
     return packs
 
 
-def report(packs: list[PlayerPack], ours: dict | None = None) -> list[str]:
-    """What the player's packs are, and what they share with a seed pack
-    (`ours`: its files, relative to the pack, and the addresses its patches
-    write), as lines to show."""
+def shared_files(pack: PlayerPack, ours: dict) -> list[str]:
+    replaced = {f"content/{name}" for name in pack.content} | {f"aoc/{name}" for name in pack.aoc}
+    return sorted(replaced & set(ours["files"]))
+
+
+def carried(packs: list[PlayerPack], ours: dict) -> tuple[list[PlayerPack], dict[str, str]]:
+    """The packs the play profile runs next to the seed pack `ours`, and why
+    each other one is left out (by entry)."""
+    keep, left = [], {}
+    for pack in packs:
+        if pack.code:
+            left[pack.entry] = "it replaces the game's executable"
+        elif pack.patched & ours["patched"]:
+            left[pack.entry] = "it patches code the Archipelago pack needs"
+        elif shared_files(pack, ours):
+            left[pack.entry] = "it replaces files the Archipelago pack changes (not supported yet)"
+        else:
+            keep.append(pack)
+    return keep, left
+
+
+def fingerprint(folder: Path) -> str:
+    """Every file of a pack (through links, as Cemu reads it): name, size, time."""
+    rows = []
+    for top, _dirs, names in os.walk(folder, followlinks=True):
+        for name in names:
+            path = Path(top) / name
+            stat = path.stat()
+            rows.append((path.relative_to(folder).as_posix(), stat.st_size, stat.st_mtime_ns))
+    return hashlib.sha256(json.dumps(sorted(rows)).encode()).hexdigest()
+
+
+def mirror(packs: list[PlayerPack], graphic_packs: Path) -> list[dict]:
+    """Copy `packs` into `graphic_packs`/MIRROR (a copy whose source has not
+    changed is kept), remove the copies of other packs; the entries to enable."""
+    root = graphic_packs / MIRROR
+    state_path = root / MIRROR_STATE
+    try:
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        state = {}
+    wanted = {pack.path: pack for pack in packs}
+    for path in list(state):
+        if path not in wanted:
+            shutil.rmtree(root / path, ignore_errors=True)
+            del state[path]
+    for folder in pack_folders(root):           # copies the state does not know
+        path = folder.relative_to(root).as_posix()
+        if path not in wanted or path not in state:
+            shutil.rmtree(folder, ignore_errors=True)
+            state.pop(path, None)
+    entries = []
+    for path, pack in wanted.items():
+        target = root / path
+        source = {"from": str(pack.folder), "fingerprint": fingerprint(pack.folder)}
+        if state.get(path) != source or not (target / "rules.txt").is_file():
+            shutil.rmtree(target, ignore_errors=True)
+            state.pop(path, None)
+            shutil.copytree(pack.folder, target)        # links are followed: their files are copied
+            state[path] = source
+        entries.append({"entry": f"{FOLDER}/{MIRROR}/{path}/rules.txt", "source": pack.entry,
+                        "name": pack.virtual_path or pack.name, "priority": pack.priority,
+                        "presets": [list(preset) for preset in pack.presets]})
+    root.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return entries
+
+
+def enable(portable: Path, entries: list[dict]) -> None:
+    """Turn the copies on in the profile's settings.xml, with the player's presets."""
+    settings = ET.parse(portable / "settings.xml")
+    packs = settings.getroot().find("GraphicPack")
+    for entry in entries:
+        element = ET.SubElement(packs, "Entry", filename=entry["entry"])
+        for category, preset in entry["presets"]:
+            node = ET.SubElement(element, "Preset")
+            ET.SubElement(node, "category").text = category
+            ET.SubElement(node, "preset").text = preset
+    settings.write(portable / "settings.xml", encoding="utf-8", xml_declaration=True)
+
+
+def report(packs: list[PlayerPack], ours: dict | None = None, left: dict[str, str] | None = None) -> list[str]:
+    """What the player's packs are, what they share with a seed pack (`ours`:
+    its files, relative to the pack, and the addresses its patches write),
+    and why some are not carried (`left`, from carried()), as lines to show."""
     if not packs:
         return ["Your Cemu runs no graphic pack for Breath of the Wild."]
     lines = [f"Your Cemu runs {len(packs)} graphic pack(s) for Breath of the Wild:"]
@@ -210,20 +308,20 @@ def report(packs: list[PlayerPack], ours: dict | None = None) -> list[str]:
         if pack.presets:
             parts.append(", ".join(f"{category or 'preset'}: {preset}" for category, preset in pack.presets))
         lines.append(f"  - {pack.virtual_path or pack.name} ({'; '.join(parts)})")
-        if ours is None:
-            continue
-        replaced = {f"content/{name}" for name in pack.content} | {f"aoc/{name}" for name in pack.aoc}
-        shared = sorted(replaced & set(ours["files"]))
-        if shared:
-            lines.append(f"      replaces {len(shared)} file(s) the Archipelago pack changes: "
-                         + ", ".join(shared[:6]) + (" ..." if len(shared) > 6 else ""))
-        taken = sorted(pack.patched & ours["patched"])
-        if taken:
-            lines.append("      patches the same code as the Archipelago pack: "
-                         + ", ".join(f"0x{address:08X}" for address in taken[:6])
-                         + (" ..." if len(taken) > 6 else ""))
-        if pack.code:
-            lines.append("      replaces the game's executable files (code/)")
+        if ours is not None:
+            shared = shared_files(pack, ours)
+            if shared:
+                lines.append(f"      replaces {len(shared)} file(s) the Archipelago pack changes: "
+                             + ", ".join(shared[:6]) + (" ..." if len(shared) > 6 else ""))
+            taken = sorted(pack.patched & ours["patched"])
+            if taken:
+                lines.append("      patches the same code as the Archipelago pack: "
+                             + ", ".join(f"0x{address:08X}" for address in taken[:6])
+                             + (" ..." if len(taken) > 6 else ""))
+        if left is not None and pack.entry in left:
+            lines.append(f"      not in the Archipelago game: {left[pack.entry]}")
+    if left is not None:
+        lines.append(f"The Archipelago game runs {len(packs) - len(left)} of them.")
     return lines
 
 
@@ -245,5 +343,6 @@ if __name__ == "__main__":
     arguments = parser.parse_args()
     user_data = arguments.user_data or cemu_profile.source_user_data()
     print(f"Cemu user folder: {user_data}")
-    print("\n".join(report(enabled(user_data, cemu_profile.region().title),
-                           seed_pack(arguments.pack) if arguments.pack else None)))
+    found = enabled(user_data, cemu_profile.region().title)
+    ours = seed_pack(arguments.pack) if arguments.pack else None
+    print("\n".join(report(found, ours, carried(found, ours)[1] if ours else None)))

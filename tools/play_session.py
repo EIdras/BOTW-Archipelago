@@ -4,8 +4,10 @@
                                  [test aids of source checkouts: --speed <x> --invincible --stamina
                                   --unbreakable --damage <x> --cheats]
 
-  * the pack bound to the seed's BOTW slot (tools/play_seed.py), the only
-    graphic pack enabled in the isolated Cemu profile (tools/cemu_profile.py);
+  * the pack bound to the seed's BOTW slot (tools/play_seed.py), enabled in
+    the isolated Cemu profile (tools/cemu_profile.py) with copies of the
+    graphic packs the player's own Cemu runs, but those it cannot run with
+    (tools/player_packs.py);
   * a Cemu account of its own, so that a new game never overwrites the saves
     copied from the Cemu installation, which are checked unchanged at the end;
   * the AP server:
@@ -352,6 +354,18 @@ def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = Fals
     source_saves_before = tree_hashes(source_saves)
     account = profile.ensure_play_account()
     portable = profile.prepare_play(pack)
+    # The graphic packs of the player's own Cemu (tools/player_packs.py), copied
+    # into the profile, but those the seed pack cannot run with.
+    from tools import player_packs
+    try:
+        mods = player_packs.enabled(profile.source_user_data(), profile.region().title)
+    except (OSError, KeyError, ValueError) as exc:
+        mods = []
+        print(f"Your Cemu's graphic packs could not be read: {exc}", flush=True)
+    ours = player_packs.seed_pack(pack)
+    kept, left = player_packs.carried(mods, ours)
+    mirrored = player_packs.mirror(kept, portable / "graphicPacks")
+    player_packs.enable(portable, mirrored)
     aid_packs = []
     if aids or damage > 1:
         from tools import play_aids
@@ -361,7 +375,7 @@ def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = Fals
         play_aids.enable(portable, aid_packs)
     packs = enabled_packs(portable)
     if packs != [f"graphicPacks/{profile.PACK_PREFIX}{pack.name}/rules.txt",
-                 *(entry["entry"] for entry in aid_packs)]:
+                 *(entry["entry"] for entry in mirrored), *(entry["entry"] for entry in aid_packs)]:
         raise RuntimeError(f"the play profile loads something else: {packs}")
     game = profile.game()
     print(f"Play profile ready: seed {folder.name}, pack {pack.name}, account "
@@ -369,16 +383,7 @@ def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = Fals
           flush=True)
     if aid_packs:
         print("Test aids: " + ", ".join(entry["name"] for entry in aid_packs) + ".", flush=True)
-    # The packs of the player's own Cemu (tools/player_packs.py), shown, not loaded yet.
-    from tools import player_packs
-    try:
-        mods = player_packs.enabled(profile.source_user_data(), profile.region().title)
-        print("\n".join(player_packs.report(mods, player_packs.seed_pack(pack))), flush=True)
-        if mods:
-            print("They are not loaded in the Archipelago game yet.", flush=True)
-    except (OSError, KeyError, ValueError) as exc:
-        mods = []
-        print(f"Your Cemu's graphic packs could not be read: {exc}", flush=True)
+    print("\n".join(player_packs.report(mods, ours, left)), flush=True)
     if journal:
         print("AP journal in the tip frame; try it: /ap-tip <text>.", flush=True)
     else:
@@ -395,7 +400,8 @@ def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = Fals
               "test_aids": [{k: v for k, v in entry.items() if k != "files"} for entry in aid_packs],
               "native_tip_channel": journal,
               "account": account, "graphic_packs": packs,
-              "player_packs": [{"entry": mod.entry, "priority": mod.priority} for mod in mods],
+              "player_packs": [{"entry": mod.entry, "priority": mod.priority,
+                                "carried": mod.entry not in left} for mod in mods],
               "play_saves_before": tree_hashes(play_saves), "status": "running"}
     # A hard crash of this console must land in the report: faulthandler
     # catches native faults, the hooks catch Python errors, and stderr is

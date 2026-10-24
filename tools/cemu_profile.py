@@ -13,8 +13,9 @@ another, whose titles and saves it then copies too.
 
 A play session (tools/play_session.py) then uses its own Cemu account
 (PLAY_ACCOUNT), derived from the copied one (SOURCE_ACCOUNT), so that a new
-game never overwrites the copied saves, and a single graphic pack: the
-verified pack of its seed.
+game never overwrites the copied saves, the verified pack of its seed, and
+copies of the graphic packs the installation runs (tools/player_packs.py:
+read and copied at each session, never changed in the installation).
 """
 from __future__ import annotations
 
@@ -252,7 +253,8 @@ def prune_packs(folder: Path, keep: str) -> list[str]:
 
 def prepare_play(pack: Path) -> Path:
     """Install a verified seed pack as the profile's only graphic pack, on the
-    play account. Returns the portable folder Cemu runs from."""
+    play account (a session then adds the player's, tools/player_packs.py).
+    Returns the portable folder Cemu runs from."""
     from tools.build_pack_from_source import verify_pack
     check_isolated()
     manifest = verify_pack(pack)
