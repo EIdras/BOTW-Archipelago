@@ -134,11 +134,20 @@ def generate(content: Path, binding_token: int, shops: list | None = None,
     stage()
     inputs = {}
     region = regions.of_content(content)
+    unexpected = []
     for name, expected in regions.inputs(UPDATE_HASHES, content).items():
-        raw = (content / name).read_bytes()
-        if vanilla_digest(raw) != expected:
-            raise ValueError(f"unexpected Wii U update resource: {name}")
+        path = content / name
+        raw = path.read_bytes() if path.is_file() else None
+        if raw is None or vanilla_digest(raw) != expected:
+            unexpected.append(name if raw is not None else f"{name} (missing)")
+            continue
         inputs[name] = raw
+    if unexpected:
+        raise ValueError(
+            f"unexpected Wii U update resource: {', '.join(unexpected)}. These files of the update v208 "
+            f"({region.name} version, {content}) are not the game's own: a mod copied into the game's files "
+            "changes them. Reinstall the update in Cemu from your console, then delete the launcher's "
+            "profile (the cemu-validation folder of BOTW Archipelago's data) so that it copies it again.")
     stage()
     files, changes = generate_presentation(content, "owned_marker")
     title = oead.Sarc(unpack(inputs[TITLE]))

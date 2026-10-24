@@ -82,6 +82,33 @@ class RegionTests(unittest.TestCase):
     def test_other_bytes_keep_their_own_hash(self):
         self.assertEqual(regions.vanilla_digest(b"x"), hashlib.sha256(b"x").hexdigest())
 
+    def test_a_file_compressed_apart_is_named_by_its_content(self):
+        import oead
+        from unittest import mock
+
+        def archive(level):
+            writer = oead.SarcWriter()
+            writer.files["Message/Msg.ssarc"] = bytes(oead.yaz0.compress(b"text " * 4000, level=level))
+            return bytes(writer.write()[1])
+        pinned, theirs = archive(9), archive(1)
+        self.assertNotEqual(pinned, theirs)
+        self.assertEqual(regions.content_digest(pinned), regions.content_digest(theirs))
+        sha = hashlib.sha256(pinned).hexdigest()
+        table = {regions.content_digest(pinned): sha}
+        with mock.patch.object(regions, "_contents", lambda: table), \
+                mock.patch.object(regions, "_pinned", lambda: frozenset(table.values())), \
+                mock.patch.object(regions, "_named", {}):
+            self.assertEqual(regions.vanilla_digest(theirs), sha)
+            self.assertEqual(regions.vanilla_digest(pinned), sha)
+            other = b"SARC" + b"\0" * 16        # holding something else: its own hash
+            self.assertEqual(regions.vanilla_digest(other), hashlib.sha256(other).hexdigest())
+
+    def test_the_content_table_knows_the_european_archives(self):
+        pinned = set(json.loads(regions.CONTENTS.read_text(encoding="utf-8")).values())
+        self.assertLessEqual({"f092c69a3598c31dbcdab1caa6292d2eabb78a7391c2e0954d5ae7fbb888594b",    # Bootup.pack
+                              "e6e7593fb7e5aba3858fa3ff6d646585dd08d83562551ed392d28a9515dfd5f8"},   # Bootup_EUen.pack
+                             pinned)
+
     @unittest.skipUnless((MLC / "0005000e/101c9400/content/Pack/Bootup.pack").is_file()
                          and (MLC / "0005000e/101c9500/content/Pack/Bootup.pack").is_file(),
                          "requires the European and American updates in Cemu")
@@ -177,6 +204,53 @@ class OtherVersionPackTests(unittest.TestCase):
                               save_flags(files["aoc/0010/" + tower_maps.unit("G-6")]).values())
                 self.assertEqual(sorted(n for n in files if n.startswith("Pack/Bootup_")),
                                  [f"Pack/Bootup_{l}.pack" for l in region.languages])
+
+    @full_build
+    @unittest.skipUnless(_installed(regions.EUR) and _installed(regions.USA) and REPORT.is_file(),
+                         "requires the European and American updates and an audited play seed in Cemu")
+    def test_a_european_update_compressed_apart_builds_the_european_pack(self):
+        """As a player's European update held it (24/10): the American files where
+        they are the same resources, the European language archives compressed apart."""
+        import oead
+        from tools.build_pack_from_source import build
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp:     # its links may be held a while (scans)
+            variant = Path(temp) / "title"
+            for kind in ("0005000e", "0005000c"):
+                source = MLC / kind / regions.USA.title
+                for path in source.rglob("*"):
+                    if path.is_file() and not path.name.startswith(("Bootup_US", "TitleBG_US")):
+                        out = variant / kind / regions.EUR.title / path.relative_to(source)
+                        out.parent.mkdir(parents=True, exist_ok=True)
+                        os.link(path, out)
+            pack = variant / "0005000e" / regions.EUR.title / "content/Pack"
+            for path in (MLC / "0005000e" / regions.EUR.title / "content/Pack").glob("*_EU*.pack"):
+                archive = oead.Sarc(path.read_bytes())
+                writer = oead.SarcWriter.from_sarc(archive)
+                for member in archive.get_files():
+                    if bytes(member.data[:4]) == b"Yaz0":
+                        writer.files[member.name] = bytes(oead.yaz0.compress(
+                            oead.yaz0.decompress(member.data), level=3))
+                (pack / path.name).write_bytes(bytes(writer.write()[1]))
+            self.assertNotEqual((pack / "Bootup_EUen.pack").read_bytes(),
+                                (MLC / "0005000e" / regions.EUR.title / "content/Pack/Bootup_EUen.pack").read_bytes())
+
+            def built(update, name):
+                return build(update / "content", update / "code/U-King.rpx", REPORT, 1, Path(temp) / name)
+
+            def contents(folder):
+                found = {}
+                for path in folder.rglob("*"):
+                    name = path.relative_to(folder).as_posix()
+                    if path.is_file() and name != "manifest.json":
+                        _resources(path.read_bytes(), name, found)
+                # Each pack sizes its own files in the table: the American ones here.
+                return {n: h for n, h in found.items()
+                        if n != "content/System/Resource/ResourceSizeTable.product.srsizetable"}
+
+            ours = built(MLC / "0005000e" / regions.EUR.title, "europe")
+            theirs = built(variant / "0005000e" / regions.EUR.title, "variant")
+            self.assertEqual(contents(theirs), contents(ours))
+
 
 if __name__ == "__main__":
     unittest.main()

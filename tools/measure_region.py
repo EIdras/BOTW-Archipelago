@@ -12,6 +12,11 @@ are opened, and records its hash. The region's language archives, which the
 European version has not, are pinned as they are. Writes the region's entry of
 data/region_hashes.json (botw_client/regions.py reads it); fails, writing
 nothing, when a pinned resource is missing or holds other data.
+
+`contents` writes data/content_hashes.json: the content of every pinned
+resource of the European update and DLC (its languages too) and of the other
+versions' language archives, with its pinned hash, by which the build knows
+the files of another distribution of the game, compressed apart.
 """
 from __future__ import annotations
 
@@ -45,19 +50,6 @@ def pins() -> set[str]:
 
 def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
-
-
-def _content(data: bytes) -> str:
-    """The hash of what a resource holds: Yaz0 undone, an archive by its members."""
-    if data[:4] == b"Yaz0":
-        data = bytes(oead.yaz0.decompress(data))
-    if data[:4] == b"SARC":
-        try:
-            members = sorted((m.name, _content(bytes(m.data))) for m in oead.Sarc(data).get_files())
-        except (RuntimeError, ValueError):
-            return _sha(data)
-        return _sha(json.dumps(members).encode())
-    return _sha(data)
 
 
 def _members(data: bytes, prefix: str, out: dict[str, bytes], wanted: set[str]) -> None:
@@ -110,7 +102,7 @@ def measure(region: regions.Region, mlc: Path) -> dict:
             theirs = _resource(other, path)
             if theirs is None:
                 problems.append(f"missing in {region.key}: {path}")
-            elif _content(theirs) != _content(data):
+            elif regions.content_digest(theirs) != regions.content_digest(data):
                 problems.append(f"other content in {region.key}: {path}")
             elif _sha(theirs) != _sha(data):
                 if equivalents.setdefault(_sha(theirs), _sha(data)) != _sha(data):
@@ -128,11 +120,45 @@ def measure(region: regions.Region, mlc: Path) -> dict:
     return {"equivalents": dict(sorted(equivalents.items())), "languages": languages}
 
 
+def contents(mlc: Path) -> dict[str, str]:
+    """{content: pinned hash} of every pinned resource and language archive."""
+    wanted, table, problems = pins(), {}, []
+
+    def record(data: bytes, where: str) -> None:
+        if table.setdefault(regions.content_digest(data), _sha(data)) != _sha(data):
+            problems.append(f"two pinned files hold the content of {where}")
+
+    for kind, folder in KINDS.items():
+        europe = mlc / "usr/title" / folder / regions.EUR.title / "content"
+        found: dict[str, bytes] = {}
+        for path in sorted(europe.rglob("*")):
+            if path.is_file():
+                _members(path.read_bytes(), path.relative_to(europe).as_posix(), found, wanted)
+        print(f"{kind}: {len(found)} pinned resources", flush=True)
+        for path, data in sorted(found.items()):
+            record(data, path)
+    for region in regions.REGIONS[1:]:
+        for name, sha in json.loads(regions.HASHES.read_text(encoding="utf-8"))[region.key]["languages"].items():
+            path = mlc / "usr/title" / KINDS["update"] / region.title / "content" / name
+            if not path.is_file() or _sha(path.read_bytes()) != sha:
+                problems.append(f"{region.key} {name} missing or not the pinned one")
+            else:
+                record(path.read_bytes(), f"{region.key} {name}")
+    if problems:
+        raise SystemExit("\n".join(problems))
+    return dict(sorted(table.items()))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("region", choices=[r.key for r in regions.REGIONS if r is not regions.EUR])
+    parser.add_argument("region", choices=[r.key for r in regions.REGIONS if r is not regions.EUR] + ["contents"])
     parser.add_argument("--mlc", type=Path, default=Path(os.environ.get("APPDATA", "")) / "Cemu/mlc01")
     arguments = parser.parse_args()
+    if arguments.region == "contents":
+        table = contents(arguments.mlc)
+        regions.CONTENTS.write_text(json.dumps(table, indent=1) + "\n", encoding="utf-8")
+        print(f"{len(table)} pinned contents -> {regions.CONTENTS}")
+        return
     region = regions.by_key(arguments.region)
     entry = measure(region, arguments.mlc)
     table = json.loads(regions.HASHES.read_text(encoding="utf-8")) if regions.HASHES.is_file() else {}

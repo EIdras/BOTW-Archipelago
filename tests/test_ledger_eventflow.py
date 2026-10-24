@@ -126,7 +126,7 @@ class EventFlowLedgerTests(unittest.TestCase):
         self.assertEqual(oead.byml.to_text(actual), oead.byml.to_text(original))
         self.assertEqual(patch_delivery_event_info(raw)[0], patched)
         with self.assertRaisesRegex(ValueError, "unsupported vanilla EventInfo"):
-            patch_delivery_event_info(raw + b"modified")
+            patch_delivery_event_info(bytes(oead.yaz0.compress(unpack(raw) + b"modified")))
 
     def test_startup_control_only_replaces_external_call_with_wait(self):
         from tools.build_delivery_control import remove_external_call

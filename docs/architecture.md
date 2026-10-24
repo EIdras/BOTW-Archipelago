@@ -97,10 +97,13 @@ existing profile to another version.
 The European (EUR, `101C9500`), American (USA, `101C9400`) and Japanese (JPN, `101C9300`) updates v208 run the same
 `U-King.rpx`, and their update and DLC hold the same resources once Yaz0 is undone and archives are opened, apart from
 their languages: seven message archives (`Pack/Bootup_EU<xx>.pack`) in the European version, three in the American one
-(`USen`, `USes`, `USfr`), one in the Japanese one (`JPja`). Nintendo compressed each version apart, so the files' bytes
-differ. The build pins the European file of every resource it reads; `data/region_hashes.json`, written by
-`tools/measure_region.py` from each version and the European one, gives the other version's file holding the same
-resource, which `vanilla_digest()` names by its European hash, and pins its language archives. A text added in a
+(`USen`, `USes`, `USfr`), one in the Japanese one (`JPja`). Their files were compressed apart, so their bytes differ,
+and not by version only: a player's European update held the American files byte for byte and its language archives
+compressed as the American ones. The build pins the European file of every resource it reads; `data/region_hashes.json`,
+written by `tools/measure_region.py` from each version and the European one, gives the other version's file holding the
+same resource, which `vanilla_digest()` names by its European hash, and pins its language archives. A file known by
+none of these hashes is named by its content (`content_digest()`, Yaz0 undone and archives opened):
+`data/content_hashes.json` (`measure_region.py contents`) gives the pinned hash of each pinned resource's content. A text added in a
 language is its own when the build has one (the sanctum's line and Vilia's price in Japanese), else its European
 counterpart's (USfr takes EUfr's). The killers a DeathLink names go into English sentences: the Japanese version,
 without English texts, names none. The pack's `rules.txt` names the version's title, and a European pack is byte for

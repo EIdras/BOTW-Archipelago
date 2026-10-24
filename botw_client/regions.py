@@ -4,15 +4,20 @@ The update v208 of the European (EUR), American (USA) and Japanese (JPN)
 versions run the same U-King.rpx, and their update and DLC hold the same
 resources once Yaz0 is undone and archives are opened, their languages apart:
 the message archives (Pack/Bootup_<language>.pack), voices and fonts (measured,
-18/10). Nintendo compressed each version's files apart, so their bytes differ.
+18/10). Their files were compressed apart, so their bytes differ, and not by
+version only: a player's European update held the American files byte for
+byte, and its language archives compressed as the American ones (24/10).
 
 The build checks every resource it reads against the SHA-256 of the European
 file. data/region_hashes.json (written by tools/measure_region.py from each
 version and the European one) gives, for another version, the hash of each such file holding the
 same data, and pins its own language archives: vanilla_digest() names a file
 by the European hash of its content, inputs() puts a version's language
-archives in place of the European ones. A text added in a language is its own
-when the build has one, else its European counterpart's (localized()).
+archives in place of the European ones. A file of another distribution,
+known by none of these hashes, is named by its content (content_digest()):
+data/content_hashes.json gives the pinned hash of each pinned resource's
+content. A text added in a language is its own when the build has one, else
+its European counterpart's (localized()).
 """
 from __future__ import annotations
 
@@ -23,6 +28,7 @@ import json
 from pathlib import Path
 
 HASHES = Path(__file__).resolve().parents[1] / "data/region_hashes.json"
+CONTENTS = Path(__file__).resolve().parents[1] / "data/content_hashes.json"
 
 
 @dataclass(frozen=True)
@@ -93,11 +99,44 @@ def _equivalents() -> dict[str, str]:
     return {theirs: ours for entry in _table().values() for theirs, ours in entry["equivalents"].items()}
 
 
+@lru_cache(maxsize=None)
+def _contents() -> dict[str, str]:
+    return json.loads(CONTENTS.read_text(encoding="utf-8")) if CONTENTS.is_file() else {}
+
+
+@lru_cache(maxsize=None)
+def _pinned() -> frozenset[str]:
+    return frozenset(_contents().values())
+
+
+def content_digest(data: bytes) -> str:
+    """The hash of what a resource holds, however it was compressed: Yaz0
+    undone, an archive by its members' names and contents."""
+    import oead
+    try:
+        if data[:4] == b"Yaz0":
+            data = bytes(oead.yaz0.decompress(data))
+        if data[:4] == b"SARC":
+            members = sorted((m.name, content_digest(bytes(m.data))) for m in oead.Sarc(data).get_files())
+            return hashlib.sha256(json.dumps(members).encode()).hexdigest()
+    except Exception:       # not what it looks like (oead's own errors): its bytes
+        pass
+    return hashlib.sha256(data).hexdigest()
+
+
+_named: dict[str, str] = {}     # by a file's own hash: the build reads a file at each stage
+
+
 def vanilla_digest(data: bytes) -> str:
-    """The SHA-256 of `data`, or of the European file holding the same resource
-    when `data` is another version's."""
+    """The SHA-256 of `data`, or of the pinned file holding the same resource
+    when `data` is another version's or another distribution's."""
     digest = hashlib.sha256(data).hexdigest()
-    return _equivalents().get(digest, digest)
+    named = _equivalents().get(digest, digest)
+    if named in _pinned() or data[:4] not in (b"Yaz0", b"SARC"):
+        return named
+    if digest not in _named:
+        _named[digest] = _contents().get(content_digest(data), named)
+    return _named[digest]
 
 
 def inputs(hashes: dict[str, str], content: Path) -> dict[str, str]:
