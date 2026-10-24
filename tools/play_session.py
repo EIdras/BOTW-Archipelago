@@ -369,6 +369,16 @@ def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = Fals
           flush=True)
     if aid_packs:
         print("Test aids: " + ", ".join(entry["name"] for entry in aid_packs) + ".", flush=True)
+    # The packs of the player's own Cemu (tools/player_packs.py), shown, not loaded yet.
+    from tools import player_packs
+    try:
+        mods = player_packs.enabled(profile.source_user_data(), profile.region().title)
+        print("\n".join(player_packs.report(mods, player_packs.seed_pack(pack))), flush=True)
+        if mods:
+            print("They are not loaded in the Archipelago game yet.", flush=True)
+    except (OSError, KeyError, ValueError) as exc:
+        mods = []
+        print(f"Your Cemu's graphic packs could not be read: {exc}", flush=True)
     if journal:
         print("AP journal in the tip frame; try it: /ap-tip <text>.", flush=True)
     else:
@@ -385,6 +395,7 @@ def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = Fals
               "test_aids": [{k: v for k, v in entry.items() if k != "files"} for entry in aid_packs],
               "native_tip_channel": journal,
               "account": account, "graphic_packs": packs,
+              "player_packs": [{"entry": mod.entry, "priority": mod.priority} for mod in mods],
               "play_saves_before": tree_hashes(play_saves), "status": "running"}
     # A hard crash of this console must land in the report: faulthandler
     # catches native faults, the hooks catch Python errors, and stderr is

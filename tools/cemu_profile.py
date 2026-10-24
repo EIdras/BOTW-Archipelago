@@ -133,6 +133,11 @@ def switch(install: CemuInstall) -> Path:
     return PROFILE
 
 
+def source_user_data() -> Path:
+    """The user folder of the Cemu the profile was copied from."""
+    return Path(_manifest()["source_user_data"])
+
+
 def game() -> Path:
     """What Cemu launches: the game found when the profile was made, else
     found again in the installation it was copied from."""
