@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.cemu.rpx import Rpx
 
-LEGACY_SHA = "f849ab0b129c1b3b16d19ab40e1b8e966a7077dd4514659ea42371dba020ca36"
+LEGACY_SHA = "99fa97ee64cd691e1e4d24970de8a842079ff9193f97d16d337a8cad6f8e5f6d"
 SOURCE = ROOT / ".build/ledger-validation/9bed01d0c46f146f"
 # Site, stack SafeString, inline storage, exact label, exit before consumption.
 SCOPES = ((0x030835C8, 0x16C, 0x178, b"Item_AP_Name\0", "apSubEnd", "apSubReq"),

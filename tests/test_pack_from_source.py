@@ -105,7 +105,7 @@ hashes = {n:digest(raw) for n,raw in tree(a).items() if n != 'manifest.json'}
 # the Archipelago quest (QuestProduct, entries, ActorInfo, texts in 7 languages), the sanctum's gate, the gifts of the
 # Zora King and Kima, Goron City's armor shop.
 assert len(hashes) == 38
-assert digest(encode(hashes)) == 'f1d937c5b45ae175fd3e73914f8a5f15b3023f32d1b4b47222ceda5245e3352b', 'new pin: ' + digest(encode(hashes))
+assert digest(encode(hashes)) == 'e8161ed3f15dc78761a649aa662450c83f0ebf6e080f8390baeaf8518f51aab4', 'new pin: ' + digest(encode(hashes))
 binding = load_seed(work/'analysis.json', 1, work/'seed.zip')
 verify_pack(a, binding)
 try:

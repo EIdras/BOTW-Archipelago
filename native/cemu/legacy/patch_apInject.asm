@@ -8,7 +8,7 @@ moduleMatches = 0x6267BFD0
 ;          after its update callback and its frame timing.
 ;          original: lwz r12, 0x0(r30), replayed LAST, by apDone, as it loads
 ;          r12, which the probe uses. FPS++ patches 0x031FA97C, a few instructions
-;          earlier in the same function, where this hook was until 0.3.0.
+;          earlier in the same function, where this hook used to be.
 ;
 ; HOOK 2 : 0x02EB5400, in PauseMenuDataMgr::itemGet, after the mflr.
 ;          original: stw r0, 0x6c(r1)
