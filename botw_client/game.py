@@ -433,6 +433,11 @@ class BotwGame:
         """The cave's per-frame counter: game frames, not wall time."""
         return be(self.process.read(self.cave.tick, 4))
 
+    def game_delta(self) -> float | None:
+        """The game's delta per frame, in frames of 1/30 s, or None (botw_client/paranoia.py)."""
+        from .paranoia import game_delta
+        return game_delta(lambda guest, size: self.process.read(self.cave.base + guest, size))
+
     def pause_menu_ready(self) -> tuple[bool, str]:
         """Can the pause menu be built at once (botw_client/pause_menu.py)."""
         from .pause_menu import pause_menu_ready

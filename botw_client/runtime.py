@@ -297,6 +297,10 @@ class BotwClientRuntime:
         # A downpour this client started, watched until it ends: at a death or
         # a reload, the client ends it (the pack would hold it on).
         self._downpour_active = False
+        self._downpour_started: float | None = None
+        # The game's pace, logged when first measured and when it changes
+        # (botw_client/game_pace.py).
+        self._pace = None
         # Pickup notifications of fillers received again, shown once their
         # delivery has committed and Link is back in the world.
         self._pickups: list[tuple[str, int]] = []
@@ -1503,6 +1507,7 @@ class BotwClientRuntime:
             kind, frames = choose()
             if await asyncio.to_thread(play, kind, frames):
                 self._downpour_active = True
+                self._downpour_started = time.monotonic()
                 self.log(f"Downpour played: {name(kind)} for {frames} frames")
             else:
                 self.log("Downpour not played: this pack has no weather hold; "
@@ -1533,6 +1538,8 @@ class BotwClientRuntime:
             return
         if frames == 0:
             self._downpour_active = False       # over by itself
+            if self._downpour_started is not None:
+                self.log(f"Downpour over by itself after {time.monotonic() - self._downpour_started:.0f} s")
             return
         try:
             dead = bool(await asyncio.to_thread(self.game.is_dead))
@@ -1641,6 +1648,20 @@ class BotwClientRuntime:
                      f"{self._reconnect_delay:.0f}s")
             await self.ap.close()
             self._reconnect_delay = min(self._reconnect_delay * 2, 30.0)
+
+    def _pace_tick(self):
+        """The game's pace in the log, when first measured and when it changes."""
+        if not all(hasattr(self.game, name) for name in ("frame_tick", "game_delta")):
+            return
+        if self._pace is None:
+            from .game_pace import Pace
+            self._pace = Pace(lambda: self.game.frame_tick(), lambda: self.game.game_delta())
+        try:
+            line = self._pace.sample()
+        except Exception:  # noqa: BLE001 - unreadable (a loading): the next window
+            return
+        if line:
+            self.log(line)
 
     def _hud_tick(self):
         """The HUD logo follows the AP connection (at most twice a second)."""
@@ -2194,6 +2215,7 @@ class BotwClientRuntime:
                 if session_bound:
                     await self._journal_tick()
                 self._hud_tick()
+                self._pace_tick()
                 if self.native_delivery:
                     if session_bound:
                         if not swarming:

@@ -83,6 +83,18 @@ NAME, P_TEXT, P_KEY, P_VALUE, HANDLE = 0x100, 0x140, 0x150, 0x160, 0x180
 R_TEXT, R_KEY, R_VALUE = 0x1A0, 0x1B0, 0x1C0
 
 
+def game_delta(read: Callable) -> float | None:
+    """The game's delta per frame, in frames of 1/30 s, or None (unreadable):
+    read(guest, size) -> bytes."""
+    raw = read(VFR, 4)
+    vfr = int.from_bytes(raw, "big") if raw and len(raw) == 4 else None
+    raw = read(vfr + VFR_DELTA, 4) if in_heap(vfr) else None
+    if not raw or len(raw) != 4:
+        return None
+    value = struct.unpack(">f", raw)[0]
+    return value if DELTA_RANGE[0] <= value <= DELTA_RANGE[1] else None
+
+
 def behind(position, forward, distance: float = DISTANCE):
     """The place `distance` behind Link, and the yaw that turns its +Z to him."""
     norm = math.hypot(forward[0], forward[2]) or 1.0
@@ -182,12 +194,7 @@ class Paranoia:
 
     def delta(self) -> float | None:
         """The game's delta per frame, in frames of 1/30 s, or None."""
-        vfr = self.u32(VFR)
-        raw = self.read(vfr + VFR_DELTA, 4) if in_heap(vfr) else None
-        if not raw or len(raw) != 4:
-            return None
-        value = struct.unpack(">f", raw)[0]
-        return value if DELTA_RANGE[0] <= value <= DELTA_RANGE[1] else None
+        return game_delta(self.read)
 
     def frame(self) -> int | None:
         try:

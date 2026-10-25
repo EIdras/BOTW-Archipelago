@@ -270,6 +270,7 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
         await self.runtime._downpour_tick()
         self.assertEqual(self.ended, [])
         self.assertFalse(self.runtime._downpour_active)
+        self.assertRegex(self.lines[-1], r"^Downpour over by itself after \d+ s$")
 
     async def test_an_unreadable_mark_ends_nothing(self):
         await self.start_downpour()
