@@ -15,7 +15,8 @@ instead, and arrives in your game from wherever it was found.
 The game runs on the Wii U version in the Cemu emulator. A game pack built for your seed replaces those rewards in the
 game's own resources, and the Archipelago client delivers items while you play, through the game's own presentation:
 the game's item window, or the Sheikah Slate's download screen for a rune. Items lost by reloading an older save are
-given back quietly, then listed in a single Archipelago window.
+given back quietly, then listed in a single Archipelago window. The graphic packs your Cemu runs, mods included,
+play in the Archipelago game too: the pack is built over the files they replace.
 
 ## Which locations are there?
 
@@ -54,8 +55,8 @@ Opening Beedle's list, or looking at a stall's jewel, hints the items for sale t
 - Filler: arrows (normal, fire, ice, shock, bomb, ancient), elixirs, weapons, gems and rupees
 - Weapons, bows and shields: 83 of the game's, from the soldiers' to the Lynels', elemental and ancient ones, a few
   jokes (a Soup Ladle, a Pot Lid) and, rarely, the amiibo's treasures (Biggoron's Sword, the Twilight Bow...)
-- Traps, with the `trap_percentage` option: Weapon Shatter, Blood Moon, Rupoor, Hearts Down, Strip Down and Cucco
-  Swarm
+- Traps, with the `trap_percentage` option: Weapon Shatter, Blood Moon, Rupoor, Hearts Down, Strip Down, Cucco
+  Swarm, Yiga Ambush, Paranoia and Downpour
 
 ## What is the goal?
 
@@ -180,6 +181,8 @@ jewel, with the item's name and its recipient.
 ## Current limitations
 
 - Only the Wii U version (European, American or Japanese), update v208, in Cemu on Windows, is supported.
+- A mod that changes an event the game pack changes too, or a graphic pack that patches the code it needs, is left
+  out of the Archipelago game, by name.
 - Each player's launcher builds a game pack for their seed, from their slot file (`.apbotw`, on the room's page
   or in the seed's zip). The seed is generated with Archipelago on a computer, then hosted anywhere, archipelago.gg
   included.

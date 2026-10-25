@@ -169,8 +169,9 @@ squad came and went at once, unseen; with `@I` = 6 (int, type 0) nothing came.
 
 **Delivery.** As the swarm's: its entry only commits, then the client creates the squad, in one turn of the invoker,
 once Link is in the world (no menu, entry or loading) and once the trap's event has closed (`SETTLE_FRAMES`, 90 frames
-after its commit, as a delivery waits before the next one): created a second after the commit, the armed Yiga left at
-once in a warp (seen in play). A squad committed while Link was leaving the world waits for him, two minutes at most.
+of 1/30 s after its commit, as a delivery waits before the next one): created a second after the commit, the armed
+Yiga left at once in a warp (seen in play). A squad committed while Link was leaving the world waits for him, two
+minutes at most.
 The Yiga can kill: such a death is a death like any other.
 
 ## Paranoia
@@ -200,6 +201,8 @@ and the shot never left. The 6.9 s are the Guardian's own, the game's: the cave'
 per frame, read from its frame-rate manager (`*0x1047c258 + 0x1c`: the vsyncs between two frames over the nominal,
 computed at `0x037932f0`; FPS++ writes 30/fps there). Measured: 1.0 at normal speed and on a vsync three times faster
 (a turbo), where the game runs three times faster; counted on the clock, the Guardian fired again and again there.
+Under FPS++ at 60 frames a second: 0.50, and the Guardian deleted after 6.9 s of game time (416 frames), 7.0 s on the
+clock.
 The clock stays a ceiling: whichever comes first deletes it, so a slowed game, or a delta misread, only sees the
 Guardian leave early. The client's log says what was measured ("deleted after 6.9 s of game time (206 frames, speed
 x1.00), 2.2 s of wall time").
@@ -229,7 +232,10 @@ The frames are the world's: one is counted when the manager's timer went below 4
 menu, which stops the world, does not shorten the weather (to be seen in the game). Another caller of the setter in
 the same frame (a weather zone, a Wizzrobe) would keep the timer at 4 and the count still: the hook's passes
 (`apWeatherPasses`, three times the frames) end the hold in any case. The client writes the type, the passes, then
-the frames (`Cave.force_weather`, [`tools/cemu/mailbox.py`](../../tools/cemu/mailbox.py)).
+the frames (`Cave.force_weather`, [`tools/cemu/mailbox.py`](../../tools/cemu/mailbox.py)), at the game's pace: its
+seconds times 30 frames, over the game's delta (see Paranoia). Measured under FPS++ at 60 frames a second: a storm of
+90 s, 5401 frames at a delta of 0.50, over by itself after 90 s; counted at 30 frames a second, a rain of 2 minutes
+had stopped after 63 s.
 
 **A death or a reload ends it.** Held by the pack, the weather would outlive a death and the save loaded after it.
 The client marks the downpour with a volatile GameData flag, `APDownpour` (declared by the pack,

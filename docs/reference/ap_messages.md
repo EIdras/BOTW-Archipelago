@@ -87,7 +87,9 @@ Every item is delivered by requesting an EventFlow entry built for it
 `APReceivedCursor`. A delivery is requested only in a safe state (no menu, event, cutscene or loading), and at least
 `SETTLE_FRAMES` = 90 frames after the previous commit: an entry requested right after a commit can be accepted and
 never played, because the commit comes before the previous event has ended (a Fairy requested 38 frames after a
-Heart Container's commit). Such an entry never raises its save guard, which every mutation follows: once 30
+Heart Container's commit). These are frames of 1/30 s, the game's time: the cave's frames weighted by the game's
+delta, never fewer than counted (`_frames_since_commit`), so that the wait lasts as long under FPS++ at 60 frames a
+second, twice as many frames. Such an entry never raises its save guard, which every mutation follows: once 30
 seconds of play pass with no guard, commit or rejection seen, it is asked again. An entry that raised its guard
 without committing stops the client (possible mutation).
 

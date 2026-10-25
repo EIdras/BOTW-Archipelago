@@ -2,7 +2,7 @@
 # reads every YAML file of this folder: one file per player of the multiworld.
 name: Player
 game: Breath of the Wild
-description: Breath of the Wild, Wii U EUR v208 in Cemu.
+description: Breath of the Wild, Wii U v208 (EUR, USA or JPN) in Cemu.
 Breath of the Wild:
   progression_balancing: 50
   accessibility: full

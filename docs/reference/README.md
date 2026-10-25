@@ -1,7 +1,7 @@
 # Technical notes
 
-What was measured in the game, and why the integration works the way it does. Addresses are those of the Wii U EUR
-v208 executable.
+What was measured in the game, and why the integration works the way it does. Addresses are those of the Wii U v208
+executable, the same in the European, American and Japanese versions.
 
 | Note | Subject |
 |---|---|

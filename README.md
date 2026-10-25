@@ -42,6 +42,8 @@ your own server.
 - **Traps** (option): a share of the filler turns into Weapon Shatter, Blood Moon, Rupoor, Hearts Down, Strip
   Down, Cucco Swarm, Yiga Ambush, Paranoia and Downpour, which strike when received. The cuccos, the Yiga and the storm's
   lightning can kill, and a trap given back by a reload is spent, not suffered twice.
+- **Your mods**: the graphic packs your Cemu runs for the game play in the Archipelago game too, FPS++ and the mods
+  UKMM deploys included; the seed's pack is built over the files they replace.
 
 ## Requirements
 
@@ -73,6 +75,9 @@ The French names of every location and item, as the French game shows them: [nom
   the sealed sanctum's line; a DeathLink sent from the Japanese version names no killer.
 - The game pack is built for one seed: Archipelago's website cannot generate a seed with this world, which is
   generated with Archipelago on a computer (then hosted anywhere).
+- A graphic pack that replaces the game's executable or patches the code the integration needs, and a mod that
+  changes an event the game pack changes too, are left out of the Archipelago game (the launcher names them). Mods
+  that change the HUD, and BCML, have not been tried yet.
 
 ## Documentation
 

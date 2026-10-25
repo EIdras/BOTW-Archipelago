@@ -50,6 +50,9 @@ The launcher's steps are tools of their own:
 - `venv\Scripts\python tools\play_seed.py <slot file or seed zip> [--slot <name>]` prepares a seed: it checks it,
   keeps a copy in `play-seeds\<seed>\`, builds the pack bound to the slot from the profile's update (or
   `--content`/`--rpx`) and selects it.
+- `venv\Scripts\python tools\player_packs.py [--user-data <folder>] [--pack <seed pack>]` lists the Breath of the
+  Wild graphic packs the player's Cemu runs, and what they share with a seed pack, without copying anything; each
+  session runs those it can next to the seed's pack, which is built over them (`tools/play_mods.py`).
 - `Play.cmd --seed <seed> [--connect <address> [--password <password>] | --host] [--speed <x>]` plays a prepared seed:
   in a room, or hosting the seed's zip on this computer, port 38281, with its state kept next to the seed (`--host`:
   on the network too). Test aids, never in a release: `--speed` multiplies Link's run, sprint and climb speed;
@@ -66,8 +69,8 @@ run-tests.cmd
 run-tests.cmd full
 ```
 
-The first runs in about half a minute. `full` also runs the tests that build whole packs from the game's files
-(`tests/full_build.py`, about four minutes): run it before a commit that changes what a pack holds (`botw_patch/`,
+The first runs in about a minute. `full` also runs the tests that build whole packs from the game's files
+(`tests/full_build.py`, about ten minutes): run it before a commit that changes what a pack holds (`botw_patch/`,
 `tools/build_*`, `native/`, `data/item_map.json`), since their pins are what catches an unintended change. A pin
 equal to the build's digest also proves the build reproducible: no test builds the same thing twice.
 

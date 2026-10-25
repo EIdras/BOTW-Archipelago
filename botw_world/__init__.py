@@ -41,7 +41,7 @@ class BotwWeb(WebWorld):
 
 
 class BotwWorld(World):
-    """Breath of the Wild, on Wii U (EUR v208) in Cemu. Shrines, towers, Great Fairies, Divine
+    """Breath of the Wild, on Wii U (v208: EUR, USA or JPN) in Cemu. Shrines, towers, Great Fairies, Divine
     Beasts, the rune terminals, the Master Sword and optionally Beedle's shops and the village
     stalls send their rewards to the multiworld; the paraglider, the runes, the champions'
     abilities, armor, hearts and stamina arrive from it, presented by the game's own windows."""

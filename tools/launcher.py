@@ -8,7 +8,8 @@
 2. Picks the seed: the file given (or dropped on the launcher), else one
    already prepared, or a new file chosen in a window. A new seed's game pack
    is built (tools/play_seed.py), and a prepared seed's again when another
-   version of the project built it.
+   version of the project built it, or over other mods than those the
+   player's Cemu runs now (tools/play_mods.py).
 3. Asks the address of the room (the one written in a slot file downloaded
    from the room's page, then the one remembered for the seed) and its password; a
    seed prepared from its zip can also be hosted on this computer, where the

@@ -7,9 +7,9 @@ the running game through Cemu.
 ```
 players/*.yaml ──> Archipelago + botw_world ──> AP_<seed>.zip (multidata + per-slot .apbotw)
                                                         │
-       Cemu's update and RPX (profile) ──> tools/play_seed.py ──> game pack of the seed (Cemu graphic pack)
+  Cemu's update, RPX and mods (profile) ──> tools/play_seed.py ──> game pack of the seed (Cemu graphic pack)
                                                         │
-      Cemu (isolated profile, pack) <── memory ──> botw_client <── websocket ──> Archipelago server
+      Cemu (isolated profile, packs) <── memory ──> botw_client <── websocket ──> Archipelago server
 ```
 
 ## The world (`botw_world/`)
@@ -24,8 +24,9 @@ locations and the prices drawn for its shop locations. The game pack is built fr
 
 ## The game pack (`tools/build_pack_from_source.py`)
 
-A Cemu graphic pack, built from the player's own game files and the seed. It is content-addressed (its folder is named
-after the hash of its content), reproducible, and verified before every use (`verify_pack`). Two builders compose it:
+A Cemu graphic pack, built from the player's own game files, as the player's mods leave them, and the seed. It is
+content-addressed (its folder is named after the hash of its content), reproducible, and verified before every use
+(`verify_pack`). Two builders compose it:
 
 - **Resources** (`tools/build_resources_from_source.py`, library `botw_patch/`): edits of the game's own files.
   - The rewards of the checked locations are taken out where the game gives them (rune terminals, pedestals, Divine
@@ -47,8 +48,18 @@ after the hash of its content), reproducible, and verified before every use (`ve
 - **Native code** (`tools/build_native_from_source.py`): Cemu patches (`patch_apInject.asm` and companions) assembled
   from `native/cemu/` and a chain of transformations (`tools/build_*.py`). They install a code cave with a mailbox the
   client writes to, and a per-frame hook that runs the client's requests on the game's own thread: requesting an
-  EventFlow entry, showing a line in the tip frame, selecting a rune. The pack refuses any RPX other than the v208
-  one it was built for (SHA-256).
+  EventFlow entry, showing a line in the tip frame, selecting a rune. The hook is in the game's frame function
+  (`0x031FA9B4`), a few instructions after the one FPS++ patches. The code follows no pointer past the end of the
+  game's main memory, which Extended Memory moves: the pack is built for the end the player's packs give
+  (`tools/cemu/guest.py`). The pack refuses any RPX other than the v208 one it was built for (SHA-256).
+
+**Over the player's mods** (`botw_patch/game_files.py`): the builders read every file through one view of the update
+and the DLC, overlaid by the graphic packs the play profile runs, the one Cemu lets win first (highest `fsPriority`,
+then the first it loads). The update and the DLC themselves are still checked against their pinned hashes. A file a
+mod replaces is taken as it is and the pack adds its changes to it, but for the event flows the pack rebuilds whole:
+one a mod changes too is refused (`ModConflict`), naming the mod. The pack's `fsPriority` is above those of the mods
+(2000 at least), and its manifest records the packs it was built over (`game_packs`) and the end of the game's main
+memory (`mem2_end`): the launcher builds it again when either changes.
 
 The pack is bound to its seed: a token derived from the seed, team, slot and data package is written into the pack
 and, on the first connection, into the save (`APBindSession`). A save bound to another seed is refused. The world
@@ -92,6 +103,18 @@ and the accounts into an isolated profile in the data folder, and records the ve
 packs are built from that copy of the update, the one the game runs from. `cemu_profile.py --region USA` switches an
 existing profile to another version.
 
+## The player's mods (`tools/player_packs.py`, `tools/play_mods.py`)
+
+Mods reach Cemu as graphic packs, whatever installed them (UKMM and BCML deploy one). Each session reads those of the
+player's Cemu as Cemu does: every folder of its `graphicPacks/` holding a `rules.txt`, in the order Cemu walks them,
+enabled by its `settings.xml` (or by their own `default`), for the profile's version of the game. Those the
+Archipelago game runs are copied into the profile's `graphicPacks/AP_Player/`, under the same path, and enabled with
+the player's presets. Left out, and named: a pack that replaces the executable (`code/`), one whose patches write an
+address the seed pack's patches write (`our_addresses()`), and a mod the seed pack cannot be built over
+(`ModConflict`, `play_mods.leave_out`). With packs that replace game files and the game's default memory, Extended
+Memory, of Cemu's community packs, is added when installed. The seed pack is then built again if the packs it was
+built over changed (`play_mods.fresh_pack`). The player's Cemu is only read.
+
 ## The versions of the game (`botw_client/regions.py`)
 
 The European (EUR, `101C9500`), American (USA, `101C9400`) and Japanese (JPN, `101C9300`) updates v208 run the same
@@ -117,11 +140,11 @@ play session.
 
 ## The play session (`tools/play_session.py`)
 
-Runs Cemu on the isolated profile of `tools/cemu_profile.py` with the seed's pack as its only graphic pack, and the
-client, until Cemu closes. The client joins the room hosting the seed (`--connect`, archipelago.gg for instance), or
-the Archipelago server of the seed, run in process from its zip (its state saved next to the seed; `--host` opens it
-to the network for the other players). Each session writes its logs to `play-seeds/<seed>/sessions/` in the data
-folder (see [Development](development.md#local-folders)).
+Runs Cemu on the isolated profile of `tools/cemu_profile.py` with the seed's pack and the copies of the player's
+graphic packs, and the client, until Cemu closes. The client joins the room hosting the seed (`--connect`,
+archipelago.gg for instance), or the Archipelago server of the seed, run in process from its zip (its state saved next
+to the seed; `--host` opens it to the network for the other players). Each session writes its logs to
+`play-seeds/<seed>/sessions/` in the data folder (see [Development](development.md#local-folders)).
 
 ## Technical notes
 

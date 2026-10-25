@@ -13,7 +13,8 @@ Cemu emulator: installing, joining a room, and, for the person who hosts it, gen
 
   Start the game once in Cemu. The Switch version is not supported: the integration is built for this exact
   executable. With several versions in Cemu, the launcher plays the European one, else the American one.
-- About 5 GB of free disk space, and 140 MB more for each seed.
+- About 5 GB of free disk space, 140 MB more for each seed, and as much as the mods you play take
+  ([mods](#mods-and-graphic-packs)).
 - The room the game is hosted in: its page on archipelago.gg offers your **slot file** (`.apbotw`, "Download Patch
   File..." next to your name), and shows the **address of the room**.
 
@@ -41,7 +42,8 @@ Start `BOTW Archipelago.cmd` (or drop your slot file on it). If Windows says it 
    slot file comes from that page: press Enter, then type the room's password, or Enter if it has none. The address
    is remembered for the seed.
 
-Cemu starts with the seed's game pack, then the Archipelago client, in the launcher's window. **Start a new game** for
+Cemu starts with the seed's game pack and your own graphic packs ([below](#mods-and-graphic-packs)), then the
+Archipelago client, in the launcher's window. **Start a new game** for
 a new seed: a save is bound to the seed it was started with. Play normally: your items arrive in the game, the
 Archipelago journal (top right of the screen) shows what is sent and received, and the Archipelago logo in the HUD
 is in color while you are connected. Close Cemu to end the session, and leave the launcher's window open until then.
@@ -69,6 +71,30 @@ Lines typed in the launcher's window go to the room as chat, or as commands: `/h
 | `/ap-disconnect [s]`    | simulate a server disconnection for `s` seconds                |
 | `/ap-evt [n\|reset]`     | list the game's last event requests                            |
 | `/ap-deathlink [cause]` | kill Link as a received DeathLink would (sent to nobody)       |
+
+## Mods and graphic packs
+
+The Archipelago game runs the Breath of the Wild graphic packs your Cemu runs: those ticked in Cemu's Options >
+Graphic packs, with the presets chosen there, community packs (FPS++, graphics...) and mods alike, whatever installed
+them (UKMM, BCML, a folder unzipped by hand). Each session copies them into the launcher's profile, and lists them in
+the launcher's window with those the Archipelago game runs; your Cemu is only read. To play without one, untick it in
+your Cemu before launching. Change presets there too: the Archipelago game takes yours at each session.
+
+- **The seed's pack is built over your mods.** When a mod replaces a file the pack changes too (Linkle's title
+  screen, a text mod's messages, the files UKMM merges), the pack starts from the mod's version and adds its own
+  changes. When your mods change, the next session builds the seed's pack again, in about a minute.
+- **Extended Memory.** Mods that add to the game take memory, and Archipelago adds its own: the game could lack it
+  and never finish loading, without any error. With mods that replace game files, the Archipelago game enables
+  Extended Memory, one of Cemu's community packs, and says so. If your Cemu does not have it, the launcher says how
+  to get it: Options > Graphic packs > Download latest community graphic packs, then launch again.
+- **What is left out.** A pack that replaces the game's executable, one that patches the code the Archipelago pack
+  needs, and a mod that changes an event the Archipelago pack changes too: the launcher names it and why, and the
+  Archipelago game runs without it. UKMM gathers its mods into one pack: one of them left out leaves them all out,
+  and the launcher says so; turn that mod off in UKMM, and deploy again, to keep the others.
+
+Tested with FPS++ (60 frames a second), the community graphics and enhancement packs, and six mods deployed by UKMM,
+Linkle among them. Mods that change the HUD, and BCML, have not been tried yet: if one does not work,
+[report it](https://github.com/EIdras/BOTW-Archipelago/issues) with the session's folder.
 
 ## Generating and hosting a seed
 
@@ -110,6 +136,8 @@ games, and the seeds. Your Cemu installation was never modified.
   the DLC not installed, a game listed by Cemu that moved...). Fix it in Cemu, start the game once there, and launch
   again.
 - **"Close Cemu before preparing a session"**: the launcher starts Cemu itself; close yours first.
+- **With mods, the game never finishes loading**: the game lacks memory. Read what the launcher says about Extended
+  Memory ([mods](#mods-and-graphic-packs)), and check that the same mods load in your own Cemu.
 - **The game does not react to your controller**: the profile copied no controller setting from your Cemu. In the
   game's window, open Cemu's Options > Input settings and choose your controller for player 1; the profile keeps it.
 - **Each session writes its logs** to `%LOCALAPPDATA%\BOTW Archipelago\play-seeds\<seed>\sessions\<date>\`: the

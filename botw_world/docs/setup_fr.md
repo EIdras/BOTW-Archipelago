@@ -15,7 +15,8 @@ l'émulateur Cemu : l'installation, rejoindre une salle et, pour la personne qui
   Lancez le jeu une fois dans Cemu. La version Switch n'est pas prise en charge : l'intégration est construite
   pour cet exécutable précis. Avec plusieurs versions dans Cemu, le lanceur joue la version européenne, sinon
   l'américaine.
-- Environ 5 Go d'espace disque libre, et 140 Mo de plus par seed.
+- Environ 5 Go d'espace disque libre, 140 Mo de plus par seed, et la place que prennent les mods que vous jouez
+  ([mods](#mods-et-packs-graphiques)).
 - La salle qui héberge la partie : sa page sur archipelago.gg propose votre **fichier de slot** (`.apbotw`,
   « Download Patch File... » à côté de votre nom) et affiche l'**adresse de la salle**.
 
@@ -43,8 +44,9 @@ ordinateur, choisir « Informations complémentaires », puis « Exécuter quand
    de slot vient de cette page : Entrée, puis le mot de passe de la salle, ou Entrée si elle n'en a pas. L'adresse est
    retenue pour la seed.
 
-Cemu démarre avec le pack de jeu de la seed, puis le client Archipelago, dans la fenêtre du lanceur. **Commencer une
-nouvelle partie** pour une nouvelle seed : une sauvegarde reste liée à la seed avec laquelle elle a été commencée.
+Cemu démarre avec le pack de jeu de la seed et vos propres packs graphiques ([plus bas](#mods-et-packs-graphiques)),
+puis le client Archipelago, dans la fenêtre du lanceur. **Commencer une nouvelle partie** pour une nouvelle seed : une
+sauvegarde reste liée à la seed avec laquelle elle a été commencée.
 Jouer normalement : vos objets arrivent dans le jeu, le journal Archipelago (en haut à droite de l'écran) montre ce qui
 est envoyé et reçu, et le logo Archipelago du HUD est en couleur tant que vous êtes connecté. Fermer Cemu termine la
 session ; laisser la fenêtre du lanceur ouverte jusque-là. Le client et les textes ajoutés au jeu sont en anglais.
@@ -77,6 +79,33 @@ pour les tests et les signalements de bugs :
 | `/ap-disconnect [s]`    | simuler une coupure du serveur pendant `s` secondes           |
 | `/ap-evt [n\|reset]`     | lister les dernières requêtes d'événement du jeu              |
 | `/ap-deathlink [cause]` | tuer Link comme un DeathLink reçu (envoyé à personne)         |
+
+## Mods et packs graphiques
+
+La partie Archipelago joue les packs graphiques de Breath of the Wild que joue votre Cemu : ceux cochés dans Options >
+Packs graphiques de Cemu, avec les préréglages choisis là, packs de la communauté (FPS++, graphismes...) comme mods,
+quel que soit ce qui les a installés (UKMM, BCML, un dossier décompressé à la main). Chaque session les copie dans le
+profil du lanceur, et les liste dans la fenêtre du lanceur avec ceux que joue la partie Archipelago ; votre Cemu est
+seulement lu. Pour jouer sans l'un d'eux, le décocher dans votre Cemu avant de lancer. Changer les préréglages là
+aussi : la partie Archipelago reprend les vôtres à chaque session.
+
+- **Le pack de la seed est construit par-dessus vos mods.** Quand un mod remplace un fichier que le pack modifie aussi
+  (l'écran titre de Linkle, les messages d'un mod de textes, les fichiers que fusionne UKMM), le pack part de la
+  version du mod et y ajoute ses propres changements. Quand vos mods changent, la session suivante reconstruit le pack
+  de la seed, en une minute environ.
+- **Extended Memory.** Les mods qui ajoutent au jeu prennent de la mémoire, et Archipelago ajoute la sienne : le jeu
+  pourrait en manquer et ne jamais finir de charger, sans aucune erreur. Avec des mods qui remplacent des fichiers du
+  jeu, la partie Archipelago active Extended Memory, un des packs de la communauté de Cemu, et le dit. Si votre Cemu
+  ne l'a pas, le lanceur dit comment l'obtenir : dans Options > Packs graphiques, télécharger les packs de la
+  communauté (« Download latest community graphic packs »), puis relancer.
+- **Ce qui est écarté.** Un pack qui remplace l'exécutable du jeu, un pack qui patche le code dont le pack Archipelago
+  a besoin, et un mod qui modifie un événement que le pack Archipelago modifie aussi : le lanceur le nomme avec la
+  raison, et la partie Archipelago se joue sans lui. UKMM réunit ses mods en un seul pack : un seul d'entre eux écarté
+  les écarte tous, et le lanceur le dit ; désactiver ce mod dans UKMM, et déployer à nouveau, pour garder les autres.
+
+Testé avec FPS++ (60 images par seconde), les packs de graphismes et d'améliorations de la communauté, et six mods
+déployés par UKMM, dont Linkle. Les mods qui modifient le HUD, et BCML, n'ont pas encore été essayés : si l'un ne
+marche pas, [le signaler](https://github.com/EIdras/BOTW-Archipelago/issues) avec le dossier de la session.
 
 ## Générer et héberger une seed
 
@@ -118,6 +147,8 @@ parties Archipelago, et les seeds. Votre installation de Cemu n'a jamais été m
 - **Le lanceur refuse votre Cemu** : son message dit ce qui manque (une autre version du jeu, la mise à jour ou le DLC
   non installés, un jeu listé par Cemu qui a été déplacé...). Corriger dans Cemu, y lancer le jeu une fois, et relancer.
 - **« Close Cemu before preparing a session »** : le lanceur démarre Cemu lui-même ; fermer le vôtre d'abord.
+- **Avec des mods, le jeu ne finit jamais de charger** : le jeu manque de mémoire. Lire ce que le lanceur dit
+  d'Extended Memory ([mods](#mods-et-packs-graphiques)), et vérifier que les mêmes mods chargent dans votre Cemu.
 - **Le jeu ne réagit pas à votre manette** : le profil n'a copié aucun réglage de manette de votre Cemu. Dans la
   fenêtre du jeu, ouvrir Options > Paramètres d'entrée de Cemu et choisir votre manette pour le joueur 1 ; le profil
   la garde.
