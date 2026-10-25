@@ -4,7 +4,8 @@ The pack holds the weather (tools/build_weather_native.py): the game's own
 setter, called every frame from the per-frame hook while the cave's frame count
 lasts, in frames of the world (a menu should stop it), three times as many
 passes of the hook at most. The client only writes which weather and for how
-long (tools/cemu/mailbox.py, Cave.force_weather).
+long (tools/cemu/mailbox.py, Cave.force_weather), in frames at the game's pace:
+twice as many under FPS++ at 60 frames a second (botw_client/game_pace.py).
 
 A death or a reload ends it (BotwClientRuntime._downpour_tick): the client
 marks the downpour with the pack's volatile flag APDownpour (botw_patch/downpour.py),

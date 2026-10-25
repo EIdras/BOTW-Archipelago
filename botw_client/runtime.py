@@ -1503,12 +1503,18 @@ class BotwClientRuntime:
             play = getattr(backend, "downpour", None)
             if play is None:
                 return
-            from .downpour import choose, name
+            from .downpour import FRAMES_PER_SECOND, choose, name
+            from .game_pace import delta_or_one
             kind, frames = choose()
-            if await asyncio.to_thread(play, kind, frames):
+            # Frames of the world at the game's pace: FPS++ at 60 runs two of
+            # x0.50 for one of 1/30 s.
+            delta = await asyncio.to_thread(delta_or_one, self.game)
+            held = round(frames / delta)
+            if await asyncio.to_thread(play, kind, held):
                 self._downpour_active = True
                 self._downpour_started = time.monotonic()
-                self.log(f"Downpour played: {name(kind)} for {frames} frames")
+                self.log(f"Downpour played: {name(kind)} for {frames // FRAMES_PER_SECOND} s of game time "
+                         f"({held} frames at x{delta:.2f})")
             else:
                 self.log("Downpour not played: this pack has no weather hold; "
                          "rebuild it with tools/play_seed.py")

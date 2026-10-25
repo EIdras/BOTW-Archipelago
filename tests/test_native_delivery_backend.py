@@ -143,6 +143,33 @@ class NativeDeliveryBackendTests(unittest.TestCase):
         self.assertEqual(backend.deliver(second).status, DeliveryStatus.APPLIED)
         self.assertEqual(calls, ["APD_SET_00", "APD_SET_01"])
 
+    def test_under_fps_plus_plus_the_wait_is_in_the_games_time(self):
+        # FPS++ at 60 frames a second: a delta of x0.50, twice the frames for the same wait.
+        from botw_client.native_delivery import SETTLE_FRAMES
+        frame = [1000]
+        self.game.frame_tick = lambda: frame[0]
+        self.game.game_delta = lambda: 0.5
+
+        def request(_process, _cave, _number, checkpoint, **kwargs):
+            checkpoint({"status": "prepared"})
+            self.values[flag("APReceivedCursor")] += 1 if kwargs["entry"] == "APD_SET_00" else 255
+            return {"native_return": 1}
+
+        backend = self.backend(request)
+        backend.deliver(DeliveryCommand("seed", 2, 7, "Set", step=0, step_count=2))
+        second = DeliveryCommand("seed", 2, 7, "Set", step=1, step_count=2)
+        frame[0] += SETTLE_FRAMES
+        result = backend.deliver(second)
+        self.assertEqual(result.status, DeliveryStatus.DEFERRED)
+        self.assertIn(f"(45/{SETTLE_FRAMES} frames of 1/30 s)", result.detail)
+        frame[0] += SETTLE_FRAMES
+        self.assertEqual(backend.deliver(second).status, DeliveryStatus.APPLIED)
+        # A slower game (a delta above 1) or an unreadable delta: never fewer frames than counted.
+        backend._committed_at = frame[0] - 100
+        for delta in (lambda: 1.5, lambda: None):
+            self.game.game_delta = delta
+            self.assertEqual(backend._frames_since_commit(), 100)
+
     def test_a_silent_twin_is_asked_in_its_own_flowchart(self):
         data = json.loads(self.path.read_text(encoding="utf-8"))
         data["items"]["Core"]["variants"]["default"][0].update(

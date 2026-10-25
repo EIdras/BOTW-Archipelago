@@ -204,10 +204,14 @@ class CemuNativeDeliveryBackend:
             return None
 
     def _frames_since_commit(self):
+        """Frames of 1/30 s, the game's time, since the last commit: the cave's
+        frames weighted by the game's delta (FPS++ at 60: two of x0.50 make one),
+        so that a settle lasts as long at any pace; never fewer than counted."""
         now = self._frame()
         if self._committed_at is None or now is None:
             return None
-        return (now - self._committed_at) & 0xFFFFFFFF
+        from .game_pace import delta_or_one
+        return int(((now - self._committed_at) & 0xFFFFFFFF) * min(delta_or_one(self.game), 1.0))
 
     def _read_s32(self, hash_u32: int) -> int:
         live = getattr(self.game, "live", None)
@@ -574,7 +578,7 @@ class CemuNativeDeliveryBackend:
         # fought (lab probe 21). As a delivery waits for the event before it.
         since = self._frames_since_commit()
         if since is not None and since < SETTLE_FRAMES:
-            return f"the trap's event closing ({since}/{SETTLE_FRAMES} frames)"
+            return f"the trap's event closing ({since}/{SETTLE_FRAMES} frames of 1/30 s)"
         outcome: dict[str, int] = {}
 
         def work(read, write):
@@ -748,7 +752,7 @@ class CemuNativeDeliveryBackend:
         since = self._frames_since_commit()
         if since is not None and since < self._settle:
             return DeliveryResult(DeliveryStatus.DEFERRED, cursor,
-                                  f"previous event closing ({since}/{self._settle} frames)")
+                                  f"previous event closing ({since}/{self._settle} frames of 1/30 s)")
         if not (command.quiet and step.get("quiet_entry")) and any(
                 m.get("kind") in ("rune_download", "map_open") for m in step.get("mutations", ())):
             # The download screen needs the pause menu built at once, or the
@@ -877,9 +881,9 @@ class CemuNativeDeliveryBackend:
             self._committed_at = self._frame()
             return DeliveryResult(DeliveryStatus.DEFERRED, command.cursor,
                                   "entry accepted but never started: asked again"
-                                  + (f" (requested {since} frames after the previous commit)"
+                                  + (f" (requested {since} frames of 1/30 s after the previous commit)"
                                      if since is not None else ""))
         return DeliveryResult(DeliveryStatus.UNCERTAIN, command.cursor,
                               "entry accepted without an observed commit"
-                              + (f" (requested {since} frames after the previous commit)"
+                              + (f" (requested {since} frames of 1/30 s after the previous commit)"
                                  if since is not None else ""))

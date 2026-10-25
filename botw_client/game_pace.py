@@ -16,6 +16,16 @@ CHANGE = 0.2            # frames a second that moved by a fifth: logged again
 DELTA_CHANGE = 0.1
 
 
+def delta_or_one(game) -> float:
+    """The game's delta per frame (game.game_delta()), 1 when unreadable."""
+    delta = getattr(game, "game_delta", None)
+    try:
+        value = float(delta()) if delta else 1.0
+    except Exception:  # noqa: BLE001 - unreadable: frames as counted
+        return 1.0
+    return value if value > 0 else 1.0
+
+
 class Pace:
     """sample() at each turn of the client's loop: a line for the log when the
     pace is first measured or has changed, else None. frames() -> the cave's

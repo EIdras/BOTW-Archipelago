@@ -213,7 +213,7 @@ class AmbushTests(unittest.TestCase):
         backend._drop_blocked = lambda: None
         turns = []
         backend._in_one_turn = lambda work: turns.append(work) or "ok"
-        self.assertEqual(backend.yiga_ambush(), f"the trap's event closing (30/{SETTLE_FRAMES} frames)")
+        self.assertEqual(backend.yiga_ambush(), f"the trap's event closing (30/{SETTLE_FRAMES} frames of 1/30 s)")
         self.assertEqual(turns, [])
         frame[0] = 970 + SETTLE_FRAMES
         self.assertEqual(backend.yiga_ambush(), {})
@@ -286,6 +286,15 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn(self.weathers[0], {(2, 3600), (7, 2700)})
         self.assertEqual(self.runtime._native_traps, [])
         self.assertTrue(self.lines[-1].startswith("Downpour played"))
+
+    async def test_under_fps_plus_plus_a_downpour_lasts_as_long(self):
+        # 60 frames a second at a delta of x0.50: twice the frames, the same game time.
+        self.runtime.game.game_delta = lambda: 0.5
+        self.runtime._native_traps.append("downpour")
+        await self.runtime._native_trap_tick()
+        self.assertIn(self.weathers[0], {(2, 7200), (7, 5400)})
+        self.assertRegex(self.lines[-1], r"^Downpour played: \w+ for (120|90) s of game time "
+                                         r"\((7200|5400) frames at x0\.50\)$")
 
     async def test_an_ambush_waits_for_link_then_plays(self):
         self.answers[:] = ["Link not in the world", {"ok": 3}]
