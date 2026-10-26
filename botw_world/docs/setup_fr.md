@@ -59,9 +59,8 @@ chaque lieu et chaque objet.
 fois, pour que son dossier `PopTracker/packs` existe), le lanceur installe le pack « Breath of the Wild
 Archipelago » avant la session. Dans PopTracker, charger le pack, cliquer sur « AP » et saisir l'adresse de la
 salle, votre nom de slot et le mot de passe : la carte montre chaque lieu, coloré selon ce que vos objets
-permettent, et les coche au fil de la partie. La carte et une partie des icônes viennent de votre propre jeu ;
-pour les autres (armures, runes...), vous pouvez déposer les icônes du jeu, en PNG nommés comme les objets, dans
-`%LOCALAPPDATA%\BOTW Archipelago\poptracker\icons` : elles servent dès la session suivante.
+permettent, et les coche au fil de la partie. Le [guide PopTracker](poptracker_en.md) (en anglais) détaille
+chaque étape.
 
 **Universal Tracker** : avec [Universal Tracker](https://github.com/FarisTheAncient/Archipelago/releases) et
 `botw.apworld` dans votre installation d'Archipelago, connectez-le à la salle avec votre nom de slot : il liste ce

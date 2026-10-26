@@ -51,10 +51,8 @@ is in color while you are connected. Close Cemu to end the session, and leave th
 **Map tracker**: with [PopTracker](https://github.com/black-sliver/PopTracker) installed (run once, so that its
 `PopTracker/packs` folder exists), the launcher installs the "Breath of the Wild Archipelago" pack before the
 session. In PopTracker, load the pack, click "AP" and enter the room's address, your slot name and the password:
-the map shows every location, colored by what your items allow, and checks them as you go. The map and part of
-the icons come from your own game; for the others (armor, runes...), you may put the game's icons, PNG files
-named after the items, in `%LOCALAPPDATA%\BOTW Archipelago\poptracker\icons`: they are used at the next
-session.
+the map shows every location, colored by what your items allow, and checks them as you go. The
+[PopTracker guide](poptracker_en.md) covers it step by step.
 
 **Universal Tracker**: with [Universal Tracker](https://github.com/FarisTheAncient/Archipelago/releases) and
 `botw.apworld` in your Archipelago installation, connect it to the room with your slot name: it lists what your

@@ -35,7 +35,7 @@ your own server.
 - **DeathLink** (option): when Link dies, the other DeathLink players die; when one of them dies, Link dies, as he
   would of a lethal blow (Mipha's Grace and fairies still save him).
 - **PopTracker**: a map tracker with the world's logic, which follows the room by itself; the launcher builds it
-  from your game and installs it when PopTracker is there.
+  from your game and installs it when PopTracker is there ([PopTracker guide](botw_world/docs/poptracker_en.md)).
 - **Universal Tracker**: supported without a YAML, and its `/explain` says what a location still asks for.
 - **Weapons**: 83 of the game's weapons, bows and shields in the filler, the weaker first and the amiibo's
   treasures last (option); with a full pouch, a weapon falls at Link's feet.
