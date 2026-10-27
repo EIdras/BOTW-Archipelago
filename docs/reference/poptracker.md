@@ -47,13 +47,13 @@ game, so that no file of the game is in the repository.
      the Sheikah Slate for the sensor, the full stamina wheel "Energizing5", the Champions' Ballad emblems);
   2. the game's own interface icons (`tools/uitex.py`, `UI_ICONS`), from the update's `Pack/Bootup.pack` >
      `Layout/Common.sblarc`: the HUD's heart and stamina wheel, the sensor, the four Divine Beasts, the inventory's
-     tab icons (sword, shield, armour) and the effect icons its armour shows (fire, swimming, shock, cold, heat,
-     climbing, noise, attack, ancient), the map's icons (shrine, tower, stable, store, castle) for the squares. Most
+     tab icons (sword, bow, shield, armour; the pouch upgrades take the first three), the map's horse for Epona, the
+     effect icons its armour shows (fire, swimming, shock, cold, heat, climbing, noise, attack, ancient), the map's icons (shrine, tower, stable, store, castle) for the squares. Most
      are masks the game colours: they come out white. A progressive piece gets its number;
   3. a label drawn by the builder, in the same style.
 
   The game draws no image of most items, and only stand-ins of the others (an armour's effect, an inventory tab,
-  white masks): the icons of every item of the grid (`RELEASE_ICONS`, 38) are published apart from the code: `tracker-icons.zip`, the file attached to the GitHub release
+  white masks): the icons of every item of the grid (`RELEASE_ICONS`, 45) are published apart from the code: `tracker-icons.zip`, the file attached to the GitHub release
   `tracker-icons` (Nintendo's images, never committed). The launcher fetches it once into
   `<data>/poptracker/icons/release` (`fetch_icons`: PNG files only, no paths, 4 MB at most); offline, the labels
   stay. The maintainer makes it from a folder of icons: `tools/build_poptracker.py --icons <folder> --package-icons

@@ -86,7 +86,10 @@ ROWS = [
      ("Ancient Set", "ANC", ARMOR), ("Radiant Set", "RAD", ARMOR)],
     [("Heart Container", "HC", LIFE), ("Stamina Vessel", "STAM", LIFE),
      ("Champion's Tunic", "TUN", GEAR), ("Ancient Bridle", "BRDL", GEAR),
-     ("Ancient Saddle", "SADL", GEAR)],
+     ("Ancient Saddle", "SADL", GEAR), ("Korok Mask", "KRK", ARMOR)],
+    [("Master Cycle Zero", "MCZ", GEAR), ("Travel Medallion", "TRV", GEAR), ("Epona", "EPO", GEAR),
+     ("Weapon Pouch Upgrade", "WPN", LIFE), ("Bow Pouch Upgrade", "BOW", LIFE),
+     ("Shield Pouch Upgrade", "SHLD", LIFE)],
 ]
 # The tower maps (the world's tower_maps option), in the order of their towers.
 MAP_ROWS = [
@@ -194,7 +197,12 @@ ICON_NAMES = {
     "heart_container": ["Heart Container"],
     "stamina_vessel": ["Stamina Vessel", "Energizing5"],         # the full stamina wheel
     "champions_tunic": ["Champion's Tunic"], "ancient_bridle": ["Ancient Bridle"],
-    "ancient_saddle": ["Ancient Saddle"],
+    "ancient_saddle": ["Ancient Saddle"], "korok_mask": ["Korok Mask"],
+    "master_cycle_zero": ["Master Cycle Zero", "Master Cycle Rune", "Master Cycle"],
+    "travel_medallion": ["Travel Medallion"], "epona": ["Epona"],
+    "weapon_pouch_upgrade": ["Weapon Pouch Upgrade", "Weapon Pouch"],
+    "bow_pouch_upgrade": ["Bow Pouch Upgrade", "Bow Pouch"],
+    "shield_pouch_upgrade": ["Shield Pouch Upgrade", "Shield Pouch"],
     "progressive_climbing_gear_1": ["Climbing Gear"], "progressive_climbing_gear_2": ["Climber's Bandanna"],
     "progressive_climbing_gear_3": ["Climbing Boots"],
     "progressive_stealth_set_1": ["Stealth Chest Guard"], "progressive_stealth_set_2": ["Stealth Mask"],
@@ -221,6 +229,8 @@ UI_ICONS = {
     "barbarian_set": "Nt_PauseIconAttack_00^t", "ancient_set": "Nt_PauseIconKodai_00^t",
     "gerudo_set": "Nt_PauseIcon_03^s", "radiant_set": "Nt_PauseIcon_03^s",
     "champions_tunic": "Nt_PauseIcon_03^s",
+    "weapon_pouch_upgrade": "Nt_PauseIcon_00^s", "bow_pouch_upgrade": "Nt_PauseIcon_01^s",
+    "shield_pouch_upgrade": "Nt_PauseIcon_02^s", "epona": "Nt_MapHorseIconL_00^t",
     **{f"progressive_climbing_gear_{n}": "Nt_PauseIconMountain_00^t" for n in (1, 2, 3)},
     **{f"progressive_stealth_set_{n}": "Nt_PauseIconNoise_00^t" for n in (1, 2, 3)},
     "freed_divine_beast_vah_rudania": "Nt_IconSinJuNew_00^d",

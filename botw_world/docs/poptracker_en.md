@@ -54,8 +54,9 @@ released, every location is checked and the whole map turns grey.
 ## The items panel
 
 The panel next to the map shows the items that matter for the logic (runes, Paraglider, armor, Divine Beasts
-freed, shrines cleared...). A bright icon is an item you have; a numbered one is a progressive item (the number is
-how many you have). The region maps have their own two rows.
+freed, shrines cleared...), and a few that it does not need but you may want to follow: Master Cycle Zero, the
+Travel Medallion, Epona, the Korok Mask and the pouch upgrades. A bright icon is an item you have; a number is how
+many you have (a progressive item, a pouch upgrade). The region maps have their own two rows.
 
 Everything is updated from the room; you never need to click anything. Without a connection, you can still mark
 items and locations by hand with the mouse.
