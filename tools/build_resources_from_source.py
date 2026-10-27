@@ -32,8 +32,8 @@ from tools import build_plateau_sensor_candidate as sensor
 from tools import build_master_sword_candidate as sword
 from tools import build_ballad_condition_candidate as ballad
 from tools.build_ballad_upgrade_delivery import champion_entries, transform_for as upgrade_delivery
-from botw_patch import (beast_heart, death_link, downpour, ganon_gate, gerudo_outfit, goron_armor,
-                        horses, hud_layout, loading_icon, pedestal, traps)
+from botw_patch import (beast_heart, bike_anywhere, death_link, downpour, ganon_gate, gerudo_outfit,
+                        goron_armor, horses, hud_layout, loading_icon, pedestal, traps)
 from botw_patch.ap_quest import INPUT_HASHES as STATUS_INPUTS
 
 TITLE = "Pack/TitleBG.pack"
@@ -124,7 +124,7 @@ def stage_names(shops: list | None = None, status: dict | None = None) -> list[s
     return ["checking the game's files", "the item deliveries", "the rewards and gifts",
             "DeathLink, traps and the HUD", *(["the shops"] if shops else []),
             *(["the Archipelago quest"] if status else []), *(["the region maps"] if tower_maps(status) else []),
-            "the texts"]
+            *(["the Master Cycle Zero"] if bike_anywhere.enabled(status) else []), "the texts"]
 
 
 def generate(content, binding_token: int, shops: list | None = None,
@@ -328,6 +328,11 @@ def _generate(game: GameFiles, binding_token: int, shops: list | None, status: d
         from botw_patch import tower_maps as tower_stage
         files, edits = tower_stage.generate(files, game)
         changes.extend(edits)
+    if bike_anywhere.enabled(status):
+        stage()
+        # The cycle through the horse-only walls (botw_patch/bike_anywhere.py).
+        files, edits = bike_anywhere.generate(files, game)
+        changes.extend(edits)
     stage()
     # Vilia's lines at the price she now asks (botw_patch/gerudo_outfit.py).
     files, edits = gerudo_outfit.generate_texts(files, game)
@@ -391,6 +396,11 @@ def build(content, output: Path, *, binding_token: int, shops: list | None = Non
             stalls.AOC_PREFIX + tower_stage.unit(cell): sha for cell, sha in tower_stage.MAP_HASHES.items()}}
         manifest["source_hashes"].update({name: digest((ROOT / name).read_bytes())
                                           for name in tower_stage.SOURCE_FILES})
+    if bike_anywhere.enabled(status):
+        # Only for seeds that ask for it, so that the others keep their identity.
+        manifest["bike_anywhere"] = list(bike_anywhere.WALLS)
+        manifest["source_hashes"].update({name: digest((ROOT / name).read_bytes())
+                                          for name in bike_anywhere.SOURCE_FILES})
     if region is not regions.EUR:
         # Only for the other versions, so that the European packs keep their identity.
         manifest["input_hashes"] = regions.inputs(manifest["input_hashes"], game.content)

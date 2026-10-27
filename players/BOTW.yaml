@@ -34,6 +34,9 @@ Breath of the Wild:
   # A map placed at one of the Great Plateau's first locations (its terminals or its tower):
   # gentle (Dueling Peaks, Hateno, Lake or Faron), any, or none
   early_map: gentle
+  # The Master Cycle Zero (Champions' Ballad DLC) in the Gerudo Desert and on Death Mountain, and through the
+  # invisible walls that stop horses; indoors still refuse it
+  bike_anywhere: false
   # Share of the filler (arrows, elixirs, weapons, gems, rupees) that becomes traps, 0 to 100, and how likely each is
   # compared with the others (a trap left out never comes up): Weapon Shatter, Blood Moon,
   # Rupoor, Hearts Down, Strip Down, Cucco Swarm, Yiga Ambush, Paranoia, Downpour. The cuccos, the Yiga

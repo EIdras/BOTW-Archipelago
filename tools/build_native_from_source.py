@@ -41,10 +41,12 @@ def encode(data):
     return (json.dumps(data, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode('utf-8')
 
 
-def generate(*, resource_gate=False, event_gate=False, tower_maps=False, mem2_end=MEM2_END):
+def generate(*, resource_gate=False, event_gate=False, tower_maps=False, bike_anywhere=False,
+             mem2_end=MEM2_END):
     """Pure native assembly generation; no dump, candidate or Cemu access.
     tower_maps: the seed's maps are items, the towers' icons read APTower_NN
     (tools/build_tower_maps_native.py; the map opening's fallback is in every pack).
+    bike_anywhere: the Master Cycle Zero anywhere outdoors (botw_patch/bike_anywhere.py).
     The weather hold of the Downpour trap is in every pack (tools/build_weather_native.py).
     mem2_end: where the game's main memory ends (tools/cemu/guest.py): the code follows
     no pointer beyond (Extended Memory moves it, tools/player_packs.py mem2_end())."""
@@ -75,6 +77,9 @@ def generate(*, resource_gate=False, event_gate=False, tower_maps=False, mem2_en
     # The Downpour trap's weather, held frame after frame (in every pack).
     from tools.build_weather_native import patch_injection as weather_stage
     injection = weather_stage(injection)
+    if bike_anywhere:
+        from botw_patch.bike_anywhere import patch_injection as bike_stage
+        injection = bike_stage(injection)
     from tools.patch_lint import lint
     problems = lint(injection)
     if problems:
@@ -89,12 +94,12 @@ def generate(*, resource_gate=False, event_gate=False, tower_maps=False, mem2_en
 
 
 def build(rpx: Path, output: Path, *, resource_gate=False, event_gate=False, tower_maps=False,
-          mem2_end=MEM2_END) -> Path:
+          bike_anywhere=False, mem2_end=MEM2_END) -> Path:
     raw = rpx.read_bytes()
     if digest(raw) != RPX_SHA256:
         raise ValueError('incompatible RPX: provide the verified Wii U EUR v208 dump')
     files = generate(resource_gate=resource_gate, event_gate=event_gate, tower_maps=tower_maps,
-                     mem2_end=mem2_end)
+                     bike_anywhere=bike_anywhere, mem2_end=mem2_end)
     source_hashes = {name: digest((ROOT / name).read_bytes()) for name in SOURCE_FILES}
     hashes = {name: digest(data) for name, data in sorted(files.items())}
     manifest = {
@@ -112,6 +117,11 @@ def build(rpx: Path, output: Path, *, resource_gate=False, event_gate=False, tow
                    'embedded_legacy_instrumentation_retained',
                    'standalone_probe_removal_not_validated_in_game'],
     }
+    if bike_anywhere:   # only then, so that the other packs keep their identity
+        from botw_patch import bike_anywhere as bike_stage
+        manifest['options']['bike_anywhere'] = True
+        manifest['source_hashes'].update({name: digest((ROOT / name).read_bytes())
+                                          for name in bike_stage.SOURCE_FILES})
     identity = digest(encode(manifest))[:16]
     manifest['build_id'] = identity
     files['manifest.json'] = encode(manifest)

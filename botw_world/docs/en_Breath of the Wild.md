@@ -128,6 +128,14 @@ rune terminals and its tower), so that a region opens besides the towers once Li
 default) draws one of the regions the game leads to first (Dueling Peaks, Hateno, Lake or Faron), `any` one of the 14,
 `none` places none early.
 
+## Can the Master Cycle Zero go anywhere?
+
+The game refuses the Master Cycle Zero (the Champions' Ballad DLC) in the Gerudo Desert and on Death Mountain, and the
+invisible walls that stop horses, at the desert's entrances among others, stop it too. With the `bike_anywhere` option
+(off by default), it can be summoned and ridden there and goes through those walls. Indoors still refuse it, and flying
+onto the desert or Death Mountain from a cliff outside still throws Link off just before the landing. The logic does
+not change.
+
 ## How are the weapons spread?
 
 The `weapon_order` option orders the weapons wherever they land in the multiworld, by the logic's spheres:

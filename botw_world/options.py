@@ -132,6 +132,16 @@ class EarlyMap(Choice):
     default = 1
 
 
+class BikeAnywhere(Toggle):
+    """The Master Cycle Zero (the Champions' Ballad DLC) can be summoned and ridden in
+    the Gerudo Desert and on Death Mountain, which refuse it in the game, and goes
+    through the invisible walls that stop horses, at the desert's entrances among
+    others. Indoors still refuse it. Flying onto the desert or Death Mountain from a
+    cliff outside still throws Link off just before the landing. The logic does not
+    change."""
+    display_name = "Master Cycle Zero Anywhere"
+
+
 class TrapPercentage(Range):
     """Share of the filler (arrows, elixirs, weapons, gems and rupees) that becomes traps,
     chosen among the traps of Trap Weights. 0: no trap. A trap strikes when it is
@@ -173,6 +183,7 @@ class BotwOptions(PerGameCommonOptions):
     weapon_order: WeaponOrder
     tower_maps: TowerMaps
     early_map: EarlyMap
+    bike_anywhere: BikeAnywhere
     trap_percentage: TrapPercentage
     trap_weights: TrapWeights
 
@@ -184,6 +195,7 @@ OPTION_GROUPS = [
     OptionGroup("Shops", [BeedleShopItems, StallItems]),
     OptionGroup("Weapons", [WeaponOrder]),
     OptionGroup("Maps", [TowerMaps, EarlyMap]),
+    OptionGroup("Master Cycle Zero", [BikeAnywhere]),
     OptionGroup("Traps", [TrapPercentage, TrapWeights]),
 ]
 

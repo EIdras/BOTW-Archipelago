@@ -212,6 +212,7 @@ def build(content: Path, rpx: Path, report: Path, slot: int, output: Path, *,
         step(names[0])
         native_dir = native.build(rpx, work / "native", resource_gate=resource_gate, event_gate=event_gate,
                                   tower_maps=bool(slot_data.get("slot_data", {}).get("tower_maps")),
+                                  bike_anywhere=bool(slot_data.get("slot_data", {}).get("bike_anywhere")),
                                   mem2_end=mem2_end)
         game = resources.game_files(content)
         if layers:

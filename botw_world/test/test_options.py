@@ -120,3 +120,15 @@ class TestDivineBeastGoal(BotwTestBase):
 
 class TestShrineGoal(BotwTestBase):
     options = {"goal": "shrines", "goal_shrines": 120}
+
+
+class TestBikeAnywhereOffByDefault(BotwTestBase):
+    def test_the_slot_data_tells_the_pack_builder(self) -> None:
+        self.assertEqual(self.world.fill_slot_data()["bike_anywhere"], 0)
+
+
+class TestBikeAnywhere(BotwTestBase):
+    options = {"bike_anywhere": True}
+
+    def test_the_slot_data_tells_the_pack_builder(self) -> None:
+        self.assertEqual(self.world.fill_slot_data()["bike_anywhere"], 1)
