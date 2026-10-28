@@ -26,7 +26,8 @@ game, so that no file of the game is in the repository.
   (`0x431`), tile mode 4, addressed as `tools/bitemico.py` does (for 64-bit blocks, the micro-tile order is
   x0 y0 x1 x2 y1 y2, checked on the map's roads). The layer `MapTex2` (200 px a section) gives a 2400 x 2000 map. A
   section's variants (`_0`, `_16`...) are other states of the place; the plain name is used. Without a base game
-  folder (a `.wud`/`.wua` game), the map is a plain grid.
+  folder (a `.wud`/`.wua` game), the map is a plain grid; so it is when the map cannot be read (its drive
+  disconnected), and the stamp is then the one of no game, so that the next session builds it again.
 - **Positions** (`data/location_positions.json`, built by `tools/build_location_positions.py` from the DLC's map
   units, checked by a test): shrines and towers from their `LocationMarker`, a rune terminal at its plateau shrine,
   a Divine Beast and its heart at the beast's marker during its quest, the Great Fairies at their fountain, Beedle at

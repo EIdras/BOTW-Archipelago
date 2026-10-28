@@ -95,8 +95,10 @@ them.
   Look at the launcher's PopTracker line: it says why, and how to build the pack.
 - **PopTracker still shows the old pack.** Drag the new `botw_archipelago.zip` onto its window again, then load the
   pack.
-- **The map is a plain grid.** Your game is a `.wud` or `.wua` file: the map is drawn from a game installed as a
-  folder (with `code`, `content` and `meta`). The tracker works all the same.
+- **The map is a plain grid.** The launcher's line says why. Either your game is a `.wud` or `.wua` file (the map
+  is drawn from a game installed as a folder, with `code`, `content` and `meta`), or the drive holding it was not
+  connected while the pack was built: plug it back, and the next session builds the map again. The tracker works
+  all the same.
 - **Nothing updates.** Click **AP** again and check the address and the slot name. The room's address changes
   when it restarts on archipelago.gg: take the new one from the room's page.
 - **A location is red but you could get it.** The tracker follows the world's logic, which can be stricter than

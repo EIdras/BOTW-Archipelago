@@ -214,9 +214,12 @@ class LauncherStepTests(unittest.TestCase):
             self.addCleanup(patcher.stop)
 
     def build(self, content, output):
+        return self.build_file(), True
+
+    def build_file(self):
         self.target.parent.mkdir(parents=True, exist_ok=True)
         self.target.write_bytes(b"pack")
-        return self.target, True
+        return self.target
 
     def launch(self, answer=True):
         said, asked = [], []
@@ -255,6 +258,20 @@ class LauncherStepTests(unittest.TestCase):
         self.assertEqual(self.build.call_count, 2)
         self.assertIn(f"PopTracker pack rebuilt, it was out of date: {self.target}", said)
         self.assertTrue(any("again, to replace the one it has" in line for line in said))
+
+    def test_a_map_not_read_is_built_again_at_the_next_session(self):
+        # The game's drive disconnected while its map was read: a plain grid,
+        # and a stamp that will not match once the game is back.
+        self.base_content.return_value = Path("game")
+        self.stamp.side_effect = lambda content: f"{self.version} {content}"
+        self.build.side_effect = lambda content, output: (self.build_file(), False)
+        said, _asked = self.launch(answer=True)
+        self.assertTrue(any("the base game could not be read in game" in line for line in said))
+        self.build.side_effect = lambda content, output: (self.build_file(), True)   # the game is back
+        said, asked = self.launch()
+        self.assertEqual(asked, [])
+        self.assertEqual(self.build.call_count, 2)
+        self.assertIn(f"PopTracker pack rebuilt, it was out of date: {self.target}", said)
 
     def test_a_failure_is_one_line_and_never_stops_the_game(self):
         self.build.side_effect = OSError("disk full")

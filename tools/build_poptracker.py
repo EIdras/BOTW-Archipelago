@@ -694,6 +694,21 @@ def fetch_icons_said(say) -> None:
         say(f"PopTracker: the release's icons not fetched ({exc})")
 
 
+def plain_map_reason(content: Path | None) -> str:
+    """Why the map is a plain grid, said after the pack's path."""
+    if content is None:
+        return (" (plain map: no base game folder found, as with a .wud/.wua game or a drive not "
+                "connected)")
+    return f" (plain map: the base game could not be read in {content}; the next session builds it again)"
+
+
+def built_stamp(content: Path | None, game_map: bool) -> str:
+    """The stamp a pack just built records: without the game's map read, the one
+    of no game, so that the next session builds the map again (a drive
+    disconnected while it was read)."""
+    return stamp(content if game_map else None)
+
+
 def ensure_pack(say=print, confirm=lambda prompt: True) -> None:
     """The launcher's step, one line at each launch whatever happens: the pack
     in PACK_FOLDER is kept up to date with what it is made of. The first one in
@@ -726,10 +741,10 @@ def ensure_pack(say=print, confirm=lambda prompt: True) -> None:
             current = stamp(content)
         target, game_map = build(content, PACK_FOLDER)
         STAMP.parent.mkdir(parents=True, exist_ok=True)
-        STAMP.write_text(current, encoding="utf-8")
+        STAMP.write_text(built_stamp(content, game_map), encoding="utf-8")
         DECLINED.unlink(missing_ok=True)
         say(f"PopTracker pack {'rebuilt, it was out of date' if outdated else 'built'}: {target}"
-            + ("" if game_map else " (plain map: the base game is not a folder)"))
+            + ("" if game_map else plain_map_reason(content)))
         say("  To use it, drag this file onto PopTracker's window"
             + (" again, to replace the one it has." if outdated else "."))
     except Exception as exc:  # noqa: BLE001 - the tracker is an extra
@@ -755,10 +770,10 @@ if __name__ == "__main__":
     target, game_map = build(content, args.output, args.icons)
     if args.output.resolve() == PACK_FOLDER.resolve() and args.icons == ICONS_FOLDER:
         STAMP.parent.mkdir(parents=True, exist_ok=True)
-        STAMP.write_text(stamp(content), encoding="utf-8")     # the launcher's pack, up to date
+        STAMP.write_text(built_stamp(content, game_map), encoding="utf-8")     # the launcher's pack
     missing = sorted(set(ICON_NAMES) - set(game_icons(args.icons)) - set(ui_icons(update_content())))
     if missing:
         print(f"no icon in {args.icons} nor in the game ({len(missing)}), a label instead: "
               + ", ".join(ICON_NAMES[key][0] for key in missing))
-    print(f"pack: {target}" + ("" if game_map else " (plain map: no base game folder found)"))
+    print(f"pack: {target}" + ("" if game_map else plain_map_reason(content)))
     print("To use it, drag this file onto PopTracker's window.")
