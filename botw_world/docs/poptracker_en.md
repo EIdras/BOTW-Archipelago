@@ -26,7 +26,8 @@ you install it in PopTracker yourself.
 3. **Install the pack**: open PopTracker and drag `botw_archipelago.zip` onto its window. (You can also copy it into
    PopTracker's `packs` folder.)
 
-You do this once per version of BOTW Archipelago. Every launch then says where the pack stands, in one line:
+You do this once per version of BOTW Archipelago. Each session then starts with one line on where the pack
+stands:
 
 | The launcher says | What it means |
 |---|---|
@@ -36,7 +37,8 @@ You do this once per version of BOTW Archipelago. Every launch then says where t
 | `PopTracker pack: not built (...)` | Something went wrong, the reason is in brackets; the game starts all the same. |
 
 If you said no and change your mind, open a command prompt in the release's folder and run
-`python\python.exe -I tools\build_poptracker.py`: it builds the pack in the same `PopTracker` folder.
+`python\python.exe -I tools\build_poptracker.py`: it fetches the icons and builds the pack in the same `PopTracker`
+folder.
 
 ## Connecting to the room
 
@@ -48,8 +50,8 @@ If you said no and change your mind, open a command prompt in the release's fold
    - the room's password, or nothing.
 
 The tracker then fills in by itself: the items you already have, the locations already checked, and the seed's
-options (which locations exist, whether region maps are needed, what Ganon asks for). PopTracker remembers the pack
-and the room: next time, load the pack and click **AP** again.
+options (which locations exist, whether region maps are needed, what Ganon asks for). The same pack serves every
+seed of a version: next time, load it and click **AP** again.
 
 ## Reading the map
 
@@ -80,7 +82,8 @@ items and locations by hand with the mouse.
 
 The map and part of the icons (hearts, stamina, Divine Beasts, shrines...) are drawn from your own game. The
 launcher downloads the rest once, when it builds the pack, from the `tracker-icons` release of this project.
-Without an internet connection, those items show a text label instead, which works just as well.
+Without an internet connection, those items show the game's white stand-ins or a text label instead, which work
+just as well.
 
 You can also use your own icons: put PNG files named after the items (`Paraglider.png`, `Zora Armor.png`...;
 subfolders are fine) in `%LOCALAPPDATA%\BOTW Archipelago\poptracker\icons`. The next session rebuilds the pack with

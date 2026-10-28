@@ -749,6 +749,8 @@ if __name__ == "__main__":
         missing = package_icons(args.icons, args.package_icons)
         print(f"icons: {args.package_icons}" + (f" (not found: {', '.join(missing)})" if missing else ""))
         sys.exit(0)
+    if args.icons == ICONS_FOLDER:
+        fetch_icons_said(print)                         # as the launcher does; not over another folder
     content = args.content or base_content()
     target, game_map = build(content, args.output, args.icons)
     if args.output.resolve() == PACK_FOLDER.resolve() and args.icons == ICONS_FOLDER:
