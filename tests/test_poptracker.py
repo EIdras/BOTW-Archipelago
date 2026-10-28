@@ -4,6 +4,7 @@ from pathlib import Path
 import re
 import tempfile
 import unittest
+from unittest import mock
 import zipfile
 
 from tools import build_location_positions as positions
@@ -186,6 +187,79 @@ class MapTests(unittest.TestCase):
         tile = maptex.decode((BASE / maptex.FOLDER / "MapTex2_E-4.sbmaptex").read_bytes())
         self.assertEqual(tile.shape, (200, 200, 3))
         self.assertGreater(tile.std(), 10)          # an image, not a blank
+
+
+
+class LauncherStepTests(unittest.TestCase):
+    """The pack the launcher keeps in the release's folder, one line a launch."""
+
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name)
+        self.target = self.root / "PopTracker" / f"{poptracker.PACK_NAME}.zip"
+        self.version = "v1"
+        for name, value in (("PACK_FOLDER", self.root / "PopTracker"),
+                            ("STAMP", self.root / "data/stamp.txt"),
+                            ("DECLINED", self.root / "data/declined.txt")):
+            patcher = mock.patch.object(poptracker, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        for name, kwargs in (("base_content", {"return_value": None}),
+                             ("fetch_icons", {"return_value": False}),
+                             ("stamp", {"side_effect": lambda content: self.version}),
+                             ("build", {"side_effect": self.build})):
+            patcher = mock.patch.object(poptracker, name, **kwargs)
+            setattr(self, name, patcher.start())
+            self.addCleanup(patcher.stop)
+
+    def build(self, content, output):
+        self.target.parent.mkdir(parents=True, exist_ok=True)
+        self.target.write_bytes(b"pack")
+        return self.target, True
+
+    def launch(self, answer=True):
+        said, asked = [], []
+        poptracker.ensure_pack(said.append, lambda prompt: asked.append(prompt) or answer)
+        return said, asked
+
+    def test_the_first_pack_is_built_when_the_player_wants_it(self):
+        said, asked = self.launch(answer=True)
+        self.assertEqual(len(asked), 1)
+        self.assertTrue(self.target.is_file())
+        self.assertIn(f"PopTracker pack built: {self.target}", said)
+        self.assertTrue(any("drag this file onto PopTracker's window" in line for line in said))
+        said, asked = self.launch()                         # the next launch: one line, nothing built
+        self.assertEqual((said, asked), ([f"PopTracker pack: up to date, not rebuilt ({self.target})"], []))
+        self.assertEqual(self.build.call_count, 1)
+
+    def test_a_no_is_remembered_until_the_pack_would_change(self):
+        said, asked = self.launch(answer=False)
+        self.assertEqual(len(asked), 1)
+        self.assertFalse(self.target.exists())
+        self.assertTrue(said[-1].startswith("PopTracker pack: not built. You will be asked again"))
+        said, asked = self.launch(answer=False)
+        self.assertEqual(asked, [])
+        self.assertEqual(len(said), 1)
+        self.assertTrue(said[0].startswith("PopTracker pack: not built, as you answered (asked again"))
+        self.version = "v2"                                 # a new version asks again
+        said, asked = self.launch(answer=True)
+        self.assertEqual(len(asked), 1)
+        self.assertTrue(self.target.is_file())
+
+    def test_an_out_of_date_pack_is_rebuilt_without_a_question(self):
+        self.launch(answer=True)
+        self.version = "v2"
+        said, asked = self.launch(answer=False)
+        self.assertEqual(asked, [])
+        self.assertEqual(self.build.call_count, 2)
+        self.assertIn(f"PopTracker pack rebuilt, it was out of date: {self.target}", said)
+        self.assertTrue(any("again, to replace the one it has" in line for line in said))
+
+    def test_a_failure_is_one_line_and_never_stops_the_game(self):
+        self.build.side_effect = OSError("disk full")
+        said, _asked = self.launch(answer=True)
+        self.assertEqual(said[-1], "PopTracker pack: not built (disk full)")
 
 
 if __name__ == "__main__":

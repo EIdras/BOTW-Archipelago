@@ -1,6 +1,6 @@
 """The PopTracker pack of Breath of the Wild for Archipelago.
 
-    venv\\Scripts\\python tools\\build_poptracker.py [--content <base game content>] [--no-install]
+    venv\\Scripts\\python tools\\build_poptracker.py [--content <base game content>] [--output <folder>]
 
 PopTracker (https://github.com/black-sliver/PopTracker) shows the map with
 every location of the world, coloured by what the items received allow
@@ -12,9 +12,10 @@ player's own base game (UI/MapTex, tools/maptex.py), so that no file of the
 game enters the repository; without it (a .wud/.wua game) the map is a plain
 grid. Everything else comes from the world: items, locations, logic
 (botw_world), positions (data/location_positions.json). The static parts are
-in tools/poptracker/. Written to <data>/poptracker/botw_archipelago.zip and,
-unless --no-install, copied to PopTracker's packs folder (HOME/PopTracker/packs
-or Documents/PopTracker/packs, the first that exists).
+in tools/poptracker/. Written to PACK_FOLDER: a release's own "PopTracker"
+folder, where the player finds it and installs it in PopTracker by hand (the
+launcher asks before building the first one: not everyone uses PopTracker);
+<data>/poptracker in a source checkout.
 
 Docs: doc/PACKS.md and doc/AUTOTRACKING.md of the PopTracker repository.
 """
@@ -36,13 +37,14 @@ if str(ROOT) not in sys.path:
 
 import numpy as np  # noqa: E402
 
-from botw_client.paths import DATA  # noqa: E402
+from botw_client.paths import DATA, RELEASE_MARKER  # noqa: E402
 from tools import maptex  # noqa: E402
 from tools.bitemico import write_png  # noqa: E402
 
 STATIC = ROOT / "tools/poptracker"
 POSITIONS = ROOT / "data/location_positions.json"
 PACK_NAME = "botw_archipelago"
+PACK_FOLDER = ROOT / "PopTracker" if (ROOT / RELEASE_MARKER).is_file() else DATA / "poptracker"
 MAP = "Hyrule"
 SCALE = 0.2                       # map pixels per world unit (MapTex2: 200 px a section)
 # The map is cut to the locations, this many pixels around them: the sea and
@@ -276,7 +278,8 @@ def fetch_icons(folder: Path = ICONS_FOLDER, url: str = ICONS_URL) -> bool:
     target = folder / "release"
     if target.is_dir() or all(key in game_icons(folder) for key in RELEASE_ICONS):
         return False
-    with urllib.request.urlopen(url, timeout=15) as response:
+    from botw_client.protocol import tls_context       # a new Windows lacks GitHub's root
+    with urllib.request.urlopen(url, timeout=15, context=tls_context()) as response:
         data = response.read(ICONS_LIMIT + 1)
     if len(data) > ICONS_LIMIT:
         raise ValueError("tracker icons: archive too large")
@@ -655,25 +658,8 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
     return target, game_map
 
 
-def install(target: Path, installed: Path) -> None:
-    """Copy the pack into PopTracker's folder. PopTracker keeps the pack it has
-    loaded open, which Windows will not let anything overwrite."""
-    try:
-        shutil.copyfile(target, installed)
-    except PermissionError:
-        raise RuntimeError(f"{installed} is in use: close PopTracker (or load another pack), "
-                           "then build again") from None
-
-
-def packs_folder() -> Path | None:
-    for folder in (Path.home() / "PopTracker/packs", Path.home() / "Documents/PopTracker/packs"):
-        if folder.is_dir():
-            return folder
-    return None
-
-
 def stamp(content: Path | None) -> str:
-    """What the installed pack was built from: its sources, the world, the map's source."""
+    """What the pack was built from: its sources, the world, the map's source, the icons."""
     import hashlib
     digest = hashlib.sha256()
     for name in (*SOURCE_FILES, "botw_world/catalog.py", "botw_world/data/items.json",
@@ -686,58 +672,91 @@ def stamp(content: Path | None) -> str:
     return digest.hexdigest()
 
 
-def ensure_installed(say=print) -> None:
-    """The launcher's step: when PopTracker has a packs folder, the pack there is
-    built again whenever what it is made of changed. Never blocks the game."""
-    folder = packs_folder()
-    if folder is None:
-        return
+STAMP = DATA / "poptracker/stamp.txt"            # what the pack in PACK_FOLDER was built from
+DECLINED = DATA / "poptracker/declined.txt"      # the stamp the player said no to
+
+
+def build_command() -> str:
+    """The command that builds the pack, from the launcher's folder."""
+    python = Path(sys.executable)
     try:
-        try:
-            if fetch_icons():
-                say("PopTracker: the release's icons fetched")
-        except Exception as exc:  # noqa: BLE001 - offline: the game's icons and labels
-            say(f"PopTracker: the release's icons not fetched ({exc})")
+        python = python.relative_to(ROOT)
+    except ValueError:
+        pass
+    return f"{python} -I tools\\build_poptracker.py"
+
+
+def fetch_icons_said(say) -> None:
+    try:
+        if fetch_icons():
+            say("PopTracker: the release's icons fetched")
+    except Exception as exc:  # noqa: BLE001 - offline: the game's icons and labels
+        say(f"PopTracker: the release's icons not fetched ({exc})")
+
+
+def ensure_pack(say=print, confirm=lambda prompt: True) -> None:
+    """The launcher's step, one line at each launch whatever happens: the pack
+    in PACK_FOLDER is kept up to date with what it is made of. The first one in
+    the folder is built only if the player wants it (`confirm`), and a no is
+    remembered until the pack would change. Never blocks the game."""
+    target = PACK_FOLDER / f"{PACK_NAME}.zip"
+    try:
         content = base_content()
-        output = DATA / "poptracker"
-        mark = output / "stamp.txt"
+        outdated = target.is_file()
+        if outdated:
+            fetch_icons_said(say)
         current = stamp(content)
-        installed = folder / f"{PACK_NAME}.zip"
-        if installed.is_file() and mark.is_file() and mark.read_text(encoding="utf-8") == current:
+        if outdated and STAMP.is_file() and STAMP.read_text(encoding="utf-8") == current:
+            say(f"PopTracker pack: up to date, not rebuilt ({target})")
             return
-        target, game_map = build(content, output)
-        install(target, installed)
-        mark.write_text(current, encoding="utf-8")
-        say(f"PopTracker pack installed: {installed}"
+        if not outdated:
+            if DECLINED.is_file() and DECLINED.read_text(encoding="utf-8") == current:
+                say("PopTracker pack: not built, as you answered (asked again with the next version). "
+                    f"To build it, run in this folder: {build_command()}")
+                return
+            say("PopTracker pack: none in this folder yet. PopTracker is an optional map tracker "
+                "that follows the room (see the PopTracker guide).")
+            if not confirm("Build the PopTracker pack? (a few seconds)"):
+                DECLINED.parent.mkdir(parents=True, exist_ok=True)
+                DECLINED.write_text(current, encoding="utf-8")
+                say("PopTracker pack: not built. You will be asked again with the next version; "
+                    f"to build it before, run in this folder: {build_command()}")
+                return
+            fetch_icons_said(say)
+            current = stamp(content)
+        target, game_map = build(content, PACK_FOLDER)
+        STAMP.parent.mkdir(parents=True, exist_ok=True)
+        STAMP.write_text(current, encoding="utf-8")
+        DECLINED.unlink(missing_ok=True)
+        say(f"PopTracker pack {'rebuilt, it was out of date' if outdated else 'built'}: {target}"
             + ("" if game_map else " (plain map: the base game is not a folder)"))
+        say("  To use it, drag this file onto PopTracker's window"
+            + (" again, to replace the one it has." if outdated else "."))
     except Exception as exc:  # noqa: BLE001 - the tracker is an extra
-        say(f"PopTracker pack not built: {exc}")
+        say(f"PopTracker pack: not built ({exc})")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--content", type=Path, help="the base game's content folder (default: Cemu's)")
-    parser.add_argument("--output", type=Path, default=DATA / "poptracker")
+    parser.add_argument("--output", type=Path, default=PACK_FOLDER)
     parser.add_argument("--icons", type=Path, default=ICONS_FOLDER,
                         help="a folder of the game's icons, PNG, named after the items")
     parser.add_argument("--package-icons", type=Path,
                         help="write the release's icon zip from --icons, and stop")
-    parser.add_argument("--no-install", action="store_true")
     args = parser.parse_args()
     if args.package_icons:
         missing = package_icons(args.icons, args.package_icons)
         print(f"icons: {args.package_icons}" + (f" (not found: {', '.join(missing)})" if missing else ""))
         sys.exit(0)
-    target, game_map = build(args.content or base_content(), args.output, args.icons)
+    content = args.content or base_content()
+    target, game_map = build(content, args.output, args.icons)
+    if args.output.resolve() == PACK_FOLDER.resolve() and args.icons == ICONS_FOLDER:
+        STAMP.parent.mkdir(parents=True, exist_ok=True)
+        STAMP.write_text(stamp(content), encoding="utf-8")     # the launcher's pack, up to date
     missing = sorted(set(ICON_NAMES) - set(game_icons(args.icons)) - set(ui_icons(update_content())))
     if missing:
         print(f"no icon in {args.icons} nor in the game ({len(missing)}), a label instead: "
               + ", ".join(ICON_NAMES[key][0] for key in missing))
     print(f"pack: {target}" + ("" if game_map else " (plain map: no base game folder found)"))
-    folder = None if args.no_install else packs_folder()
-    if folder is not None:
-        try:
-            install(target, folder / target.name)
-            print(f"installed: {folder / target.name}")
-        except RuntimeError as exc:
-            print(f"not installed: {exc}")
+    print("To use it, drag this file onto PopTracker's window.")

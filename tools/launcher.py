@@ -14,7 +14,9 @@
    from the room's page, then the one remembered for the seed) and its password; a
    seed prepared from its zip can also be hosted on this computer, where the
    Archipelago runtime is (tools/prepare_ap_runtime.py).
-4. Plays (tools/play_session.py) until Cemu closes.
+4. Says where the PopTracker pack is, built in the release's folder when it is
+   missing (if the player wants it) or out of date (tools/build_poptracker.py).
+5. Plays (tools/play_session.py) until Cemu closes.
 """
 from __future__ import annotations
 
@@ -284,7 +286,7 @@ def main(argv: list[str], ui=None) -> int:
         ui.say(f"Error: {exc}")
         return 1
     from tools import build_poptracker, play_session
-    build_poptracker.ensure_installed(ui.say)
+    build_poptracker.ensure_pack(ui.say, lambda prompt: yes(ui, prompt))
     play_session.run(seed, connect=address, password=password, **aids)
     return 0
 

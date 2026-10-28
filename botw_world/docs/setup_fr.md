@@ -55,9 +55,10 @@ Archipelago nomme les lieux et les objets en anglais, et le jeu en français les
 Shrine est le sanctuaire de Ta'Mur) : la [table des noms en français](names_fr.md) donne la correspondance, pour
 chaque lieu et chaque objet.
 
-**Tracker avec carte** : si [PopTracker](https://github.com/black-sliver/PopTracker) est installé (lancé une
-fois, pour que son dossier `PopTracker/packs` existe), le lanceur installe le pack « Breath of the Wild
-Archipelago » avant la session. Dans PopTracker, charger le pack, cliquer sur « AP » et saisir l'adresse de la
+**Tracker avec carte** : la première fois, le lanceur demande si vous voulez le pack de
+[PopTracker](https://github.com/black-sliver/PopTracker), et le construit dans le dossier `PopTracker` de la
+release ; glisser `botw_archipelago.zip` sur la fenêtre de PopTracker pour l'installer. Chaque lancement dit ensuite,
+en une ligne, si le pack est à jour. Dans PopTracker, charger le pack, cliquer sur « AP » et saisir l'adresse de la
 salle, votre nom de slot et le mot de passe : la carte montre chaque lieu, coloré selon ce que vos objets
 permettent, et les coche au fil de la partie. Le [guide PopTracker](poptracker_en.md) (en anglais) détaille
 chaque étape.

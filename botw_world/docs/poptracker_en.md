@@ -4,24 +4,39 @@
 colored by what your items let you reach. It connects to the Archipelago room by itself: the items you receive and
 the locations you check appear as you play, with nothing to click.
 
-There is no pack to download: the launcher builds it from your own copy of the game and installs it for you.
+There is no pack to download: the launcher builds it from your own copy of the game, in the release's folder, and
+you install it in PopTracker yourself.
 
 ## Setting it up
 
 1. **Install PopTracker**, version 0.26.2 or later, from its
    [releases page](https://github.com/black-sliver/PopTracker/releases) (on Windows, the `win64` zip: unzip it
    anywhere).
-2. **Run PopTracker once**, then close it. This creates its packs folder, `C:\Users\<you>\PopTracker\packs` (or
-   `Documents\PopTracker\packs`). If neither exists after that, create `C:\Users\<you>\PopTracker\packs` yourself.
-3. **Start a session with the BOTW Archipelago launcher**, as the [setup guide](setup_en.md#playing) says. Before
-   Cemu starts, the launcher builds the pack and copies it into PopTracker's packs folder. Its window says so:
+2. **Start a session with `BOTW Archipelago.cmd`**, as the [setup guide](setup_en.md#playing) says. Before Cemu
+   starts, the launcher asks once whether you want the PopTracker pack:
 
-       PopTracker pack installed: C:\Users\<you>\PopTracker\packs\botw_archipelago.zip
+       PopTracker pack: none in this folder yet. PopTracker is an optional map tracker that follows the room (see the PopTracker guide).
+       Build the PopTracker pack? (a few seconds) (Y/n):
 
-   The first build takes a few seconds; afterwards the pack is only built again when something it is made of
-   changed (a new version of BOTW Archipelago, new icons).
+   Press Enter. The pack is written to the `PopTracker` folder of the release:
 
-You do this once. From then on, every session keeps the pack up to date.
+       PopTracker pack built: <release folder>\PopTracker\botw_archipelago.zip
+         To use it, drag this file onto PopTracker's window.
+
+3. **Install the pack**: open PopTracker and drag `botw_archipelago.zip` onto its window. (You can also copy it into
+   PopTracker's `packs` folder.)
+
+You do this once per version of BOTW Archipelago. Every launch then says where the pack stands, in one line:
+
+| The launcher says | What it means |
+|---|---|
+| `PopTracker pack: up to date, not rebuilt (...)` | Nothing to do: the pack in the folder is the latest. |
+| `PopTracker pack rebuilt, it was out of date: ...` | Your icons or your game changed: drag the new file onto PopTracker again. |
+| `PopTracker pack: not built, as you answered ...` | You said no; you will be asked again with the next version. |
+| `PopTracker pack: not built (...)` | Something went wrong, the reason is in brackets; the game starts all the same. |
+
+If you said no and change your mind, open a command prompt in the release's folder and run
+`python\python.exe -I tools\build_poptracker.py`: it builds the pack in the same `PopTracker` folder.
 
 ## Connecting to the room
 
@@ -64,21 +79,22 @@ items and locations by hand with the mouse.
 ## Icons
 
 The map and part of the icons (hearts, stamina, Divine Beasts, shrines...) are drawn from your own game. The
-launcher downloads the rest once, from the `tracker-icons` release of this project. Without an internet connection,
-those items show a text label instead, which works just as well.
+launcher downloads the rest once, when it builds the pack, from the `tracker-icons` release of this project.
+Without an internet connection, those items show a text label instead, which works just as well.
 
-You can also use your own icons: put PNG files named after the items (`Paraglider.png`, `Zora Armor.png`...; subfolders are fine) in
-`%LOCALAPPDATA%\BOTW Archipelago\poptracker\icons`. They are used from the next session on.
+You can also use your own icons: put PNG files named after the items (`Paraglider.png`, `Zora Armor.png`...;
+subfolders are fine) in `%LOCALAPPDATA%\BOTW Archipelago\poptracker\icons`. The next session rebuilds the pack with
+them.
 
 ## Troubleshooting
 
-- **The pack is not in PopTracker's list.** The launcher only installs it when PopTracker's packs folder exists:
-  check `C:\Users\<you>\PopTracker\packs` (step 2 above), then start a session again. You can also drag
-  `%LOCALAPPDATA%\BOTW Archipelago\poptracker\botw_archipelago.zip` onto the PopTracker window: it installs it.
-- **"PopTracker pack not built: ... is in use".** PopTracker had the pack loaded, and Windows does not let it be
-  replaced. Close PopTracker before starting the session (or load another pack), then start the session again.
+- **No `PopTracker` folder in the release.** The pack is only built when you answer yes, at the start of a session.
+  Look at the launcher's PopTracker line: it says why, and how to build the pack.
+- **PopTracker still shows the old pack.** Drag the new `botw_archipelago.zip` onto its window again, then load the
+  pack.
 - **The map is a plain grid.** Your game is a `.wud` or `.wua` file: the map is drawn from a game installed as a
   folder (with `code`, `content` and `meta`). The tracker works all the same.
-- **Nothing updates.** Click **AP** again and check the address and the slot name. The room's address changes when it restarts on archipelago.gg: take the new one from the room's page.
+- **Nothing updates.** Click **AP** again and check the address and the slot name. The room's address changes
+  when it restarts on archipelago.gg: take the new one from the room's page.
 - **A location is red but you could get it.** The tracker follows the world's logic, which can be stricter than
   the game. You can do it anyway: it is checked all the same.

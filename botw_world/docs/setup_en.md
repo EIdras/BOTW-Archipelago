@@ -48,9 +48,10 @@ a new seed: a save is bound to the seed it was started with. Play normally: your
 Archipelago journal (top right of the screen) shows what is sent and received, and the Archipelago logo in the HUD
 is in color while you are connected. Close Cemu to end the session, and leave the launcher's window open until then.
 
-**Map tracker**: with [PopTracker](https://github.com/black-sliver/PopTracker) installed (run once, so that its
-`PopTracker/packs` folder exists), the launcher installs the "Breath of the Wild Archipelago" pack before the
-session. In PopTracker, load the pack, click "AP" and enter the room's address, your slot name and the password:
+**Map tracker**: the first time, the launcher asks whether you want the pack of
+[PopTracker](https://github.com/black-sliver/PopTracker), and builds it in the release's `PopTracker` folder; drag
+`botw_archipelago.zip` onto PopTracker's window to install it. Each launch then says, in one line, whether the pack
+is up to date. In PopTracker, load the pack, click "AP" and enter the room's address, your slot name and the password:
 the map shows every location, colored by what your items allow, and checks them as you go. The
 [PopTracker guide](poptracker_en.md) covers it step by step.
 
