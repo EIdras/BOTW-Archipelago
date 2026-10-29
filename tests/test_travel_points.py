@@ -4,6 +4,7 @@ import unittest
 
 from botw_client import travel_points as travel
 from botw_client.cucco_swarm import HEAP_HOLDER, NEW_IN_HEAP
+from tools import build_poptracker as poptracker
 
 BLOCK = 0x40000000
 TERMINAL = "MainField_DgnObj_EntranceTerminal_A_01_742860559"
@@ -94,6 +95,32 @@ class OpenTests(unittest.TestCase):
         # Asked again, the opening is done whole.
         game.refuse = None
         self.assertEqual(game.open(), "opened")
+
+
+UPDATE = poptracker.update_content()
+
+
+@unittest.skipUnless(UPDATE is not None and (UPDATE / "Pack/Bootup.pack").is_file(), "update absent")
+class GameDataTests(unittest.TestCase):
+    def test_the_game_lets_the_client_write_each_travel_flag(self):
+        # The game's setters refuse a flag a program may not write (Jee Noh's
+        # Location_ is one): the world picks shrines whose three flags it may.
+        import oead
+        from botw_patch.resources import unpack
+        boot = oead.Sarc((UPDATE / "Pack/Bootup.pack").read_bytes())
+        found = {}
+        for file in oead.Sarc(unpack(bytes(boot.get_file("GameData/gamedata.ssarc").data))).get_files():
+            for key, entries in oead.byml.from_binary(bytes(file.data)).items():
+                kind = {"bool_data": "bool", "s32_data": "s32"}.get(key)
+                for entry in entries if kind else ():
+                    found[str(entry["DataName"])] = (kind, bool(entry["IsProgramWritable"]))
+        cat = poptracker.catalog()
+        names = {row["name"]: row["gamedata_flag"].removeprefix("Clear_") for row in cat.LOCATIONS}
+        for shrine, terminal in cat.TRAVEL_TERMINALS.items():
+            with self.subTest(shrine=shrine):
+                self.assertEqual(found.get(f"Location_{names[shrine]}"), ("s32", True))
+                self.assertEqual(found.get(f"Open_{names[shrine]}"), ("bool", True))
+                self.assertEqual(found.get(terminal), ("bool", True))
 
 
 class ClientTravelTests(unittest.IsolatedAsyncioTestCase):
