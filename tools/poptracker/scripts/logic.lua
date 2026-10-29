@@ -34,13 +34,18 @@ end
 -- With region_lock (slot data), the regions open from the Great Plateau
 -- outward, the Paraglider to leave it: one is in logic once its map is received
 -- and it borders one already in logic, across the seed's open borders (slot
--- data region_borders); a region inside another's area with that one.
+-- data region_borders); a region inside another's area with that one. With
+-- map_travel_points (slot data), a map's travel point is warped to from
+-- anywhere: its region is in logic once its map is received.
 local function reached_regions()
     local reached = {["Great Plateau"] = true}
     if Tracker:ProviderCountForCode("paraglider") > 0 then
         local opened = {}
         for region, code in pairs(REGION_MAPS) do
             opened[region] = Tracker:ProviderCountForCode(code) > 0
+            if opened[region] and enabled(SLOT_DATA.map_travel_points) then
+                reached[region] = true
+            end
         end
         -- pairs, not ipairs: the slot data's lists, whatever their first index.
         local borders = {}

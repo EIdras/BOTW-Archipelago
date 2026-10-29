@@ -119,6 +119,8 @@ class PackTests(unittest.TestCase):
         logic = self.pack.read("scripts/logic.lua").decode()
         self.assertIn("SLOT_DATA.region_lock", logic)
         self.assertIn("SLOT_DATA.region_borders", logic)
+        # With map_travel_points, a region is reached by its map alone.
+        self.assertIn("SLOT_DATA.map_travel_points", logic)
 
     def test_the_regions_panel_combines_each_map_with_its_region_reached(self):
         items = {entry["codes"]: entry for entry in self.json("items/items.json") if "codes" in entry}

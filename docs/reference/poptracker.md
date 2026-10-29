@@ -53,8 +53,10 @@ game, so that no file of the game is in the repository.
   for the regions a location needs to reach (`REGION_KEYS`: its own, a tower's and Ganon's too, and those of its
   maps), as the world's region graph does: from the Great Plateau with the Paraglider, a region is reached once its
   map is received and it borders a reached one across the seed's open borders (slot data `region_borders`); Hyrule
-  Castle with Central. Ganon's square follows the sanctum's requirements of the slot data, which count, as the game's gate
-  does, the Divine Beasts freed and the shrines cleared: their squares, checked by Archipelago or by hand. Ganon is no
+  Castle with Central. With the slot data's `map_travel_points` too, a map opens a travel point in its region: the
+  region is reached by its map alone, with the Paraglider. Ganon's square follows the sanctum's requirements of the
+  slot data, which count, as the game's gate does, the Divine Beasts freed and the shrines cleared: their squares,
+  checked by Archipelago or by hand. Ganon is no
   AP location: his square is checked when the server's status of the slot (`_read_client_status_<team>_<slot>`, read
   and watched) says the goal is reached. Once a slot is released (on its goal, with the room's default), every
   location is checked: the whole map is grey.
