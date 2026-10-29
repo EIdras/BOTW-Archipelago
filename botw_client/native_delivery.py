@@ -647,6 +647,28 @@ class CemuNativeDeliveryBackend:
         return self._in_one_turn(lambda read, write: register(
             read, write, self._call, actor, name, mane, saddle, reins))
 
+    def open_travel_point(self, shrines) -> tuple[str, str] | None:
+        """map_travel_points: the travel point of the first shrine due, opened
+        by the game's GameData setters (botw_client/travel_points.py): (shrine,
+        'opened', 'already' or why not now), None when none is due. `shrines`:
+        (map's flag, shrine, terminal's flag), read from the game's flags."""
+        from .travel_points import due, open_point
+        live = getattr(self.game, "live", None)
+        if live is None:
+            return None
+
+        def get(flag, kind):
+            return live.get(zlib.crc32(flag.encode()) & 0xFFFFFFFF, kind)
+
+        point = due(get, shrines)
+        if point is None:
+            return None
+        reason = self._drop_blocked()
+        if reason:
+            return point[0], reason
+        return point[0], self._in_one_turn(lambda read, write: open_point(
+            read, write, self._call, get, *point))
+
     def _in_one_turn(self, work) -> str:
         """work(read, write) in one turn of the invoker, as an attacker of the
         swarm: none of the client's other users comes between its calls."""

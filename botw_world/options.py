@@ -144,6 +144,16 @@ class RegionLock(Toggle):
     display_name = "Region Lock"
 
 
+class MapTravelPoints(Toggle):
+    """With Tower Maps on items or region_keys, a map received also opens the travel
+    point of a shrine near where its region begins, once Link has the Paraglider:
+    he can warp there at once, and the game shows the shrine's name as it opens.
+    The shrine stays a location, cleared as ever. With Region Lock, a region is then
+    in the logic once its map and the Paraglider are received, bordering a region in
+    the logic or not, and the Early Map is drawn as without Region Lock."""
+    display_name = "Map Travel Points"
+
+
 class BikeAnywhere(Toggle):
     """The Master Cycle Zero (the Champions' Ballad DLC) can be summoned and ridden in
     the Gerudo Desert and on Death Mountain, which refuse it in the game, and goes
@@ -196,6 +206,7 @@ class BotwOptions(PerGameCommonOptions):
     tower_maps: TowerMaps
     early_map: EarlyMap
     region_lock: RegionLock
+    map_travel_points: MapTravelPoints
     bike_anywhere: BikeAnywhere
     trap_percentage: TrapPercentage
     trap_weights: TrapWeights
@@ -207,7 +218,7 @@ OPTION_GROUPS = [
                 [SanctumDivineBeasts, SanctumShrines, SanctumMasterSword, SanctumRunes]),
     OptionGroup("Shops", [BeedleShopItems, StallItems]),
     OptionGroup("Weapons", [WeaponOrder]),
-    OptionGroup("Maps", [TowerMaps, EarlyMap, RegionLock]),
+    OptionGroup("Maps", [TowerMaps, EarlyMap, RegionLock, MapTravelPoints]),
     OptionGroup("Master Cycle Zero", [BikeAnywhere]),
     OptionGroup("Traps", [TrapPercentage, TrapWeights]),
 ]

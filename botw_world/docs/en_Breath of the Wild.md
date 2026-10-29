@@ -137,6 +137,12 @@ that region, and `early_map` draws only among the Great Plateau's neighbours. No
 done out of logic counts all the same. Universal Tracker and the PopTracker pack follow this option, from the seed's
 own borders: a location whose regions are out of reach shows as out of logic.
 
+The `map_travel_points` option (off by default; with the maps as items) makes a map received also open the travel
+point of one shrine near where its region begins, once Link has the Paraglider, so that he can warp there at once;
+the game shows the shrine's name as it opens. The shrine stays a location, cleared as ever. With `region_lock`, a
+region is then in the logic once its map and the Paraglider are received, whether or not it borders a region in the
+logic (its tower still needs it), and `early_map` draws as without `region_lock`.
+
 ## Can the Master Cycle Zero go anywhere?
 
 The game refuses the Master Cycle Zero (the Champions' Ballad DLC) in the Gerudo Desert and on Death Mountain, and the

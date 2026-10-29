@@ -13,7 +13,8 @@ from Options import OptionError
 from rule_builder.rules import And, CanReachRegion, Has, HasAll, HasAny, HasFromList, Or, Rule, True_
 
 from .catalog import (FILLER, GAME, GENTLE_REGIONS, GOAL_LOCATION, INNER_REGIONS, ITEMS, LOCATIONS, MAPS, NEIGHBOURS,
-                      OPEN_BORDERS, TRAPS, WEAPON_LEVELS, WORLD_VERSION, categories, map_keys, requirements)
+                      OPEN_BORDERS, TRAPS, TRAVEL_SHRINES, TRAVEL_TERMINALS, WEAPON_LEVELS, WORLD_VERSION, categories,
+                      map_keys, requirements)
 from .options import OPTION_GROUPS, PRESETS, BotwOptions, EarlyMap, TowerMaps, WeaponOrder
 from .slot_file import BotwSlotFile
 
@@ -78,7 +79,7 @@ class BotwWorld(World):
     # The options that shape the world, given back by the slot data.
     SLOT_OPTIONS = ("goal", "goal_shrines", "sanctum_divine_beasts", "sanctum_shrines",
                     "sanctum_master_sword", "sanctum_runes", "beedle_shop_items", "stall_items", "tower_maps",
-                    "region_lock", "bike_anywhere")
+                    "region_lock", "map_travel_points", "bike_anywhere")
     # The region each map opens: {item: region}.
     MAP_REGIONS = {item: region for region, item in MAPS.items()}
     # The stall locations of the slot data, when Universal Tracker regenerates.
@@ -92,6 +93,8 @@ class BotwWorld(World):
     def generate_early(self) -> None:
         if self.options.region_lock and self.options.tower_maps != TowerMaps.option_region_keys:
             raise OptionError(f"{self.player_name}: region_lock needs tower_maps on region_keys")
+        if self.options.map_travel_points and self.options.tower_maps == TowerMaps.option_vanilla:
+            raise OptionError(f"{self.player_name}: map_travel_points needs the maps as items (tower_maps)")
         passed = getattr(self.multiworld, "re_gen_passthrough", {}).get(self.game)
         if not passed:
             return
@@ -149,9 +152,13 @@ class BotwWorld(World):
     def connect_neighbours(self, regions: dict[str, Region]) -> None:
         """region_lock: a region entered from each of its neighbours with its map,
         or Universal Tracker's stand-in for a missing map, and from the Great Plateau
-        with the Paraglider too; a region inside another's area, from that one."""
+        with the Paraglider too; a region inside another's area, from that one. With
+        map_travel_points, a region's travel point is warped to from anywhere: in the
+        logic, from the Great Plateau."""
+        travel = bool(self.options.map_travel_points)
         for name in sorted(NEIGHBOURS):
-            for other in sorted(NEIGHBOURS[name] - {"Great Plateau"}):
+            others = set(MAPS) if travel and name == "Great Plateau" else NEIGHBOURS[name]
+            for other in sorted(others - {"Great Plateau"}):
                 key = Or(Has(MAPS[other]), Has(self.glitches_item_name))
                 self.create_entrance(regions[name], regions[other],
                                      And(Has("Paraglider"), key) if name == "Great Plateau" else key)
@@ -249,7 +256,7 @@ class BotwWorld(World):
         choice = self.options.early_map
         if choice != EarlyMap.option_none:
             regions = GENTLE_REGIONS if choice == EarlyMap.option_gentle else sorted(MAPS)
-            if self.options.region_lock:
+            if self.options.region_lock and not self.options.map_travel_points:
                 # Only the map of a region bordering the Plateau opens one from the start.
                 regions = [region for region in regions if region in NEIGHBOURS["Great Plateau"]]
             self.multiworld.local_early_items[self.player][MAPS[self.random.choice(regions)]] = 1
@@ -328,14 +335,25 @@ class BotwWorld(World):
         #    rune is, which one of 8 cannot.
         # 10: the tower maps, as items, which one of 9 cannot deliver nor tell from the towers.
         # 11: the Downpour, Yiga Ambush and Paranoia traps, which one of 10 cannot play.
+        # 12: map_travel_points, the travel points a map opens, which one of 11 cannot open.
         # stall_locations: the stalls drawn by the seed, for Universal Tracker.
         # region_borders: with region_lock, the borders the seed's logic crosses.
-        return {"client_schema": 11, "world_schema": 4, "world_version": WORLD_VERSION,
+        # travel_shrines: with map_travel_points, the shrine each map opens and its terminal's flag.
+        return {"client_schema": 12, "world_schema": 4, "world_version": WORLD_VERSION,
                 "death_link": bool(self.options.death_link.value),
                 **self.options.as_dict(*self.SLOT_OPTIONS),
                 "stall_locations": sorted(location_id for location_id in self.shop_prices
                                           if location_id in self.STALL_IDS),
-                **({"region_borders": [list(pair) for pair in OPEN_BORDERS]} if self.options.region_lock else {})}
+                **({"region_borders": [list(pair) for pair in OPEN_BORDERS]} if self.options.region_lock else {}),
+                **({"travel_shrines": self.travel_shrines()} if self.options.map_travel_points else {})}
+
+    @staticmethod
+    def travel_shrines() -> dict[str, list[str]]:
+        """{map: [shrine, terminal]}: the shrine whose travel point each map opens,
+        by its GameData name (DungeonNNN), and the flag its terminal sets."""
+        flags = {row["name"]: row["gamedata_flag"] for row in LOCATIONS}
+        return {MAPS[region]: [flags[shrine].removeprefix("Clear_"), TRAVEL_TERMINALS[shrine]]
+                for region, shrine in sorted(TRAVEL_SHRINES.items())}
 
     @classmethod
     def data_package_checksum(cls) -> str:

@@ -52,6 +52,11 @@ DEATHLINK_EXPIRY_SECONDS = 120.0
 # A Yiga Ambush committed while Link was leaving the world (a menu opened in
 # between) waits for him; after this long, it is given up.
 NATIVE_TRAP_PATIENCE_SECONDS = 120.0
+# A travel point opened, the next waits for the game to show the shrine's name;
+# one that failed is asked again after as long.
+TRAVEL_SPACING_SECONDS = 5.0
+# Why a travel point waits: not failures, not logged.
+TRAVEL_WAITS = ("an entry running", "Link not in the world", "save guard unreadable")
 STATE_PATH = DATA / "client-state.json"
 GOAL_LOCATION = "Defeat Calamity Ganon"
 STATE_SCHEMA = 3
@@ -59,8 +64,8 @@ CLIENT_SCHEMA = 2
 # The client schemas of BOTW seeds this client plays: 4 added the Gerudo Set, 5 the
 # goal and the sanctum's requirements, 6 the new filler, 7 the weapons, 8 the travel items,
 # 9 Epona and the Master Cycle Zero selected only when no rune is, 10 the tower maps,
-# 11 the Downpour, Yiga Ambush and Paranoia traps.
-BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11)
+# 11 the Downpour, Yiga Ambush and Paranoia traps, 12 the travel points a map opens.
+BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
 # The mutations that present the item themselves: no AP window before them.
 VANILLA_WINDOWS = ("get_demo_actor", "champion_actor", "rune_download", "trap", "native_trap",
                    "get_demo_bundle", "cook", "pouch_slot", "map_open")
@@ -285,6 +290,10 @@ class BotwClientRuntime:
         # The sanctum's gate: checked every second; off for a pack without it.
         self._gate_unavailable = False
         self._gate_retry_after = 0.0
+        # map_travel_points: (map's flag, shrine, terminal's flag) of the slot.
+        self._travel_shrines = None
+        self._travel_retry_after = 0.0
+        self._travel_failure = None
         self._session_identity = None
         self._session_locations = None
         self.lease_error = None
@@ -1245,6 +1254,40 @@ class BotwClientRuntime:
         self._pedestal_requested = True
         # Read again once the entry has run; asked again if it did not.
         self._pedestal_retry_after = time.monotonic() + 10.0
+
+    async def _travel_tick(self):
+        """map_travel_points: the travel point of the shrine each map held
+        opens, once the Paraglider is held (botw_client/travel_points.py). Read
+        from the game's flags, so a reload to an earlier save is repaired; one
+        shrine at a time, its name shown by the game before the next."""
+        travel = (getattr(self.ap, "slot_data", None) or {}).get("travel_shrines")
+        opener = getattr(getattr(self.deliveries, "backend", None), "open_travel_point", None)
+        if not travel or opener is None or time.monotonic() < self._travel_retry_after:
+            return
+        self._travel_retry_after = time.monotonic() + 1.0
+        try:
+            if self._travel_shrines is None:
+                self._travel_shrines = [(self.game.item_map[name]["delivery"]["flag"], shrine, terminal)
+                                        for name, (shrine, terminal) in sorted(travel.items())]
+            outcome = await asyncio.to_thread(opener, self._travel_shrines)
+        except Exception as exc:  # noqa: BLE001 - a travel point must not stop the session
+            outcome = ("travel point", f"{type(exc).__name__}: {exc}")
+        if outcome is None or outcome[1] in TRAVEL_WAITS + ("already",):
+            return
+        shrine, status = outcome
+        if status == "opened":
+            self.log(f"travel point opened: {shrine}")
+            self._travel_failure = None
+            self._travel_retry_after = time.monotonic() + TRAVEL_SPACING_SECONDS
+        else:
+            # Asked again later (each attempt takes a little of the game's
+            # heap), the other shrines first: a failing one holds none back.
+            self._travel_retry_after = time.monotonic() + TRAVEL_SPACING_SECONDS
+            if self._travel_shrines:
+                self._travel_shrines.sort(key=lambda entry: entry[1] == shrine)
+            if outcome != self._travel_failure:
+                self._travel_failure = outcome
+                self.log(f"travel point of {shrine} not opened yet ({status})")
 
     async def _ganon_gate_tick(self):
         """The sanctum's gate (botw_patch/ganon_gate.py): opened once the seed's
@@ -2266,6 +2309,7 @@ class BotwClientRuntime:
                     if session_bound:
                         if not swarming:
                             await self._apply_one_received_native()
+                            await self._travel_tick()
                             await self._pickup_tick()
                             self._log_delivery_wait()
                             await self._quest_tick()

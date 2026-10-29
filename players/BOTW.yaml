@@ -34,6 +34,12 @@ Breath of the Wild:
   # A map placed at one of the Great Plateau's first locations (its terminals or its tower):
   # gentle (Dueling Peaks, Hateno, Lake or Faron), any, or none
   early_map: gentle
+  # With tower_maps on region_keys: a region enters the logic once its map is received and it borders a region
+  # already in the logic, as the game's map cuts them
+  region_lock: false
+  # With the maps as items: a map received also opens the travel point of a shrine near where its region begins,
+  # once Link has the Paraglider
+  map_travel_points: false
   # The Master Cycle Zero (Champions' Ballad DLC) in the Gerudo Desert and on Death Mountain, and through the
   # invisible walls that stop horses; indoors still refuse it
   bike_anywhere: false

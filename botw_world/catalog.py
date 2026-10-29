@@ -102,6 +102,25 @@ OPEN_BORDERS = tuple(tuple(row["regions"]) for row in BORDERS if frozenset(row["
 # {region: its neighbours}, across the open borders.
 NEIGHBOURS = {name: frozenset(other for pair in OPEN_BORDERS if name in pair for other in pair if other != name)
               for name in sorted({name for pair in OPEN_BORDERS for name in pair})}
+# The shrine whose travel point a region's map opens with map_travel_points: one
+# near where the region begins, open from the start: its terminal is the plain
+# one, not the one of the shrines a quest raises (Kam Urog, Sheem Dagoze...).
+TRAVEL_SHRINES = {
+    "Akkala": "Ze Kasho Shrine", "Central": "Kaam Ya'tak Shrine", "Dueling Peaks": "Bosh Kala Shrine",
+    "Eldin": "Tah Muhl Shrine", "Faron": "Shoda Sah Shrine", "Gerudo": "Kuh Takkar Shrine",
+    "Hateno": "Myahm Agana Shrine", "Hebra": "Dunba Taag Shrine", "Lake": "Ya Naga Shrine",
+    "Lanayru": "Kaya Wan Shrine", "Ridgeland": "Mogg Latan Shrine", "Tabantha": "Tena Ko'sah Shrine",
+    "Wasteland": "Jee Noh Shrine", "Woodland": "Monya Toma Shrine",
+}
+# The flag a travel shrine's terminal sets once activated, with Open_ and Location_
+# of the shrine: its actor and HashId in the map's units, as the client opens it.
+TRAVEL_TERMINALS = {shrine: f"MainField_DgnObj_EntranceTerminal_A_01_{hash_id}" for shrine, hash_id in {
+    "Ze Kasho Shrine": 4290992176, "Kaam Ya'tak Shrine": 2263739210, "Bosh Kala Shrine": 2462652737,
+    "Tah Muhl Shrine": 1379190536, "Shoda Sah Shrine": 1797433301, "Kuh Takkar Shrine": 3572795101,
+    "Myahm Agana Shrine": 4206609530, "Dunba Taag Shrine": 4206060014, "Ya Naga Shrine": 2041042482,
+    "Kaya Wan Shrine": 2501247945, "Mogg Latan Shrine": 742860559, "Tena Ko'sah Shrine": 3614581704,
+    "Jee Noh Shrine": 449814471, "Monya Toma Shrine": 3304413740,
+}.items()}
 # A region inside another's area, entered from it: Ganon's sanctum stands in Central's.
 INNER_REGIONS = {"Hyrule Castle": "Central"}
 
@@ -162,6 +181,22 @@ def _check_logic() -> None:
         raise ValueError("data/region_borders.json and INNER_REGIONS differ from the regions")
     if not set(CLOSED_BORDERS) <= {frozenset(row["regions"]) for row in BORDERS}:
         raise ValueError("a closed border is not a border of data/region_borders.json")
+    shrines = {row["name"]: row for row in LOCATIONS if "Shrine" in categories(row)}
+    if set(TRAVEL_SHRINES) != set(MAPS) or any(
+            name not in shrines or shrines[name]["region"] != region for region, name in TRAVEL_SHRINES.items()):
+        raise ValueError("TRAVEL_SHRINES names a shrine of each map's region")
+    for row in LOCATIONS:
+        logic = LOGIC[row["name"]]
+        if logic["region"] != row["region"]:
+            raise ValueError(f"{row['name']}: data/logic.csv says {logic['region']}, the locations {row['region']}")
+        if logic["climate"] not in CLIMATES:
+            raise ValueError(f"{row['name']}: unknown climate {logic['climate']!r}")
+        runes = logic["runes"]
+        if runes not in ("", "none", "all") and not set(runes.replace("/", "|").split("|")) <= set(RUNES):
+            raise ValueError(f"{row['name']}: unknown runes {runes!r}")
+        unknown = required_items(row) - items - events
+        if unknown:
+            raise ValueError(f"{row['name']}: unknown requirement {sorted(unknown)}")
 
 
 def _check_weapons() -> None:
