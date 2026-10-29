@@ -152,8 +152,16 @@ class PackTests(unittest.TestCase):
         logic = self.pack.read("scripts/logic.lua").decode()
         self.assertIn("function botw_update_regions()", logic)
         self.assertIn('code .. "_reached"', logic)
-        self.assertIn("botw_update_regions", self.pack.read("scripts/init.lua").decode())
-        self.assertIn("botw_update_regions()", self.pack.read("scripts/autotracking/archipelago.lua").decode())
+        # Written from a watch, a "reached" toggle would turn its map back off through
+        # its composite: the watches and the slot data only mark the panel stale, and a
+        # frame handler updates it.
+        init = self.pack.read("scripts/init.lua").decode()
+        tracking = self.pack.read("scripts/autotracking/archipelago.lua").decode()
+        self.assertNotIn("botw_update_regions", init + tracking)
+        self.assertEqual(init.count("botw_regions_changed)"), 3)
+        self.assertIn('AddOnFrameHandler("botw regions", botw_regions_frame)', init)
+        self.assertIn("botw_regions_changed()", tracking)
+        self.assertIn("function botw_regions_frame()", logic)
 
     def test_the_manifest_asks_for_archipelago_auto_tracking(self):
         manifest = self.json("manifest.json")

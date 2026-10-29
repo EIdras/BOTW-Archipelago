@@ -35,8 +35,10 @@ game, so that no file of the game is in the repository.
   received (grey), received but its region out of reach with `region_lock` (amber, hatched), the region reached (the
   game's colours under a touch of green; a tile framed green or amber). A tile and a piece are `composite_toggle`s of
   the map (left: a click marks it by hand) and its `<map>_reached` toggle, which `botw_update_regions` keeps
-  (`scripts/logic.lua`, watched in `scripts/init.lua`, called again with the slot data): the map received and, with
-  `region_lock`, the region reached as the logic counts it. Without the game's map or its update, the tiles are
+  (`scripts/logic.lua`): the map received and, with
+  `region_lock`, the region reached as the logic counts it. The watches of `scripts/init.lua` and the slot data only
+  mark the panel stale; a frame handler updates it. Written from inside an item's change, a `<map>_reached` would
+  reach its composite before the map, and the composite would write the map back off. Without the game's map or its update, the tiles are
   labels and there is no mini-map.
 - **Positions** (`data/location_positions.json`, built by `tools/build_location_positions.py` from the DLC's map
   units, checked by a test): shrines and towers from their `LocationMarker`, a rune terminal at its plateau shrine,

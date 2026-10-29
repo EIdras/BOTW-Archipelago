@@ -10,10 +10,11 @@ Tracker:AddLayouts("layouts/tracker.json")
 
 ScriptHost:AddOnLocationSectionChangedHandler("botw events", botw_update_events)
 for _, code in pairs(REGION_MAPS) do
-    ScriptHost:AddWatchForCode("botw regions " .. code, code, botw_update_regions)
-    ScriptHost:AddWatchForCode("botw regions " .. code .. "_reached", code .. "_reached", botw_update_regions)
+    ScriptHost:AddWatchForCode("botw regions " .. code, code, botw_regions_changed)
+    ScriptHost:AddWatchForCode("botw regions " .. code .. "_reached", code .. "_reached", botw_regions_changed)
 end
-ScriptHost:AddWatchForCode("botw regions paraglider", "paraglider", botw_update_regions)
+ScriptHost:AddWatchForCode("botw regions paraglider", "paraglider", botw_regions_changed)
+ScriptHost:AddOnFrameHandler("botw regions", botw_regions_frame)
 
 if PopVersion and Archipelago then
     ScriptHost:LoadScript("scripts/autotracking/archipelago.lua")

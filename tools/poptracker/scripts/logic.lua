@@ -109,6 +109,24 @@ end
 -- of the mini-map combine with its map, is on once the map is received and,
 -- with region_lock, the region reached (scripts/init.lua watches the maps, the
 -- Paraglider and these toggles: a click on one is undone).
+--
+-- Never from inside an item's change: a toggle written there reaches its
+-- composite before the map does, and the composite, from its stage, writes the
+-- map back off (PopTracker's tracker.cpp). The watches mark the panel stale,
+-- and botw_regions_frame updates it at the next frame.
+local regions_stale = false
+
+function botw_regions_changed()
+    regions_stale = true
+end
+
+function botw_regions_frame()
+    if regions_stale then
+        regions_stale = false
+        botw_update_regions()
+    end
+end
+
 function botw_update_regions()
     local lock = tonumber(SLOT_DATA.tower_maps) == 2 and enabled(SLOT_DATA.region_lock)
     local reached = lock and reached_regions() or {}
