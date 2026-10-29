@@ -10,10 +10,10 @@ from typing import Any
 from BaseClasses import Item, ItemClassification, Location, MultiWorld, Region, Tutorial
 from worlds.AutoWorld import WebWorld, World
 from Options import OptionError
-from rule_builder.rules import And, Has, HasAll, HasAny, HasFromList, Or, Rule, True_
+from rule_builder.rules import And, CanReachRegion, Has, HasAll, HasAny, HasFromList, Or, Rule, True_
 
-from .catalog import (FILLER, GAME, GENTLE_REGIONS, GOAL_LOCATION, ITEMS, LOCATIONS, MAPS, TRAPS, WEAPON_LEVELS,
-                      WORLD_VERSION, categories, map_keys, requirements)
+from .catalog import (FILLER, GAME, GENTLE_REGIONS, GOAL_LOCATION, INNER_REGIONS, ITEMS, LOCATIONS, MAPS, NEIGHBOURS,
+                      OPEN_BORDERS, TRAPS, WEAPON_LEVELS, WORLD_VERSION, categories, map_keys, requirements)
 from .options import OPTION_GROUPS, PRESETS, BotwOptions, EarlyMap, TowerMaps, WeaponOrder
 from .slot_file import BotwSlotFile
 
@@ -78,7 +78,9 @@ class BotwWorld(World):
     # The options that shape the world, given back by the slot data.
     SLOT_OPTIONS = ("goal", "goal_shrines", "sanctum_divine_beasts", "sanctum_shrines",
                     "sanctum_master_sword", "sanctum_runes", "beedle_shop_items", "stall_items", "tower_maps",
-                    "bike_anywhere")
+                    "region_lock", "bike_anywhere")
+    # The region each map opens: {item: region}.
+    MAP_REGIONS = {item: region for region, item in MAPS.items()}
     # The stall locations of the slot data, when Universal Tracker regenerates.
     passed_stalls: set[int] | None = None
 
@@ -88,6 +90,8 @@ class BotwWorld(World):
         return slot_data
 
     def generate_early(self) -> None:
+        if self.options.region_lock and self.options.tower_maps != TowerMaps.option_region_keys:
+            raise OptionError(f"{self.player_name}: region_lock needs tower_maps on region_keys")
         passed = getattr(self.multiworld, "re_gen_passthrough", {}).get(self.game)
         if not passed:
             return
@@ -108,9 +112,12 @@ class BotwWorld(World):
                    for name in sorted({r["region"] for r in LOCATIONS})}
         self.multiworld.regions.extend([menu, *regions.values()])
         menu.connect(regions["Great Plateau"])
-        for name, region in regions.items():
-            if name != "Great Plateau":
-                self.create_entrance(regions["Great Plateau"], region, Has("Paraglider"))
+        if self.options.region_lock:
+            self.connect_neighbours(regions)
+        else:
+            for name, region in regions.items():
+                if name != "Great Plateau":
+                    self.create_entrance(regions["Great Plateau"], region, Has("Paraglider"))
         self.shop_prices = {}
         # Stall Items of the 28 stall locations, at random: a stall has 2 of
         # them, so it ends up with none, one or two.
@@ -139,15 +146,31 @@ class BotwWorld(World):
         goal = self.multiworld.get_location(GOAL_LOCATION, self.player)
         goal.place_locked_item(BotwItem("Victory", ItemClassification.progression, None, self.player))
 
+    def connect_neighbours(self, regions: dict[str, Region]) -> None:
+        """region_lock: a region entered from each of its neighbours with its map,
+        or Universal Tracker's stand-in for a missing map, and from the Great Plateau
+        with the Paraglider too; a region inside another's area, from that one."""
+        for name in sorted(NEIGHBOURS):
+            for other in sorted(NEIGHBOURS[name] - {"Great Plateau"}):
+                key = Or(Has(MAPS[other]), Has(self.glitches_item_name))
+                self.create_entrance(regions[name], regions[other],
+                                     And(Has("Paraglider"), key) if name == "Great Plateau" else key)
+        for inner, outer in INNER_REGIONS.items():
+            self.create_entrance(regions[outer], regions[inner])
+
     def location_rule(self, row) -> Rule:
         """A location's rule: its requirements, and with tower_maps on region_keys,
-        its maps (map_keys), or Universal Tracker's stand-in for a missing map."""
+        its maps (map_keys), or Universal Tracker's stand-in for a missing map. With
+        region_lock, its region's entrances hold its map, and a quest through another
+        region needs to reach that region."""
         rule = self.rule(requirements(row))
         maps = map_keys(row) if self.options.tower_maps == TowerMaps.option_region_keys else ()
-        if not maps:
-            return rule
-        keys = Or(Has(maps[0]) if len(maps) == 1 else HasAll(*maps), Has(self.glitches_item_name))
-        return keys if isinstance(rule, True_) else And(rule, keys)
+        parts = [] if isinstance(rule, True_) else [rule]
+        if self.options.region_lock:
+            parts += [CanReachRegion(self.MAP_REGIONS[name]) for name in maps if name != MAPS.get(row["region"])]
+        elif maps:
+            parts.append(Or(Has(maps[0]) if len(maps) == 1 else HasAll(*maps), Has(self.glitches_item_name)))
+        return And(*parts) if len(parts) > 1 else parts[0] if parts else rule
 
     @staticmethod
     def rule(groups) -> Rule:
@@ -226,6 +249,9 @@ class BotwWorld(World):
         choice = self.options.early_map
         if choice != EarlyMap.option_none:
             regions = GENTLE_REGIONS if choice == EarlyMap.option_gentle else sorted(MAPS)
+            if self.options.region_lock:
+                # Only the map of a region bordering the Plateau opens one from the start.
+                regions = [region for region in regions if region in NEIGHBOURS["Great Plateau"]]
             self.multiworld.local_early_items[self.player][MAPS[self.random.choice(regions)]] = 1
         return list(MAPS.values())
 
@@ -303,11 +329,13 @@ class BotwWorld(World):
         # 10: the tower maps, as items, which one of 9 cannot deliver nor tell from the towers.
         # 11: the Downpour, Yiga Ambush and Paranoia traps, which one of 10 cannot play.
         # stall_locations: the stalls drawn by the seed, for Universal Tracker.
+        # region_borders: with region_lock, the borders the seed's logic crosses.
         return {"client_schema": 11, "world_schema": 4, "world_version": WORLD_VERSION,
                 "death_link": bool(self.options.death_link.value),
                 **self.options.as_dict(*self.SLOT_OPTIONS),
                 "stall_locations": sorted(location_id for location_id in self.shop_prices
-                                          if location_id in self.STALL_IDS)}
+                                          if location_id in self.STALL_IDS),
+                **({"region_borders": [list(pair) for pair in OPEN_BORDERS]} if self.options.region_lock else {})}
 
     @classmethod
     def data_package_checksum(cls) -> str:

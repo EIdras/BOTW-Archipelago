@@ -37,6 +37,16 @@ class BecoTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             map_regions.Beco(b"\0" * 32)
 
+    def test_a_border_runs_where_two_areas_touch(self):
+        # 1 | 2 over 3, a row being 2 units high.
+        beco = map_regions.Beco(grid([[(1, 4000), (2, 6000)]] * 2000 + [[(3, 10000)]] * 2000))
+        self.assertEqual(beco.borders(), {(1, 2): 4000, (1, 3): 4000, (2, 3): 6000})
+
+    def test_a_corner_is_no_border(self):
+        # 1 and 3 meet at a point only.
+        beco = map_regions.Beco(grid([[(1, 5000), (2, 5000)]] * 2000 + [[(2, 5000), (3, 5000)]] * 2000))
+        self.assertEqual(beco.borders(), {(1, 2): 4000 + 5000, (2, 3): 4000 + 5000})
+
 
 class DataTests(unittest.TestCase):
     def test_a_tower_is_in_its_own_region(self):
@@ -48,6 +58,19 @@ class DataTests(unittest.TestCase):
     @unittest.skipUnless(CONTENT is not None and (CONTENT / "Pack/Bootup.pack").is_file(), "update content absent")
     def test_the_regions_are_the_game_map(self):
         self.assertEqual(map_regions.differences(CONTENT), [])
+
+    @unittest.skipUnless(CONTENT is not None and (CONTENT / "Pack/Bootup.pack").is_file(), "update content absent")
+    def test_the_borders_are_the_game_map(self):
+        self.assertEqual(json.loads(map_regions.BORDERS.read_text(encoding="utf-8")),
+                         map_regions.region_borders(CONTENT))
+
+    @unittest.skipUnless(CONTENT is not None and (CONTENT / "Pack/Bootup.pack").is_file(), "update content absent")
+    def test_ganons_sanctum_stands_in_central(self):
+        # The world enters Hyrule Castle from Central (INNER_REGIONS).
+        positions = json.loads((ROOT / "data/location_positions.json").read_text(encoding="utf-8"))
+        towers = map_regions.map_towers(CONTENT)
+        area = towers.at(*positions["Defeat Calamity Ganon"])
+        self.assertEqual(map_regions.area_regions(towers)[area], "Central")
 
 
 if __name__ == "__main__":

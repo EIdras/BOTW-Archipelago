@@ -128,6 +128,15 @@ rune terminals and its tower), so that a region opens besides the towers once Li
 default) draws one of the regions the game leads to first (Dueling Peaks, Hateno, Lake or Faron), `any` one of the 14,
 `none` places none early.
 
+The `region_lock` option (off by default; with `tower_maps` on `region_keys` only) opens the regions from the Great
+Plateau outward, as the game's map cuts them: a region is in the logic once its map is received and it borders a region
+already in the logic. The Great Plateau borders Central, Dueling Peaks, Lake and the Wasteland. The logic leaves out the
+few borders the game offers no way across (the cliffs around the Gerudo Highlands, the climb from Ridgeland to Hebra).
+A tower then needs its region's map too, Calamity Ganon needs Central, a quest through another region needs to reach
+that region, and `early_map` draws only among the Great Plateau's neighbours. Nothing is locked in the game: a location
+done out of logic counts all the same. Universal Tracker and the PopTracker pack follow this option, from the seed's
+own borders: a location whose regions are out of reach shows as out of logic.
+
 ## Can the Master Cycle Zero go anywhere?
 
 The game refuses the Master Cycle Zero (the Champions' Ballad DLC) in the Gerudo Desert and on Death Mountain, and the

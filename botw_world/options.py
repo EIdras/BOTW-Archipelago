@@ -124,12 +124,24 @@ class EarlyMap(Choice):
     outside the Great Plateau.
     gentle: one of the regions the game leads to first: Dueling Peaks, Hateno,
     Lake or Faron.
-    any: any of the 14 maps."""
+    any: any of the 14 maps.
+    With Region Lock, only the maps of the regions bordering the Great Plateau are
+    drawn."""
     display_name = "Early Map"
     option_none = 0
     option_gentle = 1
     option_any = 2
     default = 1
+
+
+class RegionLock(Toggle):
+    """With Tower Maps on region_keys, the regions open in the logic from the Great
+    Plateau outward, as the game's map cuts them: a region is in the logic once its
+    map is received and it borders a region already in the logic. Its tower then
+    needs its map too, Hyrule Castle needs Central, and a quest that goes through
+    another region needs that region in the logic. Nothing is locked in the game: a
+    location done out of logic counts all the same."""
+    display_name = "Region Lock"
 
 
 class BikeAnywhere(Toggle):
@@ -183,6 +195,7 @@ class BotwOptions(PerGameCommonOptions):
     weapon_order: WeaponOrder
     tower_maps: TowerMaps
     early_map: EarlyMap
+    region_lock: RegionLock
     bike_anywhere: BikeAnywhere
     trap_percentage: TrapPercentage
     trap_weights: TrapWeights
@@ -194,7 +207,7 @@ OPTION_GROUPS = [
                 [SanctumDivineBeasts, SanctumShrines, SanctumMasterSword, SanctumRunes]),
     OptionGroup("Shops", [BeedleShopItems, StallItems]),
     OptionGroup("Weapons", [WeaponOrder]),
-    OptionGroup("Maps", [TowerMaps, EarlyMap]),
+    OptionGroup("Maps", [TowerMaps, EarlyMap, RegionLock]),
     OptionGroup("Master Cycle Zero", [BikeAnywhere]),
     OptionGroup("Traps", [TrapPercentage, TrapWeights]),
 ]

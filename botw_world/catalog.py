@@ -84,6 +84,26 @@ MAPLESS_REGIONS = frozenset({"Great Plateau", "Hyrule Castle"})
 # The maps an early_map of "gentle" draws from: the regions the game itself
 # leads to first, from the Plateau to Kakariko, Hateno and Lake Hylia.
 GENTLE_REGIONS = ("Dueling Peaks", "Hateno", "Lake", "Faron")
+# Where two regions touch on the game's map, and the border's length in world
+# units (data/region_borders.json, from tools/map_regions.py). With region_lock,
+# the logic enters a region from its neighbours.
+BORDERS = json.loads(files(__package__).joinpath("data/region_borders.json").read_text(encoding="utf-8"))
+# The borders of the game's map the logic does not cross, and why. Where only one
+# way is hard, the easy one opens nothing the region's other borders do not.
+CLOSED_BORDERS = {
+    frozenset({"Akkala", "Woodland"}): "a line of stray cells of Akkala's area on the Woodland-Eldin border, "
+                                       "outside the playable area",
+    frozenset({"Gerudo", "Tabantha"}): "mostly outside the playable area, across a deep ravine: no way the game leads",
+    frozenset({"Central", "Gerudo"}): "Central to Gerudo means climbing the whole ravine under the Gerudo Highlands",
+    frozenset({"Hebra", "Ridgeland"}): "Ridgeland to Hebra takes a glide over a chasm, then a climb that wants "
+                                       "more stamina than the logic counts",
+}
+OPEN_BORDERS = tuple(tuple(row["regions"]) for row in BORDERS if frozenset(row["regions"]) not in CLOSED_BORDERS)
+# {region: its neighbours}, across the open borders.
+NEIGHBOURS = {name: frozenset(other for pair in OPEN_BORDERS if name in pair for other in pair if other != name)
+              for name in sorted({name for pair in OPEN_BORDERS for name in pair})}
+# A region inside another's area, entered from it: Ganon's sanctum stands in Central's.
+INNER_REGIONS = {"Hyrule Castle": "Central"}
 
 
 def categories(row: dict) -> set[str]:
@@ -137,18 +157,11 @@ def _check_logic() -> None:
     regions = {row["region"] for row in LOCATIONS}
     if set(MAPS) != regions - MAPLESS_REGIONS:
         raise ValueError(f"the maps differ from the regions: {sorted(set(MAPS) ^ (regions - MAPLESS_REGIONS))}")
-    for row in LOCATIONS:
-        logic = LOGIC[row["name"]]
-        if logic["region"] != row["region"]:
-            raise ValueError(f"{row['name']}: data/logic.csv says {logic['region']}, the locations {row['region']}")
-        if logic["climate"] not in CLIMATES:
-            raise ValueError(f"{row['name']}: unknown climate {logic['climate']!r}")
-        runes = logic["runes"]
-        if runes not in ("", "none", "all") and not set(runes.replace("/", "|").split("|")) <= set(RUNES):
-            raise ValueError(f"{row['name']}: unknown runes {runes!r}")
-        unknown = required_items(row) - items - events
-        if unknown:
-            raise ValueError(f"{row['name']}: unknown requirement {sorted(unknown)}")
+    areas = regions - set(INNER_REGIONS)
+    if {name for row in BORDERS for name in row["regions"]} != areas or not set(INNER_REGIONS.values()) <= areas:
+        raise ValueError("data/region_borders.json and INNER_REGIONS differ from the regions")
+    if not set(CLOSED_BORDERS) <= {frozenset(row["regions"]) for row in BORDERS}:
+        raise ValueError("a closed border is not a border of data/region_borders.json")
 
 
 def _check_weapons() -> None:
