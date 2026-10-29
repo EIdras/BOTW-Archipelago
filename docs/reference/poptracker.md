@@ -28,6 +28,16 @@ game, so that no file of the game is in the repository.
   section's variants (`_0`, `_16`...) are other states of the place; the plain name is used. Without a base game
   folder (a `.wud`/`.wua` game), the map is a plain grid; so it is when the map cannot be read (its drive
   disconnected), and the stamp is then the one of no game, so that the next session builds it again.
+- **The regions panel** (`tools/poptracker_regions.py`), the maps' place in the tracker, two tabs: *Tiles*, a tile a
+  region laid out as Hyrule (the Great Plateau's always lit), and *Map*, one mini-map of Hyrule made of a piece a
+  region (a `canvas`, each piece cut to its region, transparent around it). Each is drawn from the game's map and the
+  tower areas of the update's `Ecosystem/MapTower.sbeco` (`tools/map_regions.py`), in three states: the map not
+  received (grey), received but its region out of reach with `region_lock` (amber, hatched), the region reached (the
+  game's colours under a touch of green; a tile framed green or amber). A tile and a piece are `composite_toggle`s of
+  the map (left: a click marks it by hand) and its `<map>_reached` toggle, which `botw_update_regions` keeps
+  (`scripts/logic.lua`, watched in `scripts/init.lua`, called again with the slot data): the map received and, with
+  `region_lock`, the region reached as the logic counts it. Without the game's map or its update, the tiles are
+  labels and there is no mini-map.
 - **Positions** (`data/location_positions.json`, built by `tools/build_location_positions.py` from the DLC's map
   units, checked by a test): shrines and towers from their `LocationMarker`, a rune terminal at its plateau shrine,
   a Divine Beast and its heart at the beast's marker during its quest, the Great Fairies at their fountain, Beedle at
@@ -39,7 +49,11 @@ game, so that no file of the game is in the repository.
   counts it, the beast reachable (its own groups), not checked: a heart container is picked up before the beast's
   control unit. The region maps (`catalog.map_keys`, `MAP_KEYS` in `data.lua`) are an optional rule in brackets,
   `[$botw_maps|<id>]`: when the slot data's `tower_maps` is `region_keys` (2) and a map is missing, the location is a
-  sequence break (yellow), possible but out of logic. The maps have their own two rows in the item grid. Ganon's square follows the sanctum's requirements of the slot data, which count, as the game's gate
+  sequence break (yellow), possible but out of logic. With the slot data's `region_lock`, the bracket asks instead
+  for the regions a location needs to reach (`REGION_KEYS`: its own, a tower's and Ganon's too, and those of its
+  maps), as the world's region graph does: from the Great Plateau with the Paraglider, a region is reached once its
+  map is received and it borders a reached one across the seed's open borders (slot data `region_borders`); Hyrule
+  Castle with Central. Ganon's square follows the sanctum's requirements of the slot data, which count, as the game's gate
   does, the Divine Beasts freed and the shrines cleared: their squares, checked by Archipelago or by hand. Ganon is no
   AP location: his square is checked when the server's status of the slot (`_read_client_status_<team>_<slot>`, read
   and watched) says the goal is reached. Once a slot is released (on its goal, with the room's default), every

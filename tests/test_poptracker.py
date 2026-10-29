@@ -7,9 +7,12 @@ import unittest
 from unittest import mock
 import zipfile
 
+import numpy as np
+
 from tools import build_location_positions as positions
 from tools import build_poptracker as poptracker
 from tools import maptex
+from tools import poptracker_regions as regions
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = poptracker.base_content()
@@ -77,10 +80,11 @@ class PackTests(unittest.TestCase):
         self.assertEqual(sections["Rin Oyaa Shrine"]["access_rules"],
                          [[f"$botw_access|{rows['Rin Oyaa Shrine']['id']}",
                            f"[$botw_maps|{rows['Rin Oyaa Shrine']['id']}]"]])
-        for name in ("Hebra Tower", "Oman Au Shrine"):
-            self.assertEqual(sections[name]["access_rules"], [[f"$botw_access|{rows[name]['id']}"]])
+        self.assertEqual(sections["Oman Au Shrine"]["access_rules"], [[f"$botw_access|{rows['Oman Au Shrine']['id']}"]])
         data = self.pack.read("scripts/data.lua").decode()
         keys = dict(re.findall(r'\[(\d+)\] = (\{"[a-z_]+_map"[^}]*\})', data.split("MAP_KEYS")[1]))
+        # A tower asks for no map, but for its region with region_lock.
+        self.assertNotIn(str(rows["Hebra Tower"]["id"]), keys)
         self.assertEqual(keys[str(rows["Tarrey Town - Arrow Stall Item 1"]["id"])],
                          '{"akkala_map", "eldin_map", "wasteland_map", "tabantha_map"}')
         codes = {entry["codes"] for entry in self.json("items/items.json") if "codes" in entry}
@@ -88,6 +92,66 @@ class PackTests(unittest.TestCase):
         logic = self.pack.read("scripts/logic.lua").decode()
         self.assertIn("function botw_maps(id)", logic)
         self.assertIn("SLOT_DATA.tower_maps", logic)
+
+    def test_with_region_lock_a_region_out_of_reach_is_a_sequence_break(self):
+        sections = {section["name"]: section for place in self.json("locations/locations.json")
+                    for section in place["sections"]}
+        ids = {row["name"]: row["id"] for row in self.cat.LOCATIONS}
+        hebra, goal = ids["Hebra Tower"], ids[self.cat.GOAL_LOCATION]
+        self.assertEqual(sections["Hebra Tower"]["access_rules"], [[f"$botw_access|{hebra}", f"[$botw_maps|{hebra}]"]])
+        self.assertEqual(sections[self.cat.GOAL_LOCATION]["access_rules"], [["$botw_ganon", f"[$botw_maps|{goal}]"]])
+        data = self.pack.read("scripts/data.lua").decode()
+        table = data.split("REGION_KEYS = {")[1].split("\n}")[0]
+        regions = dict(re.findall(r'\[(\d+)\] = (\{[^}]*\})', table))
+        # Its own region, a tower's too, and those of a quest's maps; Ganon's, in Central's area.
+        self.assertEqual(regions[str(hebra)], '{"Hebra"}')
+        self.assertEqual(regions[str(ids["Tarrey Town - Arrow Stall Item 1"])],
+                         '{"Akkala", "Eldin", "Wasteland", "Tabantha"}')
+        self.assertEqual(regions[str(goal)], '{"Hyrule Castle"}')
+        self.assertIn('INNER_REGIONS = {["Hyrule Castle"] = "Central"}', data)
+        # The Great Plateau is always reached: its locations have no bracket.
+        plateau = {str(row["id"]) for row in self.cat.LOCATIONS if row["region"] == "Great Plateau"}
+        self.assertFalse(plateau & set(regions))
+        self.assertEqual(len(regions), len(self.cat.LOCATIONS) - len(plateau))
+        maps = dict(re.findall(r'\["([A-Za-z ]+)"\] = "([a-z_]+)"', data.split("REGION_MAPS = ")[1].split("\n")[0]))
+        self.assertEqual(maps, {region: poptracker.code(item) for region, item in self.cat.MAPS.items()})
+        # The seed's own borders, from its slot data.
+        logic = self.pack.read("scripts/logic.lua").decode()
+        self.assertIn("SLOT_DATA.region_lock", logic)
+        self.assertIn("SLOT_DATA.region_borders", logic)
+
+    def test_the_regions_panel_combines_each_map_with_its_region_reached(self):
+        items = {entry["codes"]: entry for entry in self.json("items/items.json") if "codes" in entry}
+        panel = [region for row in poptracker.REGION_PANEL for region in row]
+        self.assertEqual(sorted(panel), sorted([*self.cat.MAPS, poptracker.START_REGION]))
+        self.assertEqual(set(poptracker.REGION_LABELS), set(panel))
+        for region, item in self.cat.MAPS.items():
+            map_code = poptracker.code(item)
+            self.assertEqual(items[map_code]["type"], "toggle")
+            self.assertEqual(items[f"{map_code}_reached"]["type"], "toggle")
+            tile = items[f"{map_code}_tile"]
+            self.assertEqual((tile["type"], tile["item_left"], tile["item_right"]),
+                             ("composite_toggle", map_code, f"{map_code}_reached"))
+            # Grey until the map is received, amber while its region is out of reach.
+            looks = {(image["left"], image["right"]): image["img"].rsplit("_", 1)[1] for image in tile["images"]}
+            self.assertEqual(looks, {(False, False): "off.png", (False, True): "off.png",
+                                     (True, False): "cut.png", (True, True): "lit.png"})
+            for image in tile["images"]:
+                self.assertIn(image["img"], self.pack.namelist())
+            # Without the game's map, no mini-map.
+            self.assertNotIn(f"{map_code}_piece", items)
+        self.assertEqual(items["great_plateau_tile"]["type"], "static")
+        layout = self.json("layouts/tracker.json")
+        self.assertEqual(layout["region_tiles"]["rows"],
+                         [[f"{poptracker.code(region)}_tile" if region == poptracker.START_REGION
+                           else f"{poptracker.code(self.cat.MAPS[region])}_tile" for region in row]
+                          for row in poptracker.REGION_PANEL])
+        self.assertNotIn("_map", json.dumps(layout["item_grid"]))
+        logic = self.pack.read("scripts/logic.lua").decode()
+        self.assertIn("function botw_update_regions()", logic)
+        self.assertIn('code .. "_reached"', logic)
+        self.assertIn("botw_update_regions", self.pack.read("scripts/init.lua").decode())
+        self.assertIn("botw_update_regions()", self.pack.read("scripts/autotracking/archipelago.lua").decode())
 
     def test_the_manifest_asks_for_archipelago_auto_tracking(self):
         manifest = self.json("manifest.json")
@@ -187,6 +251,66 @@ class MapTests(unittest.TestCase):
         tile = maptex.decode((BASE / maptex.FOLDER / "MapTex2_E-4.sbmaptex").read_bytes())
         self.assertEqual(tile.shape, (200, 200, 3))
         self.assertGreater(tile.std(), 10)          # an image, not a blank
+
+
+class RegionDrawingTests(unittest.TestCase):
+    """tools/poptracker_regions.py on a map of three regions: West and East over
+    Start, the bottom quarter."""
+
+    @classmethod
+    def setUpClass(cls):
+        rng = np.random.default_rng(1)
+        image = rng.integers(40, 200, (200, 240, 3)).astype(np.uint8)
+
+        def lookup(xs, ys):
+            out = np.where(np.asarray(xs)[None, :] < 120, "West", "East").repeat(len(ys), 0).astype(object)
+            out[np.asarray(ys) >= 150] = "Start"
+            return out
+        cls.drawn = regions.draw(image, lookup, (0, 0, 240, 200), ["West", "East"], "Start")
+
+    def test_a_tile_has_its_frame_in_its_state_and_is_grey_without_its_map(self):
+        tiles = self.drawn.tiles
+        self.assertEqual(set(tiles), {(r, s) for r in ("West", "East") for s in regions.STATES} | {("Start", "lit")})
+        width, height = regions.TILE
+        for image in tiles.values():
+            self.assertEqual(image.shape, (height, width, 4))
+        red, green, blue = tiles["West", "lit"][height // 2, 0, :3].astype(int)
+        self.assertGreater(green, red)
+        red, green, blue = tiles["West", "cut"][height // 2, 0, :3].astype(int)
+        self.assertGreater(red, green)
+        self.assertGreater(green, blue)
+        off = tiles["West", "off"]
+        self.assertTrue((off[..., 0] == off[..., 1]).all() and (off[..., 1] == off[..., 2]).all())
+
+    def test_the_pieces_lie_where_their_regions_do_on_the_mini_map(self):
+        background = self.drawn.background
+        self.assertEqual(background.shape, (round(regions.MINI_WIDTH * 200 / 240), regions.MINI_WIDTH, 4))
+        west_left, west_top, west = self.drawn.pieces["West", "lit"]
+        east_left, east_top, east = self.drawn.pieces["East", "lit"]
+        self.assertEqual((west_left, west_top, east_top), (0, 0, 0))
+        self.assertEqual(east_left, regions.MINI_WIDTH // 2)
+        self.assertEqual(west.shape[1] + east.shape[1], regions.MINI_WIDTH)
+        # Start is in the background, not in a piece (whose last row is partly covered).
+        self.assertEqual(west.shape[0], -(-background.shape[0] * 150 // 200))
+        for state in regions.STATES:
+            _left, _top, piece = self.drawn.pieces["West", state]
+            self.assertEqual(piece[piece.shape[0] // 2, piece.shape[1] // 2, 3], 255)
+
+    def test_a_label_tile_frames_the_label(self):
+        label = poptracker.icon("HEB", poptracker.MAP_COLOUR)
+        tile = regions.label_tile(label, "cut")
+        self.assertEqual(tile.shape[:2], regions.TILE[::-1])
+
+
+@unittest.skipUnless(UPDATE is not None and (UPDATE / "Pack/Bootup.pack").is_file(), "update absent")
+class TowerAreaTests(unittest.TestCase):
+    def test_each_tower_stands_in_its_region(self):
+        lookup = regions.tower_areas(UPDATE, poptracker.SCALE, maptex.ORIGIN)
+        places = json.loads(poptracker.POSITIONS.read_text(encoding="utf-8"))
+        for row in poptracker.catalog().LOCATIONS:
+            if "Tower" in row["category"].split("|"):
+                x, y = maptex.pixel(*places[row["name"]], poptracker.SCALE)
+                self.assertEqual(lookup(np.array([x]), np.array([y]))[0, 0], row["region"], row["name"])
 
 
 

@@ -38,7 +38,7 @@ if str(ROOT) not in sys.path:
 import numpy as np  # noqa: E402
 
 from botw_client.paths import DATA, RELEASE_MARKER  # noqa: E402
-from tools import maptex  # noqa: E402
+from tools import maptex, poptracker_regions  # noqa: E402
 from tools.bitemico import write_png  # noqa: E402
 
 STATIC = ROOT / "tools/poptracker"
@@ -50,7 +50,8 @@ SCALE = 0.2                       # map pixels per world unit (MapTex2: 200 px a
 # The map is cut to the locations, this many pixels around them: the sea and
 # the borders it leaves out hold none, and PopTracker shows the rest larger.
 MARGIN = 50
-SOURCE_FILES = ("tools/build_poptracker.py", "tools/maptex.py", "tools/uitex.py", "data/location_positions.json",
+SOURCE_FILES = ("tools/build_poptracker.py", "tools/maptex.py", "tools/uitex.py", "tools/poptracker_regions.py",
+                "tools/map_regions.py", "data/location_positions.json",
                 "tools/poptracker/scripts/init.lua", "tools/poptracker/scripts/logic.lua",
                 "tools/poptracker/scripts/autotracking/archipelago.lua")
 
@@ -93,15 +94,18 @@ ROWS = [
      ("Weapon Pouch Upgrade", "WPN", LIFE), ("Bow Pouch Upgrade", "BOW", LIFE),
      ("Shield Pouch Upgrade", "SHLD", LIFE)],
 ]
-# The tower maps (the world's tower_maps option), in the order of their towers.
-MAP_ROWS = [
-    [("Hebra Map", "HEB", MAP_COLOUR), ("Tabantha Map", "TAB", MAP_COLOUR), ("Gerudo Map", "GER", MAP_COLOUR),
-     ("Wasteland Map", "WST", MAP_COLOUR), ("Woodland Map", "WOOD", MAP_COLOUR), ("Central Map", "CEN", MAP_COLOUR),
-     ("Dueling Peaks Map", "DUEL", MAP_COLOUR)],
-    [("Lake Map", "LAKE", MAP_COLOUR), ("Eldin Map", "ELD", MAP_COLOUR), ("Akkala Map", "AKK", MAP_COLOUR),
-     ("Lanayru Map", "LAN", MAP_COLOUR), ("Hateno Map", "HAT", MAP_COLOUR), ("Faron Map", "FAR", MAP_COLOUR),
-     ("Ridgeland Map", "RDG", MAP_COLOUR)],
-]
+# The regions panel (tools/poptracker_regions.py): a tile a region of the tower
+# maps (the world's tower_maps option), laid out as Hyrule; the Great Plateau's,
+# where the game starts, always lit. Its label stands for its map when the pack
+# is built without the game's.
+START_REGION = "Great Plateau"
+REGION_PANEL = [["Hebra", "Woodland", "Eldin", "Akkala"],
+                ["Tabantha", "Ridgeland", "Central", "Lanayru"],
+                ["Gerudo", START_REGION, "Dueling Peaks", "Hateno"],
+                ["Wasteland", "Lake", "Faron"]]
+REGION_LABELS = {"Hebra": "HEB", "Woodland": "WOOD", "Eldin": "ELD", "Akkala": "AKK", "Tabantha": "TAB",
+                 "Ridgeland": "RDG", "Central": "CEN", "Lanayru": "LAN", "Gerudo": "GER", START_REGION: "PLAT",
+                 "Dueling Peaks": "DUEL", "Hateno": "HAT", "Wasteland": "WST", "Lake": "LAKE", "Faron": "FAR"}
 BEAST_ROW = [("Freed - Divine Beast Vah Ruta", "RUTA"), ("Freed - Divine Beast Vah Rudania", "RUDA"),
              ("Freed - Divine Beast Vah Medoh", "MEDO"), ("Freed - Divine Beast Vah Naboris", "NABO")]
 
@@ -391,7 +395,7 @@ def items(cat, icons: dict[str, bytes] | None = None) -> tuple[list, dict, dict]
     def image(path, key, label, colour):
         images[path] = icons.get(key) if key in icons else icon(label, colour)
 
-    for name, label, colour in [entry for row in ROWS + MAP_ROWS for entry in row]:
+    for name, label, colour in [entry for row in ROWS for entry in row]:
         item = rows[name]
         item_code = code(name)
         ids[item["id"]] = item_code
@@ -413,6 +417,11 @@ def items(cat, icons: dict[str, bytes] | None = None) -> tuple[list, dict, dict]
                             "min_quantity": 0, "max_quantity": count})
         else:
             entries.append({"name": name, "type": "toggle", "img": path, "codes": item_code})
+    for region, name in sorted(cat.MAPS.items()):
+        # Shown by the regions panel (region_items).
+        ids[rows[name]["id"]] = code(name)
+        entries.append({"name": name, "type": "toggle", "img": region_image(region, "tile", "lit"),
+                        "codes": code(name)})
     for name, label in BEAST_ROW:
         path = f"images/items/{code(name)}.png"
         image(path, code(name), label, EVENT)
@@ -426,6 +435,43 @@ def items(cat, icons: dict[str, bytes] | None = None) -> tuple[list, dict, dict]
     entries.append({"name": "Seed loaded", "type": "toggle",
                     "img": "images/items/seed_loaded.png", "codes": "seed_loaded"})
     return entries, images, ids
+
+
+def region_image(region: str, kind: str, state: str) -> str:
+    return f"images/regions/{code(region)}_{kind}_{state}.png"
+
+
+def region_items(cat, drawn: poptracker_regions.Drawn | None) -> tuple[list, dict]:
+    """The regions panel's items and images. A region's tile and piece combine its
+    map (left: received) and its "reached" toggle (right), which botw_update_regions
+    (scripts/logic.lua) keeps: its map received and, with region_lock, the region
+    reached. Without the game's map, labelled tiles and no mini-map."""
+    def tile(region, state):
+        return drawn.tiles[region, state] if drawn else \
+            poptracker_regions.label_tile(icon(REGION_LABELS[region], MAP_COLOUR), state)
+
+    start = region_image(START_REGION, "tile", "lit")
+    images = {start: tile(START_REGION, "lit")}
+    entries = [{"name": START_REGION, "type": "static", "img": start, "codes": f"{code(START_REGION)}_tile"}]
+    if drawn:
+        images["images/regions/hyrule.png"] = drawn.background
+        entries.append({"name": "Hyrule", "type": "static", "img": "images/regions/hyrule.png",
+                        "codes": "hyrule_regions"})
+    for region, item in sorted(cat.MAPS.items()):
+        map_code = code(item)
+        entries.append({"name": f"{region} reached", "type": "toggle", "img": region_image(region, "tile", "lit"),
+                        "codes": f"{map_code}_reached"})
+        for kind in ("tile", "piece") if drawn else ("tile",):
+            for state in poptracker_regions.STATES:
+                images[region_image(region, kind, state)] = \
+                    drawn.pieces[region, state][2] if kind == "piece" else tile(region, state)
+            # Not received, whatever the right toggle says: grey.
+            looks = {(False, False): "off", (True, False): "cut", (False, True): "off", (True, True): "lit"}
+            entries.append({"name": item, "type": "composite_toggle", "codes": f"{map_code}_{kind}",
+                            "item_left": map_code, "item_right": f"{map_code}_reached",
+                            "images": [{"left": left, "right": right, "img": region_image(region, kind, state),
+                                        "img_mods": "none"} for (left, right), state in looks.items()]})
+    return entries, images
 
 
 # --- Locations -------------------------------------------------------------------
@@ -475,6 +521,15 @@ def world_map_keys(cat, row: dict) -> tuple[str, ...]:
     return tuple(dict.fromkeys(keys))
 
 
+def world_regions(cat, row: dict) -> tuple[str, ...]:
+    """With region_lock, the regions a location needs to reach (botw_world,
+    location_rule): its own but the Great Plateau, always reached, and those of
+    its maps (world_map_keys), a quest's or a Divine Beast's."""
+    opened = {item: region for region, item in cat.MAPS.items()}
+    names = [row["region"]] + [opened[name] for name in world_map_keys(cat, row)]
+    return tuple(name for name in dict.fromkeys(names) if name != "Great Plateau")
+
+
 def crop_box(positions: dict) -> tuple[int, int, int, int]:
     """(left, top, right, bottom) of the map shown, in pixels of the whole map."""
     xs, ys = zip(*(maptex.pixel(x, z, SCALE) for x, z in positions.values()))
@@ -483,11 +538,12 @@ def crop_box(positions: dict) -> tuple[int, int, int, int]:
             min(width, max(xs) + MARGIN), min(height, max(ys) + MARGIN))
 
 
-def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[list, dict, dict, dict]:
+def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[list, dict, dict, dict, dict]:
     """locations.json, the AP id -> section path map, the Lua requirement table,
-    and the maps each location asks for when the maps are region keys."""
+    the maps each location asks for when the maps are region keys, and the
+    regions it asks to reach with region_lock."""
     places: dict[str, dict] = {}
-    sections, requirements, maps = {}, {}, {}
+    sections, requirements, maps, regions = {}, {}, {}, {}
     for row in cat.LOCATIONS:
         name = row["name"]
         kinds = set(row["category"].split("|"))
@@ -512,16 +568,20 @@ def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[l
             sections[row["id"]] = f"@{key}/{name}"
             keys = world_map_keys(cat, row)
             if keys:
-                # Optional, in brackets: without its maps, a location is a
-                # sequence break (yellow), not out of reach (botw_maps).
-                section["access_rules"][0].append(f"[$botw_maps|{row['id']}]")
                 maps[row["id"]] = keys
+        reach = world_regions(cat, row)
+        if reach:
+            # Optional, in brackets: without its maps, or with region_lock its
+            # regions out of reach, a location is a sequence break (yellow), not
+            # out of reach (botw_maps). Ganon and the towers ask for no map.
+            section["access_rules"][0].append(f"[$botw_maps|{row['id']}]")
+            regions[row["id"]] = reach
         if kinds & {"Shop", "Stall"}:
             # Shown when the seed has it (one of a place's items is enough).
             section["visibility_rules"] = [[f"$botw_in_seed|{row['id']}"]]
             place.setdefault("visibility_rules", []).append([f"$botw_in_seed|{row['id']}"])
         place["sections"].append(section)
-    return list(places.values()), sections, requirements, maps
+    return list(places.values()), sections, requirements, maps, regions
 
 
 def lua_value(value) -> str:
@@ -536,7 +596,8 @@ def lua_value(value) -> str:
     return "{" + ", ".join(lua_value(v) for v in value) + "}"
 
 
-def data_lua(cat, item_ids: dict, sections: dict, requirements: dict, maps: dict | None = None) -> str:
+def data_lua(cat, item_ids: dict, sections: dict, requirements: dict, maps: dict | None = None,
+             regions: dict | None = None) -> str:
     def groups(value):
         return [[[code(name) for name in names], count] for names, count in value]
 
@@ -554,7 +615,14 @@ def data_lua(cat, item_ids: dict, sections: dict, requirements: dict, maps: dict
     lines += ["}", "MAP_KEYS = {"]
     lines += [f"  [{location_id}] = {lua_value([code(name) for name in names])},"
               for location_id, names in sorted((maps or {}).items())]
+    lines += ["}", "REGION_KEYS = {"]
+    lines += [f"  [{location_id}] = {lua_value(names)},"
+              for location_id, names in sorted((regions or {}).items())]
     lines += ["}",
+              # region_lock: the map that opens each region, and the regions
+              # inside another's area, reached with it.
+              f"REGION_MAPS = {lua_value({region: code(item) for region, item in sorted(cat.MAPS.items())})}",
+              f"INNER_REGIONS = {lua_value(cat.INNER_REGIONS)}",
               f"GOAL_REQUIREMENTS = {lua_value(groups(cat.requirements(goal)))}",
               # Not an AP location: cleared by the slot's goal status.
               f"GOAL_SECTION = {lua_value(goal_section)}",
@@ -564,23 +632,43 @@ def data_lua(cat, item_ids: dict, sections: dict, requirements: dict, maps: dict
     return "\n".join(lines)
 
 
-def layouts() -> dict:
+def layouts(cat, drawn: poptracker_regions.Drawn | None = None) -> dict:
     grid = [[code(name) for name, _label, _colour in row] for row in ROWS]
     grid.append([code(name) for name, _ in BEAST_ROW] + ["shrines_cleared"])
-    grid += [[code(name) for name, _label, _colour in row] for row in MAP_ROWS]
+    tiles = [[f"{code(region)}_tile" if region == START_REGION else f"{code(cat.MAPS[region])}_tile"
+              for region in row] for row in REGION_PANEL]
+    width, height = poptracker_regions.TILE
+    regions = {"type": "layout", "key": "region_tiles"}
+    if drawn:
+        # The mini-map: Hyrule, then a piece a region over it, where it lies.
+        background = drawn.background.shape
+        pieces = [{"type": "item", "item": "hyrule_regions", "canvas_left": 0, "canvas_top": 0,
+                   "width": background[1], "height": background[0]}]
+        for region, item in sorted(cat.MAPS.items()):
+            left, top, image = drawn.pieces[region, "lit"]
+            pieces.append({"type": "item", "item": f"{code(item)}_piece", "canvas_left": left, "canvas_top": top,
+                           "width": image.shape[1], "height": image.shape[0]})
+        regions = {"type": "tabbed", "tabs": [
+            {"title": "Tiles", "content": regions},
+            {"title": "Map", "content": {"type": "canvas", "width": background[1], "height": background[0],
+                                         "content": pieces}}]}
     return {
         "item_grid": {"type": "itemgrid", "item_margin": "3,3", "item_size": "40,40",
                       "h_alignment": "center", "rows": grid},
+        "region_tiles": {"type": "itemgrid", "item_margin": "3,3", "item_size": f"{width},{height}",
+                         "h_alignment": "center", "rows": tiles},
         "tracker_default": {"type": "container", "background": "#00000000", "content": {
             "type": "dock", "dropshadow": True, "content": [
                 {"type": "dock", "dock": "left", "v_alignment": "stretch", "content": [
                     {"type": "group", "header": "Items", "dock": "top",
                      "content": {"type": "layout", "key": "item_grid"}},
+                    {"type": "group", "header": "Regions", "dock": "top", "content": regions},
                     {"type": "group", "header": "Pinned locations", "content": {
                         "type": "recentpins", "style": "wrapped", "h_alignment": "stretch",
                         "v_alignment": "stretch", "compact": True}}]},
                 {"type": "map", "maps": [MAP]}]}},
-        "tracker_broadcast": {"type": "layout", "key": "item_grid"},
+        "tracker_broadcast": {"type": "array", "orientation": "vertical", "content": [
+            {"type": "layout", "key": "item_grid"}, {"type": "layout", "key": "region_tiles"}]},
     }
 
 
@@ -612,6 +700,19 @@ def base_content() -> Path | None:
     return content if game.suffix.lower() == ".rpx" and content.is_dir() else None
 
 
+def regions_panel(cat, image: np.ndarray, box: tuple[int, int, int, int]) -> poptracker_regions.Drawn | None:
+    """The regions panel drawn from the game's map and the update's tower areas;
+    None without them (labelled tiles, no mini-map)."""
+    update = update_content()
+    if update is None:
+        return None
+    try:
+        lookup = poptracker_regions.tower_areas(update, SCALE, maptex.ORIGIN)
+        return poptracker_regions.draw(image, lookup, box, sorted(cat.MAPS), START_REGION)
+    except (OSError, ValueError, KeyError):
+        return None
+
+
 def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tuple[Path, bool]:
     cat = catalog()
     positions = json.loads(POSITIONS.read_text(encoding="utf-8"))
@@ -621,8 +722,8 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
     found = {**ui_icons(update_content()), **game_icons(icons)}
     item_entries, images, item_ids = items(cat, found)
     left, top, right, bottom = crop_box(positions)
-    place_entries, sections, requirements, maps = locations(cat, positions, (left, top))
-    files["scripts/data.lua"] = data_lua(cat, item_ids, sections, requirements, maps).encode()
+    place_entries, sections, requirements, maps, regions = locations(cat, positions, (left, top))
+    files["scripts/data.lua"] = data_lua(cat, item_ids, sections, requirements, maps, regions).encode()
     for kind, colour in DOT.items():
         images[f"images/dots/{code(kind)}.png"] = found.get(f"dot_{code(kind)}", dot(colour, True))
     images["images/dots/opened.png"] = dot("#777777", False)
@@ -637,6 +738,10 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
         image = plain_map()
     alpha = np.full(image.shape[:2] + (1,), 255, dtype=np.uint8)
     images["images/map.png"] = np.concatenate([image, alpha], 2)[top:bottom, left:right]
+    drawn = regions_panel(cat, image, (left, top, right, bottom)) if game_map else None
+    region_entries, region_images = region_items(cat, drawn)
+    item_entries += region_entries
+    images.update(region_images)
     files.update({path: value if isinstance(value, bytes) else png(value)
                   for path, value in images.items()})
     files["items/items.json"] = json.dumps(item_entries, indent=1).encode()
@@ -644,7 +749,7 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
     files["maps/maps.json"] = json.dumps([{
         "name": MAP, "location_size": 30, "location_border_thickness": 3,
         "img": "images/map.png"}], indent=1).encode()
-    files["layouts/tracker.json"] = json.dumps(layouts(), indent=1).encode()
+    files["layouts/tracker.json"] = json.dumps(layouts(cat, drawn), indent=1).encode()
     files["manifest.json"] = json.dumps({
         "name": "Breath of the Wild Archipelago", "game_name": cat.GAME,
         "package_uid": PACK_NAME, "package_version": cat.WORLD_VERSION,

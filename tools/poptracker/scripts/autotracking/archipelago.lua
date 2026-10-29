@@ -65,6 +65,8 @@ local function on_clear(slot_data)
         refresh.Active = not refresh.Active
     end
     botw_update_events()
+    -- The regions reached follow the slot data's region_lock.
+    botw_update_regions()
 end
 
 local function on_item(index, item_id, item_name, player_number)

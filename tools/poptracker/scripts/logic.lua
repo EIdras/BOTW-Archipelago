@@ -31,11 +31,61 @@ function botw_access(id)
     return groups == nil or met(groups)
 end
 
+-- With region_lock (slot data), the regions open from the Great Plateau
+-- outward, the Paraglider to leave it: one is in logic once its map is received
+-- and it borders one already in logic, across the seed's open borders (slot
+-- data region_borders); a region inside another's area with that one.
+local function reached_regions()
+    local reached = {["Great Plateau"] = true}
+    if Tracker:ProviderCountForCode("paraglider") > 0 then
+        local opened = {}
+        for region, code in pairs(REGION_MAPS) do
+            opened[region] = Tracker:ProviderCountForCode(code) > 0
+        end
+        -- pairs, not ipairs: the slot data's lists, whatever their first index.
+        local borders = {}
+        for _, border in pairs(SLOT_DATA.region_borders or {}) do
+            local ends = {}
+            for _, name in pairs(border) do
+                ends[#ends + 1] = name
+            end
+            borders[#borders + 1] = ends
+        end
+        local grown = true
+        while grown do
+            grown = false
+            for _, ends in ipairs(borders) do
+                for i = 1, 2 do
+                    local from, to = ends[i], ends[3 - i]
+                    if reached[from] and not reached[to] and opened[to] then
+                        reached[to] = true
+                        grown = true
+                    end
+                end
+            end
+        end
+    end
+    for inner, outer in pairs(INNER_REGIONS) do
+        reached[inner] = reached[outer]
+    end
+    return reached
+end
+
 -- The maps as region keys (slot data tower_maps 2, region_keys): a location
--- is in logic once its maps are received; without them, its rule's bracket
--- makes it a sequence break, possible but out of logic.
+-- is in logic once its maps are received, with region_lock once the regions it
+-- asks for are reached (REGION_KEYS); without them, its rule's bracket makes it
+-- a sequence break, possible but out of logic.
 function botw_maps(id)
     if tonumber(SLOT_DATA.tower_maps) ~= 2 then
+        return true
+    end
+    if enabled(SLOT_DATA.region_lock) then
+        local reached = reached_regions()
+        for _, region in ipairs(REGION_KEYS[tonumber(id)] or {}) do
+            if not reached[region] then
+                return false
+            end
+        end
         return true
     end
     local maps = MAP_KEYS[tonumber(id)]
@@ -48,6 +98,22 @@ function botw_maps(id)
         end
     end
     return true
+end
+
+-- The regions panel: a region's "reached" toggle, which its tile and its piece
+-- of the mini-map combine with its map, is on once the map is received and,
+-- with region_lock, the region reached (scripts/init.lua watches the maps, the
+-- Paraglider and these toggles: a click on one is undone).
+function botw_update_regions()
+    local lock = tonumber(SLOT_DATA.tower_maps) == 2 and enabled(SLOT_DATA.region_lock)
+    local reached = lock and reached_regions() or {}
+    for region, code in pairs(REGION_MAPS) do
+        local item = Tracker:FindObjectForCode(code .. "_reached")
+        local value = Tracker:ProviderCountForCode(code) > 0 and (not lock or reached[region] == true)
+        if item and item.Active ~= value then
+            item.Active = value
+        end
+    end
 end
 
 function botw_in_seed(id)
