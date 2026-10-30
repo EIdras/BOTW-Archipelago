@@ -38,6 +38,30 @@ class RuntimeExitTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(FatalClientError):
             await self.exercise(error,True)
 
+    async def test_the_game_starting_is_waited_for_in_one_line(self):
+        from mailbox import CaveUnavailable
+        with tempfile.TemporaryDirectory() as directory:
+            logs=[]
+            game=SimpleNamespace(cave=None, close=Mock())
+            runtime=BotwClientRuntime('unused', 'unused', log=logs.append,
+                state_path=Path(directory)/'state.json', game_factory=lambda: game,
+                game_process_alive=lambda: True)
+            runtime.ap=SimpleNamespace(connected=True, close=AsyncMock())
+            runtime._wait_or_stop=AsyncMock()
+            errors=[CaveUnavailable('Cemu is not running'),
+                    CaveUnavailable('code cave not found: is the graphic pack enabled?'),
+                    CaveUnavailable('code cave not found: is the graphic pack enabled?'),
+                    CaveUnavailable('guest/host base unresolvable: restart the game')]
+            def connect():
+                if len(errors)==1:
+                    runtime.stop_event.set()
+                raise errors.pop(0)
+            runtime._connect_game=AsyncMock(side_effect=connect)
+            await runtime.run()
+            self.assertEqual(logs[0],'Waiting for Cemu to start Breath of the Wild...')
+            self.assertFalse(any('code cave' in line for line in logs))
+            self.assertTrue(any('restart the game' in line for line in logs))
+
     async def test_disk_failure_is_not_hidden_by_simultaneous_exit(self):
         error=FatalClientError('projection presentation non enregistree')
         error.__cause__=OSError('disk full')

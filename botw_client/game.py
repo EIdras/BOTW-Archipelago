@@ -19,7 +19,7 @@ sys.path.insert(0, str(CEMU_TOOLS))
 
 from gdt_index import build_index  # noqa: E402
 from livegdt import LiveGdt  # noqa: E402
-from mailbox import be, cemu_pid, open_cave  # noqa: E402
+from mailbox import CaveUnavailable, be, cemu_pid, open_cave  # noqa: E402
 import getdemo  # noqa: E402
 import saycenter  # noqa: E402
 
@@ -59,6 +59,13 @@ GANON_FLAGS = {
 
 class GameNotReady(RuntimeError):
     pass
+
+
+def game_starting(exc: Exception) -> bool:
+    """Cemu not started yet, or the game not yet running with its pack: the
+    usual wait at launch (open_cave), not a fault."""
+    return isinstance(exc, CaveUnavailable) and str(exc).startswith(
+        ("Cemu is not running", "code cave not found"))
 
 
 class BotwGame:

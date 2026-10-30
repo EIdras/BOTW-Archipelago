@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 
 from .backend import DeliveryCommand, DeliveryCoordinator, DeliveryStatus
-from .game import BotwGame, GameNotReady
+from .game import BotwGame, GameNotReady, game_starting
 from .locations import SCHEMA_LOCATION_COUNTS, load_targets
 from .paths import DATA
 from .protocol import ArchipelagoClient, DeathLinkEvent, LocationInfo
@@ -35,6 +35,9 @@ JOURNAL_BLOCK_SECONDS = 8.0
 # A release or a collect: the server's notice (PrintJSON Release, Collect) and
 # the items it sends come within this many seconds of each other.
 BULK_WINDOW_SECONDS = 15.0
+# The game not there yet at launch is waited for quietly; after this long, the
+# player is told what to try.
+GAME_START_PATIENCE_SECONDS = 300.0
 # A received DeathLink: its journal line is read before Link dies. The entry
 # leaves its flag set on the death it causes (botw_patch/death_link.py): such a
 # death is never sent back. The flag counts for DEATHLINK_FLAG_SECONDS after
@@ -2268,6 +2271,7 @@ class BotwClientRuntime:
 
     async def run(self):
         ap_delay = game_delay = 1.0
+        waiting_since = None    # while Cemu starts the game: one line, not one per retry
         try:
             while not self.stop_event.is_set():
                 if not self.ap.connected:
@@ -2286,6 +2290,7 @@ class BotwClientRuntime:
                     try:
                         await self._connect_game()
                         game_delay = 1.0
+                        waiting_since = None
                     except FatalClientError as exc:
                         if self._process_exit_error(exc):
                             break
@@ -2293,7 +2298,15 @@ class BotwClientRuntime:
                     except Exception as exc:
                         if self._process_exit_error(exc):
                             break
-                        self.log(f"BOTW unavailable: {exc}; retrying in {game_delay:.0f}s")
+                        if not game_starting(exc):
+                            self.log(f"BOTW unavailable: {exc}; retrying in {game_delay:.0f}s")
+                        elif waiting_since is None:
+                            waiting_since = time.monotonic()
+                            self.log("Waiting for Cemu to start Breath of the Wild...")
+                        elif time.monotonic() - waiting_since > GAME_START_PATIENCE_SECONDS:
+                            waiting_since = float("inf")    # said once
+                            self.log("Still no game after 5 minutes: if Breath of the Wild is already "
+                                     "playing, close Cemu and launch it again from BOTW Archipelago.")
                         self._close_presentations()
                         self.game.close()
                         await self._wait_or_stop(game_delay)
