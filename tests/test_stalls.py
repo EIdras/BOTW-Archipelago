@@ -69,7 +69,7 @@ class GameFileTests(unittest.TestCase):
             counts = {}
             for o in sold:
                 counts[str(o["UnitConfigName"])] = counts.get(str(o["UnitConfigName"]), 0) + 1
-            for hash_id, actor, _pose, _yaw, _lift in merchant.objects:
+            for hash_id, actor, _pose, _yaw, _lift, _forward in merchant.objects:
                 self.assertEqual(str(objs[hash_id]["UnitConfigName"]), actor)
                 self.assertIn(objs[hash_id], sold)
                 counts[actor] -= 1
@@ -82,10 +82,11 @@ class GameFileTests(unittest.TestCase):
             places = [(float(objs[h]["Translate"][0]), float(objs[h]["Translate"][2]))
                       for h, *_ in merchant.objects]
             self.assertGreaterEqual(math.dist(*places), SPACING, merchant.actor)
-            for _hash, _actor, pose, yaw, lift in merchant.objects:
+            for _hash, _actor, pose, yaw, lift, forward in merchant.objects:
                 self.assertIn(pose, ("lying", "standing"))
                 self.assertLessEqual(abs(yaw), math.pi)
                 self.assertLess(abs(lift), 1.0)
+                self.assertLess(abs(forward), 0.5)
 
     def test_the_buy_event_is_the_merchants_display_shop(self):
         from botw_patch.events import graph_snapshot, read_flow
@@ -124,7 +125,8 @@ class GameFileTests(unittest.TestCase):
             else:
                 # Standing on the object, facing the customer.
                 self.assertEqual([round(float(v), 5) for v in obj["Rotate"]], [0.0, round(yaw, 5), 0.0])
-                want = (x, y + location.lift, z)
+                want = (x + location.forward * math.sin(yaw), y + location.lift,
+                        z + location.forward * math.cos(yaw))
             for got, value in zip(obj["Translate"], want):
                 self.assertAlmostEqual(float(got), value, places=3)
             self.assertIn(("ForSale", location.merchant.hash_id), links(obj))

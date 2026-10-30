@@ -136,7 +136,10 @@ def patch_map(raw: bytes, locations: list[StallLocation],
         x, y, z = (float(v) for v in obj["Translate"])
         if location.pose == "standing":
             obj["Rotate"] = oead.byml.Array([oead.F32(0.0), oead.F32(yaw), oead.F32(0.0)])
-            obj["Translate"] = oead.byml.Array([oead.F32(x), oead.F32(y + location.lift), oead.F32(z)])
+            # Off the leaning rack, towards the customer the jewel faces.
+            obj["Translate"] = oead.byml.Array([oead.F32(x + location.forward * math.sin(yaw)),
+                                                oead.F32(y + location.lift),
+                                                oead.F32(z + location.forward * math.cos(yaw))])
         elif location.pose == "lying":
             obj["Rotate"] = oead.byml.Array([oead.F32(-math.pi / 2), oead.F32(yaw), oead.F32(0.0)])
             # Lying, its middle is height/2 from its origin, towards its top.
