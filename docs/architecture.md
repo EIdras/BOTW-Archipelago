@@ -92,6 +92,10 @@ slot file alone, without reaching any server.
   of their own: the client plays them once it has seen the commit, through the game's actor creation
   (`cucco_swarm.py`, `yiga_ambush.py`, `paranoia.py`) or the pack's weather hold (`downpour.py`, `tools/build_weather_native.py`). Given back by a
   reload, a trap is spent without effect ([traps.md](reference/traps.md)).
+- **Region lock**: near a region the seed keeps closed (the map's areas that `region_lock.py` does not reach), the
+  world's fog thickens over the last 30 m and the game's own « You can't go any farther. » stays in the center of the
+  screen from 10 m on (`region_border.py`, from Link's position in the MainField; the pack's center message hold,
+  [ap_messages.md](reference/ap_messages.md#the-border-message-center-message-hold)).
 
 ## The player's Cemu (`tools/cemu_install.py`, `tools/cemu_profile.py`)
 

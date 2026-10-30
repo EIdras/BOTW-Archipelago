@@ -57,6 +57,9 @@ NATIVE_TRAP_PATIENCE_SECONDS = 120.0
 TRAVEL_SPACING_SECONDS = 5.0
 # Why a travel point waits: not failures, not logged.
 TRAVEL_WAITS = ("an entry running", "Link not in the world", "save guard unreadable")
+# region_lock: the sign at a closed region's border, read and written so often
+# (botw_client/region_border.py: the fog's timer and the message's passes run ahead).
+BORDER_SECONDS = 0.1
 STATE_PATH = DATA / "client-state.json"
 GOAL_LOCATION = "Defeat Calamity Ganon"
 STATE_SCHEMA = 3
@@ -294,6 +297,15 @@ class BotwClientRuntime:
         self._travel_shrines = None
         self._travel_retry_after = 0.0
         self._travel_failure = None
+        # region_lock: the border's sign (None until the slot asks for it), its
+        # last zone logged, why it cannot run (logged once).
+        self._border = None
+        self._border_areas = None
+        self._border_zone = None
+        # The longest time between two ticks since /ap-border last told it: the
+        # fog's and the message's leases must outlast it.
+        self._border_gap = 0.0
+        self._border_failure = None
         self._session_identity = None
         self._session_locations = None
         self.lease_error = None
@@ -582,6 +594,102 @@ class BotwClientRuntime:
                     self.game.cave.sub_disarm()
             except Exception:
                 pass
+
+    async def _border_loop(self):
+        """region_lock: the sign at a closed region's border (botw_client/region_border.py),
+        every BORDER_SECONDS from Link's position and the game's flags; let go at the end."""
+        retry_after, ticked = 0.0, None
+        try:
+            while not self.stop_event.is_set() and self.game.cave:
+                await asyncio.sleep(BORDER_SECONDS)
+                now = time.monotonic()
+                if ticked is not None:
+                    self._border_gap = max(self._border_gap, now - ticked)
+                ticked = now
+                slot = getattr(self.ap, "slot_data", None)
+                slot = slot if isinstance(slot, dict) else {}
+                if (not self.native_delivery or not slot.get("region_lock")
+                        or time.monotonic() < retry_after):
+                    continue
+                try:
+                    if self._border is None:
+                        self._border = await asyncio.to_thread(self._make_border, slot)
+                    state = await asyncio.to_thread(self._border.tick)
+                except Exception as exc:  # noqa: BLE001 - the sign must not stop the session
+                    failure = f"{type(exc).__name__}: {exc}"
+                    if failure != self._border_failure:
+                        self.log(f"region border unavailable: {failure}")
+                        self._border_failure = failure
+                    retry_after = time.monotonic() + 5.0
+                    continue
+                self._log_border(state)
+        finally:
+            if self._border is not None:
+                try:
+                    self._border.release()
+                except Exception:  # noqa: BLE001 - Cemu may be gone: the timers lapse alone
+                    pass
+                self._border = None
+
+    def _make_border(self, slot):
+        import zlib
+        from .region_border import RegionBorder, load_areas
+        from .region_lock import map_flags, reached
+        if self._border_areas is None:
+            self._border_areas = load_areas()
+        areas, maps = self._border_areas, map_flags(self.game.item_map)
+        process, cave = self.game.process, self.game.cave
+
+        def read(guest, size):
+            return process.read(cave.base + guest, size)
+
+        def write(guest, data):
+            return bool(process.write(cave.base + guest, data))
+
+        def get(flag, kind):
+            live = self.game.live
+            return live.get(zlib.crc32(flag.encode()) & 0xFFFFFFFF, kind) if live else None
+
+        def closed():
+            opened = reached(slot, get, maps)
+            return None if opened is None else areas.regions - opened
+
+        return RegionBorder(read, write, cave.hold_center, areas, closed)
+
+    def _log_border(self, state):
+        nearest = state.get("nearest")
+        zone = None
+        if nearest:
+            zone = (nearest[0], "message" if state.get("message") else "fog")
+        if zone != self._border_zone:
+            self._border_zone = zone
+            if zone:
+                self.log(f"region border: {nearest[0]} closed, {nearest[1]:.0f} m away: {zone[1]}")
+            else:
+                self.log("region border: no closed region near")
+
+    def _border_report(self) -> str:
+        state = self._border.state if self._border is not None else None
+        if not state:
+            slot = getattr(self.ap, "slot_data", None)
+            slot = slot if isinstance(slot, dict) else {}
+            return ("region border: region_lock is off in this slot" if not slot.get("region_lock")
+                    else "region border: not started yet")
+        position = state["position"]
+        where = ("(" + ", ".join(f"{c:.1f}" for c in position) + ")") if position else "unreadable"
+        nearest = state["nearest"]
+        closed = state["closed"]
+        gap, self._border_gap = self._border_gap, 0.0
+        return "\n".join((
+            "region border:",
+            f"  stage {state['stage']!r}, map {state['map']!r}, in the MainField: {state['field']}",
+            f"  Link at {where}, region {state['region']}",
+            f"  closed: {', '.join(closed) if closed else ('none' if closed is not None else 'unknown')}",
+            f"  nearest closed: {f'{nearest[0]}, {nearest[1]:.1f} m' if nearest else 'none near'}",
+            f"  fog {tuple(round(v, 2) for v in state['fog']) if state['fog'] else 'none'},"
+            f" message {'held' if state['message'] else 'none'}",
+            f"  longest gap between two ticks since the last /ap-border: {gap:.2f} s"
+            f" (every {BORDER_SECONDS} s asked)"))
 
     def _received_before(self, index: int, name: str) -> int:
         return sum(
@@ -2005,6 +2113,9 @@ class BotwClientRuntime:
             else:
                 self._journal_note(line[len('/ap-tip'):].strip() or 'Archipelago journal test')
             return True
+        if parts and parts[0] == '/ap-border':
+            self.log(self._border_report())
+            return True
         if parts and parts[0] == '/ap-evt':
             self._event_trace_command(parts[1:])
             return True
@@ -2274,6 +2385,7 @@ class BotwClientRuntime:
         if not self.native_mode:
             self.game.cave.sub_disarm()
         lease = asyncio.create_task(self._lease_loop(), name="BOTW shrine lease")
+        border = asyncio.create_task(self._border_loop(), name="BOTW region border")
         try:
             while not self.stop_event.is_set() and self.game.cave:
                 if self.lease_error:
@@ -2335,6 +2447,11 @@ class BotwClientRuntime:
             lease.cancel()
             try:
                 await lease
+            except asyncio.CancelledError:
+                pass
+            border.cancel()
+            try:
+                await border
             except asyncio.CancelledError:
                 pass
             if self._reconnect_task:
