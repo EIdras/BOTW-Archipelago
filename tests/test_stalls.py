@@ -157,6 +157,8 @@ class GameFileTests(unittest.TestCase):
                                              shops=plan_from_manifest(manifest), aoc=AOC)
         self.assertIn("aoc/0010/Map/MainField/G-6/G-6_Static.smubin", files)
         self.assertIn("aoc/0010/Map/MainField/I-7/I-7_Static.smubin", files)
+        # Emptied, or the DLC's map archive would hide the units above.
+        self.assertEqual(files["aoc/0010/Pack/AocMainField.pack"], b"")
         self.assertIn("Event/Npc_Kakariko010.sbeventpack", files)
         self.assertIn("Event/Npc_HatenoVillage002.sbeventpack", files)
         self.assertFalse(any("TripMaster" in name for name in files))

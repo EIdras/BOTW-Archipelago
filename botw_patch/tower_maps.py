@@ -25,7 +25,7 @@ import oead
 
 from botw_client.locations import tower_activation_flag
 from botw_patch.resources import ResourceBuilder, digest, unpack
-from botw_patch.stalls import AOC_PREFIX, TABLE_PREFIX
+from botw_patch.stalls import AOC_PREFIX, MAP_ARCHIVE, TABLE_PREFIX
 
 BOOTUP = "Pack/Bootup.pack"
 TABLE = "System/Resource/ResourceSizeTable.product.srsizetable"
@@ -123,6 +123,7 @@ def generate(files: dict[str, bytes], aoc) -> tuple[dict[str, bytes], list[dict]
             new, detail = patch_map(source, numbers)
             builder.account(TABLE_PREFIX + unit(cell), new, vanilla)
             files[AOC_PREFIX + unit(cell)] = new
+            files[MAP_ARCHIVE] = b""
             changes.append({"resource": AOC_PREFIX + unit(cell), "towers": detail})
         builder.patch_archive(BOOTUP, {
             "GameData/gamedata.ssarc": lambda raw: (

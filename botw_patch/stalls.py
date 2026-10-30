@@ -32,6 +32,10 @@ from botw_patch.shop_items import add_purchase_record
 
 AOC_PREFIX = "aoc/0010/"          # files at the pack root, under aoc/
 TABLE_PREFIX = "Aoc/0010/"        # their key in the resource size table
+# The DLC serves every Map/MainField unit from this archive once it loads
+# (aoc::Manager::getFileDeviceForMap), never the loose units a pack replaces.
+# An empty file fails to load, and the game reads them, as BCML does.
+MAP_ARCHIVE = AOC_PREFIX + "Pack/AocMainField.pack"
 TAG = "LinkTagAnd"
 # As on the 956 vanilla tags that create objects from a saved flag alone.
 TAG_PARAMETERS = {"IncrementSave": False, "MakeSaveFlag": oead.S32(0),
@@ -188,6 +192,7 @@ def generate(builder, files: dict[str, bytes], content, aoc, locations: list[Sta
         new, detail = patch_map(raw, located, jewel)
         builder.account(TABLE_PREFIX + unit, new, raw)
         files[AOC_PREFIX + unit] = new
+        files[MAP_ARCHIVE] = b""
         changes.append({"resource": AOC_PREFIX + unit, "stalls": detail})
     merchants: dict[str, list[StallLocation]] = {}
     for location in locations:

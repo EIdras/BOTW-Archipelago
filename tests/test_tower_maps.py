@@ -181,6 +181,7 @@ class MapUnitTests(unittest.TestCase):
             self.assertEqual({flags[h] for h in tags}, {f"APTower_{number}"})
         kakariko = save_flags(files["aoc/0010/" + tower_maps.unit("G-6")])
         self.assertIn("IsGet_AP_Shop_202", kakariko.values())
+        self.assertEqual(files["aoc/0010/Pack/AocMainField.pack"], b"")
 
 
 if __name__ == "__main__":
