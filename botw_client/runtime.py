@@ -10,7 +10,7 @@ from pathlib import Path
 
 from .backend import DeliveryCommand, DeliveryCoordinator, DeliveryStatus
 from .game import BotwGame, GameNotReady, game_starting
-from .locations import SCHEMA_LOCATION_COUNTS, load_targets
+from .locations import SCHEMA_LOCATION_COUNTS, load_targets, tower_activation_flag
 from .paths import DATA
 from .protocol import ArchipelagoClient, DeathLinkEvent, LocationInfo
 from .session import session_token
@@ -266,6 +266,11 @@ class BotwClientRuntime:
         # The Archipelago quest (botw_patch/ap_quest.py) is started once per
         # game connection, and completed once the goal is sent.
         self._quest_started = self._quest_finished = False
+        # Towers activated up to 0.2.5 without APTower_NN (_tower_repair_tick):
+        # those seen unactivated on this connection, those repaired (logged once).
+        self._towers_unactivated, self._towers_repaired = set(), set()
+        self._tower_retry_after = 0.0
+        self._tower_error = None
         # The HUD's AP logo (botw_client/hud_indicator.py): colour when
         # connected, grey otherwise.
         self.hud = None
@@ -430,6 +435,8 @@ class BotwClientRuntime:
 
     async def _connect_game(self):
         self._quest_started = self._quest_finished = False
+        self._towers_unactivated, self._towers_repaired = set(), set()
+        self._tower_retry_after = 0.0
         connect_task = asyncio.create_task(asyncio.to_thread(self.game.connect, self.log))
         try:
             await asyncio.shield(connect_task)
@@ -1267,6 +1274,36 @@ class BotwClientRuntime:
             await asyncio.to_thread(self.game.clear_ganon_refusal)
             self.log("sanctum refused: " + (", ".join(f"{h}/{n} {w}" for w, h, n in missing)
                                            or "now open"))
+
+    async def _tower_repair_tick(self):
+        """A tower activated up to 0.2.5 with the game's own map units
+        (locations.TOWER_TERMINALS) has its terminal's flag but not APTower_NN:
+        its check comes from the terminal, and APTower_NN is set live for its
+        icon and its travel point, again after a reload (the save does not keep
+        it). Not for a tower seen unactivated on this connection: activated
+        now, its terminal's flag comes before its event sets APTower_NN."""
+        if time.monotonic() < self._tower_retry_after:
+            return
+        self._tower_retry_after = time.monotonic() + 1.0
+        states = None
+        try:
+            states = await asyncio.to_thread(self.game.tower_states)
+            for map_flag, (terminal, tower) in states.items():
+                if not terminal:
+                    self._towers_unactivated.add(map_flag)
+                elif not tower and map_flag not in self._towers_unactivated:
+                    await asyncio.to_thread(self.game.mark_tower_activated, map_flag)
+                    if map_flag not in self._towers_repaired:
+                        self._towers_repaired.add(map_flag)
+                        self.log(f"{tower_activation_flag(map_flag)} set: tower activated before 0.2.6, "
+                                 "its icon and travel point given back")
+            self._tower_error = None
+        except Exception as exc:  # noqa: BLE001 - a tower must not stop the session
+            if str(exc) != self._tower_error:
+                self._tower_error = str(exc)
+                self.log(f"towers unreadable: {exc}")
+        if states == {}:
+            self._tower_retry_after = float("inf")      # no APTower_NN: maps are not items
 
     @staticmethod
     def _message_pages(text: str) -> list[str]:
@@ -2234,6 +2271,7 @@ class BotwClientRuntime:
                             await self._quest_tick()
                             await self._pedestal_tick()
                         await self._ganon_gate_tick()
+                        await self._tower_repair_tick()
                         await self._native_trap_tick()
                         await self._deathlink_tick()
                     # Even out of the session: a reload back to an unbound save.

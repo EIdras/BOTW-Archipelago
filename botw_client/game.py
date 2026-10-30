@@ -9,7 +9,8 @@ import textwrap
 import zlib
 
 from .items import load_item_map
-from .locations import LocationTracker, alternate_targets, known_hashes, load_targets
+from .locations import (TOWER_TERMINALS, LocationTracker, alternate_targets, known_hashes,
+                        load_targets, tower_activation_flag)
 from .paths import DATA
 from .rune_selection import EQUIP_HASH, RuneSelectionSync, SyncOutcome
 
@@ -291,6 +292,24 @@ class BotwGame:
         """Restore the measured pre-sensor state after Plateau Tower."""
         for flag in TOWER_SENSOR_FLAGS:
             self._write_flag(flag, False, "bool")
+
+    def tower_states(self) -> dict[str, tuple[bool, bool]]:
+        """(terminal activated, APTower_NN) of each tower, by its map's flag,
+        when the pack has APTower_NN (botw_patch/tower_maps.py)."""
+        states = {}
+        for map_flag, terminal in TOWER_TERMINALS.items():
+            tower = zlib.crc32(tower_activation_flag(map_flag).encode())
+            if tower in self.live.index["bool"]:
+                states[map_flag] = (bool(self._read_flag(terminal, "bool")),
+                                    bool(self.live.get(tower, "bool")))
+        return states
+
+    def mark_tower_activated(self, map_flag: str):
+        """APTower_NN set live, for its icon and its travel point. Volatile
+        (tools/cemu/livegdt.py): the save does not keep it."""
+        tower = zlib.crc32(tower_activation_flag(map_flag).encode())
+        if not self.live.set(tower, True, "bool") or not self.live.get(tower, "bool"):
+            raise RuntimeError(f"{tower_activation_flag(map_flag)}: live write not read back")
 
     def _hash(self, name: str) -> tuple[int, str]:
         if name in CUSTOM_FLAGS:

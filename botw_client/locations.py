@@ -105,14 +105,40 @@ def load_targets(path: Path = MASTER_CSV,
 # map actor (F-2, HashId 2427157272) says it left the pedestal, either way.
 ALTERNATE_FLAGS = {"Master Sword Pedestal": "MainField_Weapon_Sword_070_2427157272"}
 
+# Each tower's terminal (FldObj_DownloadTerminal_A_01 of its map unit, by its
+# HashId) keeps a saved flag of its own once activated. Up to 0.2.5, with most
+# copies of the DLC, a pack whose maps are items had the game read its own map
+# units (botw_patch/stalls.py, MAP_ARCHIVE): a tower activated then set its
+# terminal's flag but not its APTower_NN, and its terminal no longer offers to
+# activate it. That flag also checks the tower.
+TOWER_TERMINALS = {
+    "MapTower_01": "MainField_FldObj_DownloadTerminal_A_01_3650282708",
+    "MapTower_02": "MainField_FldObj_DownloadTerminal_A_01_3703935795",
+    "MapTower_03": "MainField_FldObj_DownloadTerminal_A_01_1285797230",
+    "MapTower_04": "MainField_FldObj_DownloadTerminal_A_01_2275687969",
+    "MapTower_05": "MainField_FldObj_DownloadTerminal_A_01_1943274718",
+    "MapTower_06": "MainField_FldObj_DownloadTerminal_A_01_2879079867",
+    "MapTower_08": "MainField_FldObj_DownloadTerminal_A_01_2934598095",
+    "MapTower_09": "MainField_FldObj_DownloadTerminal_A_01_2751434839",
+    "MapTower_10": "MainField_FldObj_DownloadTerminal_A_01_219123603",
+    "MapTower_11": "MainField_FldObj_DownloadTerminal_A_01_1669567698",
+    "MapTower_12": "MainField_FldObj_DownloadTerminal_A_01_1475180658",
+    "MapTower_13": "MainField_FldObj_DownloadTerminal_A_01_4138911080",
+    "MapTower_14": "MainField_FldObj_DownloadTerminal_A_01_4111125397",
+    "MapTower_15": "MainField_FldObj_DownloadTerminal_A_01_1620889332",
+}
+
 
 def alternate_targets(targets: list[LocationTarget]) -> list[LocationTarget]:
-    """The ALTERNATE_FLAGS of the locations among `targets`, for the tracker."""
+    """The ALTERNATE_FLAGS and TOWER_TERMINALS of the locations among
+    `targets`, for the tracker."""
     names = {target.name for target in targets}
     hashes = {flag_name: int(hash_value) & 0xFFFFFFFF
               for hash_value, (_, flag_name) in gamedata_table.load().items()}
+    flags = list(ALTERNATE_FLAGS.items()) + [
+        (target.name, TOWER_TERMINALS[target.flag]) for target in targets if target.flag in TOWER_TERMINALS]
     return [LocationTarget(name, flag, hashes[flag])
-            for name, flag in ALTERNATE_FLAGS.items() if name in names]
+            for name, flag in flags if name in names]
 
 
 def known_hashes() -> np.ndarray:

@@ -131,10 +131,23 @@ class ClientDataTests(unittest.TestCase):
         from botw_client.locations import alternate_targets
         targets = load_targets()
         extra = alternate_targets(targets)
-        self.assertEqual([(t.name, t.flag) for t in extra],
-                         [("Master Sword Pedestal", "MainField_Weapon_Sword_070_2427157272")])
+        self.assertEqual((extra[0].name, extra[0].flag),
+                         ("Master Sword Pedestal", "MainField_Weapon_Sword_070_2427157272"))
         self.assertEqual(extra[0].hash_u32, zlib.crc32(extra[0].flag.encode()))
         self.assertNotIn(extra[0].hash_u32, {t.hash_u32 for t in targets})
+
+    @NEEDS_TABLE
+    def test_a_tower_is_also_checked_by_its_terminal(self):
+        from botw_client.locations import alternate_targets
+        targets = load_targets()
+        towers = {t.name: t for t in alternate_targets(targets) if t.name.endswith(" Tower")}
+        # Every tower but the Great Plateau's, which keeps its own flag.
+        self.assertEqual(len(towers), 14)
+        self.assertNotIn("Great Plateau Tower", towers)
+        self.assertEqual(towers["Gerudo Tower"].flag, "MainField_FldObj_DownloadTerminal_A_01_1285797230")
+        for target in towers.values():
+            self.assertEqual(target.hash_u32, zlib.crc32(target.flag.encode()))
+            self.assertNotIn(target.hash_u32, {t.hash_u32 for t in targets})
 
     def test_location_tracker_reports_missing_before_indexing_it(self):
         target = LocationTarget("A", "FlagA", 10)
