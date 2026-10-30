@@ -118,6 +118,9 @@ print(a.name)
                     # And the Downpour trap's weather hold, in every pack.
                     from tools.build_weather_native import patch_injection as weather
                     composed = weather(composed)
+                    # And the regions' border message hold, in every pack.
+                    from tools.build_center_hold_native import patch_injection as center_hold
+                    composed = center_hold(composed)
                     # And the pointers it follows end with the game's main memory
                     # (tools/cemu/guest.py), no longer at 0x60000000.
                     from tools.cemu.guest import MEM2_END, below

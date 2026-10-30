@@ -64,6 +64,22 @@ composed patch.
 The pack declares the journal (`manifest.json`: `"ap_journal": "tip_channel"`) and the play session turns it on. The
 console command `/ap-tip <text>` shows a line in the journal.
 
+## The border message (center message hold)
+
+The game's own out-of-bounds message, « You can't go any farther. » (`LayoutMsg/MainScreen_00`, label `0007`, every
+language), is the center message of index 46, which the game asks for at every frame while Link is out of bounds.
+The center screen's public API (`0x02ed1e1c`) compares the message on screen (`+0xbc`) with the one asked for: another
+one replaces it; the same one is consumed and shown again from the start, except 46, which simply stays: held, without
+a flicker or a sound. Index 41, the same text, is a notification: asked again, it plays its sound again.
+
+[`tools/build_center_hold_native.py`](../../tools/build_center_hold_native.py) adds the hold to every pack: as long as
+`apCenterPasses` lasts, the per-frame hook arms the request of message `apCenterIndex` again at each pass, and its
+push and pop blocks make the calls. It arms nothing while another message is on screen (a weapon about to break...):
+that one goes to its end, then the held one follows. The client writes the index then the passes
+(`Cave.hold_center(index, passes)`, `tools/cemu/mailbox.py`), a few passes ahead and again while Link is near the
+border; 0 passes lets it go at once, and the message ends by itself if the client stops. The Archipelago lines never
+use this channel in play: they go to the journal.
+
 ## Connection status
 
 - **Journal**: the connection is announced once, then **one** line per outage (not one per attempt), then "Reconnected

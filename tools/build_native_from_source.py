@@ -29,7 +29,7 @@ SOURCE_FILES = (
     'tools/build_event_request_trace.py', 'tools/build_ui_lifecycle.py',
     'tools/build_request_reject_trace.py', 'tools/build_tip_channel.py',
     'botw_client/tip_protocol.py', 'tools/build_tower_maps_native.py',
-    'tools/build_weather_native.py', 'tools/cemu/guest.py',
+    'tools/build_weather_native.py', 'tools/build_center_hold_native.py', 'tools/cemu/guest.py',
 )
 
 
@@ -47,7 +47,8 @@ def generate(*, resource_gate=False, event_gate=False, tower_maps=False, bike_an
     tower_maps: the seed's maps are items, the towers' icons read APTower_NN
     (tools/build_tower_maps_native.py; the map opening's fallback is in every pack).
     bike_anywhere: the Master Cycle Zero anywhere outdoors (botw_patch/bike_anywhere.py).
-    The weather hold of the Downpour trap is in every pack (tools/build_weather_native.py).
+    The weather hold of the Downpour trap is in every pack (tools/build_weather_native.py),
+    and so is the center message hold of the regions' border (tools/build_center_hold_native.py).
     mem2_end: where the game's main memory ends (tools/cemu/guest.py): the code follows
     no pointer beyond (Extended Memory moves it, tools/player_packs.py mem2_end())."""
     from tools.build_scoped_text import scoped_source
@@ -77,6 +78,9 @@ def generate(*, resource_gate=False, event_gate=False, tower_maps=False, bike_an
     # The Downpour trap's weather, held frame after frame (in every pack).
     from tools.build_weather_native import patch_injection as weather_stage
     injection = weather_stage(injection)
+    # The border message of the regions, held frame after frame (in every pack).
+    from tools.build_center_hold_native import patch_injection as center_hold_stage
+    injection = center_hold_stage(injection)
     if bike_anywhere:
         from botw_patch.bike_anywhere import patch_injection as bike_stage
         injection = bike_stage(injection)

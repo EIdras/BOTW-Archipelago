@@ -520,6 +520,10 @@ class Cave:
         self.weather_type = version_addr + 9316
         self.weather_frames = version_addr + 9320
         self.weather_passes = version_addr + 9324
+        # The held center message (tools/build_center_hold_native.py), after them.
+        self.hold_magic = version_addr + 9328
+        self.hold_index = version_addr + 9332
+        self.hold_passes = version_addr + 9336
         # The twelve levels of the call chain, probed at once.
         # Each level: N, r3, r4, r5, r6, r7, Lr -- 7 words.
         self.lvl0 = version_addr + 8568
@@ -1149,6 +1153,24 @@ class Cave:
             return None
         raw = self.p.read(self.weather_frames, 4)
         return be(raw) if raw and len(raw) == 4 else None
+
+    HOLD_MAGIC = 0x484C4431  # "HLD1", written by tools/build_center_hold_native.py
+
+    def center_hold_ready(self):
+        """Has the loaded patch the center message hold? (the magic word, as map_ready)"""
+        return be(self.p.read(self.hold_magic, 4)) == self.HOLD_MAGIC
+
+    def hold_center(self, index, passes):
+        """Ask for the center message `index` at every pass of the per-frame hook, `passes`
+        times (46: the border, held without a flicker); 0 passes lets it go. The index
+        first, then the passes: the hook never asks for an index not yet written. False
+        on a patch without the hold."""
+        if not self.center_hold_ready():
+            return False
+        passes = max(int(passes), 0)
+        return bool((not passes
+                     or self.p.write(self.hold_index, (int(index) & 0xFFFFFFFF).to_bytes(4, "big")))
+                    and self.p.write(self.hold_passes, passes.to_bytes(4, "big")))
 
     def request_rune_selection(self, rune_type, timeout=1.0):
         """Have the game call 0x02A2D6D4(*(0x10463798), type).
