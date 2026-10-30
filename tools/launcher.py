@@ -9,7 +9,8 @@
    already prepared, or a new file chosen in a window. A new seed's game pack
    is built (tools/play_seed.py), and a prepared seed's again when another
    version of the project built it, or over other mods than those the
-   player's Cemu runs now (tools/play_mods.py).
+   player's Cemu runs now (tools/play_mods.py). The list of prepared seeds
+   also deletes one, with its pack (tools/play_seed.py).
 3. Asks the address of the room (the one written in a slot file downloaded
    from the room's page, then the one remembered for the seed) and its password; a
    seed prepared from its zip can also be hosted on this computer, where the
@@ -196,21 +197,49 @@ def pick(ui, prompt: str, count: int, default: int = 1) -> int:
 def choose_seed(ui, argument: str | None) -> str:
     if argument:
         return prepare_file(ui, Path(argument.strip('"')))
-    seeds = prepared_seeds()
-    if seeds:
+    while seeds := prepared_seeds():
         ui.say("Seeds:")
         for number, seed in enumerate(seeds, 1):
             day = seed.last_played[:8]
             played = f", last played {day[:4]}-{day[4:6]}-{day[6:]}" if day else ""
             ui.say(f"  {number}. {seed.seed} ({seed.slot}{played})")
         ui.say(f"  {len(seeds) + 1}. another seed: your slot file (.apbotw) or the seed's zip")
-        choice = pick(ui, "Seed", len(seeds) + 1)
+        ui.say(f"  {len(seeds) + 2}. delete a seed")
+        choice = pick(ui, "Seed", len(seeds) + 2)
         if choice <= len(seeds):
             return fresh(ui, seeds[choice - 1].seed)
+        if choice == len(seeds) + 1:
+            break
+        delete_seed(ui, seeds)
     path = ui.choose_file("Your slot file (.apbotw) or the seed's zip", SEED_FILES)
     if path is None:
         raise Cancelled
     return prepare_file(ui, path)
+
+
+def delete_seed(ui, seeds: list[Prepared]) -> None:
+    """Delete the seed the player picks, once they confirm: its folder and its pack
+    (tools/play_seed.py), not the game's saves."""
+    seed = seeds[pick(ui, "Seed to delete", len(seeds)) - 1]
+    folder = play_seed.PLAY_SEEDS / seed.seed
+    paths = play_seed.seed_paths(folder)
+    goes = "its folder and its game pack go" if len(paths) > 1 else "its folder goes"
+    hosted = (", with the progress of the game you host on this computer (.apsave)"
+              if any(folder.glob("*.apsave")) else "")
+    ui.say(f"Seed {seed.seed} ({seed.slot}): {goes}, {sum(map(play_seed.size, paths)) / 2**20:.0f} MB"
+           f"{hosted}. Your Breath of the Wild saves stay in the launcher's Cemu profile.")
+    if not yes(ui, f"Delete seed {seed.seed}?", default=False):
+        return
+    # Right before deleting: a session open on the seed writes in its folder.
+    if cemu_profile.cemu_running():
+        ui.say("Close Cemu before deleting a seed.")
+        return
+    try:
+        play_seed.delete(folder)
+    except OSError as exc:
+        ui.say(f"Seed {seed.seed} is not entirely deleted ({exc}): close what uses it, then delete it again.")
+        return
+    ui.say(f"Seed {seed.seed} deleted.")
 
 
 def choose_room(ui, seed: str) -> tuple[str | None, str | None]:

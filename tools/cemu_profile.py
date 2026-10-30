@@ -186,13 +186,18 @@ def check_isolated() -> None:
         if (not path.resolve().is_relative_to(PROFILE.resolve()) or path.is_symlink()
                 or path.is_junction()):
             raise RuntimeError(f"Profile path not isolated: {path}")
+    if cemu_running():
+        raise RuntimeError("Close Cemu before preparing a session "
+                           "(no process is stopped automatically).")
+
+
+def cemu_running() -> bool:
+    """A Cemu runs, whichever installation it comes from."""
     running = subprocess.run(["powershell", "-NoProfile", "-Command",
                               "Get-Process Cemu -ErrorAction SilentlyContinue "
                               "| Select-Object -ExpandProperty Id"],
                              capture_output=True, text=True, check=False)
-    if running.stdout.strip():
-        raise RuntimeError("Close Cemu before preparing a session "
-                           "(no process is stopped automatically).")
+    return bool(running.stdout.strip())
 
 
 def play_account_dat(source_account: str) -> str:

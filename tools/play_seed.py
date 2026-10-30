@@ -38,6 +38,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import stat
 import sys
 import warnings
 import zipfile
@@ -251,6 +252,82 @@ def refresh(folder: Path, layers: list[dict] = (), mem2_end: int = MEM2_END) -> 
             and previous not in selections(PLAY_SEEDS)):
         shutil.rmtree(previous)
     return pack
+
+
+def pointed_pack(folder: Path) -> Path | None:
+    """The pack a seed's play-pack.json names, unchecked (tools/play_pack.py
+    checks it before a session): it may be gone or changed."""
+    try:
+        pointer = json.loads((folder / "play-pack.json").read_text(encoding="utf-8"))
+        # Schema 1, written by source checkouts before the data folder, is
+        # relative to the project.
+        base = {1: ROOT, 2: DATA}.get(pointer["schema"])
+        return (base / pointer["pack"]).resolve() if base is not None else None
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+
+def seed_paths(folder: Path) -> list[Path]:
+    """What deleting a prepared seed removes: the pack it selects and that
+    pack's copy installed in the Cemu profile, unless another seed selects it,
+    then its folder (the seed's copy, the client's state, a local server's
+    .apsave, the sessions' logs). The game's saves, in the profile, stay."""
+    from tools.cemu_profile import PACK_PREFIX, PORTABLE
+    pack = pointed_pack(folder)
+    others = {pointed_pack(other) for other in folder.parent.iterdir() if other != folder}
+    paths = []
+    if pack is not None and pack.parent == PACKS.resolve() and pack not in others:
+        paths += [PORTABLE / "graphicPacks" / (PACK_PREFIX + pack.name), pack]
+    return [path for path in paths + [folder] if path.is_dir()]
+
+
+def delete(folder: Path) -> list[Path]:
+    """Delete a prepared seed (seed_paths), its folder last and, in it, its
+    analysis.json: until then the launcher lists the seed, to delete again
+    what a file in use kept. What it removed."""
+    paths = seed_paths(folder)
+    for path in paths:
+        if path == folder and not linked(folder):
+            for entry in sorted(folder.iterdir(), key=lambda entry: entry.name == "analysis.json"):
+                remove(entry)
+        remove(path)
+    return paths
+
+
+def linked(path: Path) -> bool:
+    return path.is_symlink() or path.is_junction()
+
+
+def remove(path: Path) -> None:
+    """Remove a file, a folder with all it holds, or a link: never what it leads to."""
+    if path.is_dir() and not linked(path):
+        shutil.rmtree(path, onexc=writable)     # removes the links inside, not what they lead to
+        return
+    try:
+        path.unlink()
+    except PermissionError as error:
+        writable(os.unlink, str(path), error)
+
+
+def writable(function, path: str, error: BaseException) -> None:
+    # A copy keeps the read-only attribute of a downloaded seed (shutil.copy2),
+    # which Windows refuses to delete as it is. A file in use stays refused.
+    if function not in (os.unlink, os.rmdir) or not isinstance(error, PermissionError):
+        raise error
+    os.chmod(path, stat.S_IWRITE)
+    function(path)
+
+
+def size(path: Path) -> int:
+    """The bytes remove(path) frees: what a link leads to apart."""
+    try:
+        if linked(path):
+            return 0
+        if path.is_dir():
+            return sum(size(entry) for entry in path.iterdir())
+        return path.lstat().st_size
+    except OSError:
+        return 0
 
 
 if __name__ == "__main__":

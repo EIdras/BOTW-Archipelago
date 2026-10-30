@@ -1,6 +1,9 @@
 """The player's launcher (tools/launcher.py), with scripted answers."""
 import json
+import os
 from pathlib import Path
+import shutil
+import stat
 import tempfile
 import unittest
 from unittest import mock
@@ -158,6 +161,136 @@ class SeedTests(Folder):
         other.write_text('{"x": 1}')
         with self.assertRaisesRegex(ValueError, "not a Breath of the Wild slot file"):
             launcher.prepare_file(Answers(), other)
+
+
+class DeleteTests(Folder):
+    def setUp(self):
+        super().setUp()
+        self.packs = self.root / "packs-from-source"
+        self.copies = self.root / "profile/portable/graphicPacks"
+        for patcher in (mock.patch.object(launcher.play_seed, "DATA", self.root),
+                        mock.patch.object(launcher.play_seed, "PACKS", self.packs),
+                        mock.patch.object(launcher.cemu_profile, "PORTABLE", self.root / "profile/portable"),
+                        mock.patch.object(launcher.cemu_profile, "cemu_running", return_value=False)):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def packed(self, name, pack, pointer=None):
+        """A prepared seed selecting `pack` (1 MB), installed in the profile."""
+        folder = self.seed(name)
+        for path in (self.packs / pack, self.copies / f"AP_Ledger_{pack}"):
+            path.mkdir(parents=True, exist_ok=True)
+            (path / "rules.txt").write_bytes(bytes(2**19))
+        pointer = pointer or {"schema": 2, "pack": f"packs-from-source/{pack}"}
+        (folder / "play-pack.json").write_text(json.dumps(pointer))
+        return folder
+
+    def test_the_list_deletes_a_seed_with_its_pack_then_lists_the_others(self):
+        folder = self.packed("111", "aaa")
+        (folder / "AP_x.zip").write_bytes(b"zip")
+        os.chmod(folder / "AP_x.zip", stat.S_IREAD)       # copied from a downloaded file
+        (folder / "AP_x.apsave").write_bytes(b"save")
+        self.packed("222", "bbb")
+        ui = Answers(answers=["4", "1", "y", "1"])
+        with mock.patch("tools.play_pack.selected_pack"), mock.patch("tools.play_pack.outdated", return_value=[]):
+            self.assertEqual(launcher.choose_seed(ui, None), "222")
+        self.assertEqual([path.name for path in self.seeds.iterdir()], ["222"])
+        self.assertEqual([path.name for path in self.packs.iterdir()], ["bbb"])
+        self.assertEqual([path.name for path in self.copies.iterdir()], ["AP_Ledger_bbb"])
+        self.assertIn("  3. delete a seed", ui.text())
+        self.assertIn("1 MB, with the progress of the game you host on this computer (.apsave)", ui.text())
+        self.assertIn("Seed 111 deleted.", ui.text())
+
+    def test_a_pack_another_seed_selects_stays(self):
+        self.packed("111", "aaa")
+        self.packed("222", "aaa")
+        launcher.delete_seed(Answers(answers=["1", "y"]), launcher.prepared_seeds())
+        self.assertEqual([path.name for path in self.seeds.iterdir()], ["222"])
+        self.assertTrue((self.packs / "aaa").is_dir() and (self.copies / "AP_Ledger_aaa").is_dir())
+
+    def test_a_seed_without_a_valid_selection_still_goes(self):
+        for pointer in (None, "not json", {"schema": 2, "pack": "packs-from-source/gone"}, {"schema": 2}):
+            with self.subTest(pointer):
+                folder = self.seed("111")
+                if pointer is not None:
+                    (folder / "play-pack.json").write_text(pointer if isinstance(pointer, str)
+                                                           else json.dumps(pointer))
+                launcher.delete_seed(Answers(answers=["1", "y"]), launcher.prepared_seeds())
+                self.assertFalse(folder.exists())
+
+    def test_nothing_outside_the_packs_folder_goes(self):
+        (self.root / "elsewhere/aaa").mkdir(parents=True)
+        for pointer in ({"schema": 2, "pack": "elsewhere/aaa"}, {"schema": 3, "pack": "packs-from-source/aaa"},
+                        {"schema": 2, "pack": "packs-from-source/aaa/.."}):
+            with self.subTest(pointer):
+                folder = self.packed("111", "aaa", pointer)
+                launcher.delete_seed(Answers(answers=["1", "y"]), launcher.prepared_seeds())
+                self.assertFalse(folder.exists())
+                self.assertTrue((self.root / "elsewhere/aaa").is_dir() and (self.packs / "aaa").is_dir())
+
+    def test_the_selection_of_an_older_checkout_is_followed(self):
+        # Schema 1 is relative to the project, whose .build was the data folder.
+        pointer = {"schema": 1, "pack": f"{self.root.name}/packs-from-source/aaa"}
+        folder = self.packed("111", "aaa", pointer)
+        with mock.patch.object(launcher.play_seed, "ROOT", self.root.parent):
+            launcher.delete_seed(Answers(answers=["1", "y"]), launcher.prepared_seeds())
+        self.assertFalse(folder.exists() or (self.packs / "aaa").exists()
+                         or (self.copies / "AP_Ledger_aaa").exists())
+
+    def test_nothing_goes_unless_the_player_confirms(self):
+        folder = self.packed("111", "aaa")
+        for answer in ("", "n"):
+            ui = Answers(answers=["1", answer])
+            launcher.delete_seed(ui, launcher.prepared_seeds())
+            self.assertTrue(folder.is_dir() and (self.packs / "aaa").is_dir()
+                            and (self.copies / "AP_Ledger_aaa").is_dir())
+        self.assertIn("Your Breath of the Wild saves stay in the launcher's Cemu profile.", ui.text())
+        self.assertNotIn(".apsave", ui.text())
+
+    def test_not_while_cemu_runs(self):
+        folder = self.packed("111", "aaa")
+        ui = Answers(answers=["1", "y"])
+        with mock.patch.object(launcher.cemu_profile, "cemu_running", return_value=True):
+            launcher.delete_seed(ui, launcher.prepared_seeds())
+        self.assertTrue(folder.is_dir() and (self.packs / "aaa").is_dir())
+        self.assertTrue(ui.text().endswith("Close Cemu before deleting a seed."))
+
+    @unittest.skipUnless(os.name == "nt", "a file open on Windows cannot be deleted")
+    def test_a_file_in_use_leaves_the_seed_listed_to_delete_again(self):
+        folder = self.packed("111", "aaa")
+        log = folder / "sessions/20261030T100000Z/client.log"
+        log.parent.mkdir(parents=True)
+        log.write_text("log")
+        ui = Answers(answers=["1", "y", "1", "y"])
+        with log.open():
+            launcher.delete_seed(ui, launcher.prepared_seeds())
+        self.assertIn("Seed 111 is not entirely deleted", ui.text())
+        self.assertEqual([seed.seed for seed in launcher.prepared_seeds()], ["111"])
+        self.assertFalse((self.packs / "aaa").exists())
+        launcher.delete_seed(ui, launcher.prepared_seeds())
+        self.assertFalse(folder.exists())
+        self.assertIn("Seed 111 deleted.", ui.text())
+
+    @unittest.skipUnless(os.name == "nt", "directory junctions")
+    def test_a_link_goes_never_what_it_leads_to(self):
+        import _winapi
+        outside = self.root / "outside"
+        (outside / "seed").mkdir(parents=True)
+        (outside / "precious.bin").write_bytes(bytes(2**22))
+        folder = self.packed("111", "aaa")
+        _winapi.CreateJunction(str(outside), str(folder / "sessions"))
+        shutil.rmtree(self.copies / "AP_Ledger_aaa")
+        _winapi.CreateJunction(str(outside), str(self.copies / "AP_Ledger_aaa"))
+        self.seed("elsewhere", slot="Ami").rename(outside / "seed/222")
+        _winapi.CreateJunction(str(outside / "seed/222"), str(self.seeds / "222"))
+        ui = Answers(answers=["1", "y", "1", "y"])
+        launcher.delete_seed(ui, launcher.prepared_seeds())
+        self.assertIn("1 MB", ui.text())        # the pack alone: no link is followed (4 MB more)
+        launcher.delete_seed(ui, launcher.prepared_seeds())
+        self.assertEqual(list(self.seeds.iterdir()), [])
+        self.assertFalse((self.packs / "aaa").exists() or (self.copies / "AP_Ledger_aaa").exists())
+        self.assertEqual((outside / "precious.bin").stat().st_size, 2**22)
+        self.assertTrue((outside / "seed/222/analysis.json").is_file())
 
 
 class RoomTests(Folder):
