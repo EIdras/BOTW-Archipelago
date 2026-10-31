@@ -10,7 +10,8 @@
    is built (tools/play_seed.py), and a prepared seed's again when another
    version of the project built it, or over other mods than those the
    player's Cemu runs now (tools/play_mods.py). The list of prepared seeds
-   also deletes one, with its pack (tools/play_seed.py).
+   also deletes one, with its pack (tools/play_seed.py); a release removes
+   the packs no seed selects any more.
 3. Asks the address of the room (the one written in a slot file downloaded
    from the room's page, then the one remembered for the seed) and its password; a
    seed prepared from its zip can also be hosted on this computer, where the
@@ -29,8 +30,12 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:] = [str(ROOT)] + [p for p in sys.path if Path(p).resolve() != ROOT / "tools"]
 
+from botw_client.paths import RELEASE_MARKER  # noqa: E402
 from tools import cemu_install, cemu_profile, play_seed  # noqa: E402
 
+# Only a release removes the packs no seed selects: tests and the lab of a
+# source checkout read some in its .build.
+RELEASE = (ROOT / RELEASE_MARKER).is_file()
 ROOM_FILE = "launcher.json"
 LOCAL = "local"
 SEED_FILES = [("Breath of the Wild slot file or seed", "*.apbotw *.apbotw.json *.zip")]
@@ -195,6 +200,7 @@ def pick(ui, prompt: str, count: int, default: int = 1) -> int:
 
 
 def choose_seed(ui, argument: str | None) -> str:
+    sweep(ui)
     if argument:
         return prepare_file(ui, Path(argument.strip('"')))
     while seeds := prepared_seeds():
@@ -215,6 +221,17 @@ def choose_seed(ui, argument: str | None) -> str:
     if path is None:
         raise Cancelled
     return prepare_file(ui, path)
+
+
+def sweep(ui) -> None:
+    """In a release, remove the game packs no seed selects any more: left by a
+    seed folder deleted by hand, or by a build that did not finish (tools/play_seed.py)."""
+    if not RELEASE:
+        return
+    count, freed = play_seed.remove_orphans()
+    if count:
+        ui.say(f"Deleted {count} game pack{'s' if count > 1 else ''} no seed uses any more "
+               f"({freed / 2**20:.0f} MB).")
 
 
 def delete_seed(ui, seeds: list[Prepared]) -> None:

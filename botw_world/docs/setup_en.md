@@ -38,7 +38,8 @@ Start `BOTW Archipelago.cmd` (or drop your slot file on it). If Windows says it 
    own (about 5 GB). Your Cemu installation is never modified.
 2. **The seed**: choose your slot file. Its game pack is built, in about a minute. The next times, the launcher lists
    the seeds already prepared, the last played first. Its last choice deletes a seed you no longer play, with its game
-   pack, and the progress of its game if you host it on this computer; your saves stay in the profile.
+   pack, and the progress of its game if you host it on this computer; your saves stay in the profile. The game pack
+   of a seed folder deleted by hand goes at the next launch.
 3. **The room**: its address, as the room's page shows it (`archipelago.gg:38281`), is already filled in when your
    slot file comes from that page: press Enter, then type the room's password, or Enter if it has none. The address
    is remembered for the seed.

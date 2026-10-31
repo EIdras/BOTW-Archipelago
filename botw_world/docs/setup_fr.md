@@ -41,7 +41,8 @@ ordinateur, choisir « Informations complémentaires », puis « Exécuter quand
 2. **La seed** : choisir votre fichier de slot. Son pack de jeu se construit, en une minute environ. Les fois suivantes,
    le lanceur liste les seeds déjà préparées, la dernière jouée en tête. Son dernier choix supprime une seed que vous ne
    jouez plus, avec son pack de jeu, et la progression de sa partie si vous l'hébergez sur cet ordinateur ; vos
-   sauvegardes restent dans le profil.
+   sauvegardes restent dans le profil. Le pack de jeu d'un dossier de seed supprimé à la main part au lancement
+   suivant.
 3. **La salle** : son adresse, comme sa page l'affiche (`archipelago.gg:38281`), est déjà remplie quand votre fichier
    de slot vient de cette page : Entrée, puis le mot de passe de la salle, ou Entrée si elle n'en a pas. L'adresse est
    retenue pour la seed.

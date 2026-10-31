@@ -37,9 +37,11 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import stat
 import sys
+import time
 import warnings
 import zipfile
 
@@ -55,6 +57,7 @@ sys.path.insert(0, str(BUILD / "ap-runtime"))
 
 PLAY_SEEDS = DATA / "play-seeds"
 PACKS = DATA / "packs-from-source"
+ORPHAN_AGE = 600        # seconds: see orphan_packs
 SCOPE = "generated_ap_seed"
 CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12)    # 4: the Gerudo Set; 5: the goal and the sanctum; 6: the
 #                                                      new filler; 7: the weapons; 8: the travel items; 9: Epona;
@@ -316,6 +319,47 @@ def writable(function, path: str, error: BaseException) -> None:
         raise error
     os.chmod(path, stat.S_IWRITE)
     function(path)
+
+
+def orphan_packs() -> list[Path]:
+    """The packs of PACKS no prepared seed selects, left by a seed folder
+    deleted by hand or by a build that did not finish; none while a selection
+    is unreadable, as its pack could be any of them. Only folders named as a
+    pack is, older than ORPHAN_AGE: a younger one may be a build another
+    launcher is writing."""
+    try:
+        used = set()
+        for folder in PLAY_SEEDS.iterdir() if PLAY_SEEDS.is_dir() else ():
+            pack = pointed_pack(folder)
+            if pack is None and (folder / "play-pack.json").exists():
+                return []
+            used.add(pack)
+        packs = sorted(PACKS.iterdir()) if PACKS.is_dir() else []
+    except OSError:
+        return []
+    orphans = []
+    for pack in packs:
+        try:
+            if (re.fullmatch("[0-9a-f]{16}", pack.name) and pack.is_dir() and not linked(pack)
+                    and pack.resolve() not in used and time.time() - pack.stat().st_mtime > ORPHAN_AGE):
+                orphans.append(pack)
+        except OSError:
+            continue
+    return orphans
+
+
+def remove_orphans() -> tuple[int, int]:
+    """Remove orphan_packs(): how many went and the bytes they freed. One that
+    a file in use keeps goes another time."""
+    count = freed = 0
+    for pack in orphan_packs():
+        bytes_ = size(pack)
+        try:
+            remove(pack)
+        except OSError:
+            continue
+        count, freed = count + 1, freed + bytes_
+    return count, freed
 
 
 def size(path: Path) -> int:

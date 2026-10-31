@@ -5,6 +5,7 @@ from pathlib import Path
 import shutil
 import stat
 import tempfile
+import time
 import unittest
 from unittest import mock
 
@@ -43,7 +44,9 @@ class Folder(unittest.TestCase):
         self.root = Path(temp.name)
         self.seeds = self.root / "play-seeds"
         # The player's Cemu runs no mod (tools/play_mods.py).
-        for patcher in (mock.patch.object(launcher.play_seed, "PLAY_SEEDS", self.seeds),
+        # Never a release here: its sweep would take the real packs for orphans.
+        for patcher in (mock.patch.object(launcher, "RELEASE", False),
+                        mock.patch.object(launcher.play_seed, "PLAY_SEEDS", self.seeds),
                         mock.patch.object(launcher.cemu_profile, "PROFILE", self.root / "profile"),
                         mock.patch("tools.play_mods.prepare", side_effect=lambda say=None: Mods([], {}))):
             patcher.start()
@@ -163,7 +166,9 @@ class SeedTests(Folder):
             launcher.prepare_file(Answers(), other)
 
 
-class DeleteTests(Folder):
+class Packs(Folder):
+    """The packs and their copies in the profile, in the temporary folder too."""
+
     def setUp(self):
         super().setUp()
         self.packs = self.root / "packs-from-source"
@@ -185,6 +190,8 @@ class DeleteTests(Folder):
         (folder / "play-pack.json").write_text(json.dumps(pointer))
         return folder
 
+
+class DeleteTests(Packs):
     def test_the_list_deletes_a_seed_with_its_pack_then_lists_the_others(self):
         folder = self.packed("111", "aaa")
         (folder / "AP_x.zip").write_bytes(b"zip")
@@ -291,6 +298,89 @@ class DeleteTests(Folder):
         self.assertFalse((self.packs / "aaa").exists() or (self.copies / "AP_Ledger_aaa").exists())
         self.assertEqual((outside / "precious.bin").stat().st_size, 2**22)
         self.assertTrue((outside / "seed/222/analysis.json").is_file())
+
+
+class SweepTests(Packs):
+    def setUp(self):
+        super().setUp()
+        patcher = mock.patch.object(launcher, "RELEASE", True)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def orphan(self, name, old=True):
+        """A pack (1 MB) no seed selects."""
+        pack = self.packs / name
+        pack.mkdir(parents=True)
+        (pack / "rules.txt").write_bytes(bytes(2**20))
+        if old:
+            self.age(pack)
+        return pack
+
+    def age(self, path):
+        then = time.time() - 2 * launcher.play_seed.ORPHAN_AGE
+        os.utime(path, (then, then))
+
+    def test_a_release_removes_the_old_packs_no_seed_selects(self):
+        self.packed("111", "a" * 16)
+        self.packed("222", "b" * 16, {"schema": 1, "pack": f"{self.root.name}/packs-from-source/{'b' * 16}"})
+        for name in ("a" * 16, "b" * 16):
+            self.age(self.packs / name)
+        gone = self.orphan("c" * 16)
+        for name, old in (("d" * 16, False), ("not a pack", True), ("e" * 15, True), ("F" * 16, True)):
+            self.orphan(name, old)
+        (self.packs / ("0" * 16)).write_text("a file")
+        ui = Answers()
+        with mock.patch.object(launcher.play_seed, "ROOT", self.root.parent):
+            launcher.sweep(ui)
+        self.assertFalse(gone.exists())
+        self.assertEqual(sorted(path.name for path in self.packs.iterdir()),
+                         sorted(["a" * 16, "b" * 16, "d" * 16, "not a pack", "e" * 15, "F" * 16, "0" * 16]))
+        self.assertEqual(ui.text(), "Deleted 1 game pack no seed uses any more (1 MB).")
+
+    def test_the_seed_step_sweeps_first(self):
+        pack = self.orphan("c" * 16)
+        with self.assertRaises(ValueError):
+            launcher.choose_seed(Answers(), str(self.root / "nothing.apbotw"))
+        self.assertFalse(pack.exists())
+
+    def test_an_unreadable_selection_removes_nothing(self):
+        (self.seed("111") / "play-pack.json").write_text("not json")
+        pack = self.orphan("c" * 16)
+        launcher.sweep(Answers())
+        self.assertTrue(pack.is_dir())
+
+    def test_a_source_checkout_removes_nothing_and_says_nothing(self):
+        pack = self.orphan("c" * 16)
+        ui = Answers()
+        with mock.patch.object(launcher, "RELEASE", False):
+            launcher.sweep(ui)
+        self.assertTrue(pack.is_dir())
+        pack.rename(self.packs / ("d" * 16))
+        self.packed("111", "d" * 16)
+        launcher.sweep(ui)
+        self.assertEqual(ui.said, [])
+
+    @unittest.skipUnless(os.name == "nt", "directory junctions")
+    def test_a_link_stays_with_what_it_leads_to(self):
+        import _winapi
+        outside = self.root / "outside"
+        outside.mkdir()
+        (outside / "precious.bin").write_bytes(b"kept")
+        self.packs.mkdir()
+        _winapi.CreateJunction(str(outside), str(self.packs / ("c" * 16)))
+        with mock.patch.object(launcher.play_seed, "ORPHAN_AGE", -1):
+            launcher.sweep(Answers())
+        self.assertEqual((self.packs / ("c" * 16) / "precious.bin").read_bytes(), b"kept")
+
+    @unittest.skipUnless(os.name == "nt", "a file open on Windows cannot be deleted")
+    def test_a_pack_a_file_in_use_keeps_goes_another_time(self):
+        busy, free = self.orphan("c" * 16), self.orphan("d" * 16)
+        ui = Answers()
+        with (busy / "rules.txt").open("rb"):
+            launcher.sweep(ui)
+        self.assertTrue((busy / "rules.txt").is_file())
+        self.assertFalse(free.exists())
+        self.assertEqual(ui.text(), "Deleted 1 game pack no seed uses any more (1 MB).")
 
 
 class RoomTests(Folder):
