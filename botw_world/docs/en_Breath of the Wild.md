@@ -133,8 +133,10 @@ Plateau outward, as the game's map cuts them: a region is in the logic once its 
 already in the logic. The Great Plateau borders Central, Dueling Peaks, Lake and the Wasteland. The logic leaves out the
 few borders the game offers no way across (the cliffs around the Gerudo Highlands, the climb from Ridgeland to Hebra).
 A tower then needs its region's map too, Calamity Ganon needs Central, a quest through another region needs to reach
-that region, and `early_map` draws only among the Great Plateau's neighbours. Nothing is locked in the game: a location
-done out of logic counts all the same. Universal Tracker and the PopTracker pack follow this option, from the seed's
+that region, and `early_map` draws only among the Great Plateau's neighbours. The client keeps Link out of the regions
+not yet in the logic: the fog thickens over their last 30 m, the game's "You can't go any farther." stays on screen
+from 10 m on, and Link who sets foot in one is sent back to the last safe ground outside it, his life kept; the AP
+journal then says what opens that region. Universal Tracker and the PopTracker pack follow this option, from the seed's
 own borders: a location whose regions are out of reach shows as out of logic.
 
 The `map_travel_points` option (off by default; with the maps as items) makes a map received also open the travel
