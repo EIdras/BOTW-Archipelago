@@ -61,7 +61,7 @@ Each square is a place on the map; hover it to see its locations, click it to se
 |---|---|
 | Green | Reachable with your items |
 | Red | Not reachable yet |
-| Yellow | Possible, but out of logic (a region's map is missing) |
+| Yellow | Possible, but out of logic (a region's map is missing, or with `region_lock` a region not reached) |
 | Grey | Already checked |
 
 A square holding several locations (a stable's two Beedle items, a plateau shrine and its terminal) can show more
@@ -73,7 +73,15 @@ released, every location is checked and the whole map turns grey.
 The panel next to the map shows the items that matter for the logic (runes, Paraglider, armor, Divine Beasts
 freed, shrines cleared...), and a few that it does not need but you may want to follow: Master Cycle Zero, the
 Travel Medallion, Epona, the Korok Mask and the pouch upgrades. A bright icon is an item you have; a number is how
-many you have (a progressive item, a pouch upgrade). The region maps have their own two rows.
+many you have (a progressive item, a pouch upgrade).
+
+## The regions panel
+
+The region maps have a panel of their own, with two tabs: **Tiles**, one tile per region laid out as Hyrule, and
+**Map**, a small map of Hyrule cut into its regions. A region stays grey until its map is received, then shows the
+game's own colours. With `region_lock`, a region whose map is received but that is not reached yet is amber and
+hatched. The Great Plateau is always lit. A left click marks a map by hand. When the map is a plain grid (see
+below), the tiles are plain labels and there is no small map.
 
 Everything is updated from the room; you never need to click anything. Without a connection, you can still mark
 items and locations by hand with the mouse.
