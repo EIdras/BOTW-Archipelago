@@ -302,6 +302,8 @@ class BotwClientRuntime:
         self._border = None
         self._border_areas = None
         self._border_zone = None
+        self._border_return = None
+        self._border_missed = self._border_closures = 0
         # The longest time between two ticks since /ap-border last told it: the
         # fog's and the message's leases must outlast it.
         self._border_gap = 0.0
@@ -621,6 +623,11 @@ class BotwClientRuntime:
                         self.log(f"region border unavailable: {failure}")
                         self._border_failure = failure
                     retry_after = time.monotonic() + 5.0
+                    if self._border is not None:     # a return under way: the flag back at once
+                        try:
+                            await asyncio.to_thread(self._border.release)
+                        except Exception:  # noqa: BLE001 - tried again at the next tick
+                            pass
                     continue
                 self._log_border(state)
         finally:
@@ -634,6 +641,7 @@ class BotwClientRuntime:
     def _make_border(self, slot):
         import zlib
         from .region_border import RegionBorder, load_areas
+        from .region_return import RegionReturn
         from .region_lock import map_flags, reached
         if self._border_areas is None:
             self._border_areas = load_areas()
@@ -654,21 +662,78 @@ class BotwClientRuntime:
             opened = reached(slot, get, maps)
             return None if opened is None else areas.regions - opened
 
-        return RegionBorder(read, write, cave.hold_center, areas, closed)
+        def set_flag(flag, value):
+            live, hash_u32 = self.game.live, zlib.crc32(flag.encode()) & 0xFFFFFFFF
+            guest = live.index["bool"].get(hash_u32) if live else None
+            if guest is None or read(guest + 8, 4) != hash_u32.to_bytes(4, "big"):
+                return False        # the flag's object checked before a raw write
+            return bool(live.set(hash_u32, value))
+
+        def playing():
+            """Link in the world (no menu, dialogue, event or loading: the delivery
+            backend's guard) and alive."""
+            life = get("CurrentHart", "s32")
+            in_world = getattr(getattr(getattr(self, "deliveries", None), "backend", None), "playing", None)
+            return life is not None and life > 0 and (in_world is None or bool(in_world()))
+
+        back = RegionReturn(read, write, get, set_flag, areas)
+        return RegionBorder(read, write, cave.hold_center, areas, closed, back=back, playing=playing,
+                            closures=getattr(cave, "center_closures", None))
 
     def _log_border(self, state):
         nearest = state.get("nearest")
         zone = None
         if nearest:
-            zone = (nearest[0], "message" if state.get("message") else "fog")
+            # By distance: a menu or a window near the border logs nothing.
+            zone = (nearest[0], "message" if state.get("near") else "fog")
         if zone != self._border_zone:
             self._border_zone = zone
             if zone:
                 self.log(f"region border: {nearest[0]} closed, {nearest[1]:.0f} m away: {zone[1]}")
             else:
                 self.log("region border: no closed region near")
+        closures = state.get("closures") or 0
+        if closures > self._border_closures:
+            self.log(f"region border: the game closed the held message ({closures} so far): "
+                     f"asked again in {max(state.get('backoff') or 0.0, 0.0):.0f} s")
+        self._border_closures = closures
+        back = state.get("back") or {}
+        phase, result = back.get("phase"), back.get("result")
+        before, said = self._border_return or (None, None)
+        busy = ("aimed", "landing")
+        if phase == "aimed" and before not in busy:
+            target = ", ".join(f"{c:.1f}" for c in back["target"])
+            self.log(f"region lock: no safe ground known outside, Link sent to the Great Plateau's clifftop ({target})"
+                     if back.get("fallback") else f"region lock: Link sent back to ({target})")
+        if result and (result != said or (before in busy and phase not in busy)):
+            self.log(f"region lock: {result}")
+            if result == "returned":
+                self._border_note(back.get("region"))
+        self._border_return = (phase, result)
+        missed = back.get("missed") or (0, {})
+        if missed[0] != self._border_missed:
+            self._border_missed = missed[0]
+            why = ", ".join(f"{reason} {ticks * BORDER_SECONDS:.1f} s" for reason, ticks in missed[1].items())
+            self.log(f"region lock: in a closed region without a return: {why}")
+
+    def _border_note(self, region):
+        """The journal's line once Link is sent back out of `region`: what opens it. Not twice
+        while it waits to be shown (a few returns in a row)."""
+        import zlib
+        from .ap_journal import region_locked_line
+        from .region_lock import INNER_REGIONS, map_flags
+        if not region:
+            return
+        outer = INNER_REGIONS.get(region)
+        flag = map_flags(self.game.item_map).get(outer or region)
+        live = self.game.live
+        held = bool(flag and live and live.get(zlib.crc32(flag.encode()) & 0xFFFFFFFF, "bool"))
+        line = region_locked_line(region, held, outer)
+        if all(markup != line for markup, _tag in getattr(self, "_journal_notes", ())):
+            self._journal_note(line)
 
     def _border_report(self) -> str:
+        from .region_return import report as return_report
         state = self._border.state if self._border is not None else None
         if not state:
             slot = getattr(self.ap, "slot_data", None)
@@ -688,6 +753,7 @@ class BotwClientRuntime:
             f"  nearest closed: {f'{nearest[0]}, {nearest[1]:.1f} m' if nearest else 'none near'}",
             f"  fog {tuple(round(v, 2) for v in state['fog']) if state['fog'] else 'none'},"
             f" message {'held' if state['message'] else 'none'}",
+            return_report(state.get("back")),
             f"  longest gap between two ticks since the last /ap-border: {gap:.2f} s"
             f" (every {BORDER_SECONDS} s asked)"))
 

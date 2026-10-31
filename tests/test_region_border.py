@@ -102,7 +102,8 @@ class RampTests(unittest.TestCase):
         for got, wanted in zip(rb.ramp(0.0), rb.WALL):
             self.assertAlmostEqual(got, wanted)
         ratio, near, far = rb.ramp(rb.START / 2)
-        self.assertAlmostEqual(ratio, 0.5)
+        self.assertAlmostEqual(ratio, (rb.LIGHT[0] + rb.WALL[0]) / 2)
+        self.assertGreater(rb.LIGHT[0], 0.0)
         self.assertAlmostEqual(far, (rb.LIGHT[2] * rb.WALL[2]) ** 0.5)
 
     def test_the_cell_the_engine_names(self):
@@ -188,6 +189,7 @@ class RuntimeTests(unittest.TestCase):
         runtime = BotwClientRuntime.__new__(BotwClientRuntime)
         runtime.ap, runtime._border, runtime._border_zone, runtime._border_gap = (
             SimpleNamespace(slot_data=slot), None, None, 0.0)
+        runtime._border_return, runtime._border_missed, runtime._border_closures = None, 0, 0
         runtime.lines = []
         runtime.log = runtime.lines.append
         return runtime
@@ -208,7 +210,7 @@ class RuntimeTests(unittest.TestCase):
     def test_the_log_tells_each_zone_once(self):
         runtime = self.runtime({"region_lock": 1})
         for state in ({"nearest": ("East", 25.0), "message": False}, {"nearest": ("East", 22.0), "message": False},
-                      {"nearest": ("East", 8.0), "message": True}, {"nearest": None, "message": False}):
+                      {"nearest": ("East", 8.0), "near": True, "message": True}, {"nearest": None, "message": False}):
             runtime._log_border(state)
         self.assertEqual(len(runtime.lines), 3)
         self.assertIn("East closed, 25 m away: fog", runtime.lines[0])

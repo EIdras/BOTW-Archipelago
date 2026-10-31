@@ -1,6 +1,15 @@
 """The sign at a closed region's border, with region_lock: the world's fog thickens over
 the last START metres before the region, and the game's own « You can't go any farther. »
-stays in the center of the screen from WARN metres on (inside the region as well).
+stays in the center of the screen from WARN metres on (inside the region as well), let go
+LEAVE metres farther (asked again, the message plays its sound again), and while Link is out
+of play (playing(): a menu, a dialogue, an event, a loading, or dead), whose screens close it
+again and again, its sound each time (seen in play under a dialogue, and at a game over). Back
+in play, or after a return, it waits SETTLE seconds: the end of a dialogue and of the return's
+fade closed it again and again as well, playing() already true (seen in play). Closed by the game
+while held (a window opens, the HUD is hidden), the hold stops by itself and counts it
+(closures(): tools/build_center_hold_native.py); the message is then asked again only after
+BACKOFF seconds, twice as long at each closure in a row up to BACKOFF_MAX, back to BACKOFF once
+held STEADY seconds: each start plays its sound.
 
 A closed region is one of the map's areas (tools/map_regions.py: one per tower, as the
 game cuts its map in MapTower.sbeco) that botw_client/region_lock.py reached() leaves
@@ -17,9 +26,13 @@ element 6) holds a direct fog that its setter setFogDirect (0x0364c3c0, called b
 flows' EventSetFogDirect) writes: ratio, near, far, three switches, and a timer of world
 frames counted down by the manager, the game's fog back at 0. Written here as the setter
 writes it, the timer HOLD frames ahead, again at every tick: the fog lapses by itself if
-the client stops. It replaces the game's fog (a small step at the ramp's start, left as
-it is). The message: the pack's center message hold (tools/build_center_hold_native.py),
+the client stops. It replaces the game's fog, a light one from the ramp's start (at 0, the
+world cleared at once: seen in play). The message: the pack's center message hold (tools/build_center_hold_native.py),
 MARGIN passes ahead at every tick, 0 when Link goes away.
+
+With a RegionReturn (botw_client/region_return.py), Link standing in a closed region is sent
+back out; the closed regions are not read again while it runs (they follow the paraglider), and
+the message is let go meanwhile.
 """
 from __future__ import annotations
 
@@ -35,7 +48,13 @@ from .cucco_swarm import PLAYER_INFO
 
 START = 30.0              # metres before a closed region where the fog begins
 WARN = 10.0               # metres before it where the message shows
-LIGHT = (0.0, -60.0, 500.0)   # the fog at START: ratio, near, far
+LEAVE = 1.5               # metres beyond WARN where it is let go
+PLAY_SECONDS = 0.3        # playing() read so often near a border (the screens' catalog)
+SETTLE = 1.5              # seconds in play before the message, after out of play or a return
+BACKOFF = 3.0             # seconds the message is let go once the game closed it while held
+BACKOFF_MAX = 24.0        # ... doubled at each closure in a row, up to so long
+STEADY = 10.0             # seconds held without a closure: BACKOFF again
+LIGHT = (0.1, -60.0, 500.0)   # the fog at START: ratio, near, far
 WALL = (1.0, 0.0, 20.0)       # at the border and inside
 HOLD = 30                 # world frames the fog's timer is written ahead
 MARGIN = 30               # passes of the per-frame hook the message is asked for ahead (0.5 s at 60)
@@ -120,12 +139,19 @@ def cell(position) -> str:
 
 class RegionBorder:
     """read(guest, size) -> bytes or None, write(guest, data) -> bool, hold(index, passes) ->
-    bool (mailbox Cave.hold_center), closed() -> the closed regions or None (nothing shown).
-    tick() reads, decides, and writes the fog and the message."""
+    bool (mailbox Cave.hold_center), closed() -> the closed regions or None (nothing shown),
+    back: a RegionReturn or None, playing() -> bool Link in play and alive (None: always),
+    closures() -> the hold's count of messages closed by the game, or None. tick() reads,
+    decides, and writes the fog
+    and the message."""
 
     def __init__(self, read: Callable, write: Callable, hold: Callable, areas: Areas,
-                 closed: Callable, *, clock=time.monotonic):
+                 closed: Callable, *, back=None, playing=None, closures=None, clock=time.monotonic):
         self.read, self.write, self.hold, self.areas = read, write, hold, areas
+        self.back, self.playing, self.closures_source = back, playing, closures
+        self.play, self.play_at = False, None
+        self.settled_at, self.backoff_until = 0.0, 0.0
+        self.closures, self.counted, self.backoff, self.held_since = 0, None, BACKOFF, None
         self.closed_source, self.clock = closed, clock
         self.closed, self.closed_at = None, None
         self.kind = self.settle = self.last = None
@@ -202,7 +228,7 @@ class RegionBorder:
 
     def tick(self) -> dict:
         now = self.clock()
-        if self.closed_at is None or now - self.closed_at >= CLOSED_SECONDS:
+        if (self.closed_at is None or now - self.closed_at >= CLOSED_SECONDS) and not (self.back and self.back.busy):
             self.closed, self.closed_at = self.closed_source(), now
         kind, name, position = self.text(MAP_TYPE), self.text(MAP_NAME), self.position()
         field = self.in_field(kind, name, position)
@@ -210,14 +236,54 @@ class RegionBorder:
         nearest = None
         if field and self.closed:
             nearest = self.areas.nearest(position[0], position[2], self.closed, START)
+        near = bool(nearest) and nearest[1] <= WARN + (LEAVE if self.message else 0.0)
+        playing = near and self.in_play(now)
+        back = self.back.tick(position, self.closed, field=field, playing=playing) if self.back else None
+        self.watch(now)
+        quiet = (near and not playing) or bool(self.back and self.back.hush)
+        if quiet:
+            self.settled_at = None
+        elif self.settled_at is None:
+            self.settled_at = now + SETTLE
         fog = ramp(nearest[1]) if nearest else None
-        message = bool(nearest) and nearest[1] <= WARN
+        message = playing and not quiet and now >= max(self.settled_at, self.backoff_until)
         self.show(fog, message)
+        self.held_since = (self.held_since or now) if self.message else None
+        if self.held_since is not None and now - self.held_since >= STEADY:
+            self.backoff = BACKOFF
         self.state = dict(stage=kind, map=name, field=field, position=position, region=region,
                           closed=sorted(self.closed) if self.closed is not None else None,
-                          nearest=nearest, fog=fog, message=message)
+                          nearest=nearest, fog=fog, message=message, near=near, playing=playing,
+                          closures=self.closures, backoff=self.backoff_until - now, back=back)
         return self.state
 
+    def watch(self, now) -> None:
+        """The held message closed by the game, as the hold counts it (from its first read: the
+        cave keeps its count across reloads; lower, a new cave, counted from there): asked again
+        after the back-off only."""
+        count = self.closures_source() if self.closures_source else None
+        if count is None:
+            return
+        if self.counted is not None and count > self.counted:
+            self.closures += count - self.counted
+            self.backoff_until = now + self.backoff
+            self.backoff = min(self.backoff * 2, BACKOFF_MAX)
+        self.counted = count
+
+    def in_play(self, now) -> bool:
+        """playing(), read again after PLAY_SECONDS; unreadable: out of play."""
+        if self.playing is None:
+            return True
+        if self.play_at is None or now - self.play_at >= PLAY_SECONDS:
+            try:
+                self.play = bool(self.playing())
+            except Exception:  # noqa: BLE001 - a loading: out of play
+                self.play = False
+            self.play_at = now
+        return self.play
+
     def release(self) -> None:
-        """The game's fog back and the message let go, at once."""
+        """The game's fog back and the message let go, at once; the return put back."""
+        if self.back:
+            self.back.release()
         self.show(None, False)

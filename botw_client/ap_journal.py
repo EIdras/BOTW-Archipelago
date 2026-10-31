@@ -71,6 +71,17 @@ def ganon_sealed_line(missing: list[tuple[str, int, int]]) -> str:
         f"{have}/{need} {_plain(what)}" for what, have, need in missing)
 
 
+def region_locked_line(region: str, map_held: bool, opens_with: str | None = None) -> str:
+    """Why region_lock sent Link back out of `region`: its map not found yet, or, found, no open
+    border from a region already open (botw_client/region_lock.py); a region inside another's
+    area (`opens_with`) opens with that one."""
+    if opens_with:
+        return f"{{0}}{region} is locked{{/}}: it opens with {opens_with}"
+    if not map_held:
+        return f"{{0}}{region} is locked{{/}}: find the {{1}}{region} Map{{/}} to enter it"
+    return f"{{0}}{region} is locked from this side{{/}}: open another region next to it first"
+
+
 def is_received_item(entry: dict, me: int) -> bool:
     """A server line announcing an item for this slot (shown with its item)."""
     return (isinstance(entry, dict) and entry.get("kind") == "ItemSend"

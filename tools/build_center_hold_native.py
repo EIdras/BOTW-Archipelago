@@ -28,10 +28,16 @@ The client writes the index, then the passes, through the cave's fixed offsets
 (tools/cemu/mailbox.py, ``hold_index`` and ``hold_passes``), again and again while Link
 is near the border, a few passes ahead: the message ends by itself within those passes
 if the client stops. 0 passes lets it go at once.
+
+Closed by the game while held (the screen free again although ours was on it at the last
+pass: a window opens, the HUD is hidden), the message is not armed again: the game closes
+it again at the next frame, and each new start plays its sound, six in five frames
+(measured, lab/journal/etude_verrou_regions.md). The hold stops instead (its passes to 0)
+and counts it in ``apCenterClosed``, which the client reads to ask again later.
 """
 from __future__ import annotations
 
-MAGIC = 0x484C4431  # "HLD1"
+MAGIC = 0x484C4432  # "HLD2": with apCenterSeen and apCenterClosed ("HLD1" before)
 BORDER_MESSAGE = 46
 # The data block's end, after the weather's fields (tools/build_weather_native.py).
 DATA_ANCHOR = """apWeatherPasses:
@@ -51,6 +57,12 @@ apCenterIndex:
 ; The hook's passes it is still asked for; 0: none.
 apCenterPasses:
 .int 0
+; 1: the held message was on the screen at the last pass.
+apCenterSeen:
+.int 0
+; The times the game closed it while held (the hold then stopped).
+apCenterClosed:
+.int 0
 """
 HOLD_BLOCK = """
 apCheckPlay:
@@ -58,12 +70,18 @@ apCheckPlay:
     ; As long as apCenterPasses lasts, the request of message apCenterIndex is
     ; armed again, as the game asks for its border message at every frame;
     ; the push and the pop below make the calls. r11 is apTick@ha here.
+    stw   r3, apS3@l(r11)
     lis   r12, apCenterPasses@ha
     lwz   r12, apCenterPasses@l(r12)
     cmpwi r12, 0
-    ble   apCenterEnd
+    bgt   apCenterHeld
+    ; Not asked for: the next request starts afresh.
+    li    r3, 0
+    lis   r12, apCenterSeen@ha
+    stw   r3, apCenterSeen@l(r12)
+    b     apCenterRestore
 
-    stw   r3, apS3@l(r11)
+apCenterHeld:
     addi  r3, r12, -1
     lis   r12, apCenterPasses@ha
     stw   r3, apCenterPasses@l(r12)
@@ -80,19 +98,44 @@ apCheckPlay:
     beq   apCenterRestore
     lwz   r3, 0x8c(r12)             ; its state: 0, 2, 4, 6 free, as 0x02ed1e70 tests it
     cmpwi r3, 0
-    beq   apCenterArm
+    beq   apCenterFree
     cmpwi r3, 2
-    beq   apCenterArm
+    beq   apCenterFree
     cmpwi r3, 4
-    beq   apCenterArm
+    beq   apCenterFree
     cmpwi r3, 6
-    beq   apCenterArm
+    beq   apCenterFree
 apCenterShown:
     lwz   r12, 0xbc(r12)            ; the message shown
     lis   r3, apCenterIndex@ha
     lwz   r3, apCenterIndex@l(r3)
     cmpw  r12, r3
-    bne   apCenterRestore
+    bne   apCenterOther
+    li    r3, 1                     ; ours on the screen
+    lis   r12, apCenterSeen@ha
+    stw   r3, apCenterSeen@l(r12)
+    b     apCenterArm
+apCenterOther:
+    li    r3, 0                     ; another one: its end is not ours closed
+    lis   r12, apCenterSeen@ha
+    stw   r3, apCenterSeen@l(r12)
+    b     apCenterRestore
+apCenterFree:
+    ; Ours on the screen at the last pass: the game closed it. Not armed again (it
+    ; would start again, with its sound, at every frame): the hold stops, counted.
+    lis   r12, apCenterSeen@ha
+    lwz   r3, apCenterSeen@l(r12)
+    cmpwi r3, 0
+    beq   apCenterArm
+    li    r3, 0
+    stw   r3, apCenterSeen@l(r12)
+    lis   r12, apCenterPasses@ha
+    stw   r3, apCenterPasses@l(r12)
+    lis   r12, apCenterClosed@ha
+    lwz   r3, apCenterClosed@l(r12)
+    addi  r3, r3, 1
+    stw   r3, apCenterClosed@l(r12)
+    b     apCenterRestore
 
 apCenterArm:
     lis   r12, apCenterIndex@ha

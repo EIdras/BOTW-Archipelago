@@ -77,7 +77,13 @@ a flicker or a sound. Index 41, the same text, is a notification: asked again, i
 push and pop blocks make the calls. It arms nothing while another message is on screen (a weapon about to break...):
 that one goes to its end, then the held one follows. The client writes the index then the passes
 (`Cave.hold_center(index, passes)`, `tools/cemu/mailbox.py`), a few passes ahead and again while Link is near the
-border; 0 passes lets it go at once, and the message ends by itself if the client stops. With region_lock,
+border; 0 passes lets it go at once, and the message ends by itself if the client stops.
+
+Closed by the game while held (a window opens, the HUD is hidden, a cutscene ends), the message is not armed again:
+the game would close it again at the next frame, and each new start plays its sound (six in five frames, measured).
+The hold remembers that its message was on screen at the last pass; free again, it stops instead (its passes to 0)
+and counts the closure (`Cave.center_closures()`, packs of magic `HLD2`). The client asks again 3 s later, then
+6, 12 and 24 s after each new closure, back to 3 s once the message has stayed 10 s. With region_lock,
 [`botw_client/region_border.py`](../../botw_client/region_border.py) asks for it within 10 m of a closed region,
 under the world's direct fog (the environment manager's `setFogDirect` fields, a timer held ahead), thickened over the
 last 30 m. The Archipelago lines never use this channel in play: they go to the journal.

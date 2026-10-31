@@ -524,6 +524,8 @@ class Cave:
         self.hold_magic = version_addr + 9328
         self.hold_index = version_addr + 9332
         self.hold_passes = version_addr + 9336
+        self.hold_seen = version_addr + 9340
+        self.hold_closed = version_addr + 9344
         # The twelve levels of the call chain, probed at once.
         # Each level: N, r3, r4, r5, r6, r7, Lr -- 7 words.
         self.lvl0 = version_addr + 8568
@@ -1154,11 +1156,27 @@ class Cave:
         raw = self.p.read(self.weather_frames, 4)
         return be(raw) if raw and len(raw) == 4 else None
 
-    HOLD_MAGIC = 0x484C4431  # "HLD1", written by tools/build_center_hold_native.py
+    HOLD_MAGIC = 0x484C4432  # "HLD2", written by tools/build_center_hold_native.py
+    HOLD_MAGIC_V1 = 0x484C4431  # "HLD1": a pack built before, without apCenterClosed
+
+    def center_hold_version(self):
+        """2: the hold stops when the game closes the message (center_closures); 1: before;
+        None: no hold."""
+        raw = self.p.read(self.hold_magic, 4)
+        magic = be(raw) if raw and len(raw) == 4 else None
+        return {self.HOLD_MAGIC: 2, self.HOLD_MAGIC_V1: 1}.get(magic)
 
     def center_hold_ready(self):
         """Has the loaded patch the center message hold? (the magic word, as map_ready)"""
-        return be(self.p.read(self.hold_magic, 4)) == self.HOLD_MAGIC
+        return self.center_hold_version() is not None
+
+    def center_closures(self):
+        """The times the game closed the held message (the hold then stopped); None before
+        version 2."""
+        if self.center_hold_version() != 2:
+            return None
+        raw = self.p.read(self.hold_closed, 4)
+        return be(raw) if raw and len(raw) == 4 else None
 
     def hold_center(self, index, passes):
         """Ask for the center message `index` at every pass of the per-frame hook, `passes`

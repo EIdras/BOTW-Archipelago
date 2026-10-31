@@ -34,22 +34,50 @@ class NativeTests(unittest.TestCase):
         # must be the one held, which apCheckMsg writes there again.
         self.assertIn("lwz   r3, 0x8c(r12)", check)
         for state in (0, 2, 4, 6):
-            self.assertIn(f"cmpwi r3, {state}\n    beq   apCenterArm", check)
+            self.assertIn(f"cmpwi r3, {state}\n    beq   apCenterFree", check)
         self.assertLess(check.index("cmpwi r3, 6"), check.index("apCenterShown:"))
         self.assertIn("lwz   r12, 0xbc(r12)", check)
-        self.assertIn("cmpw  r12, r3\n    bne   apCenterRestore", check)
+        self.assertIn("cmpw  r12, r3\n    bne   apCenterOther", check)
         self.assertIn("cmpwi r12, 0\n    beq   apCenterRestore", check)
+        other = check[check.index("apCenterOther:"):check.index("apCenterFree:")]
+        self.assertIn("li    r3, 0", other)
+        self.assertIn("stw   r3, apCenterSeen@l(r12)", other)
+        self.assertTrue(other.rstrip().endswith("b     apCenterRestore"))
+
+    def test_closed_by_the_game_the_hold_stops_and_counts_it(self):
+        hold = self.text[self.text.index("\napCheckPlay:\n"):self.text.index("apCenterEnd:")]
+        free = hold[hold.index("apCenterFree:"):hold.index("apCenterArm:")]
+        # Never shown yet: armed; shown at the last pass: passes 0, counted, not armed.
+        self.assertIn("lwz   r3, apCenterSeen@l(r12)\n    cmpwi r3, 0\n    beq   apCenterArm", free)
+        after = free[free.index("beq   apCenterArm") + len("beq   apCenterArm"):]
+        self.assertNotIn("apCenterArm", after)
+        for line in ("stw   r3, apCenterSeen@l(r12)", "lis   r12, apCenterPasses@ha\n    stw   r3, apCenterPasses@l(r12)",
+                     "addi  r3, r3, 1\n    stw   r3, apCenterClosed@l(r12)", "b     apCenterRestore"):
+            self.assertIn(line, after)
+        shown = hold[hold.index("apCenterShown:"):hold.index("apCenterOther:")]
+        self.assertIn("li    r3, 1", shown)
+        self.assertIn("stw   r3, apCenterSeen@l(r12)\n    b     apCenterArm", shown)
+
+    def test_not_asked_for_the_next_request_starts_afresh(self):
+        hold = self.text[self.text.index("\napCheckPlay:\n"):self.text.index("apCenterHeld:")]
+        # r3 saved first: the path that is not asked for clears the mark with it.
+        self.assertLess(hold.index("stw   r3, apS3@l(r11)"), hold.index("lwz   r12, apCenterPasses@l(r12)"))
+        idle = hold[hold.index("bgt   apCenterHeld"):]
+        self.assertIn("li    r3, 0\n    lis   r12, apCenterSeen@ha\n    stw   r3, apCenterSeen@l(r12)", idle)
+        self.assertTrue(idle.rstrip().endswith("b     apCenterRestore"))
 
     def test_the_fields_follow_the_weathers_where_the_client_writes_them(self):
         tail = self.text[self.text.index("apWeatherMagic:"):]
         words = [line for line in tail.split("\n")[:30] if line.startswith(".int") or line.endswith(":")]
-        self.assertEqual(words[6:14], [
+        self.assertEqual(words[6:18], [
             "apWeatherPasses:", ".int 0", "apCenterMagic:", f".int 0x{MAGIC:08X}", "apCenterIndex:",
-            ".int 0", "apCenterPasses:", ".int 0"])
+            ".int 0", "apCenterPasses:", ".int 0", "apCenterSeen:", ".int 0", "apCenterClosed:", ".int 0"])
+        self.assertEqual(MAGIC, int.from_bytes(b"HLD2", "big"))
         from tools.cemu import mailbox
         source = inspect.getsource(mailbox)
         self.assertIn("self.weather_passes = version_addr + 9324", source)
-        for name, offset in (("hold_magic", 9328), ("hold_index", 9332), ("hold_passes", 9336)):
+        for name, offset in (("hold_magic", 9328), ("hold_index", 9332), ("hold_passes", 9336),
+                             ("hold_seen", 9340), ("hold_closed", 9344)):
             self.assertIn(f"self.{name} = version_addr + {offset}", source)
         self.assertEqual(mailbox.Cave.HOLD_MAGIC, MAGIC)
 
@@ -83,6 +111,19 @@ class CaveTests(unittest.TestCase):
         self.assertFalse(cave.center_hold_ready())
         self.assertFalse(cave.hold_center(BORDER_MESSAGE, 15))
         memory.write.assert_not_called()
+
+    def test_the_count_of_closures_only_from_the_second_version(self):
+        from tools.cemu.mailbox import Cave
+        words = {}
+        memory = Mock()
+        memory.read.side_effect = lambda address, size: words.get(address, bytes(4))
+        cave = Cave(memory, 0x1000, 0)
+        words[cave.hold_closed] = (3).to_bytes(4, "big")
+        words[cave.hold_magic] = b"HLD1"
+        self.assertEqual((1, True, None), (cave.center_hold_version(), cave.center_hold_ready(),
+                                           cave.center_closures()))
+        words[cave.hold_magic] = MAGIC.to_bytes(4, "big")
+        self.assertEqual((2, 3), (cave.center_hold_version(), cave.center_closures()))
 
 
 if __name__ == "__main__":
