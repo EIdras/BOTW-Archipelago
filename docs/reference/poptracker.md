@@ -43,9 +43,10 @@ game, so that no file of the game is in the repository.
 - **Positions** (`data/location_positions.json`, built by `tools/build_location_positions.py` from the DLC's map
   units, checked by a test): shrines and towers from their `LocationMarker`, a rune terminal at its plateau shrine,
   a Divine Beast and its heart at the beast's marker during its quest, the Great Fairies at their fountain, Beedle at
-  his NPC, a stall at its merchant, the Master Sword at its pedestal, Ganon at Hyrule Castle. One square on the map
-  can hold several locations: a stable's two Beedle items, a stall's, a beast and its heart, a plateau shrine and its
-  terminal.
+  his NPC, a stall at its merchant, the Master Sword at its pedestal, Purah's upgrades at her lab, a song of the
+  Champions' Ballad at its Divine Beast's marker, Ganon at Hyrule Castle. One square on the map can hold several
+  locations: a stable's two Beedle items, a stall's, a beast and its heart, a plateau shrine and its terminal,
+  Purah's three upgrades.
 - **Logic**: `botw_world/catalog.requirements`, the world's own, generated into `scripts/data.lua`; a location is
   reachable when each of its groups is met by one of its items. An event "Freed - Divine Beast X" counts as the world
   counts it, the beast reachable (its own groups), not checked: a heart container is picked up before the beast's
@@ -66,18 +67,18 @@ game, so that no file of the game is in the repository.
   inventory renders them from their models), so each image comes from the first of:
   1. the player's own icons, PNG, in `<data>/poptracker/icons` (`--icons`, subfolders too), found by name
      (`ICON_NAMES`: "Zora-armor.png" is the Zora Set's, "Climber-bandanna.png" the second piece of the climbing gear;
-     a possessive "'s" is ignored, a "+" icon only stands in for a missing plain one; near ones where a wiki has none:
+     a possessive "'s" is ignored, a "+" icon is the second stage of an upgraded rune or power; near ones where a wiki has none:
      the Sheikah Slate for the sensor, the full stamina wheel "Energizing5", the Champions' Ballad emblems);
   2. the game's own interface icons (`tools/uitex.py`, `UI_ICONS`), from the update's `Pack/Bootup.pack` >
      `Layout/Common.sblarc`: the HUD's heart and stamina wheel, the sensor, the four Divine Beasts, the inventory's
      tab icons (sword, bow, shield, armour; the pouch upgrades take the first three), the map's horse for Epona, the
      effect icons its armour shows (fire, swimming, shock, cold, heat, climbing, noise, attack, ancient), the map's
      icons (shrine, tower, stable, store, castle) for the squares. Most
-     are masks the game colours: they come out white. A progressive piece gets its number;
+     are masks the game colours: they come out white. A progressive piece gets its number, an upgrade a "+";
   3. a label drawn by the builder, in the same style.
 
   The game draws no image of most items, and only stand-ins of the others (an armour's effect, an inventory tab,
-  white masks): the icons of every item of the grid (`RELEASE_ICONS`, 45) are published apart from the code: `tracker-icons.zip`, the file attached to the GitHub release
+  white masks): the icons of every item of the grid (`RELEASE_ICONS`, 52) are published apart from the code: `tracker-icons.zip`, the file attached to the GitHub release
   `tracker-icons` (Nintendo's images, never committed). The launcher, when it builds the pack, and the command by
   hand fetch it once into `<data>/poptracker/icons/release` (`fetch_icons`: PNG files only, no paths, 4 MB at most;
   the client's TLS roots, Windows' and certifi's, as a new Windows lacks GitHub's); offline, the game's stand-ins

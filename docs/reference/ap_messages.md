@@ -121,10 +121,11 @@ without committing stops the client (possible mutation).
   that goes into the pouch: armor (one window per piece), weapons, shield, paraglider, Korok seeds, Spirit Orbs,
   fairies, materials, heart containers, stamina vessels and rupees.
 - **Champions' abilities**: the game's own window (`GetDemo<ShowGetDemoDialogByName>`, a special presentation), at its
-  vanilla place in the entry: inventory, equipment, window, flag. The upgraded ability of the Champions' Ballad has no
-  window, because granting the DLC power through `GetDemo` outside the Ballad crashes the game: in that rare case the
-  journal line is the only presentation.
-- **Runes**: the Sheikah Slate's download screen, see below.
+  vanilla place in the entry: inventory, equipment, window, flag. An ability's second copy is its "+", the Champions'
+  Ballad's power: in the same window's entry, the base ability is deleted, then the DLC one (`Obj_DLC_HeroSoul_*`)
+  is put in the pouch, equipped and flagged, without `GetDemo`, which outside the Ballad crashes the game.
+- **Runes**: the Sheikah Slate's download screen, see below. The second copy of Progressive Remote Bomb or Progressive Stasis, its "+", shows
+  the same screen in its power-up form (`IsPowerUp`), with the line Purah's terminal says for it.
 - **Region maps**: as a tower's event ends (`Demo004_0`): the map's flag, `IsDownloadDemo` (the menu consumes it as
   it opens and runs its download states), 10 frames for the map to rest, the map's opening
   (`EventSystemActor<Demo_StartMapOpenDemo>`), the tower's 240 frames, the Slate's line "Regional map extracted."
@@ -133,7 +134,7 @@ without committing stops the client (possible mutation).
   (`tools/build_tower_maps_native.py`) makes it take the tower the client writes in the cave (`apMapTower`) just
   before. Like a rune, it waits for the pause menu (map and inventory) to be loaded. Before the Great Plateau's
   tower, the Slate has no map: the map is then revealed by its silent twin.
-- **Without a game window** (Sheikah Sensor, Ancient Bridle, Ancient Saddle): the entry is hosted in `OperationGuide`
+- **Without a game window** (Sheikah Sensor and its "+", Ancient Bridle, Ancient Saddle): the entry is hosted in `OperationGuide`
   with `QUIET_EVENT_INFO`, like the quiet twins below, so that it neither pauses the game nor makes the HUD blink. The
   step names its flowchart in the catalog (`flow`, from `delivery_flow.host_of`). An Archipelago window names the item
   and its sender.
@@ -268,6 +269,11 @@ Screens, as numbered by the factory `0x0305EB18`: `0x1F` pause menu, `0x22` inve
   `Demo041_0<SheikPadSetOff>` (`GameROMPlayer` `Demo_PlayASAdapt` `SheikPadSetOff` until it ends, then `DemoWait`),
   20 frames, as after the terminal, and the rune's selection (`PlayerEquipItemType`). Given back after a reload, a rune
   gets its flag and its selection only.
+- A rune's "+" (`IsPowerUp`) follows Purah's order instead (`Demo032_0` Event262, Event159/Event160, Event285,
+  Event258): the screen, the voice, the "+" flag, `Demo_PowerupRune` for Stasis, then the menu's close.
+- Known limit: the HUD keeps the icon of the rune in hand until the rune is changed in a menu or the save is
+  reloaded, so a "+" received with that rune in hand shows its old icon until then; the upgrade itself works at
+  once. Neither the selection request (`0x02A2D6D4`), Purah's order, nor opening the menus redraws it.
 - The terminal's cameras and animations, its music and the `Guide_ItemUse` tip are not reproduced. The animation in
   which Link puts the Slate away is made for the Slate laid on the terminal, and looks slightly odd outside of it.
 - The rune wheel follows the selection: `botw_client/rune_selection.py` synchronizes the game's live selection object

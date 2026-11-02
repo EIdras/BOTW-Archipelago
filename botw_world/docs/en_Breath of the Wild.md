@@ -8,7 +8,8 @@ a config file.
 ## What does randomization do to this game?
 
 The rewards of the game's main milestones become Archipelago locations: clearing a shrine, activating a tower, the
-Great Fairies, freeing a Divine Beast, and so on. What those milestones gave in the normal game (the paraglider, the
+Great Fairies, freeing a Divine Beast, Purah's rune upgrades, the songs of the Champions' Ballad, and so on. What
+those milestones gave in the normal game (the paraglider, the
 runes, the champions' abilities, key armor, heart containers and stamina vessels) is shuffled into the multiworld
 instead, and arrives in your game from wherever it was found.
 
@@ -28,6 +29,8 @@ play in the Archipelago game too: the pack is built over the files they replace.
 | Great Fairy fountains                      | 4          |
 | Divine Beasts, and their heart containers  | 4 + 4      |
 | Master Sword                               | 1          |
+| Purah's rune upgrades, in Hateno           | 3          |
+| Songs of the Champions' Ballad             | 4          |
 | Beedle's shops (option)                    | 0 to 32    |
 | Village stalls (option)                    | 0 to 28    |
 
@@ -37,12 +40,16 @@ Opening Beedle's list, or looking at a stall's jewel, hints the items for sale t
 
 ## Which items can be received?
 
-- The Paraglider, and the four runes: Magnesis, Remote Bomb, Stasis and Cryonis
-- The Sheikah Sensor
+- The Paraglider, and the four runes: Magnesis, Remote Bomb, Stasis and Cryonis. Remote Bomb and Stasis are
+  progressive items, Progressive Remote Bomb and Progressive Stasis: the first copy is the rune, the second its
+  upgrade (Remote Bomb+, Stasis+)
+- The Progressive Sheikah Sensor: the Sheikah Sensor, then the Sheikah Sensor+. Purah's camera no longer comes with it
 - Armor: Warm Doublet, Snowquill Set, Flamebreaker Set (Goron City's armor shop no longer sells it), Desert Voe Set,
   Zora Set, Rubber Set
 - The Gerudo Set, the outfit Gerudo Town's guards let Link in with: Vilia no longer sells it
-- The four champions' abilities: Revali's Gale, Daruk's Protection, Urbosa's Fury, Mipha's Grace
+- The four champions' abilities, progressive too (Progressive Revali's Gale, Progressive Daruk's Protection,
+  Progressive Urbosa's Fury, Progressive Mipha's Grace): the first copy is the ability, the second the upgraded
+  power the Champions' Ballad gives (shorter recharge)
 - Progressive Climbing Gear and Progressive Stealth Set (three pieces each)
 - 17 Heart Containers and 5 Stamina Vessels
 - The Master Sword, the Hylian Shield, the Champion's Tunic, the Ancient Bridle and Saddle, the Barbarian, Ancient
@@ -97,6 +104,12 @@ its rune, and leaving it needs the Paraglider. Beyond, the logic asks only for w
   a quest that goes through the Southern Mine. The foothills around Foothill Stable do not burn. Cold and desert
   heat are crossed with food and elixirs, as in the game: no armor is required for them.
 - **The Zora Set** where the way goes up a waterfall: Vah Ruta.
+- **Purah's upgrades** open in Hateno once her quest Locked Mementos is done (the blue flame, carried from the
+  furnace below her lab). Each asks for three ancient parts that Guardians drop, which the logic leaves out, as it
+  does food.
+- **The Champions' Ballad** (the DLC) opens once the four Divine Beasts are freed, and its trials on the Great
+  Plateau want the four runes; each song then goes through its champion's region, with what the way there asks
+  (the Flamebreaker Set for Daruk's, the Zora Set for Mipha's, the Gerudo Set for Urbosa's).
 - **The Gerudo Set** for Gerudo Town, whose guards let Link in only wearing it, for Vah Naboris, whose quest goes
   through the town, and for the shrine quests given in the town.
 - The freed Divine Beast for its heart container and for the shrines whose quest opens after it; ten Heart
@@ -206,6 +219,8 @@ jewel, with the item's name and its recipient.
 ## Current limitations
 
 - Only the Wii U version (European, American or Japanese), update v208, in Cemu on Windows, is supported.
+- A rune's upgrade (Remote Bomb+, Stasis+) received with that rune in hand works at once, but the HUD shows its old
+  icon until the rune is changed in a menu or the game reloaded.
 - A mod that changes an event the game pack changes too, or a graphic pack that patches the code it needs, is left
   out of the Archipelago game, by name.
 - Each player's launcher builds a game pack for their seed, from their slot file (`.apbotw`, on the room's page

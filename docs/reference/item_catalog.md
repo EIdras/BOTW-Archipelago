@@ -7,20 +7,21 @@ classification; [`data/item_map.json`](../../data/item_map.json) defines what ea
 ## Pool size
 
 126 items are declared, the 14 maps among them (`tower_maps`: none on `vanilla`), completed with drawn filler up to
-the number of locations: 152 locations without the shop options (26 filler items with the default options, 40 with
-`tower_maps` on `vanilla`), up to 212 with two items in every shop and all 28 stall items (86). `Defeat Calamity Ganon` is the victory location and holds no item.
+the number of locations: 159 locations without the shop options (26 filler items with the default options, 40 with
+`tower_maps` on `vanilla`), up to 219 with two items in every shop and all 28 stall items (86). `Defeat Calamity Ganon` is the victory location and holds no item.
 
 ## Progression and equipment
 
 | Archipelago item | Count | In the game |
 |---|---:|---|
 | Paraglider | 1 | the paraglider (`PlayerStole2`) |
-| Magnesis, Remote Bomb, Stasis, Cryonis | 1 each | the rune, presented by the Sheikah Slate's download screen, and selected |
-| Sheikah Sensor | 1 | the sensor's flags |
+| Magnesis, Cryonis | 1 each | the rune, presented by the Sheikah Slate's download screen, and selected |
+| Progressive Remote Bomb, Progressive Stasis | 2 each | the rune, then its "+" (Purah's upgrade), each presented by the Sheikah Slate's download screen; Purah's upgrades are locations ([`botw_patch/purah_upgrades.py`](../../botw_patch/purah_upgrades.py)) |
+| Progressive Sheikah Sensor | 2 | the sensor's flags, then its "+"; Purah no longer gives the sensor with her camera ([`botw_patch/camera_sensor.py`](../../botw_patch/camera_sensor.py)) |
 | Warm Doublet | 1 | the doublet |
 | Snowquill, Flamebreaker, Desert Voe, Zora, Rubber Set | 1 each | the three pieces of the set; King Dorephan no longer gives the Zora armor, which Vah Ruta asks for, nor Kima the Flamebreaker armor, which the burning zones ask for; Goron City's armor shop says it is sold out when Link buys a piece ([`botw_patch/goron_armor.py`](../../botw_patch/goron_armor.py)) |
 | Gerudo Set | 1 | the veil, top and sirwal that let Link into Gerudo Town; Vilia no longer sells them: she asks 1,000,000 rupees, and her lines say so in every language ([`botw_patch/gerudo_outfit.py`](../../botw_patch/gerudo_outfit.py)) |
-| Revali's Gale, Daruk's Protection, Urbosa's Fury, Mipha's Grace | 1 each | the champion's ability, with its get window |
+| Progressive Revali's Gale, Progressive Daruk's Protection, Progressive Urbosa's Fury, Progressive Mipha's Grace | 2 each | the champion's ability, with its get window, then its "+" (the Champions' Ballad's power, in its place); the end of each song is a location and no longer gives it ([`botw_patch/ballad_ends.py`](../../botw_patch/ballad_ends.py)) |
 | Progressive Climbing Gear | 3 | body, head, legs, in that order |
 | Progressive Stealth Set | 3 | body, head, legs, in that order |
 | Heart Container | 17 | one heart, with the game's get window |

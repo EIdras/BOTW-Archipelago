@@ -13,8 +13,9 @@ your own server.
 
 ## Features
 
-- **212 locations**: 120 shrines, 15 towers, 4 rune terminals, 4 Great Fairies, 4 Divine Beasts and their heart
-  containers, the Master Sword, and up to 60 shop and stall items.
+- **219 locations**: 120 shrines, 15 towers, 4 rune terminals, 4 Great Fairies, 4 Divine Beasts and their heart
+  containers, the Master Sword, Purah's 3 rune upgrades, the 4 songs of the Champions' Ballad, and up to 60 shop and
+  stall items.
 - **Items delivered by the game itself**: the game's item window, the Sheikah Slate's download screen for a rune, the
   champions' ability windows. An item is given exactly once per save, even across reloads and disconnections.
 - **Reload-safe**: loading an older save gives back what it lost, quietly, then lists it in one window.
