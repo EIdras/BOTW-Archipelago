@@ -13,6 +13,9 @@ by what the map holds for it:
     second RemainsX marker; the first is where it rests once freed);
   * a Great Fairy: her fountain (GreatFairyBeforeRevival);
   * Beedle: his NPC (Npc_TripMaster_NN); a stall: its merchant;
+  * a rune upgrade: Purah in her lab (Npc_AncientDoctor);
+  * a Champions' Ballad: its beast where it rests once freed (the first RemainsX
+    marker), where the Ballad's last trial ends;
   * the Master Sword: its pedestal; Calamity Ganon: Hyrule Castle's marker.
 """
 from __future__ import annotations
@@ -39,6 +42,9 @@ FAIRIES = {"Great Fairy Cotera": "G-5", "Great Fairy Kaysa": "B-4",
            "Great Fairy Mija": "J-3", "Great Fairy Tera": "A-8"}
 BEASTS = {"Water": "Ruta", "Fire": "Rudania", "Wind": "Medoh", "Electric": "Naboris"}
 PEDESTAL = ("F-2", 2427157272)       # Weapon_Sword_070 in its pedestal
+PURAH = ("I-7", 3828497424)          # Npc_AncientDoctor in the Hateno lab
+# The Ballads' ends (IsPlayed_Demo622_N): the race of each, its beast's element.
+BALLADS = {"0": "Fire", "1": "Wind", "2": "Water", "3": "Electric"}
 
 
 def xz(translate) -> list[float]:
@@ -115,6 +121,10 @@ def build(aoc: Path = AOC) -> dict[str, list[float]]:
             if element.startswith("Remains"):
                 element = element[len("Remains"):]
             place = markers["Remains" + element][1]
+        elif category == "Rune Upgrade":
+            place = by_hash(*PURAH)
+        elif category == "Champions' Ballad":
+            place = markers["Remains" + BALLADS[row["gamedata_flag"].rsplit("_", 1)[1]]][0]
         elif category == "Great Fairy":
             place = by_actor(FAIRIES[name], "GreatFairyBeforeRevival")
         elif category == "Master Sword":

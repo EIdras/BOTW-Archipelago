@@ -21,7 +21,7 @@ from evfl.util import Index, make_rindex
 from botw_client.delivery_plan import (
     COOK_SLOTS, POUCHES, DeliveryMutation, DeliveryStep, ItemDeliveryPlan, MutationKind,
     compile_delivery_plan, droppable)
-from botw_client.items import load_item_map
+from botw_client.items import POWER_UP_LINES, load_item_map, stage_count
 from .events import graph_snapshot, read_flow, write_flow
 from .resources import unpack
 
@@ -66,6 +66,9 @@ REJECT_COUNTER = "APDeliveryRejectCounter"
 # a pause).
 DOWNLOAD_FLAG = "IsDownloadDemo"
 DOWNLOAD_SETTLE = 10
+# The download types whose "+" Purah's cutscene also powers up
+# (Demo_PowerupRune, Demo032_0 Event285): Stasis only.
+POWERUP_RUNES = {2}
 DOWNLOAD_WAIT = 70
 PLAYER = ("GameROMPlayer", "")
 PLAYER_PARAMS = {"CreateMode": 0, "IsGrounding": False, "IsWorld": False, "PosX": 0.0,
@@ -136,6 +139,10 @@ MAP_OPEN_FRAMES = 240
 MAP_MESSAGE = "DemoMsg/Demo004_0:Demo004_0_Text026"
 
 
+# The screens whose silent twin sets their flag only.
+SCREEN_FLAGS = (MutationKind.RUNE_DOWNLOAD, MutationKind.RUNE_POWER_UP, MutationKind.MAP_OPEN)
+
+
 def quiet_step(plan: DeliveryStep) -> DeliveryStep | None:
     """The same step without the game's get window, when there is one: pouch
     items granted directly, champion powers without their window (pouch,
@@ -157,10 +164,10 @@ def quiet_step(plan: DeliveryStep) -> DeliveryStep | None:
     if any(m.kind in (MutationKind.COOK, MutationKind.POUCH_SLOT) for m in plan.mutations):
         # The same dish or slot, without its window (the builder reads `quiet`).
         return plan
-    if any(m.kind in (MutationKind.RUNE_DOWNLOAD, MutationKind.MAP_OPEN) for m in plan.mutations):
+    if any(m.kind in SCREEN_FLAGS for m in plan.mutations):
         return replace(plan, mutations=tuple(
             DeliveryMutation(MutationKind.SET_BOOL, m.target, True, value_type="bool")
-            if m.kind in (MutationKind.RUNE_DOWNLOAD, MutationKind.MAP_OPEN) else m
+            if m.kind in SCREEN_FLAGS else m
             for m in plan.mutations))
     rupees = [m for m in plan.mutations if m.kind is MutationKind.GET_DEMO_ACTOR
               and m.target in RUPEE_VALUES]
@@ -202,7 +209,8 @@ def shows_window(plan: DeliveryStep) -> bool:
     """The step opens the game's window (GetDemo, champion powers, the rune
     download screen, the map's opening)."""
     return any(m.kind in (MutationKind.GET_DEMO_ACTOR, MutationKind.CHAMPION_ACTOR,
-                          MutationKind.RUNE_DOWNLOAD, MutationKind.GET_DEMO_BUNDLE,
+                          MutationKind.RUNE_DOWNLOAD, MutationKind.RUNE_POWER_UP,
+                          MutationKind.GET_DEMO_BUNDLE,
                           MutationKind.COOK, MutationKind.POUCH_SLOT, MutationKind.MAP_OPEN)
                for m in plan.mutations)
 
@@ -250,8 +258,9 @@ def compile_native_entries(mapping=None) -> tuple[list[NativeDeliveryEntry], dic
             unsupported[item_name] = "no automatic native action"
             continue
 
+        stages = stage_count(mapping[item_name])
         tiers = range(len(mapping[item_name]["delivery"]["actors"])) \
-            if kind == "progressive_actors" else (None,)
+            if kind == "progressive_actors" else range(stages) if stages else (None,)
         for tier in tiers:
             plan: ItemDeliveryPlan = compile_delivery_plan(
                 item_name, received_before=0 if tier is None else tier,
@@ -544,15 +553,22 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
         "Demo_FlagON", "Demo_FlagOFF", "Demo_SetItemDataToPouch",
         "Demo_AppearFullPouchInfo", "Demo_IncreaseGameDataInt",
         "Demo_SetGameDataInt")
-    if champions:
+    upgrades = any(m.kind is MutationKind.CHAMPION_UPGRADE for spec in specs for m in spec.plan.mutations)
+    if champions or upgrades:
         action_names += ('Demo_CheckAndCreateEquip', 'Demo_SetGetFlagByActorName')
+    if upgrades:
+        action_names += ('Demo_DeletePorchItemInEquip',)
     if any(m.kind is MutationKind.INCREASE_RUPEE for spec in specs for m in spec.plan.mutations):
         action_names += ('Demo_IncreaseRupee',)
     action_names += tuple(sorted({m.target for spec in specs for m in spec.plan.mutations
                                   if m.kind is MutationKind.INCREASE_MAX}))
-    runes = any(m.kind is MutationKind.RUNE_DOWNLOAD for spec in specs for m in spec.plan.mutations)
+    runes = any(m.kind in (MutationKind.RUNE_DOWNLOAD, MutationKind.RUNE_POWER_UP)
+                for spec in specs for m in spec.plan.mutations)
     if runes:
         action_names += ('Demo_OpenItemDownloadDemo', 'Demo_CloseItemMenu')
+    if any(m.kind is MutationKind.RUNE_POWER_UP and int(m.value) in POWERUP_RUNES
+           for spec in specs for m in spec.plan.mutations):
+        action_names += ('Demo_PowerupRune',)
     kinds = {m.kind for spec in specs for m in spec.plan.mutations}
     maps = MutationKind.MAP_OPEN in kinds
     if MutationKind.INCREASE_PORCH in kinds:
@@ -666,7 +682,20 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
             "IsWaitFinish": True}, guard_off)
         nxt = commit
         for index, mutation in reversed(list(enumerate(spec.plan.mutations))):
-            if mutation.kind is MutationKind.CHAMPION_ACTOR and spec.quiet:
+            if mutation.kind is MutationKind.CHAMPION_UPGRADE:
+                # Demo622_N_GetUI's delete (Event456 of Demo622_2), then the
+                # DLC power without its window (CHAMPION_UPGRADE).
+                base_flag = action(stem + f"_Mut{index}_BaseFlag", 'Demo_SetGetFlagByActorName', {
+                    'ActorName':mutation.value, 'IsWaitFinish':True}, nxt)
+                get_flag = action(stem + f"_Mut{index}_GetFlag", 'Demo_SetGetFlagByActorName', {
+                    'ActorName':mutation.target, 'IsWaitFinish':True}, base_flag)
+                equip = action(stem + f"_Mut{index}_Equip", 'Demo_CheckAndCreateEquip', {
+                    'TargetActorName':mutation.target, 'IsWaitFinish':True}, get_flag)
+                pouch = action(stem + f"_Mut{index}_Pouch", 'Demo_SetItemDataToPouch', {
+                    'TargetActorName':mutation.target, 'IsWaitFinish':False}, equip)
+                nxt = action(stem + f"_Mut{index}", 'Demo_DeletePorchItemInEquip', {
+                    'PorchItemName':mutation.value, 'DeleteNum':-1, 'IsWaitFinish':True}, pouch)
+            elif mutation.kind is MutationKind.CHAMPION_ACTOR and spec.quiet:
                 # Pouch, equipment, flag, without the window.
                 get_flag = action(stem + f"_Mut{index}_GetFlag", 'Demo_SetGetFlagByActorName', {
                     'ActorName':mutation.target, 'IsWaitFinish':True}, nxt)
@@ -688,20 +717,39 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
                     'TargetActorName':mutation.target, 'IsWaitFinish':True}, show)
                 nxt = action(stem + f"_Mut{index}", 'Demo_SetItemDataToPouch', {
                     'TargetActorName':mutation.target, 'IsWaitFinish':False}, equip)
-            elif mutation.kind is MutationKind.RUNE_DOWNLOAD:
-                # Demo003_0 Item01..04 (see DOWNLOAD_FLAG).
+            elif mutation.kind in (MutationKind.RUNE_DOWNLOAD, MutationKind.RUNE_POWER_UP):
+                # Demo003_0 Item01..04 (see DOWNLOAD_FLAG); a "+", as Purah's
+                # upgrade shows it (Demo032_0 Event188/191, then Event262/263).
+                power_up = mutation.kind is MutationKind.RUNE_POWER_UP
+                line = dict(SLATE_MESSAGE, MessageId=POWER_UP_LINES[int(mutation.value)]) \
+                    if power_up else dict(SLATE_MESSAGE)
                 after = acted(stem + f"_Mut{index}_After", waiter, "Demo_WaitFrame", {
                     "IsWaitFinish": True, "Frame": AFTER_SLATE}, nxt)
                 idle = acted(stem + f"_Mut{index}_Idle", player, "Demo_PlayASAdapt",
                              dict(DEMO_WAIT), after)
                 away = acted(stem + f"_Mut{index}_Away", player, "Demo_PlayASAdapt",
                              dict(SLATE_AWAY), idle)
-                flag = action(stem + f"_Mut{index}_Flag", "Demo_FlagON", {
-                    "FlagName": mutation.target, "IsWaitFinish": True}, away)
-                close = action(stem + f"_Mut{index}_Close", "Demo_CloseItemMenu", {
-                    "IsWaitFinish": True}, flag)
-                voiced = acted(stem + f"_Mut{index}_Voice", voice, "Demo_OpenMessageDialog",
-                               dict(SLATE_MESSAGE), close)
+                if power_up:
+                    # Purah's order (Demo032_0 Event262 → Event159/Event160 →
+                    # Event285 → Event258): the "+" flag, Stasis' Demo_PowerupRune,
+                    # then the menu closes; the HUD redraws its rune icon on that
+                    # close, so a flag set after it leaves the old icon.
+                    close = action(stem + f"_Mut{index}_Close", "Demo_CloseItemMenu", {
+                        "IsWaitFinish": True}, away)
+                    if int(mutation.value) in POWERUP_RUNES:
+                        close = action(stem + f"_Mut{index}_PowerUp", "Demo_PowerupRune", {
+                            "RuneType": int(mutation.value), "IsWaitFinish": True}, close)
+                    flag = action(stem + f"_Mut{index}_Flag", "Demo_FlagON", {
+                        "FlagName": mutation.target, "IsWaitFinish": True}, close)
+                    voiced = acted(stem + f"_Mut{index}_Voice", voice, "Demo_OpenMessageDialog",
+                                   line, flag)
+                else:
+                    flag = action(stem + f"_Mut{index}_Flag", "Demo_FlagON", {
+                        "FlagName": mutation.target, "IsWaitFinish": True}, away)
+                    close = action(stem + f"_Mut{index}_Close", "Demo_CloseItemMenu", {
+                        "IsWaitFinish": True}, flag)
+                    voiced = acted(stem + f"_Mut{index}_Voice", voice, "Demo_OpenMessageDialog",
+                                   line, close)
                 waited = acted(stem + f"_Mut{index}_Wait", waiter, "Demo_WaitFrame", {
                     "IsWaitFinish": True, "Frame": DOWNLOAD_WAIT}, voiced)
                 # IsEquip selects the new rune, as a terminal does; not a rune
@@ -709,7 +757,7 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
                 equip = not any(m.kind is MutationKind.SELECT_IF_NONE for m in spec.plan.mutations)
                 screen = action(stem + f"_Mut{index}_Open", "Demo_OpenItemDownloadDemo", {
                     "ItemType": int(mutation.value), "IsWaitFinish": True, "IsEquip": equip,
-                    "IsPowerUp": False, "IsPlayerClose": False}, waited)
+                    "IsPowerUp": power_up, "IsPlayerClose": False}, waited)
                 settle = acted(stem + f"_Mut{index}_Settle", waiter, "Demo_WaitFrame", {
                     "IsWaitFinish": True, "Frame": DOWNLOAD_SETTLE}, screen)
                 nxt = action(stem + f"_Mut{index}", "Demo_FlagON", {

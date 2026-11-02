@@ -3,7 +3,7 @@ from BaseClasses import ItemClassification
 from . import BotwTestBase
 from ..catalog import FILLER, WEAPONS
 
-# The filler of the default options: 152 locations, 112 declared items, 14 maps.
+# The filler of the default options: 159 locations, 119 declared items, 14 maps.
 FILLER_SLOTS = 26
 
 
@@ -79,7 +79,7 @@ class TestEveryFillerATrap(BotwTestBase):
         self.assertLessEqual(names, {"Weapon Shatter", "Blood Moon", "Rupoor", "Hearts Down", "Strip Down",
                                      "Cucco Swarm", "Downpour", "Yiga Ambush", "Paranoia"})
         self.assertGreaterEqual(len(names), 4)
-        self.assertEqual(len(pool), 152)
+        self.assertEqual(len(pool), 159)
 
 
 class TestFiller(BotwTestBase):

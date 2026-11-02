@@ -776,7 +776,8 @@ class CemuNativeDeliveryBackend:
             return DeliveryResult(DeliveryStatus.DEFERRED, cursor,
                                   f"previous event closing ({since}/{self._settle} frames of 1/30 s)")
         if not (command.quiet and step.get("quiet_entry")) and any(
-                m.get("kind") in ("rune_download", "map_open") for m in step.get("mutations", ())):
+                m.get("kind") in ("rune_download", "rune_power_up", "map_open")
+                for m in step.get("mutations", ())):
             # The download screen needs the pause menu built at once, or the
             # menu clears its request and the event waits forever
             # (botw_client/pause_menu.py); so may the map's opening, a screen

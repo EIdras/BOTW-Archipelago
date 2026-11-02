@@ -34,6 +34,11 @@ OWN_ITEMS = {"Weapon Shatter": "Arme brisée (piège)", "Rupoor": "Rubis maudit 
              "Weapon Pouch Upgrade": "Emplacement d'arme en plus (Noïa)",
              "Bow Pouch Upgrade": "Emplacement d'arc en plus (Noïa)",
              "Shield Pouch Upgrade": "Emplacement de bouclier en plus (Noïa)"}
+# Purah's upgrades: the upgraded rune, as the game names it.
+UPGRADES = {"Sheikah Sensor": "Obj_SheikSensorLv2", "Remote Bomb": "Obj_RemoteBombLv2",
+            "Stasis": "Obj_StopTimerLv2"}
+# The Champions' Ballad's songs: their quest, by the champion's people.
+BALLADS = {"Revali": "Rito", "Mipha": "Zora", "Daruk": "Goron", "Urbosa": "Gerudo"}
 # Traps named after something of the game: (actor or label, suffix).
 GAME_TRAPS = {"Blood Moon": "Lune de sang (piège)", "Cucco Swarm": "Nuée de cocottes (piège)",
               "Downpour": "Averse (piège)", "Yiga Ambush": "Embuscade yiga (piège)",
@@ -58,7 +63,7 @@ def messages(content: Path, language: str) -> dict[tuple[str, str], str]:
     archive = oead.Sarc(unpack(bytes(boot.get_file(f"Message/Msg_{language}.product.ssarc").data)))
     out = {}
     for member in archive.get_files():
-        if member.name.startswith(("StaticMsg/", "ActorType/")) and member.name.endswith(".msbt"):
+        if member.name.startswith(("StaticMsg/", "ActorType/", "QuestMsg/")) and member.name.endswith(".msbt"):
             for label, text in read_labels(bytes(member.data)).items():
                 out[(member.name, label)] = plain(text)
     return out
@@ -99,7 +104,12 @@ def location_fr(names: Names, row: dict) -> str:
         return f"{names.actor(rune)} (pierre guide du Plateau)"
     if category == "Goal":
         return f"Vaincre {names.actor('Enemy_Ganon')}"
+    if category == "Champions' Ballad":
+        people = BALLADS[name.split("'")[0]]
+        return names.fr[(f"QuestMsg/QL_BalladOfHero{people}.msbt", f"QL_BalladOfHero{people}_Name")].strip()
     place, _, rest = name.partition(" - ")
+    if category == "Rune Upgrade":
+        return f"{names.place(place)} : {names.actor(UPGRADES[rest.removesuffix(' Upgrade')])}"
     item = rest.rsplit(" ", 1)[1]
     if category == "Shop":
         return f"{names.place(place)} : Beedle, objet {item}"
@@ -113,8 +123,11 @@ def item_fr(names: Names, entry: dict) -> str:
         return OWN_ITEMS[name]
     if name in GAME_TRAPS:
         return GAME_TRAPS[name]
-    if name == "Sheikah Sensor":
-        return names.actor("Obj_SheikSensor")
+    if delivery.get("kind") == "staged":
+        # The copies in order, as the game names them: the item, then its "+".
+        actors = [stage.get("actor") or (stage.get("flag") or stage["writes"][0][0]).removeprefix("IsGet_")
+                  for stage in delivery["stages"]]
+        return " → ".join(names.actor(a) for a in actors) + " (progressif)"
     if delivery.get("kind") == "map":
         # A region's map: its tower's name, as the game's map shows it.
         return f"Carte ({names.place(name[:-len(' Map')] + ' Tower')})"
@@ -155,6 +168,7 @@ def build(content: Path) -> str:
     titles = {"Shrine": "Sanctuaires", "Tower": "Tours", "Great Fairy": "Grandes fées",
               "Divine Beast": "Créatures divines", "Divine Beast Heart": "Réceptacles des Créatures divines",
               "Master Sword": "Épée de légende", "Rune Terminal": "Pierres guides du Plateau",
+              "Rune Upgrade": "Améliorations de Purah", "Champions' Ballad": "La Ballade des Prodiges",
               "Goal": "But", "Shop": "Boutiques de Beedle", "Stall": "Étals des villages"}
     lines += ["## Lieux", ""]
     for category, title in titles.items():

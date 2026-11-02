@@ -54,7 +54,7 @@ class BotwWorld(World):
     required_client_version = (0, 6, 7)
     item_name_to_id = {row["name"]: row["id"] for row in ITEMS}
     location_name_to_id = {row["name"]: row["id"] for row in LOCATIONS if row["name"] != GOAL_LOCATION}
-    item_name_groups = {"Runes": {"Magnesis", "Remote Bomb", "Stasis", "Cryonis"},
+    item_name_groups = {"Runes": {"Magnesis", "Progressive Remote Bomb", "Progressive Stasis", "Cryonis"},
                         "Weapons": set(WEAPON_LEVELS), "Maps": set(MAPS.values())}
     # Universal Tracker shows as "glitched" (out of logic, but possible) what this
     # item, which only it gives itself, would reach: a region without its map.
@@ -69,6 +69,8 @@ class BotwWorld(World):
                                 if "Divine Beast Heart" in categories(r)},
         "Beedle Shops": {r["name"] for r in LOCATIONS if "Shop" in categories(r)},
         "Stalls": {r["name"] for r in LOCATIONS if "Stall" in categories(r)},
+        "Rune Upgrades": {r["name"] for r in LOCATIONS if "Rune Upgrade" in categories(r)},
+        "Champions' Ballad": {r["name"] for r in LOCATIONS if "Champions' Ballad" in categories(r)},
     }
     # Shop prices drawn by the seed, in rupees: SHOP_PRICE_STEPS * 5.
     SHOP_PRICE_STEPS = (4, 40)
@@ -339,7 +341,7 @@ class BotwWorld(World):
         # stall_locations: the stalls drawn by the seed, for Universal Tracker.
         # region_borders: with region_lock, the borders the seed's logic crosses.
         # travel_shrines: with map_travel_points, the shrine each map opens and its terminal's flag.
-        return {"client_schema": 12, "world_schema": 4, "world_version": WORLD_VERSION,
+        return {"client_schema": 12, "world_schema": 5, "world_version": WORLD_VERSION,
                 "death_link": bool(self.options.death_link.value),
                 **self.options.as_dict(*self.SLOT_OPTIONS),
                 "stall_locations": sorted(location_id for location_id in self.shop_prices

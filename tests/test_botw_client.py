@@ -72,20 +72,22 @@ class ClientDataTests(unittest.TestCase):
         mapping = load_item_map()
         pairs = {
             "Magnesis Terminal": "Magnesis",
-            "Remote Bombs Terminal": "Remote Bomb",
-            "Stasis Terminal": "Stasis",
+            "Remote Bombs Terminal": "Progressive Remote Bomb",
+            "Stasis Terminal": "Progressive Stasis",
             "Cryonis Terminal": "Cryonis",
         }
         for location, item in pairs.items():
             check_flag = targets[location].flag
-            received_flags = {mapping[item]["delivery"]["flag"]}
+            # Both stages: the rune, then its "+".
+            delivery = mapping[item]["delivery"]
+            received_flags = {stage["flag"] for stage in delivery.get("stages", [delivery])}
             self.assertNotIn(check_flag, received_flags)
 
     @NEEDS_TABLE
     def test_native_world_ids_are_append_only(self):
         world = json.loads((ROOT / "botw_world" / "data" /
                             "locations.json").read_text(encoding="utf-8"))
-        self.assertEqual([entry["id"] for entry in world], list(range(1, 214)))
+        self.assertEqual([entry["id"] for entry in world], list(range(1, 221)))
         self.assertEqual([entry["name"] for entry in world],
                          [target.name for target in load_targets()])
         hearts = {entry["name"]: entry["gamedata_flag"] for entry in world

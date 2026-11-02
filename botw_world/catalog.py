@@ -8,7 +8,7 @@ GAME = "Breath of the Wild"
 WORLD_VERSION = json.loads(files(__package__).joinpath("archipelago.json").read_text(encoding="utf-8"))["world_version"]
 LOCATIONS = json.loads(files(__package__).joinpath("data/locations.json").read_text(encoding="utf-8"))
 ITEMS = json.loads(files(__package__).joinpath("data/items.json").read_text(encoding="utf-8"))
-RUNES = ("Magnesis", "Remote Bomb", "Stasis", "Cryonis")
+RUNES = ("Magnesis", "Progressive Remote Bomb", "Progressive Stasis", "Cryonis")
 TRAPS = tuple(row["name"] for row in ITEMS if row.get("trap"))
 # What reaching each location takes in the game (data/logic.csv, one row each):
 # the climate to cross, the runes its shrine cannot be done without, and any

@@ -70,15 +70,16 @@ CLIENT_SCHEMA = 2
 # 11 the Downpour, Yiga Ambush and Paranoia traps, 12 the travel points a map opens.
 BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
 # The mutations that present the item themselves: no AP window before them.
-VANILLA_WINDOWS = ("get_demo_actor", "champion_actor", "rune_download", "trap", "native_trap",
+VANILLA_WINDOWS = ("get_demo_actor", "champion_actor", "rune_download", "rune_power_up", "trap",
+                   "native_trap",
                    "get_demo_bundle", "cook", "pouch_slot", "map_open")
 # The location of an item Link starts with (the start inventory, a world's
 # starting map): Archipelago's server sends it from player 0, at location -2.
 START_INVENTORY = -2
 TERMINAL_ITEMS = {
     "Magnesis Terminal": "Magnesis",
-    "Remote Bombs Terminal": "Remote Bomb",
-    "Stasis Terminal": "Stasis",
+    "Remote Bombs Terminal": "Progressive Remote Bomb",
+    "Stasis Terminal": "Progressive Stasis",
     "Cryonis Terminal": "Cryonis",
 }
 RUNE_NAMES = tuple(TERMINAL_ITEMS.values())
@@ -960,7 +961,7 @@ class BotwClientRuntime:
         cursor_index, step = self._delivery_position()
         if cursor_index != index:
             return
-        action_count = self.game.item_action_count(name)
+        action_count = self.game.item_action_count(name, before)
         if step > action_count:
             raise FatalClientError(
                 f"AP cursor #{index}: invalid step {step}/{action_count}")
@@ -1307,7 +1308,7 @@ class BotwClientRuntime:
                     self.log(f"vanilla rune suppressed: {vanilla_rune}")
                 if name == "Great Plateau Tower" and not self.native_mode:
                     owns_sensor = any(
-                        self.ap.item_name(item) == "Sheikah Sensor"
+                        self.ap.item_name(item) == "Progressive Sheikah Sensor"
                         for item in self.ap.received_items.values())
                     if not owns_sensor:
                         await asyncio.to_thread(self.game.suppress_tower_sensor)

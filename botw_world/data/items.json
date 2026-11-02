@@ -17,19 +17,21 @@
     "id": 2
   },
   {
-    "name": "Remote Bomb",
+    "name": "Progressive Remote Bomb",
     "category": [
       "Rune"
     ],
     "progression": true,
+    "count": 2,
     "id": 3
   },
   {
-    "name": "Stasis",
+    "name": "Progressive Stasis",
     "category": [
       "Rune"
     ],
     "progression": true,
+    "count": 2,
     "id": 4
   },
   {
@@ -41,11 +43,12 @@
     "id": 5
   },
   {
-    "name": "Sheikah Sensor",
+    "name": "Progressive Sheikah Sensor",
     "category": [
       "Rune"
     ],
     "useful": true,
+    "count": 2,
     "id": 6
   },
   {
@@ -111,35 +114,39 @@
     "id": 41
   },
   {
-    "name": "Revali's Gale",
+    "name": "Progressive Revali's Gale",
     "category": [
       "Champion Ability"
     ],
     "useful": true,
+    "count": 2,
     "id": 13
   },
   {
-    "name": "Daruk's Protection",
+    "name": "Progressive Daruk's Protection",
     "category": [
       "Champion Ability"
     ],
     "useful": true,
+    "count": 2,
     "id": 14
   },
   {
-    "name": "Urbosa's Fury",
+    "name": "Progressive Urbosa's Fury",
     "category": [
       "Champion Ability"
     ],
     "useful": true,
+    "count": 2,
     "id": 15
   },
   {
-    "name": "Mipha's Grace",
+    "name": "Progressive Mipha's Grace",
     "category": [
       "Champion Ability"
     ],
     "useful": true,
+    "count": 2,
     "id": 16
   },
   {

@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-from .items import load_item_map, progressive_index
+from .items import load_item_map, progressive_index, stage_delivery
 
 
 class MutationKind(str, Enum):
@@ -17,10 +17,22 @@ class MutationKind(str, Enum):
     # Horned Statue trades vessels (Demo035_0): the silent twin of a vessel.
     INCREASE_MAX = "increase_max"
     CHAMPION_ACTOR = "champion_actor"
+    # A champion power's "+" (its second copy), as the end of its Champions'
+    # Ballad gives it (Demo622_N_GetUI): the base power deleted from the pouch,
+    # then the DLC power by the three actions of a champion grant (pouch,
+    # equipment, get flag) and the base's get flag, as the vanilla upgrade leaves
+    # both. No get window: a GetDemo grant of the DLC power outside its Ballad
+    # crashes, even on a branch not taken. Target the DLC power, value the base.
+    CHAMPION_UPGRADE = "champion_upgrade"
     # The rune terminal's own presentation (Demo003_0 Item01..04): the Sheikah
     # Slate download screen, "the module is activated" in the Slate's voice,
     # the menu closed, then the rune's flag. Its silent twin sets the flag.
     RUNE_DOWNLOAD = "rune_download"
+    # A rune's "+" (the second copy of Remote Bomb or Stasis), as Purah gives
+    # it (Demo032_0): the same presentation, the download screen of an upgrade
+    # (IsPowerUp) and the Slate's line for it, then the Lv2 flag. Its silent
+    # twin sets the flag.
+    RUNE_POWER_UP = "rune_power_up"
     # A trap: the entry of botw_patch/traps.py called as a sub-flow, its text
     # (what the journal says once it has happened) as the value. Its silent twin,
     # for a trap given back after a reload, spends it without effect.
@@ -146,7 +158,8 @@ def compile_delivery_plan(item_name: str, received_before: int = 0,
     entry = mapping.get(item_name)
     if entry is None:
         raise KeyError(f"AP item missing from the item map: {item_name}")
-    delivery = entry["delivery"]
+    # A staged item (Remote Bomb, then Remote Bomb+): the stage of this copy.
+    delivery = stage_delivery(entry, received_before)
     kind = delivery["kind"]
 
     if kind == "actors":
@@ -185,6 +198,12 @@ def compile_delivery_plan(item_name: str, received_before: int = 0,
         # transaction. The AP dialog has already finished; omit GetDemo's dialog.
         return ItemDeliveryPlan(item_name, (DeliveryStep((DeliveryMutation(
             MutationKind.CHAMPION_ACTOR, delivery["actor"], 1),)),))
+    if kind == "champion_upgrade":
+        # In the window flowchart, as the base power: the host where this chain
+        # was measured (tools/build_ballad_upgrade_delivery.py).
+        return ItemDeliveryPlan(item_name, (DeliveryStep((DeliveryMutation(
+            MutationKind.CHAMPION_UPGRADE, delivery["actor"], delivery["base"]),),
+            host="Demo007_1"),))
     if kind == "progressive_actors":
         actors = delivery["actors"]
         actor = actors[progressive_index(
@@ -206,7 +225,8 @@ def compile_delivery_plan(item_name: str, received_before: int = 0,
         # an equip type (the Master Cycle Zero), the rune in hand stays, and the
         # new one is selected only when there is none (select_if_none).
         download = DeliveryMutation(
-            MutationKind.RUNE_DOWNLOAD, delivery["flag"], int(delivery["download_type"]))
+            MutationKind.RUNE_POWER_UP if delivery.get("power_up") else MutationKind.RUNE_DOWNLOAD,
+            delivery["flag"], int(delivery["download_type"]))
         if "equip_type" not in delivery:
             select = DeliveryMutation(MutationKind.SELECT_IF_NONE, "PlayerEquipItemType",
                                       int(delivery["select_if_none"]), value_type="s32")

@@ -119,12 +119,12 @@ class ClientGateTests(unittest.IsolatedAsyncioTestCase):
     async def test_the_runes_and_the_master_sword_are_counted_when_asked(self):
         game = _Game(refused=True)
         asks = {"goal_type": 0, "ganon_runes": True, "ganon_master_sword": True}
-        runtime = self.runtime(game, asks, received=["Magnesis", "Stasis", "Paraglider"])
+        runtime = self.runtime(game, asks, received=["Magnesis", "Progressive Stasis", "Paraglider"])
         await runtime._ganon_gate_tick()
         self.assertFalse(game.flags["open"])
         self.assertEqual(runtime._journal_notes,
                          [("{0}Sanctum sealed{/}: 2/4 runes, 0/1 Master Sword", None)])
-        runtime = self.runtime(game, asks, received=["Magnesis", "Stasis", "Remote Bomb", "Cryonis",
+        runtime = self.runtime(game, asks, received=["Magnesis", "Progressive Stasis", "Progressive Remote Bomb", "Cryonis",
                                                      "Master Sword"])
         await runtime._ganon_gate_tick()
         self.assertTrue(game.flags["open"])
@@ -157,7 +157,7 @@ class ClientGateTests(unittest.IsolatedAsyncioTestCase):
         ganon.state["goal_observed"] = True
         self.assertFalse(ganon._goal_reached())
         ganon = self.runtime(game, {"goal": 0, "sanctum_runes": True},
-                             received=["Magnesis", "Remote Bomb", "Stasis", "Cryonis"])
+                             received=["Magnesis", "Progressive Remote Bomb", "Progressive Stasis", "Cryonis"])
         self.assertFalse(ganon._goal_reached())     # not defeated yet
         ganon.state["goal_observed"] = True
         self.assertTrue(ganon._goal_reached())

@@ -19,15 +19,20 @@ MASTER_CSV = ROOT / "data" / "locations_master.csv"
 # generated before the Divine Beast heart containers (149 rows); 2: + "Vah X
 # Heart Container" (153 rows); 3: + 32 Beedle shop
 # items (185 rows, botw_client/shop_catalog.py); 4: + 28 3D stall items (213
-# rows, botw_client/stall_catalog.py). botw_world declares its schema in
+# rows, botw_client/stall_catalog.py); 5: + Purah's 3 rune upgrades and the
+# ends of the 4 Champions' Ballads (220 rows). botw_world declares its schema in
 # slot_data["world_schema"].
-SCHEMA_LOCATION_COUNTS = {1: 149, 2: 153, 3: 185, 4: 213}
-WORLD_SCHEMA = 4
+SCHEMA_LOCATION_COUNTS = {1: 149, 2: 153, 3: 185, 4: 213, 5: 220}
+WORLD_SCHEMA = 5
 # The Great Plateau's tower reveals its own map: its map is no item.
 PLATEAU_TOWER_FLAG = "MapTower_07"
 # Locations tracked by a saved s32 of their own (APShop_<id>), present only
 # in packs built for a seed that has them.
 CUSTOM_CATEGORIES = (SHOP_CATEGORY, STALL_CATEGORY)
+# Locations tracked by a saved bool of their own, present in every pack built
+# since (Purah's upgrades, botw_patch/purah_upgrades.py): absent from an older
+# pack, the location is not tracked.
+CUSTOM_BOOL_PREFIXES = ("APPurahUp_",)
 EXPECTED_LOCATION_COUNT = SCHEMA_LOCATION_COUNTS[WORLD_SCHEMA]
 
 
@@ -77,10 +82,11 @@ def load_targets(path: Path = MASTER_CSV,
         if not row.get("gamedata_flag") or not row.get("flag_hash"):
             raise ValueError(f"location without GameData: {row.get('name')}")
         shop = row["category"] in CUSTOM_CATEGORIES
+        custom = shop or row["gamedata_flag"].startswith(CUSTOM_BOOL_PREFIXES)
         tower = row["category"] == "Tower" and row["gamedata_flag"] != PLATEAU_TOWER_FLAG
         targets.append(LocationTarget(
             row["name"], row["gamedata_flag"], int(row["flag_hash"]) & 0xFFFFFFFF,
-            SHOP_FLAG_KIND if shop else "bool", optional=shop,
+            SHOP_FLAG_KIND if shop else "bool", optional=custom,
             pack_flag=tower_activation_flag(row["gamedata_flag"]) if tower else None))
     if len({target.name for target in targets}) != len(targets):
         raise ValueError("duplicate location names")

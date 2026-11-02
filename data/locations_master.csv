@@ -212,3 +212,10 @@ Zora's Domain - General Stall Item 1,Lanayru,Stall,,APShop_210,-685377683,Npc_Zo
 Zora's Domain - General Stall Item 2,Lanayru,Stall,,APShop_211,-1608333317,Npc_Zora002 object 2178080993 (Item_Material_03); custom saved s32
 Hateno Village - General Stall Item 1,Hateno,Stall,,APShop_212,959157825,Npc_HatenoVillage002 object 4020751443 (Item_Material_05); custom saved s32
 Hateno Village - General Stall Item 2,Hateno,Stall,,APShop_213,1311549143,Npc_HatenoVillage002 object 2366597095 (Obj_ArrowBundle_A_01); custom saved s32
+Hateno Ancient Tech Lab - Sheikah Sensor Upgrade,Hateno,Rune Upgrade,,APPurahUp_SheikSensorLv2,513394852,"Npc_AncientDoctor SelectPowerUp, 3 ancient screws (Item_Enemy_27); custom saved bool"
+Hateno Ancient Tech Lab - Remote Bomb Upgrade,Hateno,Rune Upgrade,,APPurahUp_RemoteBombLv2,-981560234,"Npc_AncientDoctor SelectPowerUp, 3 ancient shafts (Item_Enemy_29); custom saved bool"
+Hateno Ancient Tech Lab - Stasis Upgrade,Hateno,Rune Upgrade,,APPurahUp_StopTimerLv2,-1531362586,"Npc_AncientDoctor SelectPowerUp, 3 ancient cores (Item_Enemy_30); custom saved bool"
+Revali's Song,Tabantha,Champions' Ballad,,IsPlayed_Demo622_1,-560051155,"Demo622_1, the end of Vah Medoh's Ballad trial; saved"
+Mipha's Song,Lanayru,Champions' Ballad,,IsPlayed_Demo622_2,1201085847,"Demo622_2, the end of Vah Ruta's Ballad trial; saved"
+Daruk's Song,Eldin,Champions' Ballad,,IsPlayed_Demo622_0,-1449558853,"Demo622_0, the end of Vah Rudania's Ballad trial; saved"
+Urbosa's Song,Wasteland,Champions' Ballad,,IsPlayed_Demo622_3,814755073,"Demo622_3, the end of Vah Naboris' Ballad trial; saved"

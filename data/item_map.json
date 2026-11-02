@@ -8,11 +8,11 @@
   "items": [
     {"name":"Paraglider","delivery":{"kind":"actors","actors":["PlayerStole2"]},"display_actor":"PlayerStole2"},
     {"name":"Magnesis","delivery":{"kind":"rune","flag":"IsGet_Obj_Magnetglove","equip_type":2,"download_type":1},"display_actor":"Obj_Magnetglove"},
-    {"name":"Remote Bomb","delivery":{"kind":"rune","flag":"IsGet_Obj_RemoteBomb","equip_type":0,"download_type":0},"display_actor":"Obj_RemoteBomb"},
-    {"name":"Stasis","delivery":{"kind":"rune","flag":"IsGet_Obj_StopTimer","equip_type":3,"download_type":2},"display_actor":"Obj_StopTimer"},
+    {"name":"Progressive Remote Bomb","delivery":{"kind":"staged","stages":[{"kind":"rune","flag":"IsGet_Obj_RemoteBomb","equip_type":0,"download_type":0},{"kind":"rune","flag":"IsGet_Obj_RemoteBombLv2","equip_type":0,"download_type":0,"power_up":true}]},"display_actor":"Obj_RemoteBomb"},
+    {"name":"Progressive Stasis","delivery":{"kind":"staged","stages":[{"kind":"rune","flag":"IsGet_Obj_StopTimer","equip_type":3,"download_type":2},{"kind":"rune","flag":"IsGet_Obj_StopTimerLv2","equip_type":3,"download_type":2,"power_up":true}]},"display_actor":"Obj_StopTimer"},
     {"name":"Cryonis","delivery":{"kind":"rune","flag":"IsGet_Obj_IceMaker","equip_type":4,"download_type":3},"display_actor":"Obj_IceMaker"},
     {"name":"Master Cycle Zero","delivery":{"kind":"rune","flag":"IsGet_Obj_Motorcycle","download_type":5,"select_if_none":6},"display_actor":"Obj_Motorcycle"},
-    {"name":"Sheikah Sensor","delivery":{"kind":"flags","writes":[["IsGet_Obj_SheikSensor",true],["IsStart_Obj_SheikSensor",true],["App_SeakSensor_IsEnabled",true]]},"display_actor":"Item_AP"},
+    {"name":"Progressive Sheikah Sensor","delivery":{"kind":"staged","stages":[{"kind":"flags","writes":[["IsGet_Obj_SheikSensor",true],["IsStart_Obj_SheikSensor",true],["App_SeakSensor_IsEnabled",true]]},{"kind":"flags","writes":[["IsGet_Obj_SheikSensorLv2",true]]}]},"display_actor":"Item_AP"},
 
     {"name":"Warm Doublet","delivery":{"kind":"actors","actors":["Armor_044_Upper"]},"display_actor":"Armor_044_Upper"},
     {"name":"Snowquill Set","delivery":{"kind":"actors","actors":["Armor_009_Head","Armor_009_Upper","Armor_009_Lower"]},"display_actor":"Armor_009_Upper"},
@@ -22,10 +22,10 @@
     {"name":"Rubber Set","delivery":{"kind":"actors","actors":["Armor_046_Head","Armor_046_Upper","Armor_046_Lower"]},"display_actor":"Armor_046_Upper"},
     {"name":"Gerudo Set","delivery":{"kind":"actors","actors":["Armor_053_Head","Armor_053_Upper","Armor_053_Lower"]},"display_actor":"Armor_053_Upper"},
 
-    {"name":"Revali's Gale","delivery":{"kind":"champion_actor","actor":"Obj_HeroSoul_Rito"},"display_actor":"Obj_HeroSoul_Rito"},
-    {"name":"Daruk's Protection","delivery":{"kind":"champion_actor","actor":"Obj_HeroSoul_Goron"},"display_actor":"Obj_HeroSoul_Goron"},
-    {"name":"Urbosa's Fury","delivery":{"kind":"champion_actor","actor":"Obj_HeroSoul_Gerudo"},"display_actor":"Obj_HeroSoul_Gerudo"},
-    {"name":"Mipha's Grace","delivery":{"kind":"champion_actor","actor":"Obj_HeroSoul_Zora"},"display_actor":"Obj_HeroSoul_Zora"},
+    {"name":"Progressive Revali's Gale","delivery":{"kind":"staged","stages":[{"kind":"champion_actor","actor":"Obj_HeroSoul_Rito"},{"kind":"champion_upgrade","actor":"Obj_DLC_HeroSoul_Rito","base":"Obj_HeroSoul_Rito"}]},"display_actor":"Obj_HeroSoul_Rito"},
+    {"name":"Progressive Daruk's Protection","delivery":{"kind":"staged","stages":[{"kind":"champion_actor","actor":"Obj_HeroSoul_Goron"},{"kind":"champion_upgrade","actor":"Obj_DLC_HeroSoul_Goron","base":"Obj_HeroSoul_Goron"}]},"display_actor":"Obj_HeroSoul_Goron"},
+    {"name":"Progressive Urbosa's Fury","delivery":{"kind":"staged","stages":[{"kind":"champion_actor","actor":"Obj_HeroSoul_Gerudo"},{"kind":"champion_upgrade","actor":"Obj_DLC_HeroSoul_Gerudo","base":"Obj_HeroSoul_Gerudo"}]},"display_actor":"Obj_HeroSoul_Gerudo"},
+    {"name":"Progressive Mipha's Grace","delivery":{"kind":"staged","stages":[{"kind":"champion_actor","actor":"Obj_HeroSoul_Zora"},{"kind":"champion_upgrade","actor":"Obj_DLC_HeroSoul_Zora","base":"Obj_HeroSoul_Zora"}]},"display_actor":"Obj_HeroSoul_Zora"},
 
     {"name":"Progressive Climbing Gear","delivery":{"kind":"progressive_actors","actors":["Armor_014_Upper","Armor_014_Head","Armor_014_Lower"]},"display_actor":"Armor_014_Upper"},
     {"name":"Progressive Stealth Set","delivery":{"kind":"progressive_actors","actors":["Armor_012_Upper","Armor_012_Head","Armor_012_Lower"]},"display_actor":"Armor_012_Upper"},

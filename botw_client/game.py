@@ -8,7 +8,7 @@ import time
 import textwrap
 import zlib
 
-from .items import load_item_map
+from .items import load_item_map, stage_delivery
 from .locations import (TOWER_TERMINALS, LocationTracker, alternate_targets, known_hashes,
                         load_targets, tower_activation_flag)
 from .paths import DATA
@@ -394,11 +394,11 @@ class BotwGame:
         self.process.write(self.cave.give_req, bytes(4))
         raise RuntimeError(f"itemGet without an answer for {actor}; request cancelled")
 
-    def item_action_count(self, name: str) -> int:
+    def item_action_count(self, name: str, received_before: int = 0) -> int:
         entry = self.item_map.get(name)
         if not entry:
             raise RuntimeError(f"AP item missing from the item map: {name}")
-        delivery = entry["delivery"]
+        delivery = stage_delivery(entry, received_before)
         kind = delivery["kind"]
         if kind in ("actors", "flags"):
             return len(delivery["actors"] if kind == "actors" else delivery["writes"])
@@ -409,9 +409,9 @@ class BotwGame:
         entry = self.item_map.get(name)
         if not entry:
             raise RuntimeError(f"AP item missing from the item map: {name}")
-        delivery = entry["delivery"]
+        delivery = stage_delivery(entry, received_before)
         kind = delivery["kind"]
-        count = self.item_action_count(name)
+        count = self.item_action_count(name, received_before)
         if not 0 <= step < count:
             raise IndexError(f"{name}: invalid step {step}/{count}")
         if kind == "actors":
@@ -451,7 +451,7 @@ class BotwGame:
     def apply_item(self, name: str, received_before: int = 0) -> str | None:
         """Apply every sub-action; runtime persists progress between steps."""
         extra = None
-        for step in range(self.item_action_count(name)):
+        for step in range(self.item_action_count(name, received_before)):
             extra = self.apply_item_step(name, step, received_before) or extra
         return extra
 

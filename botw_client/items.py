@@ -10,6 +10,10 @@ ITEMS_JSON = ROOT / "botw_world" / "data" / "items.json"
 MAP_JSON = ROOT / "data" / "item_map.json"
 # The traps the client plays itself (native_trap), by effect name.
 NATIVE_EFFECTS = {"cucco_swarm", "downpour", "paranoia", "yiga_ambush"}
+# A rune's "+", by its download type: the Slate's line once Purah has upgraded
+# it (Demo032_0 Event262, Event263): Remote Bomb, Stasis.
+POWER_UP_LINES = {0: "DemoMsg/Demo032_0:Demo032_0_Text020",
+                  2: "DemoMsg/Demo032_0:Demo032_0_Text019"}
 
 
 class ItemMapError(RuntimeError):
@@ -51,14 +55,14 @@ def validate_item_map(items_path: Path = ITEMS_JSON,
     if useful:
         raise ItemMapError(f"pickup notification for an item that is not a filler: {useful}")
 
-    allowed = {"actors", "progressive_actors", "flags", "rune", "counter",
-               "counter_at_least", "getdemo_actor", "champion_actor", "manual_prompt", "trap",
+    allowed = {"actors", "progressive_actors", "staged", "flags", "rune", "counter",
+               "counter_at_least", "getdemo_actor", "champion_actor", "champion_upgrade",
+               "manual_prompt", "trap",
                "native_trap", "arrows", "cook", "pouch_slot", "horse", "map"}
     from .gamedata_table import load
     gamedata = load()
     flag_types = {flag_name: kind for kind, flag_name in gamedata.values()}
-    for name, entry in mapping.items():
-        delivery = entry.get("delivery", {})
+    for name, entry, delivery in _deliveries(mapping):
         kind = delivery.get("kind")
         if kind not in allowed:
             raise ItemMapError(f"{name}: invalid delivery.kind")
@@ -67,6 +71,11 @@ def validate_item_map(items_path: Path = ITEMS_JSON,
         actors = delivery.get("actors", [])
         if kind in ("getdemo_actor", "champion_actor", "arrows"):
             actors = [delivery.get("actor")]
+        if kind == "champion_upgrade":
+            actors = [delivery.get("actor"), delivery.get("base")]
+            race = str(delivery.get("base", "")).removeprefix("Obj_HeroSoul_")
+            if race not in ("Rito", "Goron", "Gerudo", "Zora") or actors[0] != f"Obj_DLC_HeroSoul_{race}":
+                raise ItemMapError(f"{name}: a champion upgrade is Obj_DLC_HeroSoul_X over Obj_HeroSoul_X")
         if kind == "horse":
             actors = [delivery.get(key) for key in ("actor", "mane", "saddle", "reins")]
             if not all(actors):
@@ -107,6 +116,10 @@ def validate_item_map(items_path: Path = ITEMS_JSON,
             # Master Cycle Zero's 5, Demo645_0 Event63).
             if delivery.get("download_type") not in (0, 1, 2, 3, 5):
                 raise ItemMapError(f"{name}: invalid rune download type")
+            # Its "+" (Purah's upgrade, Demo032_0): the screen of the upgrade,
+            # Remote Bomb's or Stasis' only (the Sensor's "+" has its own).
+            if delivery.get("power_up") and delivery.get("download_type") not in POWER_UP_LINES:
+                raise ItemMapError(f"{name}: no upgrade screen for this rune")
             # Without an equip type, the rune selected when none is in hand.
             from .rune_selection import RUNE_TYPES
             if "equip_type" not in delivery and delivery.get("select_if_none") not in RUNE_TYPES:
@@ -139,6 +152,38 @@ def validate_item_map(items_path: Path = ITEMS_JSON,
             if flag_types.get(flag) != delivery.get("type"):
                 raise ItemMapError(f"{name}: unknown counter or type: {flag}")
     return len(expected), len(mapping) - len(expected)
+
+
+def _deliveries(mapping: dict[str, dict]):
+    """(name, entry, delivery) of each item, once per stage of a staged item."""
+    for name, entry in mapping.items():
+        delivery = entry.get("delivery", {})
+        if delivery.get("kind") != "staged":
+            yield name, entry, delivery
+            continue
+        stages = delivery.get("stages")
+        if not isinstance(stages, list) or len(stages) < 2 or any(
+                not isinstance(stage, dict) or stage.get("kind") == "staged" for stage in stages):
+            raise ItemMapError(f"{name}: a staged item needs two stages or more, none staged")
+        for stage in stages:
+            yield name, entry, stage
+
+
+def stage_delivery(entry: dict, received_before: int) -> dict:
+    """The delivery of an item's next copy: a staged item's stage (its first
+    copy the first stage, whichever copy it is; copies past the last give the
+    last again), any other item's own."""
+    delivery = entry["delivery"]
+    if delivery["kind"] != "staged":
+        return delivery
+    stages = delivery["stages"]
+    return stages[min(max(received_before, 0), len(stages) - 1)]
+
+
+def stage_count(entry: dict) -> int | None:
+    """The stages of a staged item; None for any other."""
+    delivery = entry["delivery"]
+    return len(delivery["stages"]) if delivery["kind"] == "staged" else None
 
 
 def progressive_index(item_name: str, received_before: int, size: int) -> int:

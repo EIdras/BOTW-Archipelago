@@ -20,7 +20,7 @@ REPORT = ROOT / ".build/play-seeds/08278964164390492688/analysis.json"
 
 def write_seed(folder, *, corrupt_manifest=False, duplicate=False):
     slot = {"schema": 1, "game": "Breath of the Wild", "seed": "test-seed", "slot": 1,
-            "slot_name": "Player", "slot_data": {"world_schema": 2, "client_schema": 3}}
+            "slot_name": "Player", "slot_data": {"world_schema": 5, "client_schema": 3}}
     slot["content_sha256"] = digest(json.dumps(slot, ensure_ascii=False, sort_keys=True,
                                               separators=(",", ":")).encode())
     if corrupt_manifest:
@@ -103,9 +103,9 @@ def tree(path):
 hashes = {n:digest(raw) for n,raw in tree(a).items() if n != 'manifest.json'}
 # Every installed file (metadata excluded): the native code, the resources,
 # the Archipelago quest (QuestProduct, entries, ActorInfo, texts in 7 languages), the sanctum's gate, the gifts of the
-# Zora King and Kima, Goron City's armor shop.
-assert len(hashes) == 38
-assert digest(encode(hashes)) == 'dd2f655c95dc0ba7e186ffe97a790e0855ec01c8a78fcd32485090f61aa90e35', 'new pin: ' + digest(encode(hashes))
+# Zora King and Kima, Goron City's armor shop, Purah's upgrades and her camera.
+assert len(hashes) == 42
+assert digest(encode(hashes)) == '11f624637637a746bbe9310c2d9242b8211a5fd1abb120558a3606a302ce3e66', 'new pin: ' + digest(encode(hashes))
 binding = load_seed(work/'analysis.json', 1, work/'seed.zip')
 verify_pack(a, binding)
 try:

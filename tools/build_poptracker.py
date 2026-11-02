@@ -77,10 +77,11 @@ def code(name: str) -> str:
 RUNE, ARMOR, CHAMPION, GEAR, LIFE, EVENT, MAP_COLOUR = ("#2f6fae", "#3d7a3f", "#b08a2e", "#6b6f7d",
                                                        "#a8323a", "#6d4a9c", "#c07a2a")
 ROWS = [
-    [("Paraglider", "GLD", GEAR), ("Magnesis", "MAG", RUNE), ("Remote Bomb", "BOMB", RUNE),
-     ("Stasis", "STA", RUNE), ("Cryonis", "CRY", RUNE), ("Sheikah Sensor", "SNS", RUNE)],
-    [("Revali's Gale", "REV", CHAMPION), ("Daruk's Protection", "DAR", CHAMPION),
-     ("Urbosa's Fury", "URB", CHAMPION), ("Mipha's Grace", "MIP", CHAMPION),
+    [("Paraglider", "GLD", GEAR), ("Magnesis", "MAG", RUNE), ("Progressive Remote Bomb", "BOMB", RUNE),
+     ("Progressive Stasis", "STA", RUNE), ("Cryonis", "CRY", RUNE),
+     ("Progressive Sheikah Sensor", "SNS", RUNE)],
+    [("Progressive Revali's Gale", "REV", CHAMPION), ("Progressive Daruk's Protection", "DAR", CHAMPION),
+     ("Progressive Urbosa's Fury", "URB", CHAMPION), ("Progressive Mipha's Grace", "MIP", CHAMPION),
      ("Master Sword", "MS", GEAR), ("Hylian Shield", "HYL", GEAR)],
     [("Flamebreaker Set", "FIRE", ARMOR), ("Zora Set", "ZORA", ARMOR), ("Gerudo Set", "GER", ARMOR),
      ("Warm Doublet", "WARM", ARMOR), ("Snowquill Set", "SNOW", ARMOR), ("Desert Voe Set", "VOE", ARMOR)],
@@ -106,11 +107,17 @@ REGION_PANEL = [["Hebra", "Woodland", "Eldin", "Akkala"],
 REGION_LABELS = {"Hebra": "HEB", "Woodland": "WOOD", "Eldin": "ELD", "Akkala": "AKK", "Tabantha": "TAB",
                  "Ridgeland": "RDG", "Central": "CEN", "Lanayru": "LAN", "Gerudo": "GER", START_REGION: "PLAT",
                  "Dueling Peaks": "DUEL", "Hateno": "HAT", "Wasteland": "WST", "Lake": "LAKE", "Faron": "FAR"}
+# The items whose second copy is their "+" (Purah's upgrades, the Champions'
+# Ballad's powers): shown in two stages, the item then its "+".
+UPGRADED = ("Progressive Remote Bomb", "Progressive Stasis", "Progressive Sheikah Sensor",
+            "Progressive Revali's Gale", "Progressive Daruk's Protection",
+            "Progressive Urbosa's Fury", "Progressive Mipha's Grace")
 BEAST_ROW = [("Freed - Divine Beast Vah Ruta", "RUTA"), ("Freed - Divine Beast Vah Rudania", "RUDA"),
              ("Freed - Divine Beast Vah Medoh", "MEDO"), ("Freed - Divine Beast Vah Naboris", "NABO")]
 
 # 5 x 7 capitals and digits, one string a row.
 FONT = {
+    "+": "00000 00100 00100 11111 00100 00100 00000",
     "A": "01110 10001 10001 11111 10001 10001 10001", "B": "11110 10001 10001 11110 10001 10001 11110",
     "C": "01110 10001 10000 10000 10000 10001 01110", "D": "11110 10001 10001 10001 10001 10001 11110",
     "E": "11111 10000 10000 11110 10000 10000 11111", "F": "11111 10000 10000 11110 10000 10000 10000",
@@ -190,10 +197,16 @@ def png(image: np.ndarray) -> bytes:
 # found wins. What is missing keeps its badge.
 ICON_NAMES = {
     "paraglider": ["Paraglider"], "magnesis": ["Magnesis"],
-    "remote_bomb": ["Remote Bomb", "Remote Bombs", "Remote Bomb Round", "Remote Bomb Cube"],
-    "stasis": ["Stasis"], "cryonis": ["Cryonis"], "sheikah_sensor": ["Sheikah Sensor", "Sheikah Sensor+", "Sheikah Slate", "Sheikah Slate2"],
-    "revalis_gale": ["Revali's Gale"], "daruks_protection": ["Daruk's Protection"],
-    "urbosas_fury": ["Urbosa's Fury"], "miphas_grace": ["Mipha's Grace"],
+    "progressive_remote_bomb_1": ["Remote Bomb", "Remote Bombs", "Remote Bomb Round", "Remote Bomb Cube"],
+    "progressive_remote_bomb_2": ["Remote Bomb+", "Remote Bombs+"],
+    "progressive_stasis_1": ["Stasis"], "progressive_stasis_2": ["Stasis+"], "cryonis": ["Cryonis"],
+    "progressive_sheikah_sensor_1": ["Sheikah Sensor", "Sheikah Slate", "Sheikah Slate2"],
+    "progressive_sheikah_sensor_2": ["Sheikah Sensor+"],
+    "progressive_revalis_gale_1": ["Revali's Gale"], "progressive_revalis_gale_2": ["Revali's Gale+"],
+    "progressive_daruks_protection_1": ["Daruk's Protection"],
+    "progressive_daruks_protection_2": ["Daruk's Protection+"],
+    "progressive_urbosas_fury_1": ["Urbosa's Fury"], "progressive_urbosas_fury_2": ["Urbosa's Fury+"],
+    "progressive_miphas_grace_1": ["Mipha's Grace"], "progressive_miphas_grace_2": ["Mipha's Grace+"],
     "master_sword": ["Master Sword"], "hylian_shield": ["Hylian Shield"],
     "flamebreaker_set": ["Flamebreaker Armor"], "zora_set": ["Zora Armor"],
     "gerudo_set": ["Gerudo Top", "Gerudo Veil"], "warm_doublet": ["Warm Doublet"],
@@ -227,7 +240,7 @@ ICONS_FOLDER = DATA / "poptracker/icons"
 # inventory, its map's icons. Under the player's icons, over the labels.
 UI_ICONS = {
     "heart_container": "Nt_HeartNew_00^f", "stamina_vessel": "Nt_PauseIconGanbari_04^f",
-    "sheikah_sensor": "Nt_SeekSensorIcon_00^s",
+    **{f"progressive_sheikah_sensor_{n}": "Nt_SeekSensorIcon_00^s" for n in (1, 2)},
     "master_sword": "Nt_PauseIcon_00^s", "hylian_shield": "Nt_PauseIcon_02^s",
     "flamebreaker_set": "Nt_PauseIconFire_00^t", "zora_set": "Nt_PauseIconSwim_00^t",
     "rubber_set": "Nt_PauseIconElect_00^t", "warm_doublet": "Nt_PauseIconCool_00^t",
@@ -247,6 +260,7 @@ UI_ICONS = {
     "dot_shrine": "Nt_MapDungeonNew_00^t", "dot_tower": "Nt_MapTowerNew_00^t",
     "dot_shop": "Nt_MapHatago_00^t", "dot_stall": "Nt_YorozuIcon_00^t", "dot_goal": "Nt_MapCastle_00^t",
     "dot_rune_terminal": "Nt_PauseIconKodai_00^t", "dot_divine_beast": "Nt_IconSinJuNew_01^d",
+    "dot_rune_upgrade": "Nt_PauseIconKodai_00^t", "dot_champions_ballad": "Nt_IconSinJuNew_03^d",
     "dot_master_sword": "Nt_PauseIcon_00^s",
 }
 
@@ -321,7 +335,7 @@ def update_content() -> Path | None:
 
 
 def ui_icons(content: Path | None) -> dict[str, np.ndarray]:
-    """{image key: RGBA} of UI_ICONS; a progressive piece gets its number."""
+    """{image key: RGBA} of UI_ICONS; a progressive piece gets its number, a "+" its sign."""
     if content is None:
         return {}
     from tools import uitex
@@ -336,12 +350,16 @@ def ui_icons(content: Path | None) -> dict[str, np.ndarray]:
         except (KeyError, ValueError):
             continue
         piece = re.search(r"_(\d)$", key)
-        found[key] = numbered(image, piece.group(1)) if key.startswith("progressive_") and piece else image
+        if key in {f"{code(name)}_2" for name in UPGRADED}:
+            image = numbered(image, "+")
+        elif key.startswith("progressive_") and piece:
+            image = numbered(image, piece.group(1))
+        found[key] = image
     return found
 
 
 def numbered(image: np.ndarray, digit: str) -> np.ndarray:
-    """The icon with a piece's number in its lower right corner."""
+    """The icon with a piece's number (or a "+") in its lower right corner."""
     image = image.copy()
     height, width = image.shape[:2]
     scale = max(1, height // 24)
@@ -361,14 +379,15 @@ NOISE = re.compile(r"botw|breathofthewild|icon|file")
 
 
 def icon_key(text: str) -> str:
+    """The name of an icon file, without what a wiki adds; a "+" one (an
+    upgraded rune or power) stays apart from the plain one."""
+    plus = "+" in text
     text = text.lower().replace("'s ", " ").replace("'", "")
-    return NOISE.sub("", re.sub(r"[^a-z0-9]+", "", text))
+    return NOISE.sub("", re.sub(r"[^a-z0-9]+", "", text)) + ("+" if plus else "")
 
 
 def game_icons(folder: Path) -> dict[str, bytes]:
-    """{image key: PNG bytes} of the icons found in `folder` and its subfolders.
-    A name met twice keeps its plain file before its "+" one (the Champions'
-    Ballad's upgraded powers)."""
+    """{image key: PNG bytes} of the icons found in `folder` and its subfolders."""
     if not folder.is_dir():
         return {}
     files = {}
@@ -401,12 +420,18 @@ def items(cat, icons: dict[str, bytes] | None = None) -> tuple[list, dict, dict]
         ids[item["id"]] = item_code
         path = f"images/items/{item_code}.png"
         count = int(item.get("count", 1))
-        if name.startswith("Progressive "):
+        if name.startswith("Progressive ") or name in UPGRADED:
             stages = []
             for stage in range(1, count + 1):
                 stage_path = f"images/items/{item_code}_{stage}.png"
-                image(stage_path, f"{item_code}_{stage}", label[:3] + str(stage), colour)
-                stages.append({"name": f"{name} ({stage}/{count})", "img": stage_path,
+                if name in UPGRADED:
+                    # The item, then its "+".
+                    plain = name.removeprefix("Progressive ")
+                    badge, title = (label, plain) if stage == 1 else (label[:3] + "+", plain + "+")
+                else:
+                    badge, title = label[:3] + str(stage), f"{name} ({stage}/{count})"
+                image(stage_path, f"{item_code}_{stage}", badge, colour)
+                stages.append({"name": title, "img": stage_path,
                                "codes": item_code, "inherit_codes": True})
             entries.append({"name": name, "type": "progressive", "allow_disabled": True,
                             "loop": False, "stages": stages})
@@ -478,15 +503,19 @@ def region_items(cat, drawn: poptracker_regions.Drawn | None) -> tuple[list, dic
 
 DOT = {"Shrine": "#3a8fd6", "Tower": "#e08a2c", "Divine Beast": "#c94a4a", "Shop": "#2fa36b",
        "Stall": "#2fa36b", "Great Fairy": "#d65fb5", "Master Sword": "#e6d23a",
-       "Rune Terminal": "#3ac0c9", "Goal": "#ffffff"}
+       "Rune Terminal": "#3ac0c9", "Rune Upgrade": "#3ac0c9", "Champions' Ballad": "#c94a4a",
+       "Goal": "#ffffff"}
 
 
 def place_of(row: dict) -> str:
     """The map square a location belongs to: a stable's two Beedle items, a
-    stall's, a Divine Beast and its heart, a plateau shrine and its terminal."""
+    stall's, a Divine Beast and its heart, a plateau shrine and its terminal,
+    Purah's three upgrades."""
     name, kinds = row["name"], set(row["category"].split("|"))
     if kinds & {"Shop", "Stall"}:
         return re.sub(r" Item \d+$", "", name)
+    if "Rune Upgrade" in kinds:
+        return name.rsplit(" - ", 1)[0]
     if "Divine Beast Heart" in kinds:
         return "Divine Beast " + name.replace(" Heart Container", "")
     return name

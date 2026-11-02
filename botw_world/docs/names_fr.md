@@ -187,6 +187,23 @@ Archipelago affiche les noms anglais du jeu. Voici leurs équivalents dans le je
 | Remote Bombs Terminal | Bombes à distance (pierre guide du Plateau) |
 | Stasis Terminal | Cinetis (pierre guide du Plateau) |
 
+### Améliorations de Purah
+
+| English | Français |
+|---|---|
+| Hateno Ancient Tech Lab - Remote Bomb Upgrade | Laboratoire antique d'Elimith : Bombes à distance + |
+| Hateno Ancient Tech Lab - Sheikah Sensor Upgrade | Laboratoire antique d'Elimith : Détecteur sheikah + |
+| Hateno Ancient Tech Lab - Stasis Upgrade | Laboratoire antique d'Elimith : Cinetis + |
+
+### La Ballade des Prodiges
+
+| English | Français |
+|---|---|
+| Daruk's Song | EX La Chanson de Daruk |
+| Mipha's Song | EX La Chanson de Mipha |
+| Revali's Song | EX La Chanson de Revali |
+| Urbosa's Song | EX La Chanson d'Urbosa |
+
 ### But
 
 | English | Français |
@@ -269,11 +286,11 @@ Archipelago affiche les noms anglais du jeu. Voici leurs équivalents dans le je
 |---|---|
 | Paraglider | Paravoile |
 | Magnesis | Polaris |
-| Remote Bomb | Bombes à distance |
-| Stasis | Cinetis |
+| Progressive Remote Bomb | Bombes à distance → Bombes à distance + (progressif) |
+| Progressive Stasis | Cinetis → Cinetis + (progressif) |
 | Cryonis | Cryonis |
 | Master Cycle Zero | Destrier de légende 0.1 |
-| Sheikah Sensor | Détecteur sheikah |
+| Progressive Sheikah Sensor | Détecteur sheikah → Détecteur sheikah + (progressif) |
 | Warm Doublet | Doublet |
 | Snowquill Set | Bijou à plumes, Tunique duveteuse piaf, Pantalon duveteux piaf |
 | Flamebreaker Set | Casque de pierre, Armure de pierre, Bottes de pierre |
@@ -281,10 +298,10 @@ Archipelago affiche les noms anglais du jeu. Voici leurs équivalents dans le je
 | Zora Set | Casque zora, Armure zora, Jambières zoras |
 | Rubber Set | Casque isolant, Combinaison isolante, Pantalon isolant |
 | Gerudo Set | Voile de damoiselle, Corsage de damoiselle, Sarouel de damoiselle |
-| Revali's Gale | Rage de Revali |
-| Daruk's Protection | Bouclier de Daruk |
-| Urbosa's Fury | Colère d'Urbosa |
-| Mipha's Grace | Prière de Mipha |
+| Progressive Revali's Gale | Rage de Revali → Rage de Revali + (progressif) |
+| Progressive Daruk's Protection | Bouclier de Daruk → Bouclier de Daruk + (progressif) |
+| Progressive Urbosa's Fury | Colère d'Urbosa → Colère d'Urbosa + (progressif) |
+| Progressive Mipha's Grace | Prière de Mipha → Prière de Mipha + (progressif) |
 | Progressive Climbing Gear | Gants d'escalade → Bandana d'escalade → Souliers d'escalade (progressif) |
 | Progressive Stealth Set | Combinaison furtive → Masque furtif → Chausses furtives (progressif) |
 | Heart Container | Réceptacle de cœur |

@@ -78,7 +78,7 @@ class NativeWorldTests(unittest.TestCase):
         row = next(r for r in LOCATIONS if r["name"] == "Vah Ruta Heart Container")
         self.assertIn("Freed - Divine Beast Vah Ruta", required_items(row))
         heart = mw.get_location("Vah Ruta Heart Container", 1)
-        for name in ("Paraglider", "Magnesis", "Remote Bomb", "Stasis", "Zora Set"):
+        for name in ("Paraglider", "Magnesis", "Progressive Remote Bomb", "Progressive Stasis", "Zora Set"):
             mw.state.collect(world.create_item(name))
         mw.state.sweep_for_advancements()
         self.assertFalse(heart.can_reach(mw.state))   # beast not freeable without Cryonis
@@ -91,14 +91,14 @@ class NativeWorldTests(unittest.TestCase):
         for goal in range(3):
             mw = self.make_world(goal=goal, goal_shrines=120)
             state = mw.get_all_state(False)
-            self.assertEqual(len(mw.get_unfilled_locations(1)), 152)
+            self.assertEqual(len(mw.get_unfilled_locations(1)), 159)
             self.assertTrue(all(loc.can_reach(state) for loc in mw.get_locations()))
 
     def test_beedle_and_stall_items_are_locations_of_their_options(self):
         from Fill import distribute_items_restrictive
         for beedle, stall in ((0, 5), (2, 28)):
             mw = self.make_world(seed=7, beedle_shop_items=beedle, stall_items=stall)
-            expected = 152 + 16 * beedle + stall
+            expected = 159 + 16 * beedle + stall
             self.assertEqual(len(mw.get_unfilled_locations(1)), expected)
             names = {loc.name for loc in mw.get_locations()}
             if stall == 28:
@@ -110,9 +110,9 @@ class NativeWorldTests(unittest.TestCase):
                 manifest = slot_manifests(next(Path(temp).glob("*.apbotw")))[0]
             self.assertEqual(len(manifest["placements"]), expected)
             self.assertEqual(len(manifest["shops"]), 16 * beedle + stall)
-            self.assertEqual(manifest["slot_data"]["world_schema"], 4)
+            self.assertEqual(manifest["slot_data"]["world_schema"], 5)
             self.assertEqual(manifest["slot_data"]["stall_items"], stall)
-            stalls = [row for row in manifest["shops"] if row["location_id"] >= 186]
+            stalls = [row for row in manifest["shops"] if 186 <= row["location_id"] <= 213]
             self.assertEqual(len(stalls), stall)
             self.assertTrue(all(20 <= row["price"] <= 200 for row in manifest["shops"]))
 
@@ -179,7 +179,7 @@ class NativeWorldTests(unittest.TestCase):
                     self.assertEqual(len(files), players)
                     for path in files:
                         manifest = slot_manifests(path)[0]
-                        self.assertEqual(len(manifest["placements"]), 152)
+                        self.assertEqual(len(manifest["placements"]), 159)
 
 
 if __name__ == "__main__":

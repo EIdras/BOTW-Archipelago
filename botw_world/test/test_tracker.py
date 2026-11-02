@@ -77,7 +77,7 @@ class TestRulesAreTheLogic(unittest.TestCase):
         shrines = [f"Cleared - {r['name']}" for r in LOCATIONS if "Shrine" in categories(r)]
         for state in states(multiworld, 300):
             sanctum = (plain(goal_row, state, 1)
-                       and state.has_all(["Master Sword", "Magnesis", "Remote Bomb", "Stasis", "Cryonis"], 1)
+                       and state.has_all(["Master Sword", "Magnesis", "Progressive Remote Bomb", "Progressive Stasis", "Cryonis"], 1)
                        and state.has_from_list(beasts, 1, 3) and state.has_from_list(shrines, 1, 20))
             self.assertEqual(ganon.access_rule(state), sanctum)
             self.assertEqual(multiworld.completion_condition[1](state), state.has_from_list(shrines, 1, 30))

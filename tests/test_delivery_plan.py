@@ -35,7 +35,7 @@ class DeliveryPlanTests(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     def test_related_flags_share_one_idempotent_step(self):
-        plan = compile_delivery_plan("Sheikah Sensor")
+        plan = compile_delivery_plan("Progressive Sheikah Sensor")
         self.assertEqual(len(plan.steps), 1)
         self.assertEqual(len(plan.steps[0].mutations), 3)
         self.assertIsNone(plan.steps[0].capacity_actor)
@@ -43,7 +43,7 @@ class DeliveryPlanTests(unittest.TestCase):
                             for mutation in plan.steps[0].mutations))
 
     def test_rune_unlock_and_selection_share_one_guarded_step(self):
-        plan = compile_delivery_plan("Stasis")
+        plan = compile_delivery_plan("Progressive Stasis")
         self.assertEqual(len(plan.steps), 1)
         self.assertEqual([
             (mutation.kind, mutation.target, mutation.value)
@@ -52,6 +52,16 @@ class DeliveryPlanTests(unittest.TestCase):
                 (MutationKind.RUNE_DOWNLOAD, "IsGet_Obj_StopTimer", 2),
                 (MutationKind.SET_S32, "PlayerEquipItemType", 3),
             ])
+
+    def test_a_second_copy_is_the_runes_upgrade_and_a_third_gives_it_again(self):
+        for received_before in (1, 2):
+            (step,) = compile_delivery_plan("Progressive Stasis", received_before).steps
+            self.assertEqual([(m.kind, m.target, m.value) for m in step.mutations], [
+                (MutationKind.RUNE_POWER_UP, "IsGet_Obj_StopTimerLv2", 2),
+                (MutationKind.SET_S32, "PlayerEquipItemType", 3)])
+        (step,) = compile_delivery_plan("Progressive Sheikah Sensor", 1).steps
+        self.assertEqual([(m.kind, m.target) for m in step.mutations],
+                         [(MutationKind.SET_BOOL, "IsGet_Obj_SheikSensorLv2")])
 
     def test_the_master_cycle_downloads_as_a_rune_without_taking_the_hand(self):
         # Demo645_0 (Event63, Event73): the download screen, type 5, then its flag;

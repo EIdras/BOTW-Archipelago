@@ -2248,5 +2248,75 @@
     "id": 213,
     "merchant": 13,
     "slot": 2
+  },
+  {
+    "name": "Hateno Ancient Tech Lab - Sheikah Sensor Upgrade",
+    "region": "Hateno",
+    "category": "Rune Upgrade",
+    "requires": "",
+    "gamedata_flag": "APPurahUp_SheikSensorLv2",
+    "flag_hash": "513394852",
+    "notes": "Npc_AncientDoctor SelectPowerUp, 3 ancient screws (Item_Enemy_27); custom saved bool",
+    "id": 214
+  },
+  {
+    "name": "Hateno Ancient Tech Lab - Remote Bomb Upgrade",
+    "region": "Hateno",
+    "category": "Rune Upgrade",
+    "requires": "",
+    "gamedata_flag": "APPurahUp_RemoteBombLv2",
+    "flag_hash": "-981560234",
+    "notes": "Npc_AncientDoctor SelectPowerUp, 3 ancient shafts (Item_Enemy_29); custom saved bool",
+    "id": 215
+  },
+  {
+    "name": "Hateno Ancient Tech Lab - Stasis Upgrade",
+    "region": "Hateno",
+    "category": "Rune Upgrade",
+    "requires": "",
+    "gamedata_flag": "APPurahUp_StopTimerLv2",
+    "flag_hash": "-1531362586",
+    "notes": "Npc_AncientDoctor SelectPowerUp, 3 ancient cores (Item_Enemy_30); custom saved bool",
+    "id": 216
+  },
+  {
+    "name": "Revali's Song",
+    "region": "Tabantha",
+    "category": "Champions' Ballad",
+    "requires": "",
+    "gamedata_flag": "IsPlayed_Demo622_1",
+    "flag_hash": "-560051155",
+    "notes": "Demo622_1, the end of Vah Medoh's Ballad trial; saved",
+    "id": 217
+  },
+  {
+    "name": "Mipha's Song",
+    "region": "Lanayru",
+    "category": "Champions' Ballad",
+    "requires": "",
+    "gamedata_flag": "IsPlayed_Demo622_2",
+    "flag_hash": "1201085847",
+    "notes": "Demo622_2, the end of Vah Ruta's Ballad trial; saved",
+    "id": 218
+  },
+  {
+    "name": "Daruk's Song",
+    "region": "Eldin",
+    "category": "Champions' Ballad",
+    "requires": "",
+    "gamedata_flag": "IsPlayed_Demo622_0",
+    "flag_hash": "-1449558853",
+    "notes": "Demo622_0, the end of Vah Rudania's Ballad trial; saved",
+    "id": 219
+  },
+  {
+    "name": "Urbosa's Song",
+    "region": "Wasteland",
+    "category": "Champions' Ballad",
+    "requires": "",
+    "gamedata_flag": "IsPlayed_Demo622_3",
+    "flag_hash": "814755073",
+    "notes": "Demo622_3, the end of Vah Naboris' Ballad trial; saved",
+    "id": 220
   }
 ]

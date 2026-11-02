@@ -30,10 +30,9 @@ from tools.build_resource_base_from_source import INPUT_HASHES, generate_present
 from tools.build_game_data_mod import modify_gamedata_flags
 from tools import build_plateau_sensor_candidate as sensor
 from tools import build_master_sword_candidate as sword
-from tools import build_ballad_condition_candidate as ballad
-from tools.build_ballad_upgrade_delivery import champion_entries, transform_for as upgrade_delivery
-from botw_patch import (beast_heart, bike_anywhere, death_link, downpour, ganon_gate, gerudo_outfit,
-                        goron_armor, horses, hud_layout, loading_icon, pedestal, traps)
+from botw_patch import (ballad_ends, beast_heart, bike_anywhere, camera_sensor, death_link, downpour,
+                        ganon_gate, gerudo_outfit, goron_armor, horses, hud_layout, loading_icon,
+                        pedestal, purah_upgrades, traps)
 from botw_patch.ap_quest import INPUT_HASHES as STATUS_INPUTS
 
 TITLE = "Pack/TitleBG.pack"
@@ -65,8 +64,10 @@ UPDATE_HASHES = {
     **sword.PACKS,
     **gerudo_outfit.PACKS, **gerudo_outfit.text_inputs(),
     **goron_armor.PACKS,
+    **camera_sensor.PACKS,
+    **purah_upgrades.PACKS,
     **ganon_gate.PACKS,
-    **{ballad.pack(name): spec[1] for name, spec in ballad.FLOWS.items()},
+    **ballad_ends.PACKS,
 }
 # What a pack of another version than the European one is also built from.
 REGION_SOURCES = ("botw_client/regions.py", "data/region_hashes.json")
@@ -76,8 +77,7 @@ SOURCE_FILES = (
     "tools/build_ui_close_trace.py", "tools/build_ui_lifecycle.py",
     "tools/build_eventflow_alias.py", "tools/build_autonomous_eventflow.py",
     "tools/build_owned_presentation.py", "tools/build_plateau_sensor_candidate.py",
-    "tools/build_master_sword_candidate.py", "tools/build_ballad_condition_candidate.py",
-    "tools/build_ballad_upgrade_delivery.py", "botw_patch/build.py",
+    "tools/build_master_sword_candidate.py", "botw_patch/build.py",
     "botw_patch/resources.py", "botw_patch/events.py", "botw_patch/delivery_flow.py",
     "botw_patch/ledger_experiment.py", "botw_client/delivery_plan.py",
     "botw_client/items.py", "data/item_map.json", "assets/wiiu/Item_AP.sbitemico",
@@ -85,7 +85,8 @@ SOURCE_FILES = (
     "botw_patch/loading_icon.py", "botw_patch/traps.py", "botw_patch/melee_weapons.py",
     "botw_patch/horses.py", "botw_patch/downpour.py", "botw_patch/game_files.py",
     *gerudo_outfit.SOURCE_FILES, *ganon_gate.SOURCE_FILES, *beast_heart.SOURCE_FILES,
-    *goron_armor.SOURCE_FILES, *pedestal.SOURCE_FILES,
+    *goron_armor.SOURCE_FILES, *pedestal.SOURCE_FILES, *camera_sensor.SOURCE_FILES,
+    *purah_upgrades.SOURCE_FILES, *ballad_ends.SOURCE_FILES,
 )
 
 
@@ -247,8 +248,14 @@ def _generate(game: GameFiles, binding_token: int, shops: list | None, status: d
                for name, members in gerudo_outfit.STAGES.items()]
     # So is the Flamebreaker set (botw_patch/goron_armor.py): Goron City's armor shop is sold out.
     stages += [(goron_armor.PACK, {goron_armor.FLOW: goron_armor.transform})]
-    stages += [(ballad.pack(name), {ballad.member(name): ballad.transform_for(name)})
-               for name in ballad.FLOWS]
+    # And the Sheikah Sensor (botw_patch/camera_sensor.py): the camera's restoration no longer gives it.
+    stages += [(camera_sensor.PACK, {camera_sensor.FLOW: camera_sensor.transform})]
+    # Purah's rune upgrades are locations (botw_patch/purah_upgrades.py), in each copy of her flow.
+    stages += [(name, {purah_upgrades.FLOW: purah_upgrades.transform}) for name in purah_upgrades.PACKS]
+    # And the ends of the Champions' Ballad (botw_patch/ballad_ends.py): the "+" of a
+    # champion power is an item too.
+    stages += [(ballad_ends.pack(name), {ballad_ends.member(name): ballad_ends.transform_for(name)})
+               for name in ballad_ends.FLOWS]
     # The sanctum stays sealed until the seed's requirements are met (botw_patch/ganon_gate.py).
     stages += [(ganon_gate.PACK, {ganon_gate.FLOW: ganon_gate.transform})]
     for name, transforms in stages:
@@ -258,14 +265,6 @@ def _generate(game: GameFiles, binding_token: int, shops: list | None, status: d
     # The Divine Beasts' hearts, picked up without the game's get window
     # (botw_patch/beast_heart.py).
     files, edits = patch_stage(files, TITLE, {beast_heart.FLOW: beast_heart.transform})
-    changes.extend(edits)
-    champions = champion_entries(catalog)
-    files, edits = patch_stage(files, TITLE, {
-        MEMBER: upgrade_delivery({item: entry for item, entry in champions.items()
-                                  if not item.endswith(" (quiet)")}),
-        QUIET_MEMBER: upgrade_delivery({item: entry for item, entry in champions.items()
-                                        if item.endswith(" (quiet)")}, host=QUIET_FLOW),
-    })
     changes.extend(edits)
     stage()
     # DeathLink (botw_patch/death_link.py): in every pack, requested only when
@@ -280,6 +279,9 @@ def _generate(game: GameFiles, binding_token: int, shops: list | None, status: d
                                extra_archive=(BOOTUP, {pedestal.EVENT_INFO: pedestal.add_event_info}))
     changes.extend(edits)
     files, edits = patch_stage(files, BOOTUP, {ganon_gate.GAMEDATA: ganon_gate.add_flags})
+    changes.extend(edits)
+    files, edits = patch_stage(files, BOOTUP, {purah_upgrades.GAMEDATA: purah_upgrades.add_flags,
+                                               purah_upgrades.SAVEFORMAT: purah_upgrades.add_save_format})
     changes.extend(edits)
     # The Downpour trap's mark (botw_patch/downpour.py): down again, a save was
     # loaded, and the client ends the downpour.
@@ -339,6 +341,9 @@ def _generate(game: GameFiles, binding_token: int, shops: list | None, status: d
     changes.extend(edits)
     # The sealed sanctum's line (botw_patch/ganon_gate.py).
     files, edits = ganon_gate.generate_texts(files, game)
+    changes.extend(edits)
+    # Purah's choice, which hides the runes she has upgraded (botw_patch/purah_upgrades.py).
+    files, edits = purah_upgrades.generate_texts(files, game)
     changes.extend(edits)
     table = rstb.ResourceSizeTable(unpack(files[TABLE]), True)
     for name, minimum in MINIMUM_ALLOCATIONS.items():

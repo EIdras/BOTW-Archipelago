@@ -187,7 +187,7 @@ class IconTests(unittest.TestCase):
             (folder / "notes.txt").write_bytes(b"not an icon")
             found = poptracker.game_icons(folder)
             self.assertEqual(found, {"zora_set": b"zora", "progressive_climbing_gear_2": b"bandanna",
-                                     "revalis_gale": b"gale"})
+                                     "progressive_revalis_gale_1": b"gale", "progressive_revalis_gale_2": b"gale+"})
             _entries, images, _ids = poptracker.items(poptracker.catalog(), found)
             self.assertEqual(images["images/items/zora_set.png"], b"zora")
             self.assertEqual(images["images/items/progressive_climbing_gear_2.png"], b"bandanna")

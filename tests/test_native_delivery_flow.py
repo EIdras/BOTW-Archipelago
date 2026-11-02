@@ -20,7 +20,7 @@ SOURCE = ROOT / ".build/ledger-validation/4e60affc56def09f/content"
 class NativeDeliveryCompilationTests(unittest.TestCase):
     def test_catalog_covers_verified_action_families_only(self):
         entries, unsupported = compile_native_entries()
-        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 199)
+        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 206)
         self.assertEqual(set(unsupported), set())
         self.assertEqual(len({entry.entry_name for entry in entries}), len(entries))
         self.assertTrue(all(entry.plan.mutations for entry in entries))
@@ -109,7 +109,7 @@ class NativeDeliveryCompilationTests(unittest.TestCase):
     def test_bool_group_has_one_commit_and_no_capacity_preflight(self):
         entries, _ = compile_native_entries()
         sensor = next(entry for entry in entries
-                      if entry.item_name == "Sheikah Sensor")
+                      if entry.item_name == "Progressive Sheikah Sensor")
         self.assertIsNone(sensor.plan.capacity_actor)
         self.assertEqual(len(sensor.plan.mutations), 3)
         self.assertEqual(sensor.cursor_delta, 256)
@@ -186,7 +186,7 @@ class NativeDeliveryGraphTests(unittest.TestCase):
         # With the twins, the steps that open no window of their own.
         self.assertEqual({s.item_name for s in self.specs
                           if host_of(s) == QUIET_FLOW and not s.quiet and not s.drop}, {
-            "Sheikah Sensor", "Ancient Bridle", "Ancient Saddle", "Epona",
+            "Progressive Sheikah Sensor", "Ancient Bridle", "Ancient Saddle", "Epona",
             *(trap.item for trap in TRAPS if trap.host == QUIET_FLOW), "Cucco Swarm", "Downpour",
             "Yiga Ambush", "Paranoia"})
         # The traps' own entries come first, then the delivery entries.
@@ -203,9 +203,10 @@ class NativeDeliveryGraphTests(unittest.TestCase):
         self.assertEqual((step["quiet_entry"], step["quiet_flow"]),
                          ("APD_BFA8EB4C_01Q", "OperationGuide"))
         self.assertNotIn("flow", step)
-        self.assertNotIn("flow", catalog["items"]["Stasis"]["variants"]["default"][0])
-        self.assertEqual(catalog["items"]["Sheikah Sensor"]["variants"]["default"][0]["flow"],
-                         "OperationGuide")
+        for tier in ("0", "1"):
+            self.assertNotIn("flow", catalog["items"]["Progressive Stasis"]["variants"][tier][0])
+            self.assertEqual(catalog["items"]["Progressive Sheikah Sensor"]["variants"][tier][0]["flow"],
+                             "OperationGuide")
 
     def test_patch_is_deterministic_and_preserves_existing_graph(self):
         repeated, _ = patch_delivery_flow(
@@ -386,7 +387,7 @@ class NativeDeliveryGraphTests(unittest.TestCase):
             "IsWaitFinish": True})
 
     def test_flag_group_mutates_all_flags_inside_one_guard(self):
-        spec = self.spec("Sheikah Sensor")
+        spec = self.spec("Progressive Sheikah Sensor", tier=0)
         events = graph_snapshot(read_flow(self.quiet))["events"]
         self.assertNotIn(spec.entry_name + "_Capacity", events)
         cursor = spec.entry_name + "_GuardON"
@@ -404,8 +405,41 @@ class NativeDeliveryGraphTests(unittest.TestCase):
             "IsGet_Obj_SheikSensor", "IsStart_Obj_SheikSensor",
             "App_SeakSensor_IsEnabled"])
 
+    def test_the_second_sensor_is_sensor_plus(self):
+        spec = self.spec("Progressive Sheikah Sensor", tier=1)
+        events = graph_snapshot(read_flow(self.quiet))["events"]
+        stem = spec.entry_name
+        self.assertEqual(events[stem + "_GuardON"]["nxt"], stem + "_Mut0")
+        self.assertEqual(events[stem + "_Mut0"]["params"]["FlagName"], "IsGet_Obj_SheikSensorLv2")
+        self.assertEqual(events[stem + "_Mut0"]["nxt"], stem + "_Commit")
+
+    def test_the_second_rune_is_its_upgrade_as_purah_shows_it(self):
+        lines = {"Progressive Remote Bomb": ("IsGet_Obj_RemoteBombLv2", 0, 0, "Demo032_0_Text020"),
+                 "Progressive Stasis": ("IsGet_Obj_StopTimerLv2", 2, 3, "Demo032_0_Text019")}
+        events = graph_snapshot(read_flow(self.patched))["events"]
+        for item, (flag, screen, equip, line) in lines.items():
+            stem = self.spec(item, tier=1).entry_name
+            self.assertEqual(events[stem + "_Mut0_Open"]["params"], {
+                "ItemType": screen, "IsWaitFinish": True, "IsEquip": True,
+                "IsPowerUp": True, "IsPlayerClose": False})
+            self.assertEqual(events[stem + "_Mut0_Voice"]["params"]["MessageId"],
+                             f"DemoMsg/Demo032_0:{line}")
+            self.assertEqual(events[stem + "_Mut0_Flag"]["params"]["FlagName"], flag)
+            # Purah's order: the "+" flag (and Stasis' power-up) before the menu
+            # closes, which redraws the HUD's rune icon.
+            chain = [stem + "_Mut0_Voice", stem + "_Mut0_Flag",
+                     *([stem + "_Mut0_PowerUp"] if screen == 2 else []), stem + "_Mut0_Close"]
+            self.assertEqual([events[name]["nxt"] for name in chain[:-1]], chain[1:])
+            if screen == 2:
+                self.assertEqual(events[stem + "_Mut0_PowerUp"]["actor_action"], "Demo_PowerupRune")
+                self.assertEqual(events[stem + "_Mut0_PowerUp"]["params"]["RuneType"], 2)
+            self.assertEqual(events[stem + "_Mut1"]["params"]["Value"], equip)
+            # The first copy is the rune itself, whichever is received first.
+            first = self.spec(item, tier=0).entry_name
+            self.assertFalse(events[first + "_Mut0_Open"]["params"]["IsPowerUp"])
+
     def test_rune_unlock_and_equip_commit_together(self):
-        spec = self.spec("Stasis")
+        spec = self.spec("Progressive Stasis", tier=0)
         graph = graph_snapshot(read_flow(self.patched))
         events = graph["events"]
         stem = spec.entry_name
@@ -473,7 +507,7 @@ class NativeDeliveryGraphTests(unittest.TestCase):
         self.assertEqual(mutation["nxt"], stem + "_Commit")
 
     def test_a_champion_power_shows_the_games_get_window_in_vanilla_order(self):
-        spec = self.spec("Mipha's Grace")
+        spec = self.spec("Progressive Mipha's Grace", tier=0)
         events = graph_snapshot(read_flow(self.patched))["events"]
         stem = spec.entry_name + "_Mut0"
         self.assertEqual(events[stem]["actor_action"], "Demo_SetItemDataToPouch")
@@ -485,6 +519,29 @@ class NativeDeliveryGraphTests(unittest.TestCase):
         self.assertEqual(show["params"], {"CheckTargetActorName": "Obj_HeroSoul_Zora",
                                           "IsInvalidOpenPouch": False})
         self.assertEqual(show["nxt"], stem + "_GetFlag")
+
+    def test_the_second_champion_power_replaces_the_base_one_without_a_get_window(self):
+        spec = self.spec("Progressive Mipha's Grace", tier=1)
+        events = graph_snapshot(read_flow(self.patched))["events"]
+        stem = spec.entry_name
+        order, cursor = [], events[stem + "_GuardON"]["nxt"]
+        while cursor != stem + "_Commit":
+            node = events[cursor]
+            order.append((node["actor_action"], node["params"].get("PorchItemName")
+                          or node["params"].get("TargetActorName") or node["params"].get("ActorName")))
+            cursor = node["nxt"]
+        self.assertEqual(order, [
+            ("Demo_DeletePorchItemInEquip", "Obj_HeroSoul_Zora"),
+            ("Demo_SetItemDataToPouch", "Obj_DLC_HeroSoul_Zora"),
+            ("Demo_CheckAndCreateEquip", "Obj_DLC_HeroSoul_Zora"),
+            ("Demo_SetGetFlagByActorName", "Obj_DLC_HeroSoul_Zora"),
+            ("Demo_SetGetFlagByActorName", "Obj_HeroSoul_Zora")])
+        self.assertEqual(events[stem + "_Mut0"]["params"]["DeleteNum"], -1)
+        # No GetDemo of the DLC power anywhere: it crashes outside its Ballad.
+        for flow in (self.patched, self.quiet):
+            self.assertFalse([name for name, node in graph_snapshot(read_flow(flow))["events"].items()
+                              if node.get("res_flowchart_name") == "GetDemo"
+                              and "Obj_DLC_HeroSoul" in str(node.get("params"))])
 
     def test_korok_seed_uses_the_vanilla_pouch_actor(self):
         spec = self.spec("Korok Seed")

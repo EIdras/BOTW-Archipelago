@@ -52,7 +52,7 @@ class CatalogueTests(unittest.TestCase):
         world = json.loads((ROOT / "botw_world/data/locations.json").read_text(encoding="utf-8"))
         self.assertEqual([r for r in world if r["category"] == "Stall"],
                          [world_row(l) for l in LOCATIONS])
-        self.assertEqual([r["id"] for r in world][-28:], [l.id for l in LOCATIONS])
+        self.assertEqual([r["id"] for r in world][185:213], [l.id for l in LOCATIONS])
 
 
 @unittest.skipUnless(HAS_GAME, "requires the Wii U update and the DLC")

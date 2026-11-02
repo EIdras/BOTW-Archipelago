@@ -36,8 +36,8 @@ class TestShrinesOutsideThePlateau(LogicTestBase):
 
 class TestEitherWay(LogicTestBase):
     def test_either_rune_opens_a_shrine_with_two_ways(self) -> None:
-        self.assertEqual(LOGIC["Maka Rah Shrine"]["runes"], "Magnesis/Stasis")
-        self.assertAccessDependency(["Maka Rah Shrine"], [["Magnesis", "Stasis"]], only_check_listed=True)
+        self.assertEqual(LOGIC["Maka Rah Shrine"]["runes"], "Magnesis/Progressive Stasis")
+        self.assertAccessDependency(["Maka Rah Shrine"], [["Magnesis", "Progressive Stasis"]], only_check_listed=True)
 
 
 class TestWhatTheGameBlocks(LogicTestBase):
@@ -159,9 +159,9 @@ class TestSanctumRunes(LogicTestBase):
     options = {**HARD, "sanctum_runes": True}
 
     def test_the_four_runes_are_asked(self) -> None:
-        self.collect_by_name(["Paraglider", "Magnesis", "Stasis", "Cryonis"])
+        self.collect_by_name(["Paraglider", "Magnesis", "Progressive Stasis", "Cryonis"])
         self.assertFalse(self.can_reach_location("Defeat Calamity Ganon"))
-        self.collect_by_name("Remote Bomb")
+        self.collect_by_name("Progressive Remote Bomb")
         self.assertTrue(self.can_reach_location("Defeat Calamity Ganon"))
 
 
