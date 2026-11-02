@@ -98,11 +98,13 @@ def verified_manifest(manifest: dict) -> dict:
 
 
 def check_compatible(slot_data: dict) -> None:
-    """This version can play a seed whose schemas it knows, whatever the world's
-    version that generated it; otherwise the player needs that version."""
-    from botw_client.locations import SCHEMA_LOCATION_COUNTS
+    """This version can play a seed of its own world schema, whatever the world's
+    version that generated it; otherwise the player needs that version. An
+    earlier schema is not played: its pack would take Purah's upgrades and the
+    Champions' Ballad's powers away, without their locations."""
+    from botw_client.locations import WORLD_SCHEMA
     from botw_client.version import VERSION
-    if (slot_data.get("world_schema") not in SCHEMA_LOCATION_COUNTS
+    if (slot_data.get("world_schema") != WORLD_SCHEMA
             or slot_data.get("client_schema") not in CLIENT_SCHEMAS):
         made = slot_data.get("world_version", "an earlier version")
         raise ValueError(f"this seed was generated with the Breath of the Wild world {made}, which this "
