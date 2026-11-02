@@ -199,8 +199,8 @@ def compile_delivery_plan(item_name: str, received_before: int = 0,
         return ItemDeliveryPlan(item_name, (DeliveryStep((DeliveryMutation(
             MutationKind.CHAMPION_ACTOR, delivery["actor"], 1),)),))
     if kind == "champion_upgrade":
-        # In the window flowchart, as the base power: the host where this chain
-        # was measured (tools/build_ballad_upgrade_delivery.py).
+        # In the window flowchart, as the base power: Demo007_1 is the host
+        # where this chain was measured.
         return ItemDeliveryPlan(item_name, (DeliveryStep((DeliveryMutation(
             MutationKind.CHAMPION_UPGRADE, delivery["actor"], delivery["base"]),),
             host="Demo007_1"),))

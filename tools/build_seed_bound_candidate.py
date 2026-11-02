@@ -15,9 +15,6 @@ The source must already carry the seed-independent chain stages:
   vanilla heart;
 - Master Sword pedestal (tools/build_master_sword_candidate.py): without it the
   pedestal, an AP check, also gives the vanilla sword;
-- Ballad upgrade guard (tools/build_ballad_condition_candidate.py): without it
-  the end of a Champions' Ballad upgrades a champion power the player has not
-  received from AP yet;
 - champion power restore (tools/build_hero_soul_restore_withhold.py): without
   it the engine puts the champion power back in the pouch at every load of a
   save where the Divine Beast is freed, which is the normal AP state, so the
@@ -130,15 +127,9 @@ def build(report_path: Path, slot: int, source: Path = SOURCE,
     if not manifest.get("master_sword_source"):
         raise ValueError("source lacks the Master Sword stage "
                          "(tools/build_master_sword_candidate.py --source ...)")
-    if not manifest.get("ballad_condition_source"):
-        raise ValueError("source lacks the Ballad upgrade guard stage "
-                         "(tools/build_ballad_condition_candidate.py --source ...)")
     if not manifest.get("hero_soul_restore_withhold"):
         raise ValueError("source lacks the champion power restore stage "
                          "(tools/build_hero_soul_restore_withhold.py --source ...)")
-    if not manifest.get("ballad_upgrade_delivery"):
-        raise ValueError("source lacks the Ballad upgrade delivery stage "
-                         "(tools/build_ballad_upgrade_delivery.py --source ...)")
     files = verified_files(source, manifest)
     catalog = json.loads(files["delivery_catalog.json"])
     old_token = manifest["native_session_binding_token"]
