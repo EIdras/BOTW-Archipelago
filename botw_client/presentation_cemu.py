@@ -106,7 +106,13 @@ class CemuPresentationBackend:
         self._check()
         if state['version'] != 2 or state['generation'] != self.generation or state['fault']:
             self.stopped = True
-            raise RuntimeError('Native generation/protocol changed or faulted')
+            # The owner's state goes in the journal: a fault comes from a lock
+            # contention or a second Bind, which only its phase and generations tell.
+            keys = ('phase', 'generation', 'bound_generation', 'completed_generation',
+                    'left_generation', 'aborted_generation', 'busy', 'fault', 'native_return')
+            seen = ', '.join(f'{key} {state.get(key)}' for key in keys)
+            raise RuntimeError(f'Native generation/protocol changed or faulted '
+                               f'(expected generation {self.generation}: {seen}; join {join})')
         return state, join
 
     def owner_free(self):
