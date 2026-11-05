@@ -76,21 +76,30 @@ local function reached_regions()
     return reached
 end
 
--- The maps as region keys (slot data tower_maps 2, region_keys): a location
--- is in logic once its maps are received, with region_lock once the regions it
--- asks for are reached (REGION_KEYS); without them, its rule's bracket makes it
--- a sequence break, possible but out of logic.
-function botw_maps(id)
-    if tonumber(SLOT_DATA.tower_maps) ~= 2 then
+local function region_locked()
+    return tonumber(SLOT_DATA.tower_maps) == 2 and enabled(SLOT_DATA.region_lock)
+end
+
+-- With region_lock, a location is out of reach until the regions it asks for
+-- are reached (REGION_KEYS): the client sends Link back from a closed region.
+function botw_regions(id)
+    if not region_locked() then
         return true
     end
-    if enabled(SLOT_DATA.region_lock) then
-        local reached = reached_regions()
-        for _, region in ipairs(REGION_KEYS[tonumber(id)] or {}) do
-            if not reached[region] then
-                return false
-            end
+    local reached = reached_regions()
+    for _, region in ipairs(REGION_KEYS[tonumber(id)] or {}) do
+        if not reached[region] then
+            return false
         end
+    end
+    return true
+end
+
+-- The maps as region keys (slot data tower_maps 2, region_keys): a location
+-- is in logic once its maps are received; without them, its rule's bracket
+-- makes it a sequence break, possible but out of logic.
+function botw_maps(id)
+    if tonumber(SLOT_DATA.tower_maps) ~= 2 then
         return true
     end
     local maps = MAP_KEYS[tonumber(id)]
@@ -127,8 +136,19 @@ function botw_regions_frame()
     end
 end
 
+-- A region's marker on the big map (locations/regions.json) is checked, grey
+-- as a location done, once the region is open: green would read as a location
+-- in logic.
+local function open_marker(region, open)
+    local section = Tracker:FindObjectForCode("@" .. region .. " Region/Region")
+    local left = open and 0 or 1
+    if section and section.AvailableChestCount ~= left then
+        section.AvailableChestCount = left
+    end
+end
+
 function botw_update_regions()
-    local lock = tonumber(SLOT_DATA.tower_maps) == 2 and enabled(SLOT_DATA.region_lock)
+    local lock = region_locked()
     local reached = lock and reached_regions() or {}
     for region, code in pairs(REGION_MAPS) do
         local item = Tracker:FindObjectForCode(code .. "_reached")
@@ -136,7 +156,15 @@ function botw_update_regions()
         if item and item.Active ~= value then
             item.Active = value
         end
+        open_marker(region, value)
     end
+    open_marker("Great Plateau", true)
+end
+
+-- The regions' markers on the big map: hidden when the towers reveal the maps
+-- (tower_maps vanilla), their maps then never received.
+function botw_regions_shown()
+    return tonumber(SLOT_DATA.tower_maps) ~= 0
 end
 
 function botw_in_seed(id)

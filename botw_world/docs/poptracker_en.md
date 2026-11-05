@@ -60,8 +60,8 @@ Each square is a place on the map; hover it to see its locations, click it to se
 | Color | Meaning |
 |---|---|
 | Green | Reachable with your items |
-| Red | Not reachable yet |
-| Yellow | Possible, but out of logic (a region's map is missing, or with `region_lock` a region not reached) |
+| Red | Not reachable yet (with `region_lock`, also a location in a region not reached: the game sends you back) |
+| Yellow | Possible, but out of logic (a region's map is missing) |
 | Grey | Already checked |
 
 A square holding several locations (a stable's two Beedle items, a plateau shrine and its terminal) can show more
@@ -77,11 +77,15 @@ many you have (a progressive item, a pouch upgrade).
 
 ## The regions panel
 
-The region maps have a panel of their own, with two tabs: **Tiles**, one tile per region laid out as Hyrule, and
-**Map**, a small map of Hyrule cut into its regions. A region stays grey until its map is received, then shows the
+The region maps have a panel of their own: a small map of Hyrule cut into its regions. A region stays grey until its map is received, then shows the
 game's own colours. With `region_lock`, a region whose map is received but that is not reached yet is amber and
 hatched. The Great Plateau is always lit. A left click marks a map by hand. When the map is a plain grid (see
-below), the tiles are plain labels and there is no small map.
+below), the panel is one plain label per region instead.
+
+The big map shows the regions too: their borders, their names, and a large diamond in a gold ring in each. Red,
+its map is not received; yellow, with `region_lock` only, its map is received but the region is not reached yet;
+grey, the region is open, as a location done (the Great Plateau always is). The diamonds are not locations of the
+seed. There are none when the towers reveal the maps (`tower_maps: vanilla`).
 
 Everything is updated from the room; you never need to click anything. Without a connection, you can still mark
 items and locations by hand with the mouse.

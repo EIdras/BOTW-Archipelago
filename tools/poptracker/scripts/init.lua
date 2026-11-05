@@ -6,6 +6,7 @@ ScriptHost:LoadScript("scripts/logic.lua")
 Tracker:AddItems("items/items.json")
 Tracker:AddMaps("maps/maps.json")
 Tracker:AddLocations("locations/locations.json")
+Tracker:AddLocations("locations/regions.json")
 Tracker:AddLayouts("layouts/tracker.json")
 
 ScriptHost:AddOnLocationSectionChangedHandler("botw events", botw_update_events)
@@ -15,6 +16,7 @@ for _, code in pairs(REGION_MAPS) do
 end
 ScriptHost:AddWatchForCode("botw regions paraglider", "paraglider", botw_regions_changed)
 ScriptHost:AddOnFrameHandler("botw regions", botw_regions_frame)
+botw_regions_changed()
 
 if PopVersion and Archipelago then
     ScriptHost:LoadScript("scripts/autotracking/archipelago.lua")

@@ -28,9 +28,9 @@ game, so that no file of the game is in the repository.
   section's variants (`_0`, `_16`...) are other states of the place; the plain name is used. Without a base game
   folder (a `.wud`/`.wua` game), the map is a plain grid; so it is when the map cannot be read (its drive
   disconnected), and the stamp is then the one of no game, so that the next session builds it again.
-- **The regions panel** (`tools/poptracker_regions.py`), the maps' place in the tracker, two tabs: *Tiles*, a tile a
-  region laid out as Hyrule (the Great Plateau's always lit), and *Map*, one mini-map of Hyrule made of a piece a
-  region (a `canvas`, each piece cut to its region, transparent around it). Each is drawn from the game's map and the
+- **The regions panel** (`tools/poptracker_regions.py`), the maps' place in the tracker: one mini-map of Hyrule made
+  of a piece a region (a `canvas`, each piece cut to its region, transparent around it); without the game's map, and
+  in the broadcast view, a tile a region laid out as Hyrule (the Great Plateau's always lit). Each is drawn from the game's map and the
   tower areas of the update's `Ecosystem/MapTower.sbeco` (`tools/map_regions.py`), in three states: the map not
   received (grey), received but its region out of reach with `region_lock` (amber, hatched), the region reached (the
   game's colours under a touch of green; a tile framed green or amber). A tile and a piece are `composite_toggle`s of
@@ -40,6 +40,13 @@ game, so that no file of the game is in the repository.
   mark the panel stale; a frame handler updates it. Written from inside an item's change, a `<map>_reached` would
   reach its composite before the map, and the composite would write the map back off. Without the game's map or its update, the tiles are
   labels and there is no mini-map.
+- **The regions on the big map** (`regions_on_map`, `poptracker_regions.on_map`): from the same tower areas, the
+  regions' borders and names are drawn into `images/map.png`, and each region a gold ring, deep inside it and away
+  from the checks' squares. In each ring, a marker, a large diamond, a location of no check
+  (`locations/regions.json`): red its map not received, yellow received but the region out of reach with
+  `region_lock`. Green would read as a check in logic: once the region is open, `botw_update_regions` checks its
+  marker (grey, as a location done), the Great Plateau's from the start. The markers are hidden
+  (`botw_regions_shown`) when the slot data's `tower_maps` is vanilla. Without the update, neither is drawn.
 - **Positions** (`data/location_positions.json`, built by `tools/build_location_positions.py` from the DLC's map
   units, checked by a test): shrines and towers from their `LocationMarker`, a rune terminal at its plateau shrine,
   a Divine Beast and its heart at the beast's marker during its quest, the Great Fairies at their fountain, Beedle at
@@ -52,9 +59,10 @@ game, so that no file of the game is in the repository.
   counts it, the beast reachable (its own groups), not checked: a heart container is picked up before the beast's
   control unit. The region maps (`catalog.map_keys`, `MAP_KEYS` in `data.lua`) are an optional rule in brackets,
   `[$botw_maps|<id>]`: when the slot data's `tower_maps` is `region_keys` (2) and a map is missing, the location is a
-  sequence break (yellow), possible but out of logic. With the slot data's `region_lock`, the bracket asks instead
-  for the regions a location needs to reach (`REGION_KEYS`: its own, a tower's and Ganon's too, and those of its
-  maps), as the world's region graph does: from the Great Plateau with the Paraglider, a region is reached once its
+  sequence break (yellow), possible but out of logic. With the slot data's `region_lock`, a rule out of brackets,
+  `$botw_regions|<id>`, asks too for the regions a location needs to reach: out of them, it is out of reach (red),
+  since the client sends Link back from a closed region. The regions (`REGION_KEYS`: its own, a tower's and Ganon's
+  too, and those of its maps) are reached as the world's region graph does: from the Great Plateau with the Paraglider, a region is reached once its
   map is received and it borders a reached one across the seed's open borders (slot data `region_borders`); Hyrule
   Castle with Central. With the slot data's `map_travel_points` too, a map opens a travel point in its region: the
   region is reached by its map alone, with the Paraglider. Ganon's square follows the sanctum's requirements of the

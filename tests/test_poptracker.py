@@ -47,6 +47,20 @@ class PackTests(unittest.TestCase):
         self.assertEqual((min(xs), min(ys)), (poptracker.MARGIN, poptracker.MARGIN))
         self.assertEqual((width - max(xs), height - max(ys)), (poptracker.MARGIN, poptracker.MARGIN))
 
+    def test_each_region_has_its_marker_on_the_map_checked_once_open(self):
+        markers = {place["name"].removesuffix(" Region"): place for place in self.json("locations/regions.json")}
+        if poptracker.region_lookup() is None:
+            self.assertEqual(markers, {})
+            return
+        self.assertEqual(set(markers), {poptracker.START_REGION, *self.cat.MAPS})
+        item = poptracker.code(self.cat.MAPS["Hebra"])
+        self.assertEqual(markers["Hebra"]["sections"], [{"name": "Region", "access_rules": [[item, f"[{item}_reached]"]]}])
+        self.assertEqual(markers["Hebra"]["visibility_rules"], [["$botw_regions_shown"]])
+        # Checked once open, by the name the Lua finds it.
+        self.assertIn('Tracker:FindObjectForCode("@" .. region .. " Region/Region")',
+                      self.pack.read("scripts/logic.lua").decode())
+        self.assertIn('Tracker:AddLocations("locations/regions.json")', self.pack.read("scripts/init.lua").decode())
+
     def test_the_autotracker_knows_every_ap_location_and_item(self):
         data = self.pack.read("scripts/data.lua").decode()
         sections = dict(re.findall(r'\[(\d+)\] = "(@[^"]+)"', data.split("REQUIREMENTS")[0]))
@@ -79,6 +93,7 @@ class PackTests(unittest.TestCase):
         rows = {row["name"]: row for row in self.cat.LOCATIONS}
         self.assertEqual(sections["Rin Oyaa Shrine"]["access_rules"],
                          [[f"$botw_access|{rows['Rin Oyaa Shrine']['id']}",
+                           f"$botw_regions|{rows['Rin Oyaa Shrine']['id']}",
                            f"[$botw_maps|{rows['Rin Oyaa Shrine']['id']}]"]])
         self.assertEqual(sections["Oman Au Shrine"]["access_rules"], [[f"$botw_access|{rows['Oman Au Shrine']['id']}"]])
         data = self.pack.read("scripts/data.lua").decode()
@@ -93,13 +108,15 @@ class PackTests(unittest.TestCase):
         self.assertIn("function botw_maps(id)", logic)
         self.assertIn("SLOT_DATA.tower_maps", logic)
 
-    def test_with_region_lock_a_region_out_of_reach_is_a_sequence_break(self):
+    def test_with_region_lock_a_region_out_of_reach_is_out_of_reach(self):
         sections = {section["name"]: section for place in self.json("locations/locations.json")
                     for section in place["sections"]}
         ids = {row["name"]: row["id"] for row in self.cat.LOCATIONS}
         hebra, goal = ids["Hebra Tower"], ids[self.cat.GOAL_LOCATION]
-        self.assertEqual(sections["Hebra Tower"]["access_rules"], [[f"$botw_access|{hebra}", f"[$botw_maps|{hebra}]"]])
-        self.assertEqual(sections[self.cat.GOAL_LOCATION]["access_rules"], [["$botw_ganon", f"[$botw_maps|{goal}]"]])
+        self.assertEqual(sections["Hebra Tower"]["access_rules"], [[f"$botw_access|{hebra}", f"$botw_regions|{hebra}",
+                                                                  f"[$botw_maps|{hebra}]"]])
+        self.assertEqual(sections[self.cat.GOAL_LOCATION]["access_rules"], [["$botw_ganon", f"$botw_regions|{goal}",
+                                                                           f"[$botw_maps|{goal}]"]])
         data = self.pack.read("scripts/data.lua").decode()
         table = data.split("REGION_KEYS = {")[1].split("\n}")[0]
         regions = dict(re.findall(r'\[(\d+)\] = (\{[^}]*\})', table))
@@ -118,6 +135,7 @@ class PackTests(unittest.TestCase):
         # The seed's own borders, from its slot data.
         logic = self.pack.read("scripts/logic.lua").decode()
         self.assertIn("SLOT_DATA.region_lock", logic)
+        self.assertIn("function botw_regions(id)", logic)
         self.assertIn("SLOT_DATA.region_borders", logic)
         # With map_travel_points, a region is reached by its map alone.
         self.assertIn("SLOT_DATA.map_travel_points", logic)
@@ -305,6 +323,17 @@ class RegionDrawingTests(unittest.TestCase):
         for state in regions.STATES:
             _left, _top, piece = self.drawn.pieces["West", state]
             self.assertEqual(piece[piece.shape[0] // 2, piece.shape[1] // 2, 3], 255)
+
+    def test_on_the_big_map_a_marker_stands_in_its_region_away_from_the_checks(self):
+        where = np.where(np.arange(480)[None, :] < 240, "West", "East").repeat(400, 0).astype(object)
+        rgb = np.full((400, 480, 3), 120, dtype=np.uint8)
+        checks = [(120, 200), (360, 200)]
+        markers = regions.on_map(rgb, where, ["West", "East"], checks, lambda text: poptracker.glyphs(text, 3, 2))
+        self.assertEqual(set(markers), {"West", "East"})
+        for region, (x, y) in markers.items():
+            self.assertEqual(where[y, x], region)
+            self.assertTrue(all(max(abs(x - cx), abs(y - cy)) >= regions.CLEARANCES[0] for cx, cy in checks))
+        self.assertEqual(tuple(rgb[200, 240]), tuple(regions.LINE.astype(np.uint8)))   # the border
 
     def test_a_label_tile_frames_the_label(self):
         label = poptracker.icon("HEB", poptracker.MAP_COLOUR)

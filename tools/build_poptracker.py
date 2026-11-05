@@ -100,6 +100,7 @@ ROWS = [
 # where the game starts, always lit. Its label stands for its map when the pack
 # is built without the game's.
 START_REGION = "Great Plateau"
+REGION_MARKER = 46                # a region's diamond on the big map (regions_on_map), a check's square 30
 REGION_PANEL = [["Hebra", "Woodland", "Eldin", "Akkala"],
                 ["Tabantha", "Ridgeland", "Central", "Lanayru"],
                 ["Gerudo", START_REGION, "Dueling Peaks", "Hateno"],
@@ -140,21 +141,31 @@ def rgb(colour: str) -> np.ndarray:
     return np.array([int(colour[i:i + 2], 16) for i in (1, 3, 5)], dtype=np.int32)
 
 
+def glyphs(text: str, scale: int, pad: int = 0) -> np.ndarray:
+    """The text in FONT, a space as wide as a letter: a bool mask (7 * scale
+    high), `pad` pixels around it."""
+    width = len(text) * 6 * scale - scale
+    mask = np.zeros((7 * scale + 2 * pad, width + 2 * pad), dtype=bool)
+    for index, char in enumerate(text):
+        for row, bits in enumerate(FONT[char].split() if char != " " else ()):
+            for column, bit in enumerate(bits):
+                if bit == "1":
+                    px = pad + index * 6 * scale + column * scale
+                    py = pad + row * scale
+                    mask[py:py + scale, px:px + scale] = True
+    return mask
+
+
 def icon(label: str, colour: str, size: int = 48) -> np.ndarray:
     """A label for an item the game draws no icon of: white letters on nothing,
     like the game's own (masks it colours white), a bar of its family's colour
     under them. (size, size, 4) RGBA."""
     scale = 2
-    width = len(label) * 5 * scale + (len(label) - 1) * scale
+    letters = glyphs(label, scale)
+    width = letters.shape[1]
     left, top = (size - width) // 2, (size - 7 * scale) // 2 - 3
     glyph = np.zeros((size, size), dtype=bool)
-    for index, char in enumerate(label):
-        for row, bits in enumerate(FONT[char].split()):
-            for column, bit in enumerate(bits):
-                if bit == "1":
-                    px = left + index * 6 * scale + column * scale
-                    py = top + row * scale
-                    glyph[py:py + scale, px:px + scale] = True
+    glyph[top:top + 7 * scale, left:left + width] = letters
     outline = np.zeros_like(glyph)
     for dy in (-1, 0, 1):
         for dx in (-1, 0, 1):
@@ -600,10 +611,10 @@ def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[l
                 maps[row["id"]] = keys
         reach = world_regions(cat, row)
         if reach:
-            # Optional, in brackets: without its maps, or with region_lock its
-            # regions out of reach, a location is a sequence break (yellow), not
-            # out of reach (botw_maps). Ganon and the towers ask for no map.
-            section["access_rules"][0].append(f"[$botw_maps|{row['id']}]")
+            # With region_lock, its regions out of reach, a location is out of
+            # reach (botw_regions). Optional, in brackets: without its maps, a
+            # sequence break (yellow, botw_maps). Ganon and the towers ask for no map.
+            section["access_rules"][0] += [f"$botw_regions|{row['id']}", f"[$botw_maps|{row['id']}]"]
             regions[row["id"]] = reach
         if kinds & {"Shop", "Stall"}:
             # Shown when the seed has it (one of a place's items is enough).
@@ -669,7 +680,8 @@ def layouts(cat, drawn: poptracker_regions.Drawn | None = None) -> dict:
     width, height = poptracker_regions.TILE
     regions = {"type": "layout", "key": "region_tiles"}
     if drawn:
-        # The mini-map: Hyrule, then a piece a region over it, where it lies.
+        # The mini-map: Hyrule, then a piece a region over it, where it lies. The
+        # tiles stay for a map not read, and for the broadcast view.
         background = drawn.background.shape
         pieces = [{"type": "item", "item": "hyrule_regions", "canvas_left": 0, "canvas_top": 0,
                    "width": background[1], "height": background[0]}]
@@ -677,10 +689,7 @@ def layouts(cat, drawn: poptracker_regions.Drawn | None = None) -> dict:
             left, top, image = drawn.pieces[region, "lit"]
             pieces.append({"type": "item", "item": f"{code(item)}_piece", "canvas_left": left, "canvas_top": top,
                            "width": image.shape[1], "height": image.shape[0]})
-        regions = {"type": "tabbed", "tabs": [
-            {"title": "Tiles", "content": regions},
-            {"title": "Map", "content": {"type": "canvas", "width": background[1], "height": background[0],
-                                         "content": pieces}}]}
+        regions = {"type": "canvas", "width": background[1], "height": background[0], "content": pieces}
     return {
         "item_grid": {"type": "itemgrid", "item_margin": "3,3", "item_size": "40,40",
                       "h_alignment": "center", "rows": grid},
@@ -729,17 +738,59 @@ def base_content() -> Path | None:
     return content if game.suffix.lower() == ".rpx" and content.is_dir() else None
 
 
-def regions_panel(cat, image: np.ndarray, box: tuple[int, int, int, int]) -> poptracker_regions.Drawn | None:
-    """The regions panel drawn from the game's map and the update's tower areas;
-    None without them (labelled tiles, no mini-map)."""
+def region_lookup() -> poptracker_regions.Lookup | None:
+    """The region at map pixels, from the update's tower areas; None without them."""
     update = update_content()
     if update is None:
         return None
     try:
-        lookup = poptracker_regions.tower_areas(update, SCALE, maptex.ORIGIN)
+        return poptracker_regions.tower_areas(update, SCALE, maptex.ORIGIN)
+    except (OSError, ValueError, KeyError):
+        return None
+
+
+def regions_panel(cat, image: np.ndarray, box: tuple[int, int, int, int],
+                  lookup: poptracker_regions.Lookup | None) -> poptracker_regions.Drawn | None:
+    """The regions panel drawn from the game's map and the update's tower areas;
+    None without them (labelled tiles, no mini-map)."""
+    if lookup is None:
+        return None
+    try:
         return poptracker_regions.draw(image, lookup, box, sorted(cat.MAPS), START_REGION)
     except (OSError, ValueError, KeyError):
         return None
+
+
+def regions_on_map(cat, crop: np.ndarray, box: tuple[int, int, int, int], places: list,
+                   lookup: poptracker_regions.Lookup | None) -> list:
+    """The regions drawn on the big map (`crop`, RGB, changed in place) and their
+    markers, locations of no check: a large diamond in a gold ring a region, red
+    its map not received, yellow received but out of reach with region_lock, and
+    once the region is open checked (grey) by botw_update_regions, the Great
+    Plateau's from the start: green would read as a check in logic. Hidden when
+    the towers reveal the maps (botw_regions_shown). None without the tower areas."""
+    if lookup is None:
+        return []
+    left, top, right, bottom = box
+    try:
+        where = lookup(np.arange(left, right), np.arange(top, bottom))
+    except (OSError, ValueError, KeyError):
+        return []
+    checks = [(spot["x"], spot["y"]) for place in places for spot in place["map_locations"]]
+    regions = [START_REGION, *sorted(cat.MAPS)]
+    drawn = poptracker_regions.on_map(crop, where, regions, checks, lambda text: glyphs(text, 3, 2))
+    markers = []
+    for region, (x, y) in drawn.items():
+        rules = []
+        if region != START_REGION:
+            item = code(cat.MAPS[region])
+            rules = [[item, f"[{item}_reached]"]]
+        markers.append({
+            "name": f"{region} Region", "visibility_rules": [["$botw_regions_shown"]],
+            "sections": [{"name": "Region", "access_rules": rules}],
+            "map_locations": [{"map": MAP, "x": x, "y": y, "size": REGION_MARKER, "border_thickness": 4,
+                               "shape": "diamond"}]})
+    return markers
 
 
 def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tuple[Path, bool]:
@@ -765,9 +816,12 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
             image = plain_map()
     else:
         image = plain_map()
-    alpha = np.full(image.shape[:2] + (1,), 255, dtype=np.uint8)
-    images["images/map.png"] = np.concatenate([image, alpha], 2)[top:bottom, left:right]
-    drawn = regions_panel(cat, image, (left, top, right, bottom)) if game_map else None
+    lookup = region_lookup()
+    crop = np.ascontiguousarray(image[top:bottom, left:right])
+    markers = regions_on_map(cat, crop, (left, top, right, bottom), place_entries, lookup)
+    alpha = np.full(crop.shape[:2] + (1,), 255, dtype=np.uint8)
+    images["images/map.png"] = np.concatenate([crop, alpha], 2)
+    drawn = regions_panel(cat, image, (left, top, right, bottom), lookup) if game_map else None
     region_entries, region_images = region_items(cat, drawn)
     item_entries += region_entries
     images.update(region_images)
@@ -775,6 +829,7 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
                   for path, value in images.items()})
     files["items/items.json"] = json.dumps(item_entries, indent=1).encode()
     files["locations/locations.json"] = json.dumps(place_entries, indent=1).encode()
+    files["locations/regions.json"] = json.dumps(markers, indent=1).encode()
     files["maps/maps.json"] = json.dumps([{
         "name": MAP, "location_size": 30, "location_border_thickness": 3,
         "img": "images/map.png"}], indent=1).encode()

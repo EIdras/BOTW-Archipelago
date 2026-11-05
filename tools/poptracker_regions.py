@@ -198,3 +198,100 @@ def label_tile(label: np.ndarray, state: str) -> np.ndarray:
     alpha = big[..., 3:] / 255
     rgb[y:y + h, x:x + w] = big[..., :3] * alpha + rgb[y:y + h, x:x + w] * (1 - alpha)
     return _finish_tile(rgb, state)
+
+
+# --- The big map ----------------------------------------------------------------
+
+LINE, SHADE = np.array([245, 236, 205.]), np.array([25, 22, 18.])
+RING = np.array([255, 205, 70.])
+PLATE = 32                                  # radius of the ring around a marker, in map pixels
+# PopTracker draws a location a pixel or two up and left of its point (its
+# rounding): the ring is centred there too.
+NUDGE = (-2, -1)
+CLEARANCES = (40, 28, 16, 0)                # pixels kept free around a check's square, if the region has room
+
+
+def _deepest(mask: np.ndarray) -> tuple[int, int] | None:
+    """The (x, y) deepest inside a mask, its edge counted as outside: eroded
+    until it would vanish."""
+    mask = np.pad(mask, 1)
+    if not mask.any():
+        return None
+    while True:
+        inner = mask[1:-1, 1:-1] & mask[:-2, 1:-1] & mask[2:, 1:-1] & mask[1:-1, :-2] & mask[1:-1, 2:]
+        if not inner.any():
+            ys, xs = np.nonzero(mask)
+            middle = len(xs) // 2
+            return int(xs[middle]) - 1, int(ys[middle]) - 1
+        mask = np.pad(inner, 1)
+
+
+def _blur(values: np.ndarray, radius: int) -> np.ndarray:
+    """A box blur, the edges repeated."""
+    k = 2 * radius + 1
+    out = np.pad(values.astype(np.float64), radius, mode="edge")
+    out = np.pad(out.cumsum(0), ((1, 0), (0, 0)))
+    out = out[k:] - out[:-k]
+    out = np.pad(out.cumsum(1), ((0, 0), (1, 0)))
+    return (out[:, k:] - out[:, :-k]) / (k * k)
+
+
+def _blend(rgb: np.ndarray, alpha: np.ndarray, colour: np.ndarray) -> None:
+    alpha = alpha[..., None]
+    rgb[:] = np.rint(rgb * (1 - alpha) + colour * alpha)
+
+
+def on_map(rgb: np.ndarray, where: np.ndarray, regions, checks, label: Callable[[str], np.ndarray],
+           step: int = 4) -> dict:
+    """The regions drawn on the big map (RGB, changed in place) whose region at
+    each pixel is `where`: their borders, and a region its name under a gold ring,
+    where its marker stands, deep inside it and away from the checks' squares
+    (`checks`, (x, y) pixels). The markers' {region: (x, y)}. `label(text)` is
+    the name's glyphs, a bool mask."""
+    names = np.isin(where, list(regions))
+    edge = np.zeros(where.shape, dtype=bool)
+    edge[1:] |= names[1:] & names[:-1] & (where[1:] != where[:-1])
+    edge[:, 1:] |= names[:, 1:] & names[:, :-1] & (where[:, 1:] != where[:, :-1])
+    # Blurred twice, the line's steps rounded off: 3 to 4 pixels, anti-aliased,
+    # in a dark shadow.
+    soft = _blur(_blur(edge, 2), 2) * 5
+    _blend(rgb, np.clip((soft - 0.3) / 0.3, 0, 1) * 0.75, SHADE)
+    _blend(rgb, np.clip((soft - 0.55) / 0.25, 0, 1), LINE)
+
+    height, width = where.shape
+    small = where[::step, ::step]
+    markers = {}
+    for region in regions:
+        mask = small == region
+        for clearance in CLEARANCES:
+            free = mask.copy()
+            for x, y in checks:
+                free[max(0, (y - clearance) // step):(y + clearance) // step + 1,
+                     max(0, (x - clearance) // step):(x + clearance) // step + 1] = False
+            spot = _deepest(free)
+            if spot:
+                break
+        if not spot:
+            continue
+        x, y = spot[0] * step, spot[1] * step
+        markers[region] = (x, y)
+        reach = PLATE + 8
+        y0, x0 = max(0, y - reach), max(0, x - reach)
+        plate = rgb[y0:y + reach, x0:x + reach]
+        yy, xx = np.ogrid[y0:y0 + plate.shape[0], x0:x0 + plate.shape[1]]
+        distance = np.hypot(xx - x - NUDGE[0], yy - y - NUDGE[1])
+        _blend(plate, np.clip(PLATE + 0.5 - distance, 0, 1) * 0.6, SHADE)
+        _blend(plate, np.clip(np.minimum(distance - PLATE + 0.5, PLATE + 3.5 - distance), 0, 1), RING)
+        _blend(plate, np.clip(np.minimum(distance - PLATE - 3.5, PLATE + 5.5 - distance), 0, 1) * 0.8, SHADE)
+        glyphs = label(region.upper())
+        h, w = glyphs.shape
+        top, left = y + PLATE + 10, x - w // 2
+        top, left = max(0, min(height - h, top)), max(0, min(width - w, left))
+        if top < y + PLATE:                     # no room under the ring: above it
+            top = max(0, y - PLATE - 10 - h)
+        cut = (slice(top, top + h), slice(left, left + w))
+        banner = rgb[max(0, top - 6):top + h + 6, max(0, left - 8):left + w + 8]
+        banner[:] = banner * 0.35 + SHADE * 0.65
+        rgb[cut][_grow(glyphs, 2)] = SHADE
+        rgb[cut][glyphs] = (255, 255, 255)
+    return markers
