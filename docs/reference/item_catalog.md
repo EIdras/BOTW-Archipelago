@@ -17,7 +17,7 @@ the number of locations: 159 locations without the shop options (26 filler items
 | Paraglider | 1 | the paraglider (`PlayerStole2`) |
 | Magnesis, Cryonis | 1 each | the rune, presented by the Sheikah Slate's download screen, and selected |
 | Progressive Remote Bomb, Progressive Stasis | 2 each | the rune, then its "+" (Purah's upgrade), each presented by the Sheikah Slate's download screen; Purah's upgrades are locations ([`botw_patch/purah_upgrades.py`](../../botw_patch/purah_upgrades.py)) |
-| Progressive Sheikah Sensor | 2 | the sensor's flags, then its "+"; Purah no longer gives the sensor with her camera ([`botw_patch/camera_sensor.py`](../../botw_patch/camera_sensor.py)) |
+| Progressive Sheikah Sensor | 2 | the Sensor, then its "+", by their vanilla download screens; Purah no longer gives the sensor with her camera ([`botw_patch/camera_sensor.py`](../../botw_patch/camera_sensor.py)) |
 | Warm Doublet | 1 | the doublet |
 | Snowquill, Flamebreaker, Desert Voe, Zora, Rubber Set | 1 each | the three pieces of the set; King Dorephan no longer gives the Zora armor, which Vah Ruta asks for, nor Kima the Flamebreaker armor, which the burning zones ask for; Goron City's armor shop says it is sold out when Link buys a piece ([`botw_patch/goron_armor.py`](../../botw_patch/goron_armor.py)) |
 | Gerudo Set | 1 | the veil, top and sirwal that let Link into Gerudo Town; Vilia no longer sells them: she asks 1,000,000 rupees, and her lines say so in every language ([`botw_patch/gerudo_outfit.py`](../../botw_patch/gerudo_outfit.py)) |

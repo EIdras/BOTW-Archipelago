@@ -58,7 +58,7 @@ def validate_item_map(items_path: Path = ITEMS_JSON,
     allowed = {"actors", "progressive_actors", "staged", "flags", "rune", "counter",
                "counter_at_least", "getdemo_actor", "champion_actor", "champion_upgrade",
                "manual_prompt", "trap",
-               "native_trap", "arrows", "cook", "pouch_slot", "horse", "map"}
+               "native_trap", "arrows", "cook", "pouch_slot", "horse", "map", "sensor"}
     from .gamedata_table import load
     gamedata = load()
     flag_types = {flag_name: kind for kind, flag_name in gamedata.values()}
@@ -126,6 +126,14 @@ def validate_item_map(items_path: Path = ITEMS_JSON,
                 raise ItemMapError(f"{name}: a rune without equip_type needs select_if_none")
             if flag_types.get("PlayerEquipItemType") != "s32":
                 raise ItemMapError("PlayerEquipItemType missing from the s32 GameData")
+        elif kind == "sensor":
+            # The Sheikah Sensor (Demo004_0) or its "+" (Demo032_0): its flag,
+            # and the flags that start it, set before the menu closes.
+            for flag in (delivery.get("flag"), *delivery.get("start", ())):
+                if flag_types.get(flag) != "bool":
+                    raise ItemMapError(f"{name}: unknown sensor flag: {flag}")
+            if delivery.get("power_up") and delivery.get("start"):
+                raise ItemMapError(f"{name}: the Sensor's upgrade starts nothing")
         elif kind == "map":
             # A tower's map: the flag the game's map reads to show its area.
             flag = delivery.get("flag", "")

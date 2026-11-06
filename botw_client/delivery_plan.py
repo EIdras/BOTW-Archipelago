@@ -33,6 +33,16 @@ class MutationKind(str, Enum):
     # (IsPowerUp) and the Slate's line for it, then the Lv2 flag. Its silent
     # twin sets the flag.
     RUNE_POWER_UP = "rune_power_up"
+    # The Sheikah Sensor, as the first tower gives it (Demo004_0 Event595-591;
+    # Purah too, Demo032_0 Event249-302): its flag (the target), the map's
+    # sensor download, the Slate's line, the sensor's icon moved to the HUD,
+    # the flags that start it (the value), the menu closed. Its silent twin sets
+    # the flags.
+    SENSOR_DOWNLOAD = "sensor_download"
+    # The Sensor's "+", as Purah gives it (Demo032_0 Event214-305, then
+    # Event319, Event158): the download of the upgrade, its two lines, then the
+    # Lv2 flag (the target) before the menu closes. Its silent twin sets the flag.
+    SENSOR_POWER_UP = "sensor_power_up"
     # A trap: the entry of botw_patch/traps.py called as a sub-flow, its text
     # (what the journal says once it has happened) as the value. Its silent twin,
     # for a trap given back after a reload, spends it without effect.
@@ -217,6 +227,11 @@ def compile_delivery_plan(item_name: str, received_before: int = 0,
             MutationKind.SET_BOOL, flag, bool(value), value_type="bool")
             for flag, value in delivery["writes"])
         return ItemDeliveryPlan(item_name, (DeliveryStep(mutations),))
+    if kind == "sensor":
+        # One guarded step: every flag of the copy is set by its presentation.
+        return ItemDeliveryPlan(item_name, (DeliveryStep((DeliveryMutation(
+            MutationKind.SENSOR_POWER_UP if delivery.get("power_up") else MutationKind.SENSOR_DOWNLOAD,
+            delivery["flag"], tuple(delivery.get("start", ()))),)),))
     if kind == "rune":
         # Vanilla rune downloads both unlock and select the new app. Keeping
         # PlayerEquipItemType in the same guarded step makes the first received

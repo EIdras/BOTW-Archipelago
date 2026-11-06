@@ -790,12 +790,13 @@ class CemuNativeDeliveryBackend:
             return DeliveryResult(DeliveryStatus.DEFERRED, cursor,
                                   f"previous event closing ({since}/{self._settle} frames of 1/30 s)")
         if not (command.quiet and step.get("quiet_entry")) and any(
-                m.get("kind") in ("rune_download", "rune_power_up", "map_open")
+                m.get("kind") in ("rune_download", "rune_power_up", "map_open",
+                                  "sensor_download", "sensor_power_up")
                 for m in step.get("mutations", ())):
             # The download screen needs the pause menu built at once, or the
             # menu clears its request and the event waits forever
             # (botw_client/pause_menu.py); so may the map's opening, a screen
-            # of the same menu.
+            # of the same menu, and the Sensor's downloads, which play on the map.
             try:
                 ready, reason = self.game.pause_menu_ready()
             except Exception as exc:  # noqa: BLE001 - unreadable: not now

@@ -72,7 +72,8 @@ BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
 # The mutations that present the item themselves: no AP window before them.
 VANILLA_WINDOWS = ("get_demo_actor", "champion_actor", "rune_download", "rune_power_up", "trap",
                    "native_trap",
-                   "get_demo_bundle", "cook", "pouch_slot", "map_open")
+                   "get_demo_bundle", "cook", "pouch_slot", "map_open",
+                   "sensor_download", "sensor_power_up")
 # The location of an item Link starts with (the start inventory, a world's
 # starting map): Archipelago's server sends it from player 0, at location -2.
 START_INVENTORY = -2
@@ -1018,12 +1019,15 @@ class BotwClientRuntime:
         # A region's map opens on the game's map, which the Slate has only once
         # the Great Plateau's tower gave it one (a starting map comes right after
         # the intro): before, its silent twin reveals it, its journal line alone.
+        # So does the Sheikah Sensor, whose download plays on the map, as the
+        # first tower gives it (Demo004_0).
         unmapped = False
-        if not quiet and any(m.get("kind") == "map_open" for m in steps[step].get("mutations", ())):
+        if not quiet and any(m.get("kind") in ("map_open", "sensor_download", "sensor_power_up")
+                             for m in steps[step].get("mutations", ())):
             has_map = getattr(self.game, "slate_has_map", None)
             unmapped = has_map is not None and not await asyncio.to_thread(has_map)
         # A step hosted in the quiet flowchart has no window of its own
-        # (Sheikah Sensor, horse gear): given quietly, it is named by the summary.
+        # (horse gear): given quietly, it is named by the summary.
         catalog_flow = getattr(self.deliveries.backend.catalog, "data", {}).get("flow")
         windowless = steps[step].get("flow") not in (None, catalog_flow)
         silent = quiet and (bool(steps[step].get("quiet_entry")) or windowless)

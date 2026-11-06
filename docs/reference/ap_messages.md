@@ -134,7 +134,20 @@ without committing stops the client (possible mutation).
   (`tools/build_tower_maps_native.py`) makes it take the tower the client writes in the cave (`apMapTower`) just
   before. Like a rune, it waits for the pause menu (map and inventory) to be loaded. Before the Great Plateau's
   tower, the Slate has no map: the map is then revealed by its silent twin.
-- **Without a game window** (Sheikah Sensor and its "+", Ancient Bridle, Ancient Saddle): the entry is hosted in `OperationGuide`
+- **Sheikah Sensor**: as the first tower gives it once its map is open (`Demo004_0` Event595 to Event591), with
+  Purah's waits and line (`Demo032_0`): `IsDownloadDemo`, 10 frames, the sensor's flag, 30 frames, the map's sensor
+  download (`Demo_DownloadShiekSensor`), 60 frames, the Slate's line "you can now use..." (`Demo032_0_Text022`), 15
+  frames, its icon moved to the HUD (`Demo_DownloadSensorMoveIcon`), the flags that start it, 15 frames, the menu
+  closed, Link puts the Slate away; `IsDownloadDemo` off last. Its "+", as Purah gives it (`Demo032_0` Event214):
+  `Demo_ShiekSensorPlusDownload`, the line "the Sheikah Sensor has been linked to..." (`Text024`), the icon, 70
+  frames, "the Sheikah Sensor has been upgraded" (`Text018`), the Lv2 flag before the menu closes. The three actions
+  (AI classes `DownloadShiekSensor`, `ShiekSensorPlusDownloadDemo`, `DownloadShiekSensorMoveIcon`) act on the map
+  screen (`0x2A`) and open no menu of their own; without that screen ready, they end at once and show nothing. Like a
+  rune, the step waits for the pause menu to be loaded; before the Great Plateau's tower, the Sensor is given by its
+  silent twin, its flags only. The HUD's gauge (`MainScreen_00` > `PaAppAllRadarGauge_00`) keeps its blue icon after
+  the "+", a reload too, while the Sensor looks for shrines; its green "+" icons (`Nt_SeekSensorIconP_*`) are also
+  those of the Compendium's targets, presumably shown once one is chosen.
+- **Without a game window** (Ancient Bridle, Ancient Saddle): the entry is hosted in `OperationGuide`
   with `QUIET_EVENT_INFO`, like the quiet twins below, so that it neither pauses the game nor makes the HUD blink. The
   step names its flowchart in the catalog (`flow`, from `delivery_flow.host_of`). An Archipelago window names the item
   and its sender.

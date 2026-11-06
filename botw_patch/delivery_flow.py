@@ -139,8 +139,38 @@ MAP_OPEN_FRAMES = 240
 MAP_MESSAGE = "DemoMsg/Demo004_0:Demo004_0_Text026"
 
 
-# The screens whose silent twin sets their flag only.
-SCREEN_FLAGS = (MutationKind.RUNE_DOWNLOAD, MutationKind.RUNE_POWER_UP, MutationKind.MAP_OPEN)
+# The Sheikah Sensor, as the first tower gives it once its map is open
+# (Demo004_0 Event595 → Event591): its flag, 30 frames, the sensor's download
+# (Demo_DownloadShiekSensor), the Slate's line, its icon moved to the HUD
+# (Demo_DownloadSensorMoveIcon), 15 frames, the menu closed; the waits and the
+# line are Purah's (Demo032_0 Event320, Event311, Event325). Its "+", as Purah
+# gives it (Demo032_0 Event214 → Event305, then Event324, Event319, Event158,
+# Event258): the upgrade's download (Demo_ShiekSensorPlusDownload), 60 frames,
+# "linked to...", 15 frames, the icon, 70 frames, "upgraded", the Lv2
+# flag, the menu closed. Read in U-King.rpx (AI classes DownloadShiekSensor
+# 0x02AB1F90, ShiekSensorPlusDownloadDemo 0x02AC3BC8, DownloadShiekSensorMoveIcon
+# 0x02AB1FD4): the three act on the map screen (0x2A) and open no menu; without
+# that screen ready they end at once, showing nothing. Purah's "+" runs with
+# IsDownloadDemo set and no menu open; so do both here, after DOWNLOAD_SETTLE.
+SENSOR_LINE = "DemoMsg/Demo032_0:Demo032_0_Text022"
+SENSOR_PLUS_LINES = ("DemoMsg/Demo032_0:Demo032_0_Text024", "DemoMsg/Demo032_0:Demo032_0_Text018")
+SENSOR_BEFORE = 30
+SENSOR_WAIT = 60
+SENSOR_ICON_WAIT = 15
+SENSOR_AFTER_ICON = 15
+SENSOR_PLUS_LAST = 70
+SENSORS = (MutationKind.SENSOR_DOWNLOAD, MutationKind.SENSOR_POWER_UP)
+
+
+# The screens whose silent twin sets their flags only.
+SCREEN_FLAGS = (MutationKind.RUNE_DOWNLOAD, MutationKind.RUNE_POWER_UP, MutationKind.MAP_OPEN,
+                *SENSORS)
+
+
+def screen_flags(mutation: DeliveryMutation) -> tuple[str, ...]:
+    """The flags a screen's presentation sets: its target, and a Sensor's start flags."""
+    return (mutation.target, *(mutation.value or ())) if mutation.kind in SENSORS \
+        else (mutation.target,)
 
 
 def quiet_step(plan: DeliveryStep) -> DeliveryStep | None:
@@ -166,9 +196,9 @@ def quiet_step(plan: DeliveryStep) -> DeliveryStep | None:
         return plan
     if any(m.kind in SCREEN_FLAGS for m in plan.mutations):
         return replace(plan, mutations=tuple(
-            DeliveryMutation(MutationKind.SET_BOOL, m.target, True, value_type="bool")
-            if m.kind in SCREEN_FLAGS else m
-            for m in plan.mutations))
+            quiet for m in plan.mutations
+            for quiet in ((DeliveryMutation(MutationKind.SET_BOOL, flag, True, value_type="bool")
+                           for flag in screen_flags(m)) if m.kind in SCREEN_FLAGS else (m,))))
     rupees = [m for m in plan.mutations if m.kind is MutationKind.GET_DEMO_ACTOR
               and m.target in RUPEE_VALUES]
     if rupees and len(plan.mutations) == 1:
@@ -207,10 +237,10 @@ def drop_step(plan: DeliveryStep) -> DeliveryStep | None:
 
 def shows_window(plan: DeliveryStep) -> bool:
     """The step opens the game's window (GetDemo, champion powers, the rune
-    download screen, the map's opening)."""
+    download screen, the map's opening, the Sensor's download)."""
     return any(m.kind in (MutationKind.GET_DEMO_ACTOR, MutationKind.CHAMPION_ACTOR,
                           MutationKind.RUNE_DOWNLOAD, MutationKind.RUNE_POWER_UP,
-                          MutationKind.GET_DEMO_BUNDLE,
+                          MutationKind.GET_DEMO_BUNDLE, *SENSORS,
                           MutationKind.COOK, MutationKind.POUCH_SLOT, MutationKind.MAP_OPEN)
                for m in plan.mutations)
 
@@ -218,7 +248,7 @@ def shows_window(plan: DeliveryStep) -> bool:
 def host_of(entry: NativeDeliveryEntry) -> str:
     """Demo007_1 for a step that opens the game's window, QUIET_FLOW for all
     others: the silent twins, and the steps with no window of their own
-    (Sheikah Sensor, horse gear), which would pause the game and blink the
+    (horse gear), which would pause the game and blink the
     HUD in Demo007_1 for nothing to show (seen with runes). A step that names its
     host lives there: the Blood Moon trap calls a cutscene, which only a demo
     event can (botw_patch/traps.py)."""
@@ -579,6 +609,13 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
         action_names += ('Demo_OpenPouchAddStockNum', 'Demo_ClosePouchAddStockNum', 'Demo_WaitFrame')
     if maps:
         action_names += ('Demo_StartMapOpenDemo', 'Demo_CloseItemMenu')
+    sensors = bool(kinds & set(SENSORS))
+    if MutationKind.SENSOR_DOWNLOAD in kinds:
+        action_names += ('Demo_DownloadShiekSensor',)
+    if MutationKind.SENSOR_POWER_UP in kinds:
+        action_names += ('Demo_ShiekSensorPlusDownload',)
+    if sensors:
+        action_names += ('Demo_DownloadSensorMoveIcon', 'Demo_CloseItemMenu')
     actions = {name: holder(system.actions, name) for name in action_names}
     queries = {"CheckAddPorchItem": holder(
         system.queries, "CheckAddPorchItem")}
@@ -629,7 +666,7 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
         chart.events.append(event)
         return event
 
-    if runes or maps:
+    if runes or maps or sensors:
         waiter = actor_of(SLATE_WAITER, ACTOR_PARAMS)
         voice = actor_of(SLATE_VOICE, SLATE_VOICE_PARAMS)
         player = actor_of(PLAYER, PLAYER_PARAMS)
@@ -849,6 +886,54 @@ def patch_delivery_flow(data: bytes, guard_donor: bytes, capacity_donor: bytes,
                     "FlagName": DOWNLOAD_FLAG, "IsWaitFinish": True}, settle)
                 nxt = action(mut, "Demo_FlagON", {
                     "FlagName": mutation.target, "IsWaitFinish": True}, download)
+            elif mutation.kind in SENSORS:
+                # See SENSOR_LINE; built from its end, as the map's opening,
+                # IsDownloadDemo off last should nothing have consumed it.
+                mut = stem + f"_Mut{index}"
+
+                def wait(name, frames, then):
+                    return acted(mut + name, waiter, "Demo_WaitFrame", {
+                        "IsWaitFinish": True, "Frame": frames}, then)
+
+                def flag_on(name, flag, then):
+                    return action(mut + name, "Demo_FlagON", {
+                        "FlagName": flag, "IsWaitFinish": True}, then)
+
+                def line(name, message, then):
+                    return acted(mut + name, voice, "Demo_OpenMessageDialog",
+                                 {**SLATE_MESSAGE, "MessageId": message}, then)
+
+                clear = action(mut + "_Clear", "Demo_FlagOFF", {
+                    "FlagName": DOWNLOAD_FLAG, "IsWaitFinish": True}, nxt)
+                after = wait("_After", AFTER_SLATE, clear)
+                idle = acted(mut + "_Idle", player, "Demo_PlayASAdapt", dict(DEMO_WAIT), after)
+                away = acted(mut + "_Away", player, "Demo_PlayASAdapt", dict(SLATE_AWAY), idle)
+                close = action(mut + "_Close", "Demo_CloseItemMenu", {"IsWaitFinish": True}, away)
+                if mutation.kind is MutationKind.SENSOR_POWER_UP:
+                    flag = flag_on("_Flag", mutation.target, close)
+                    last = line("_Upgraded", SENSOR_PLUS_LINES[1], flag)
+                    tail = wait("_Last", SENSOR_PLUS_LAST, last)
+                else:
+                    tail = wait("_Shown", SENSOR_AFTER_ICON, close)
+                    for number, start in reversed(list(enumerate(mutation.value or ()))):
+                        tail = flag_on(f"_Start{number}", start, tail)
+                icon = action(mut + "_Icon", "Demo_DownloadSensorMoveIcon", {"IsWaitFinish": True}, tail)
+                before_icon = wait("_IconWait", SENSOR_ICON_WAIT, icon)
+                if mutation.kind is MutationKind.SENSOR_POWER_UP:
+                    voiced = line("_Voice", SENSOR_PLUS_LINES[0], before_icon)
+                    waited = wait("_Wait", SENSOR_WAIT, voiced)
+                    download = action(mut + "_Open", "Demo_ShiekSensorPlusDownload", {
+                        "IsPlayerClose": False, "IsWaitFinish": True}, waited)
+                else:
+                    voiced = line("_Voice", SENSOR_LINE, before_icon)
+                    waited = wait("_Wait", SENSOR_WAIT, voiced)
+                    download = action(mut + "_Open", "Demo_DownloadShiekSensor", {
+                        "IsWaitFinish": True}, waited)
+                    download = wait("_Before", SENSOR_BEFORE, download)
+                    download = flag_on("_Flag", mutation.target, download)
+                settle = wait("_Settle", DOWNLOAD_SETTLE, download)
+                nxt = action(mut, "Demo_FlagON", {
+                    "FlagName": DOWNLOAD_FLAG, "IsWaitFinish": True}, settle)
             elif mutation.kind is MutationKind.INCREASE_RUPEE:
                 # Not waited for: the counter's animation then runs after the
                 # event instead of freezing the player.

@@ -107,11 +107,14 @@ class NativeDeliveryCompilationTests(unittest.TestCase):
             delivery_catalog(binding_token=0)
 
     def test_bool_group_has_one_commit_and_no_capacity_preflight(self):
+        # The Sensor's twin: its three flags, without the download.
         entries, _ = compile_native_entries()
         sensor = next(entry for entry in entries
-                      if entry.item_name == "Progressive Sheikah Sensor")
+                      if entry.item_name == "Progressive Sheikah Sensor" and entry.quiet)
         self.assertIsNone(sensor.plan.capacity_actor)
-        self.assertEqual(len(sensor.plan.mutations), 3)
+        self.assertEqual([(m.kind.value, m.target) for m in sensor.plan.mutations], [
+            ("set_bool", "IsGet_Obj_SheikSensor"), ("set_bool", "IsStart_Obj_SheikSensor"),
+            ("set_bool", "App_SeakSensor_IsEnabled")])
         self.assertEqual(sensor.cursor_delta, 256)
 
 
@@ -186,7 +189,7 @@ class NativeDeliveryGraphTests(unittest.TestCase):
         # With the twins, the steps that open no window of their own.
         self.assertEqual({s.item_name for s in self.specs
                           if host_of(s) == QUIET_FLOW and not s.quiet and not s.drop}, {
-            "Progressive Sheikah Sensor", "Ancient Bridle", "Ancient Saddle", "Epona",
+            "Ancient Bridle", "Ancient Saddle", "Epona",
             *(trap.item for trap in TRAPS if trap.host == QUIET_FLOW), "Cucco Swarm", "Downpour",
             "Yiga Ambush", "Paranoia"})
         # The traps' own entries come first, then the delivery entries.
@@ -204,9 +207,10 @@ class NativeDeliveryGraphTests(unittest.TestCase):
                          ("APD_BFA8EB4C_01Q", "OperationGuide"))
         self.assertNotIn("flow", step)
         for tier in ("0", "1"):
-            self.assertNotIn("flow", catalog["items"]["Progressive Stasis"]["variants"][tier][0])
-            self.assertEqual(catalog["items"]["Progressive Sheikah Sensor"]["variants"][tier][0]["flow"],
-                             "OperationGuide")
+            for item in ("Progressive Stasis", "Progressive Sheikah Sensor"):
+                step = catalog["items"][item]["variants"][tier][0]
+                self.assertNotIn("flow", step)
+                self.assertEqual(step["quiet_flow"], "OperationGuide")
 
     def test_patch_is_deterministic_and_preserves_existing_graph(self):
         repeated, _ = patch_delivery_flow(
@@ -386,8 +390,12 @@ class NativeDeliveryGraphTests(unittest.TestCase):
             "GameDataIntName": "APReceivedCursor", "Value": 256,
             "IsWaitFinish": True})
 
+    def twin(self, item, tier):
+        return next(entry for entry in self.specs if entry.item_name == item
+                    and entry.progressive_tier == tier and entry.quiet)
+
     def test_flag_group_mutates_all_flags_inside_one_guard(self):
-        spec = self.spec("Progressive Sheikah Sensor", tier=0)
+        spec = self.twin("Progressive Sheikah Sensor", 0)
         events = graph_snapshot(read_flow(self.quiet))["events"]
         self.assertNotIn(spec.entry_name + "_Capacity", events)
         cursor = spec.entry_name + "_GuardON"
@@ -406,12 +414,55 @@ class NativeDeliveryGraphTests(unittest.TestCase):
             "App_SeakSensor_IsEnabled"])
 
     def test_the_second_sensor_is_sensor_plus(self):
-        spec = self.spec("Progressive Sheikah Sensor", tier=1)
+        spec = self.twin("Progressive Sheikah Sensor", 1)
         events = graph_snapshot(read_flow(self.quiet))["events"]
         stem = spec.entry_name
         self.assertEqual(events[stem + "_GuardON"]["nxt"], stem + "_Mut0")
         self.assertEqual(events[stem + "_Mut0"]["params"]["FlagName"], "IsGet_Obj_SheikSensorLv2")
         self.assertEqual(events[stem + "_Mut0"]["nxt"], stem + "_Commit")
+
+    def sensor_chain(self, tier):
+        spec = self.spec("Progressive Sheikah Sensor", tier=tier)
+        self.assertEqual(host_of(spec), "Demo007_1")
+        events = graph_snapshot(read_flow(self.patched))["events"]
+        cursor, chain = spec.entry_name + "_Mut0", []
+        while cursor != spec.entry_name + "_Commit":
+            node = events[cursor]
+            chain.append((node["actor_action"], {k: v for k, v in node["params"].items()
+                                                 if k in ("FlagName", "Frame", "MessageId")}))
+            cursor = node["nxt"]
+        return chain
+
+    def test_the_sensor_downloads_as_the_first_tower_gives_it(self):
+        # Demo004_0 Event595 → Event591, with Purah's waits and line.
+        down, wait = ("Demo_FlagON", {"FlagName": "IsDownloadDemo"}), "Demo_WaitFrame"
+        self.assertEqual(self.sensor_chain(0), [
+            down, (wait, {"Frame": 10}),
+            ("Demo_FlagON", {"FlagName": "IsGet_Obj_SheikSensor"}), (wait, {"Frame": 30}),
+            ("Demo_DownloadShiekSensor", {}), (wait, {"Frame": 60}),
+            ("Demo_OpenMessageDialog", {"MessageId": "DemoMsg/Demo032_0:Demo032_0_Text022"}),
+            (wait, {"Frame": 15}), ("Demo_DownloadSensorMoveIcon", {}),
+            ("Demo_FlagON", {"FlagName": "IsStart_Obj_SheikSensor"}),
+            ("Demo_FlagON", {"FlagName": "App_SeakSensor_IsEnabled"}), (wait, {"Frame": 15}),
+            ("Demo_CloseItemMenu", {}), ("Demo_PlayASAdapt", {}), ("Demo_PlayASAdapt", {}),
+            (wait, {"Frame": 20}), ("Demo_FlagOFF", {"FlagName": "IsDownloadDemo"})])
+
+    def test_the_sensors_upgrade_downloads_as_purah_gives_it(self):
+        # Demo032_0 Event214 → Event305, Event324, Event319, Event158, Event258:
+        # the Lv2 flag before the menu closes.
+        down, wait = ("Demo_FlagON", {"FlagName": "IsDownloadDemo"}), "Demo_WaitFrame"
+        self.assertEqual(self.sensor_chain(1), [
+            down, (wait, {"Frame": 10}),
+            ("Demo_ShiekSensorPlusDownload", {}), (wait, {"Frame": 60}),
+            ("Demo_OpenMessageDialog", {"MessageId": "DemoMsg/Demo032_0:Demo032_0_Text024"}),
+            (wait, {"Frame": 15}), ("Demo_DownloadSensorMoveIcon", {}), (wait, {"Frame": 70}),
+            ("Demo_OpenMessageDialog", {"MessageId": "DemoMsg/Demo032_0:Demo032_0_Text018"}),
+            ("Demo_FlagON", {"FlagName": "IsGet_Obj_SheikSensorLv2"}),
+            ("Demo_CloseItemMenu", {}), ("Demo_PlayASAdapt", {}), ("Demo_PlayASAdapt", {}),
+            (wait, {"Frame": 20}), ("Demo_FlagOFF", {"FlagName": "IsDownloadDemo"})])
+        events = graph_snapshot(read_flow(self.patched))["events"]
+        opened = events[self.spec("Progressive Sheikah Sensor", tier=1).entry_name + "_Mut0_Open"]
+        self.assertEqual(opened["params"], {"IsPlayerClose": False, "IsWaitFinish": True})
 
     def test_the_second_rune_is_its_upgrade_as_purah_shows_it(self):
         lines = {"Progressive Remote Bomb": ("IsGet_Obj_RemoteBombLv2", 0, 0, "Demo032_0_Text020"),

@@ -424,6 +424,9 @@ class BotwGame:
         elif kind == "flags":
             flag, value = delivery["writes"][step]
             self._write_flag(flag, value, "bool")
+        elif kind == "sensor":
+            for flag in (delivery["flag"], *delivery.get("start", ())):
+                self._write_flag(flag, True, "bool")
         elif kind == "rune":
             self._write_flag(delivery["flag"], True, "bool")
             if "equip_type" in delivery:
