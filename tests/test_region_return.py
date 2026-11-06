@@ -439,7 +439,7 @@ class Sign(unittest.TestCase):
 
     def test_playing_is_read_only_near_and_unreadable_is_out_of_play(self):
         calls = []
-        sign, _memory, _holds, _back = self.sign(-20.0, lambda: calls.append(1) or True)
+        sign, _memory, _holds, _back = self.sign(-rb.WARN - rb.LEAVE - 1.0, lambda: calls.append(1) or True)
         self.assertFalse(sign.tick()["playing"])
         self.assertEqual([], calls)
         sign, _memory, _holds, _back = self.sign(-5.0, lambda: 1 / 0)
@@ -530,6 +530,17 @@ class Runtime(unittest.TestCase):
         self.assertIn("find the {1}Central Map{/}", region_locked_line("Central", False))
         self.assertIn("open another region next to it", region_locked_line("Central", True))
         self.assertIn("opens with Central", region_locked_line("Hyrule Castle", False, "Central"))
+
+    def test_nothing_is_closed_before_the_paraglider_but_during_a_return(self):
+        runtime, live = self.runtime(Memory())
+        border = runtime._make_border({"region_lock": 1})
+        live.get = lambda h, kind: False
+        self.assertIsNone(border.closed_source())        # the game keeps Link on the Plateau
+        border.back.lowered = True                       # a return holds the flag low a moment
+        self.assertEqual({"West", "East"}, set(border.closed_source()))
+        border.back.lowered = False
+        live.get = lambda h, kind: True
+        self.assertEqual({"West", "East"}, set(border.closed_source()))
 
     def test_playing_asks_the_delivery_backend_and_life(self):
         from types import SimpleNamespace

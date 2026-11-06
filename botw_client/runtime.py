@@ -644,6 +644,7 @@ class BotwClientRuntime:
         from .region_border import RegionBorder, load_areas
         from .region_return import RegionReturn
         from .region_lock import map_flags, reached
+        from .travel_points import PARAGLIDER
         if self._border_areas is None:
             self._border_areas = load_areas()
         areas, maps = self._border_areas, map_flags(self.game.item_map)
@@ -660,6 +661,10 @@ class BotwClientRuntime:
             return live.get(zlib.crc32(flag.encode()) & 0xFFFFFFFF, kind) if live else None
 
         def closed():
+            # Before the Paraglider the game keeps Link on the Plateau itself: no fog nor
+            # message there. A return lowers the flag a moment, the Paraglider still held.
+            if not back.lowered and not get(PARAGLIDER, "bool"):
+                return None
             opened = reached(slot, get, maps)
             return None if opened is None else areas.regions - opened
 

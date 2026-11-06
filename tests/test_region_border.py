@@ -112,19 +112,16 @@ class RampTests(unittest.TestCase):
 
 
 class SignTests(unittest.TestCase):
-    def test_the_fog_then_the_message_then_both_let_go(self):
+    def test_the_fog_and_the_message_then_both_let_go(self):
         memory = game((-20.0, 100.0, 0.0))
         sign, holds = border(memory)
         state = sign.tick()
         self.assertTrue(state["field"])
         self.assertEqual((state["region"], state["nearest"]), ("West", ("East", 20.0)))
-        self.assertFalse(state["message"])
+        self.assertTrue(state["message"])                 # with the fog, from START on
         fog = struct.pack(">3f", *rb.ramp(20.0))
         self.assertEqual(memory.writes, [(ENV + rb.FOG, fog), (ENV + rb.SWITCHES, bytes((0, 1, 1))),
                                          (ENV + rb.FOG_TIMER, struct.pack(">i", rb.HOLD))])
-        self.assertEqual(holds, [])
-        place(memory, (-5.0, 100.0, 0.0))
-        self.assertTrue(sign.tick()["message"])
         self.assertEqual(holds, [(46, rb.MARGIN)])
         place(memory, (-100.0, 100.0, 0.0))
         memory.writes.clear()

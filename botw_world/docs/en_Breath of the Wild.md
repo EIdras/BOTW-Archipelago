@@ -147,8 +147,8 @@ already in the logic. The Great Plateau borders Central, Dueling Peaks, Lake and
 few borders the game offers no way across (the cliffs around the Gerudo Highlands, the climb from Ridgeland to Hebra).
 A tower then needs its region's map too, Calamity Ganon needs Central, a quest through another region needs to reach
 that region, and `early_map` draws only among the Great Plateau's neighbours. The client keeps Link out of the regions
-not yet in the logic: the fog thickens over their last 30 m, the game's "You can't go any farther." stays on screen
-from 10 m on, and Link who sets foot in one is sent back to the last safe ground outside it, his life kept; the AP
+not yet in the logic: the fog thickens over their last 25 m, the game's "You can't go any farther." stays on screen
+over them, and Link who sets foot in one is sent back to the last safe ground outside it, his life kept; the AP
 journal then says what opens that region. Universal Tracker and the PopTracker pack follow this option, from the seed's
 own borders: a location whose regions are out of reach shows as out of logic.
 

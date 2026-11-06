@@ -84,9 +84,9 @@ the game would close it again at the next frame, and each new start plays its so
 The hold remembers that its message was on screen at the last pass; free again, it stops instead (its passes to 0)
 and counts the closure (`Cave.center_closures()`, packs of magic `HLD2`). The client asks again 3 s later, then
 6, 12 and 24 s after each new closure, back to 3 s once the message has stayed 10 s. With region_lock,
-[`botw_client/region_border.py`](../../botw_client/region_border.py) asks for it within 10 m of a closed region,
+[`botw_client/region_border.py`](../../botw_client/region_border.py) asks for it within 25 m of a closed region,
 under the world's direct fog (the environment manager's `setFogDirect` fields, a timer held ahead), thickened over the
-last 30 m. The Archipelago lines never use this channel in play: they go to the journal.
+same 25 m. The Archipelago lines never use this channel in play: they go to the journal.
 
 ## Connection status
 

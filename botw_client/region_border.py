@@ -46,8 +46,8 @@ from tools.cemu.guest import in_guest
 
 from .cucco_swarm import PLAYER_INFO
 
-START = 30.0              # metres before a closed region where the fog begins
-WARN = 10.0               # metres before it where the message shows
+START = 25.0              # metres before a closed region where the fog begins
+WARN = START              # metres before it where the message shows: with the fog
 LEAVE = 1.5               # metres beyond WARN where it is let go
 PLAY_SECONDS = 0.3        # playing() read so often near a border (the screens' catalog)
 SETTLE = 1.5              # seconds in play before the message, after out of play or a return
@@ -235,7 +235,7 @@ class RegionBorder:
         region = self.areas.region_at(position[0], position[2]) if field else None
         nearest = None
         if field and self.closed:
-            nearest = self.areas.nearest(position[0], position[2], self.closed, START)
+            nearest = self.areas.nearest(position[0], position[2], self.closed, max(START, WARN + LEAVE))
         near = bool(nearest) and nearest[1] <= WARN + (LEAVE if self.message else 0.0)
         playing = near and self.in_play(now)
         back = self.back.tick(position, self.closed, field=field, playing=playing) if self.back else None
@@ -245,7 +245,7 @@ class RegionBorder:
             self.settled_at = None
         elif self.settled_at is None:
             self.settled_at = now + SETTLE
-        fog = ramp(nearest[1]) if nearest else None
+        fog = ramp(nearest[1]) if nearest and nearest[1] <= START else None
         message = playing and not quiet and now >= max(self.settled_at, self.backoff_until)
         self.show(fog, message)
         self.held_since = (self.held_since or now) if self.message else None

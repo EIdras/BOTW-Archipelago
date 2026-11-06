@@ -93,8 +93,8 @@ slot file alone, without reaching any server.
   (`cucco_swarm.py`, `yiga_ambush.py`, `paranoia.py`) or the pack's weather hold (`downpour.py`, `tools/build_weather_native.py`). Given back by a
   reload, a trap is spent without effect ([traps.md](reference/traps.md)).
 - **Region lock**: near a region the seed keeps closed (the map's areas that `region_lock.py` does not reach), the
-  world's fog thickens over the last 30 m and the game's own « You can't go any farther. » stays in the center of the
-  screen from 10 m on while Link is in play (`region_border.py`, from Link's position in the MainField; the pack's
+  world's fog thickens over the last 25 m and the game's own « You can't go any farther. » stays in the center of the
+  screen over them while Link is in play (`region_border.py`, from Link's position in the MainField; the pack's
   center message hold, [ap_messages.md](reference/ap_messages.md#the-border-message-center-message-hold)). Link who
   sets foot in a closed region is sent back to the last safe ground outside it, by the game's own return of the
   Great Plateau aimed there, with his life kept; the journal then says what opens that region (`region_return.py`).
