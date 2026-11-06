@@ -426,6 +426,20 @@ class CemuNativeDeliveryBackend:
             DeliveryStatus.UNCERTAIN, cursor,
             "binding entry accepted without an observed commit")
 
+    def _refresh_rune_icon(self, step: dict, equip: int | None) -> str:
+        """After a rune's "+" (its rune now in hand), have the HUD ask its icon
+        again: it keeps the base one otherwise (botw_client/rune_icon.py)."""
+        if equip is None or not any(m.get("kind") == "rune_power_up"
+                                    for m in step.get("mutations", ())):
+            return ""
+        refresh = getattr(self.game, "refresh_rune_icon", None)
+        if refresh is None:
+            return ""
+        try:
+            return refresh(equip)
+        except Exception as exc:  # noqa: BLE001 - the commit is already durable
+            return f"rune icon not refreshed: {type(exc).__name__}: {exc}"
+
     def _sync_selection(self, equip: int | None, selection: int | None = None) -> str:
         """After a commit that selected a rune, make the live game show it; or,
         for a rune selected only when none is in hand (the Master Cycle Zero),
@@ -879,8 +893,10 @@ class CemuNativeDeliveryBackend:
                         self._committed_at = self._frame()
                         # A trap's twin is spent without its strike: silent too.
                         self._settle = QUIET_SETTLE_FRAMES if twin else SETTLE_FRAMES
-                        return DeliveryResult(DeliveryStatus.APPLIED, cursor_now,
-                                              self._sync_selection(equip, selection))
+                        detail = "; ".join(filter(None, (
+                            self._sync_selection(equip, selection),
+                            self._refresh_rune_icon(step, equip))))
+                        return DeliveryResult(DeliveryStatus.APPLIED, cursor_now, detail)
                     if cursor_now != command.cursor:
                         raise BackendContractError(
                             f"impossible native commit: {cursor_now}, expected "

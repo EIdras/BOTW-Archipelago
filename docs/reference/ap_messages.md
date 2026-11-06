@@ -271,9 +271,10 @@ Screens, as numbered by the factory `0x0305EB18`: `0x1F` pause menu, `0x22` inve
   gets its flag and its selection only.
 - A rune's "+" (`IsPowerUp`) follows Purah's order instead (`Demo032_0` Event262, Event159/Event160, Event285,
   Event258): the screen, the voice, the "+" flag, `Demo_PowerupRune` for Stasis, then the menu's close.
-- Known limit: the HUD keeps the icon of the rune in hand until the rune is changed in a menu or the save is
-  reloaded, so a "+" received with that rune in hand shows its old icon until then; the upgrade itself works at
-  once. Neither the selection request (`0x02A2D6D4`), Purah's order, nor opening the menus redraws it.
+- The HUD's rune icon: the shortcut screen (`MainShortCut_00`, pane `Pa_MainU_00`) sets it by `0x02fc85a4(screen,
+  rune)`, which returns at once when `screen+0x1bd4` already holds that rune; a "+" does not change the rune, so the
+  icon stayed the base one. Once a "+" is committed, the client writes -1 there if it holds the rune just upgraded
+  (`botw_client/rune_icon.py`): the game calls its setter again by itself, about 1.5 s later, and shows the "+" icon.
 - The terminal's cameras and animations, its music and the `Guide_ItemUse` tip are not reproduced. The animation in
   which Link puts the Slate away is made for the Slate laid on the terminal, and looks slightly odd outside of it.
 - The rune wheel follows the selection: `botw_client/rune_selection.py` synchronizes the game's live selection object

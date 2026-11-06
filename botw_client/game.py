@@ -567,6 +567,13 @@ class BotwGame:
             return SyncOutcome("unavailable", expected,
                                detail=f"{type(exc).__name__}: {exc}")
 
+    def refresh_rune_icon(self, rune: int) -> str:
+        """After a rune's "+", have the HUD show its icon (botw_client/rune_icon.py)."""
+        if not self.process or not self.cave:
+            return "rune icon not refreshed: game not connected"
+        from .rune_icon import refresh_rune_icon
+        return refresh_rune_icon(self.process, self.cave, rune)
+
     def delivery_position(self) -> tuple[int, int]:
         if not self.save_ledger_available:
             raise RuntimeError("BOTW ledger unavailable")
