@@ -50,7 +50,8 @@ SCALE = 0.2                       # map pixels per world unit (MapTex2: 200 px a
 # The map is cut to the locations, this many pixels around them: the sea and
 # the borders it leaves out hold none, and PopTracker shows the rest larger.
 MARGIN = 50
-SOURCE_FILES = ("tools/build_poptracker.py", "tools/maptex.py", "tools/uitex.py", "tools/poptracker_regions.py",
+SOURCE_FILES = ("tools/build_poptracker.py", "tools/maptex.py", "tools/uitex.py", "tools/bitemico.py",
+                "tools/poptracker_regions.py",
                 "tools/map_regions.py", "data/location_positions.json",
                 "tools/poptracker/scripts/init.lua", "tools/poptracker/scripts/logic.lua",
                 "tools/poptracker/scripts/autotracking/archipelago.lua")
@@ -210,9 +211,7 @@ ICON_NAMES = {
     "paraglider": ["Paraglider"], "magnesis": ["Magnesis"],
     "progressive_remote_bomb_1": ["Remote Bomb", "Remote Bombs", "Remote Bomb Round", "Remote Bomb Cube"],
     "progressive_remote_bomb_2": ["Remote Bomb+", "Remote Bombs+"],
-    "progressive_stasis_1": ["Stasis"], "progressive_stasis_2": ["Stasis+"], "cryonis": ["Cryonis"],
-    "progressive_sheikah_sensor_1": ["Sheikah Sensor", "Sheikah Slate", "Sheikah Slate2"],
-    "progressive_sheikah_sensor_2": ["Sheikah Sensor+"],
+    "progressive_stasis_2": ["Stasis+"], "cryonis": ["Cryonis"],
     "progressive_revalis_gale_1": ["Revali's Gale"], "progressive_revalis_gale_2": ["Revali's Gale+"],
     "progressive_daruks_protection_1": ["Daruk's Protection"],
     "progressive_daruks_protection_2": ["Daruk's Protection+"],
@@ -251,7 +250,9 @@ ICONS_FOLDER = DATA / "poptracker/icons"
 # inventory, its map's icons. Under the player's icons, over the labels.
 UI_ICONS = {
     "heart_container": "Nt_HeartNew_00^f", "stamina_vessel": "Nt_PauseIconGanbari_04^f",
-    **{f"progressive_sheikah_sensor_{n}": "Nt_SeekSensorIcon_00^s" for n in (1, 2)},
+    # The Sensor's HUD icon, all its waves lit; the Sensor+'s, with its own "+".
+    "progressive_sheikah_sensor_1": "Nt_SeekSensorIcon_04^s",
+    "progressive_sheikah_sensor_2": "Nt_SeekSensorIconP_04^s",
     "master_sword": "Nt_PauseIcon_00^s", "hylian_shield": "Nt_PauseIcon_02^s",
     "flamebreaker_set": "Nt_PauseIconFire_00^t", "zora_set": "Nt_PauseIconSwim_00^t",
     "rubber_set": "Nt_PauseIconElect_00^t", "warm_doublet": "Nt_PauseIconCool_00^t",
@@ -274,6 +275,15 @@ UI_ICONS = {
     "dot_rune_upgrade": "Nt_PauseIconKodai_00^t", "dot_champions_ballad": "Nt_IconSinJuNew_03^d",
     "dot_master_sword": "Nt_PauseIcon_00^s",
 }
+# White masks the game colours itself: the Sensor in the Slate's blue, its "+" in green.
+UI_TINTS = {"progressive_sheikah_sensor_1": (70, 190, 255),
+            "progressive_sheikah_sensor_2": (110, 230, 110)}
+# The inventory's own icons of the runes (UI/StockItem, tools/bitemico.py, from the
+# player's update), in colour; the "+" ones no wiki draws, and Stasis, whose wiki icon
+# is not square (PopTracker stretches it). Under the player's icons, over the interface's.
+STOCK_ICONS = {"magnesis": "Obj_Magnetglove", "cryonis": "Obj_IceMaker",
+               "progressive_remote_bomb_1": "Obj_RemoteBombBall", "progressive_remote_bomb_2": "Obj_RemoteBombBall2",
+               "progressive_stasis_1": "Obj_StopTimer", "progressive_stasis_2": "Obj_StopTimerLv2"}
 
 
 # The icons of every item of the grid, published apart from the code: the
@@ -361,12 +371,42 @@ def ui_icons(content: Path | None) -> dict[str, np.ndarray]:
         except (KeyError, ValueError):
             continue
         piece = re.search(r"_(\d)$", key)
-        if key in {f"{code(name)}_2" for name in UPGRADED}:
+        if key in UI_TINTS:
+            # Coloured, the Sensor's own two icons tell its stages apart: no number.
+            image = image.copy()
+            image[..., :3] = (image[..., :3] * (np.array(UI_TINTS[key]) / 255)).astype(np.uint8)
+        elif key in {f"{code(name)}_2" for name in UPGRADED}:
             image = numbered(image, "+")
         elif key.startswith("progressive_") and piece:
             image = numbered(image, piece.group(1))
         found[key] = image
     return found
+
+
+def stock_icons(content: Path | None) -> dict[str, np.ndarray]:
+    """{image key: RGBA} of STOCK_ICONS."""
+    if content is None:
+        return {}
+    from tools import bitemico
+    found = {}
+    for key, actor in STOCK_ICONS.items():
+        try:
+            icon = bitemico.load(content / f"UI/StockItem/{actor}.sbitemico")
+            found[key] = trimmed(np.frombuffer(bytes(icon.read_rgba()), np.uint8).reshape(icon.height, icon.width, 4))
+        except (OSError, ValueError):
+            continue
+    return found
+
+
+def trimmed(image: np.ndarray) -> np.ndarray:
+    """The image cut to what it draws, square: the inventory leaves a margin the wikis' icons have not."""
+    rows, columns = np.nonzero(image[..., 3])
+    top, bottom, left, right = rows.min(), rows.max() + 1, columns.min(), columns.max() + 1
+    side = max(bottom - top, right - left)
+    square = np.zeros((side, side, 4), np.uint8)
+    y, x = (side - (bottom - top)) // 2, (side - (right - left)) // 2
+    square[y:y + bottom - top, x:x + right - left] = image[top:bottom, left:right]
+    return square
 
 
 def numbered(image: np.ndarray, digit: str) -> np.ndarray:
@@ -799,7 +839,8 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
     files: dict[str, bytes] = {}
     for path in sorted(STATIC.rglob("*.lua")):
         files[path.relative_to(STATIC).as_posix()] = path.read_bytes()
-    found = {**ui_icons(update_content()), **game_icons(icons)}
+    update = update_content()
+    found = {**ui_icons(update), **stock_icons(update), **game_icons(icons)}
     item_entries, images, item_ids = items(cat, found)
     left, top, right, bottom = crop_box(positions)
     place_entries, sections, requirements, maps, regions = locations(cat, positions, (left, top))
@@ -960,7 +1001,8 @@ if __name__ == "__main__":
     if args.output.resolve() == PACK_FOLDER.resolve() and args.icons == ICONS_FOLDER:
         STAMP.parent.mkdir(parents=True, exist_ok=True)
         STAMP.write_text(built_stamp(content, game_map), encoding="utf-8")     # the launcher's pack
-    missing = sorted(set(ICON_NAMES) - set(game_icons(args.icons)) - set(ui_icons(update_content())))
+    missing = sorted(set(ICON_NAMES) - set(game_icons(args.icons)) - set(ui_icons(update_content()))
+                     - set(stock_icons(update_content())))
     if missing:
         print(f"no icon in {args.icons} nor in the game ({len(missing)}), a label instead: "
               + ", ".join(ICON_NAMES[key][0] for key in missing))

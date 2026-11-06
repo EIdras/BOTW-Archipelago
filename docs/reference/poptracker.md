@@ -76,13 +76,17 @@ game, so that no file of the game is in the repository.
   1. the player's own icons, PNG, in `<data>/poptracker/icons` (`--icons`, subfolders too), found by name
      (`ICON_NAMES`: "Zora-armor.png" is the Zora Set's, "Climber-bandanna.png" the second piece of the climbing gear;
      a possessive "'s" is ignored, a "+" icon is the second stage of an upgraded rune or power; near ones where a wiki has none:
-     the Sheikah Slate for the sensor, the full stamina wheel "Energizing5", the Champions' Ballad emblems);
+     the full stamina wheel "Energizing5", the Champions' Ballad emblems);
   2. the game's own interface icons (`tools/uitex.py`, `UI_ICONS`), from the update's `Pack/Bootup.pack` >
      `Layout/Common.sblarc`: the HUD's heart and stamina wheel, the sensor, the four Divine Beasts, the inventory's
      tab icons (sword, bow, shield, armour; the pouch upgrades take the first three), the map's horse for Epona, the
      effect icons its armour shows (fire, swimming, shock, cold, heat, climbing, noise, attack, ancient), the map's
      icons (shrine, tower, stable, store, castle) for the squares. Most
      are masks the game colours: they come out white. A progressive piece gets its number, an upgrade a "+";
+     the sensor alone comes only from here, its HUD icon with every wave lit, in blue, then the Sensor+'s, which has
+     its own "+", in green (`UI_TINTS`). Over them, under the player's: the inventory's own icons of the runes
+     (`UI/StockItem`, `tools/bitemico.py`, `STOCK_ICONS`), in colour and cut to what they draw, the only source of
+     the "+" of Remote Bomb and Stasis, and of Stasis itself (the wikis' is not square, and PopTracker stretches it);
   3. a label drawn by the builder, in the same style.
 
   The game draws no image of most items, and only stand-ins of the others (an armour's effect, an inventory tab,

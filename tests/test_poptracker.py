@@ -222,7 +222,7 @@ class ReleaseIconTests(unittest.TestCase):
             archive = Path(temp) / "tracker-icons.zip"
             missing = poptracker.package_icons(source, archive)
             self.assertNotIn("Paraglider", missing)
-            self.assertIn("Stasis", missing)
+            self.assertIn("Cryonis", missing)
             url = archive.resolve().as_uri()
             self.assertTrue(poptracker.fetch_icons(player, url))
             self.assertFalse(poptracker.fetch_icons(player, url))       # once
@@ -252,6 +252,24 @@ class InterfaceIconTests(unittest.TestCase):
         # A white heart on nothing: transparent corners, an opaque white middle.
         self.assertEqual(heart[0, 0, 3], 0)
         self.assertTrue((heart[24, 24] == (255, 255, 255, 255)).all())
+        # The Sensor in blue, the Sensor+ in green, where the white was.
+        for key, tint in poptracker.UI_TINTS.items():
+            drawn = {tuple(colour) for colour in found[key][found[key][..., 3] > 0][:, :3].tolist()}
+            self.assertIn(tint, drawn)
+            self.assertNotIn((255, 255, 255), drawn)
+
+    def test_every_rune_icon_is_in_the_game_and_decodes(self):
+        found = poptracker.stock_icons(UPDATE)
+        self.assertEqual(set(found), set(poptracker.STOCK_ICONS))
+        bomb = found["progressive_remote_bomb_2"]
+        # Square, cut to what it draws (the inventory's margin gone), on nothing.
+        self.assertEqual(bomb.shape[0], bomb.shape[1])
+        self.assertLess(bomb.shape[0], 96)
+        self.assertTrue(bomb[0, :, 3].any() or bomb[:, 0, 3].any())
+        self.assertEqual(bomb[0, 0, 3], 0)
+        # In colour: the bomb's blue, not a white mask.
+        opaque = bomb[bomb[..., 3] == 255].astype(int)
+        self.assertTrue((opaque[:, 2] > opaque[:, 0] + 100).any())
 
     def test_the_player_icons_come_first(self):
         with tempfile.TemporaryDirectory() as temp:
