@@ -102,6 +102,21 @@ UPDATE = poptracker.update_content()
 
 @unittest.skipUnless(UPDATE is not None and (UPDATE / "Pack/Bootup.pack").is_file(), "update absent")
 class GameDataTests(unittest.TestCase):
+    def test_each_travel_shrine_stands_clear_of_the_other_regions(self):
+        # Warped there, Link must not land in a closed neighbour's fog nor
+        # message: Dunba Taag stood 21 m from Tabantha.
+        import json
+        from botw_client.region_border import Areas
+        from botw_client.region_return import CLEAR
+        from tools.map_regions import area_regions, map_towers
+        grid = map_towers(UPDATE)
+        areas = Areas(grid, area_regions(grid))
+        positions = json.loads(poptracker.POSITIONS.read_text(encoding="utf-8"))
+        for region, shrine in poptracker.catalog().TRAVEL_SHRINES.items():
+            x, z = positions[shrine]
+            self.assertEqual(region, areas.region_at(x, z), shrine)
+            self.assertIsNone(areas.nearest(x, z, set(areas.regions) - {region}, CLEAR), shrine)
+
     def test_the_game_lets_the_client_write_each_travel_flag(self):
         # The game's setters refuse a flag a program may not write (Jee Noh's
         # Location_ is one): the world picks shrines whose three flags it may.

@@ -109,7 +109,7 @@ NEIGHBOURS = {name: frozenset(other for pair in OPEN_BORDERS if name in pair for
 TRAVEL_SHRINES = {
     "Akkala": "Ze Kasho Shrine", "Central": "Kaam Ya'tak Shrine", "Dueling Peaks": "Bosh Kala Shrine",
     "Eldin": "Tah Muhl Shrine", "Faron": "Shoda Sah Shrine", "Gerudo": "Kuh Takkar Shrine",
-    "Hateno": "Myahm Agana Shrine", "Hebra": "Dunba Taag Shrine", "Lake": "Ya Naga Shrine",
+    "Hateno": "Myahm Agana Shrine", "Hebra": "Rin Oyaa Shrine", "Lake": "Ya Naga Shrine",
     "Lanayru": "Kaya Wan Shrine", "Ridgeland": "Mogg Latan Shrine", "Tabantha": "Tena Ko'sah Shrine",
     "Wasteland": "Kay Noh Shrine", "Woodland": "Monya Toma Shrine",
 }
@@ -118,7 +118,7 @@ TRAVEL_SHRINES = {
 TRAVEL_TERMINALS = {shrine: f"MainField_DgnObj_EntranceTerminal_A_01_{hash_id}" for shrine, hash_id in {
     "Ze Kasho Shrine": 4290992176, "Kaam Ya'tak Shrine": 2263739210, "Bosh Kala Shrine": 2462652737,
     "Tah Muhl Shrine": 1379190536, "Shoda Sah Shrine": 1797433301, "Kuh Takkar Shrine": 3572795101,
-    "Myahm Agana Shrine": 4206609530, "Dunba Taag Shrine": 4206060014, "Ya Naga Shrine": 2041042482,
+    "Myahm Agana Shrine": 4206609530, "Rin Oyaa Shrine": 2536831938, "Ya Naga Shrine": 2041042482,
     "Kaya Wan Shrine": 2501247945, "Mogg Latan Shrine": 742860559, "Tena Ko'sah Shrine": 3614581704,
     "Kay Noh Shrine": 3305154705, "Monya Toma Shrine": 3304413740,
 }.items()}
