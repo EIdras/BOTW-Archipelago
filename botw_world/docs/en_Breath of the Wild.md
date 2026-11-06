@@ -219,8 +219,6 @@ jewel, with the item's name and its recipient.
 ## Current limitations
 
 - Only the Wii U version (European, American or Japanese), update v208, in Cemu on Windows, is supported.
-- A rune's upgrade (Remote Bomb+, Stasis+) received with that rune in hand works at once, but the HUD shows its old
-  icon until the rune is changed in a menu or the game reloaded.
 - A mod that changes an event the game pack changes too, or a graphic pack that patches the code it needs, is left
   out of the Archipelago game, by name.
 - Each player's launcher builds a game pack for their seed, from their slot file (`.apbotw`, on the room's page
