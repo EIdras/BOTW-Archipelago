@@ -121,6 +121,21 @@ class SeedTests(Folder):
             refresh.assert_called_once_with(self.seeds / "111", [], 0x50000000)
             self.assertIn("Building the game pack of seed 111 again", ui.text())
 
+    def test_the_list_names_each_seeds_version_and_those_not_playable(self):
+        from botw_client.locations import WORLD_SCHEMA
+        for name, schema, version in (("111", WORLD_SCHEMA, "0.3.1"), ("222", WORLD_SCHEMA - 1, "0.2.5"),
+                                      ("333", WORLD_SCHEMA - 1, None)):
+            folder = self.seed(name)
+            report = json.loads((folder / "analysis.json").read_text())
+            report["audit"].update(world_schema=schema, world_version=version)
+            (folder / "analysis.json").write_text(json.dumps(report))
+        ui = Answers(answers=["1"])
+        with mock.patch("tools.play_pack.selected_pack"), mock.patch("tools.play_pack.outdated", return_value=[]):
+            launcher.choose_seed(ui, None)
+        self.assertIn("111 (Zelda, world 0.3.1)\n", ui.text())
+        self.assertIn("222 (Zelda, world 0.2.5): not playable with this version", ui.text())
+        self.assertIn("333 (Zelda): not playable with this version", ui.text())
+
     def test_a_seed_of_a_newer_world_is_played_with_a_warning(self):
         folder = self.seed("111")
         report = json.loads((folder / "analysis.json").read_text())

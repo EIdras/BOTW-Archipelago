@@ -10,6 +10,7 @@
    is built (tools/play_seed.py), and a prepared seed's again when another
    version of the project built it, or over other mods than those the
    player's Cemu runs now (tools/play_mods.py). The list of prepared seeds
+   names the world's version of each, and those this version cannot play; it
    also deletes one, with its pack (tools/play_seed.py); a release removes
    the packs no seed selects any more.
 3. Asks the address of the room (the one written in a slot file downloaded
@@ -116,10 +117,13 @@ class Prepared:
     seed: str
     slot: str
     last_played: str        # the last session's folder name, "" if never played
+    version: str = ""       # the world's version that generated it, "" if not recorded
+    playable: bool = True   # of this version's world schema (tools/play_seed.py check_compatible)
 
 
 def prepared_seeds() -> list[Prepared]:
     """The prepared seeds, the last played first."""
+    from botw_client.locations import WORLD_SCHEMA
     seeds = []
     folders = sorted(play_seed.PLAY_SEEDS.iterdir()) if play_seed.PLAY_SEEDS.is_dir() else []
     for folder in folders:
@@ -130,7 +134,10 @@ def prepared_seeds() -> list[Prepared]:
             continue
         sessions = sorted(path.name for path in (folder / "sessions").glob("*")) \
             if (folder / "sessions").is_dir() else []
-        seeds.append(Prepared(folder.name, slot, sessions[-1] if sessions else ""))
+        audit = report["audit"]
+        schema = audit.get("world_schema")
+        seeds.append(Prepared(folder.name, slot, sessions[-1] if sessions else "",
+                              audit.get("world_version") or "", schema is None or schema == WORLD_SCHEMA))
     return sorted(seeds, key=lambda seed: seed.last_played, reverse=True)
 
 
@@ -207,8 +214,10 @@ def choose_seed(ui, argument: str | None) -> str:
         ui.say("Seeds:")
         for number, seed in enumerate(seeds, 1):
             day = seed.last_played[:8]
+            made = f", world {seed.version}" if seed.version else ""
             played = f", last played {day[:4]}-{day[4:6]}-{day[6:]}" if day else ""
-            ui.say(f"  {number}. {seed.seed} ({seed.slot}{played})")
+            other = "" if seed.playable else ": not playable with this version"
+            ui.say(f"  {number}. {seed.seed} ({seed.slot}{made}{played}){other}")
         ui.say(f"  {len(seeds) + 1}. another seed: your slot file (.apbotw) or the seed's zip")
         ui.say(f"  {len(seeds) + 2}. delete a seed")
         choice = pick(ui, "Seed", len(seeds) + 2)
