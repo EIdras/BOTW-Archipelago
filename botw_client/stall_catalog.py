@@ -103,7 +103,7 @@ MERCHANTS = (
     StallMerchant(9, "Npc_Kakariko014", "G-6", 185877349, "Kakariko Village", "General Stall",
                   "Dueling Peaks", "Event87", 0.3490658402442932,
                   ((3640152823, "Item_PlantGet_M", "lying", -2.4887, 0.0, 0.0),
-                   (3058983883, "Item_Material_06", "lying", -2.6858, 0.0, 0.0))),
+                   (270489316, "Item_Material_06", "lying", -2.6858, 0.0, 0.0))),
     StallMerchant(10, "Npc_SouthernVillage005", "H-8", 3292211395, "Lurelin Village",
                   "General Stall", "Faron", "Event49", 2.9399991035461426,
                   ((4103452247, "Item_InsectGet_O", "lying", -1.6142, 0.0, 0.0),

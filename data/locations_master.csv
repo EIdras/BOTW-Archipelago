@@ -203,7 +203,7 @@ Goron City - General Stall Item 2,Eldin,Stall,,APShop_201,-1187383622,Npc_goron0
 Kakariko Village - Arrow Stall Item 1,Dueling Peaks,Stall,,APShop_202,540059392,Npc_Kakariko010 object 3820325991 (Obj_ArrowNormal_A_01); custom saved s32
 Kakariko Village - Arrow Stall Item 2,Dueling Peaks,Stall,,APShop_203,1463261078,Npc_Kakariko010 object 2376699312 (Obj_FireArrow_A_03); custom saved s32
 Kakariko Village - General Stall Item 1,Dueling Peaks,Stall,,APShop_204,-917306827,Npc_Kakariko014 object 3640152823 (Item_PlantGet_M); custom saved s32
-Kakariko Village - General Stall Item 2,Dueling Peaks,Stall,,APShop_205,-1101778269,Npc_Kakariko014 object 3058983883 (Item_Material_06); custom saved s32
+Kakariko Village - General Stall Item 2,Dueling Peaks,Stall,,APShop_205,-1101778269,Npc_Kakariko014 object 270489316 (Item_Material_06); custom saved s32
 Lurelin Village - General Stall Item 1,Faron,Stall,,APShop_206,660431641,Npc_SouthernVillage005 object 4103452247 (Item_InsectGet_O); custom saved s32
 Lurelin Village - General Stall Item 2,Faron,Stall,,APShop_207,1348096911,Npc_SouthernVillage005 object 2335650137 (Obj_ArrowBundle_A_01); custom saved s32
 Tarrey Town - Arrow Stall Item 1,Akkala,Stall,,APShop_208,-1058714082,Npc_HighMountain010 object 781734643 (Obj_ArrowBundle_A_02); custom saved s32
