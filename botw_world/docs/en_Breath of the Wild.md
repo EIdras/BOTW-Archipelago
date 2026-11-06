@@ -1,226 +1,243 @@
 # The Legend of Zelda: Breath of the Wild
 
-## Where is the options page?
-
-The [player options page for this game](../player-options) contains all the options you need to configure and export
-a config file.
+[Setup](setup_en.md) · [In the game](ingame_en.md) · **Options** · [Hosting](hosting_en.md) ·
+[Trackers](poptracker_en.md) · [Mods](mods_en.md) · [Troubleshooting](troubleshooting_en.md)
 
 ## What does randomization do to this game?
 
-The rewards of the game's main milestones become Archipelago locations: clearing a shrine, activating a tower, the
-Great Fairies, freeing a Divine Beast, Purah's rune upgrades, the songs of the Champions' Ballad, and so on. What
-those milestones gave in the normal game (the paraglider, the
-runes, the champions' abilities, key armor, heart containers and stamina vessels) is shuffled into the multiworld
-instead, and arrives in your game from wherever it was found.
+The rewards of the game's milestones become Archipelago locations: clearing a shrine, activating a tower, a Great
+Fairy, freeing a Divine Beast, and more. What those milestones gave in the normal game (the Paraglider, the runes,
+the champions' abilities, key armor, heart containers and stamina vessels) is shuffled into the multiworld instead,
+and arrives in your game from wherever it was found.
 
 The game runs on the Wii U version in the Cemu emulator. A game pack built for your seed replaces those rewards in the
-game's own resources, and the Archipelago client delivers items while you play, through the game's own presentation:
-the game's item window, or the Sheikah Slate's download screen for a rune. Items lost by reloading an older save are
-given back quietly, then listed in a single Archipelago window. The graphic packs your Cemu runs, mods included,
-play in the Archipelago game too: the pack is built over the files they replace.
+game's own resources, and the Archipelago client delivers items while you play: see [In the game](ingame_en.md).
 
-## Which locations are there?
+## Where are the options?
 
-| Locations                                  | Count      |
-|--------------------------------------------|------------|
-| Shrines (4 on the Great Plateau)           | 120        |
-| Sheikah Towers                             | 15         |
-| Rune terminals of the Great Plateau        | 4          |
-| Great Fairy fountains                      | 4          |
-| Divine Beasts, and their heart containers  | 4 + 4      |
-| Master Sword                               | 1          |
-| Purah's rune upgrades, in Hateno           | 3          |
-| Songs of the Champions' Ballad             | 4          |
-| Beedle's shops (option)                    | 0 to 32    |
-| Village stalls (option)                    | 0 to 28    |
+In the player's YAML file. The release brings a ready one, `players\BOTW.yaml`, and the Archipelago Launcher writes a
+template with "Generate Template Options". Every option is explained [below](#options).
 
-With the shop options, Archipelago items are sold by Beedle at his 16 shops (listed first in his stock) and placed as a
-jewel on the village stalls, spread at random over 14 stalls (2 at most on one); buying one checks its location.
-Opening Beedle's list, or looking at a stall's jewel, hints the items for sale there.
+## Locations
 
-## Which items can be received?
+| Locations | Count |
+|---|---|
+| Shrines (4 on the Great Plateau) | 120 |
+| Sheikah Towers | 15 |
+| Rune terminals of the Great Plateau | 4 |
+| Great Fairy fountains | 4 |
+| Divine Beasts, and their heart containers | 4 + 4 |
+| Master Sword | 1 |
+| Purah's rune upgrades, in Hateno | 3 |
+| Songs of the Champions' Ballad | 4 |
+| Beedle's shops (option) | 0 to 32 |
+| Village stalls (option) | 0 to 28 |
 
-- The Paraglider, and the four runes: Magnesis, Remote Bomb, Stasis and Cryonis. Remote Bomb and Stasis are
-  progressive items, Progressive Remote Bomb and Progressive Stasis: the first copy is the rune, the second its
-  upgrade (Remote Bomb+, Stasis+)
-- The Progressive Sheikah Sensor: the Sheikah Sensor, then the Sheikah Sensor+. Purah's camera no longer comes with it
-- Armor: Warm Doublet, Snowquill Set, Flamebreaker Set (Goron City's armor shop no longer sells it), Desert Voe Set,
-  Zora Set, Rubber Set
-- The Gerudo Set, the outfit Gerudo Town's guards let Link in with: Vilia no longer sells it
-- The four champions' abilities, progressive too (Progressive Revali's Gale, Progressive Daruk's Protection,
-  Progressive Urbosa's Fury, Progressive Mipha's Grace): the first copy is the ability, the second the upgraded
-  power the Champions' Ballad gives (shorter recharge)
-- Progressive Climbing Gear and Progressive Stealth Set (three pieces each)
-- 17 Heart Containers and 5 Stamina Vessels
+## Items
+
+**Progression and key items**
+
+- The **Paraglider**, and the four runes: Magnesis, Cryonis, **Progressive Remote Bomb** and **Progressive Stasis**
+  (the first copy is the rune, the second its upgrade, Remote Bomb+ or Stasis+).
+- The **Progressive Sheikah Sensor**: the Sheikah Sensor, then the Sheikah Sensor+. Purah's camera no longer comes
+  with it.
+- Armor: Warm Doublet, Snowquill Set, Flamebreaker Set, Desert Voe Set, Zora Set, Rubber Set, and the Gerudo Set,
+  which lets Link into Gerudo Town. Goron City's armor shop no longer sells the Flamebreaker Set, nor Vilia the
+  Gerudo Set.
+- The four champions' abilities, progressive: the first copy is the ability, the second the upgraded power of the
+  Champions' Ballad (shorter recharge).
+- Progressive Climbing Gear and Progressive Stealth Set (three pieces each).
+- 17 Heart Containers and 5 Stamina Vessels.
+- The maps of the 14 regions (all but the Great Plateau's), with the [`tower_maps`](#region-maps) option.
+
+**Useful items**
+
 - The Master Sword, the Hylian Shield, the Champion's Tunic, the Ancient Bridle and Saddle, the Barbarian, Ancient
-  and Radiant sets
-- Pouch upgrades: 4 for weapons, 3 for bows, 4 for shields (each one of Hestu's, who offers one fewer)
-- The Master Cycle Zero (The Champions' Ballad), the Travel Medallion and the Korok Mask (The Master Trials)
-- Epona, registered at the stables: take her out at any of them
-- The maps of the 14 regions (all but the Great Plateau's), with the `tower_maps` option: see below
-- Spirit Orbs, Ancient Cores, Star Fragments, Fairies (the Koroks still give their seeds, as in the game)
-- Filler: arrows (normal, fire, ice, shock, bomb, ancient), elixirs, weapons, gems and rupees
-- Weapons, bows and shields: 83 of the game's, from the soldiers' to the Lynels', elemental and ancient ones, a few
-  jokes (a Soup Ladle, a Pot Lid) and, rarely, the amiibo's treasures (Biggoron's Sword, the Twilight Bow...)
-- Traps, with the `trap_percentage` option: Weapon Shatter, Blood Moon, Rupoor, Hearts Down, Strip Down, Cucco
-  Swarm, Yiga Ambush, Paranoia and Downpour
+  and Radiant sets.
+- Pouch upgrades: 4 for weapons, 3 for bows, 4 for shields. Each one is one of Hestu's, who offers one fewer.
+- The Master Cycle Zero (The Champions' Ballad), the Travel Medallion and the Korok Mask (The Master Trials).
+- Epona, registered at the stables.
+- Spirit Orbs, Ancient Cores, Star Fragments and Fairies. The Koroks still give their seeds, as in the game.
 
-## What is the goal?
+**Filler**
+
+- Arrows (normal, fire, ice, shock, bomb, ancient), elixirs, gems and rupees.
+- Weapons, bows and shields: 83 of the game's, from the soldiers' to the Lynels', elemental and ancient ones, a few
+  jokes (a Soup Ladle, a Pot Lid) and, rarely, the amiibo's treasures (Biggoron's Sword, the Twilight Bow...).
+- [Traps](#traps), with the `trap_percentage` option.
+
+## Goal
 
 The `goal` option says what finishes your game:
 
-- `ganon` (the default): defeat Calamity Ganon;
-- `divine_beasts`: free the four Divine Beasts;
-- `shrines`: clear the number of shrines of `goal_shrines`.
+| `goal` | Finished when |
+|---|---|
+| `ganon` (default) | Calamity Ganon is defeated |
+| `divine_beasts` | the four Divine Beasts are freed |
+| `shrines` | `goal_shrines` shrines are cleared (1 to 120, default 60) |
 
-## When can Link face Ganon?
+Whatever the goal, Ganon's sanctum stays [sealed](#the-sealed-sanctum) until its own requirements are met.
 
-Hyrule Castle's sanctum, where Ganon waits, stays sealed until what the `sanctum_` options ask is met, whatever the
-goal: entering it sends Link back to its doors, a monk's line says the seal holds, and the Archipelago journal says
-what is missing ("Sanctum sealed: 1/2 Divine Beasts freed, 3/4 runes"). Each option asks for one thing, and 0 or
-`false` asks for nothing:
-
-- `sanctum_divine_beasts`: Divine Beasts freed (0 to 4);
-- `sanctum_shrines`: shrines cleared (0 to 120);
-- `sanctum_master_sword`: the Master Sword received;
-- `sanctum_runes`: the four runes received.
-
-Three presets set them on the options page: **Easy** (the 4 Divine Beasts, the Master Sword and the runes),
-**Medium** (2 Divine Beasts, the Master Sword and the runes: the defaults) and **Hard** (nothing: Ganon whenever Link
-likes, as in the game).
-
-## How does the logic work?
+## Logic
 
 The Great Plateau is the only region reachable at first: its terminals need nothing, each of its four shrines needs
-its rune, and leaving it needs the Paraglider. Beyond, the logic asks only for what the game itself blocks
-(`data/logic.csv` in the world):
+its rune, and leaving it needs the Paraglider. Beyond, the logic asks only for what the game itself blocks:
 
-- **The runes on the way to a shrine's monk** (its chests left out). Where the game offers two ways, either rune
-  is enough (Maka Rah: Magnesis or Stasis), unless one way is clearly the game's own. An entrance blocked by cracked
-  rocks asks for Remote Bomb, bomb arrows not being sure to be at hand.
-  The Divine Beasts keep all four runes.
-- **The Flamebreaker Set** where Link catches fire, the game's burning zones: Death Mountain, Goron City and the
-  canyon around it (Vah Rudania, Shae Mo'sah, Shora Hah...), and Tarrey Town's arrow stall, whose merchant comes in
-  a quest that goes through the Southern Mine. The foothills around Foothill Stable do not burn. Cold and desert
-  heat are crossed with food and elixirs, as in the game: no armor is required for them.
-- **The Zora Set** where the way goes up a waterfall: Vah Ruta.
-- **Purah's upgrades** open in Hateno once her quest Locked Mementos is done (the blue flame, carried from the
-  furnace below her lab). Each asks for three ancient parts that Guardians drop, which the logic leaves out, as it
-  does food.
-- **The Champions' Ballad** (the DLC) opens once the four Divine Beasts are freed, and its trials on the Great
-  Plateau want the four runes; each song then goes through its champion's region, with what the way there asks
-  (the Flamebreaker Set for Daruk's, the Zora Set for Mipha's, the Gerudo Set for Urbosa's).
-- **The Gerudo Set** for Gerudo Town, whose guards let Link in only wearing it, for Vah Naboris, whose quest goes
-  through the town, and for the shrine quests given in the town.
-- The freed Divine Beast for its heart container and for the shrines whose quest opens after it; ten Heart
-  Containers for the Master Sword.
+- **Runes on the way to a shrine's monk** (its chests left out). Where the game offers two ways, either rune is
+  enough (Maka Rah: Magnesis or Stasis), unless one way is clearly the game's own. An entrance blocked by cracked rocks
+  asks for Remote Bomb. The Divine Beasts ask for all four runes.
+- **The Flamebreaker Set** where Link catches fire: Death Mountain, Goron City and the canyon around it, and Tarrey
+  Town's arrow stall, whose merchant comes through the Southern Mine. Cold and desert heat are crossed with food and
+  elixirs, as in the game: no armor is required for them.
+- **The Zora Set** up the waterfalls to Vah Ruta.
+- **The Gerudo Set** for Gerudo Town, for Vah Naboris, whose quest goes through the town, and for the shrine quests
+  given in the town.
+- **Purah's upgrades** once her quest Locked Mementos is done. Each also asks for three ancient parts that Guardians
+  drop, which the logic leaves out, as it does food.
+- **The Champions' Ballad** once the four Divine Beasts are freed; its trials on the Great Plateau want the four
+  runes, and each song what the way to its champion's region asks.
+- **A freed Divine Beast** for its heart container, and for the shrines whose quest opens after it.
+- **13 hearts for the Master Sword**, as in the game: 10 Heart Containers.
 
-Only what these rules name is progression; the champions' abilities, the other armor, the climbing gear and the
-stamina vessels help without being required, and come wherever the seed puts them.
+Only what these rules name is progression. The champions' abilities, the other armor, the climbing gear and the
+stamina vessels help without being required.
 
-## What do the region maps do?
+## Options
 
-A tower reveals one area of the game's map; each location belongs to the region of the tower whose map shows it. The
-`tower_maps` option makes these maps items:
+| Group | Option | Default | In short |
+|---|---|---|---|
+| Goal | [`goal`, `goal_shrines`](#goal) | `ganon`, 60 | What finishes your game |
+| Sanctum | [`sanctum_divine_beasts`](#the-sealed-sanctum) | 2 | Divine Beasts freed before Ganon |
+| | [`sanctum_shrines`](#the-sealed-sanctum) | 0 | Shrines cleared before Ganon |
+| | [`sanctum_master_sword`](#the-sealed-sanctum) | true | The Master Sword before Ganon |
+| | [`sanctum_runes`](#the-sealed-sanctum) | true | The four runes before Ganon |
+| Shops | [`beedle_shop_items`](#shops-and-stalls) | 0 | Archipelago items at each of Beedle's 16 shops (0 to 2) |
+| | [`stall_items`](#shops-and-stalls) | 0 | Archipelago items on the village stalls (0 to 28) |
+| Weapons | [`weapon_order`](#weapon-order) | `smoothed` | Weaker weapons first, stronger later |
+| Maps | [`tower_maps`](#region-maps) | `region_keys` | Region maps are items, and keys of the logic |
+| | [`early_map`](#region-maps) | `gentle` | One map among the Great Plateau's first checks |
+| | [`region_lock`](#region-lock) | false | Regions open from the Great Plateau outward |
+| | [`map_travel_points`](#map-travel-points) | false | A map received opens a travel point |
+| Master Cycle Zero | [`bike_anywhere`](#master-cycle-zero-anywhere) | false | The bike in the desert and on Death Mountain |
+| Traps | [`trap_percentage`, `trap_weights`](#traps) | 0 | Share of the filler turned into traps |
+| | `death_link` | false | [DeathLink](#deathlink) |
 
-- `region_keys` (the default): the 14 maps, all but the Great Plateau's, are items. A region's locations are in the
-  logic once its map is received; so are the locations whose quest goes through another region, with that region's
-  map too: Tarrey Town's arrow stall (its quest recruits in Eldin, the Wasteland and Tabantha) and Shoqa Tatone
-  (its quest wants pictures of Guardians, taken with the camera Purah gives in Hateno, of the kinds that roam
-  Central Hyrule). The towers, the Great Plateau and Calamity Ganon need no map. Nothing is locked in the game: a
-  location done without its map counts all the same, it was just out of the logic. The trackers show such a
-  location as possible but out of logic: "glitched" in Universal Tracker, a sequence break (yellow) in PopTracker.
-- `items`: the maps are items, but the logic does not ask for them.
-- `vanilla`: as in the game, each tower reveals its own map; no map is an item.
+### The sealed sanctum
 
-With the maps as items, climbing a tower still counts as its location and opens its travel point, but no longer
-reveals the map: a map received does, with the game's own animation of a map opening.
+Hyrule Castle's sanctum, where Ganon waits, stays sealed until what the `sanctum_` options ask is met, whatever the
+goal ([what you see](ingame_en.md#the-sealed-sanctum)). Each option asks for one thing; 0 or `false` asks for
+nothing. Three levels, as the options' presets set them:
 
-The `early_map` option places one map among the Great Plateau's first locations, those reachable from the start (its
-rune terminals and its tower), so that a region opens besides the towers once Link leaves the Plateau: `gentle` (the
-default) draws one of the regions the game leads to first (Dueling Peaks, Hateno, Lake or Faron), `any` one of the 14,
-`none` places none early.
+| Preset | Divine Beasts | Master Sword | Runes |
+|---|---|---|---|
+| Easy | 4 | yes | yes |
+| Medium (default) | 2 | yes | yes |
+| Hard | 0 | no | no (Ganon whenever Link likes, as in the game) |
 
-The `region_lock` option (off by default; with `tower_maps` on `region_keys` only) opens the regions from the Great
-Plateau outward, as the game's map cuts them: a region is in the logic once its map is received and it borders a region
-already in the logic. The Great Plateau borders Central, Dueling Peaks, Lake and the Wasteland. The logic leaves out the
-few borders the game offers no way across (the cliffs around the Gerudo Highlands, the climb from Ridgeland to Hebra).
-A tower then needs its region's map too, Calamity Ganon needs Central, a quest through another region needs to reach
-that region, and `early_map` draws only among the Great Plateau's neighbours. The client keeps Link out of the regions
-not yet in the logic: the fog thickens over their last 25 m, the game's "You can't go any farther." stays on screen
-over them, and Link who sets foot in one is sent back to the last safe ground outside it, his life kept; the AP
-journal then says what opens that region. Universal Tracker and the PopTracker pack follow this option, from the seed's
-own borders: a location whose regions are out of reach shows as out of logic.
+### Shops and stalls
 
-The `map_travel_points` option (off by default; with the maps as items) makes a map received also open the travel
-point of one shrine near where its region begins, once Link has the Paraglider, so that he can warp there at once;
-the game shows the shrine's name as it opens. The shrine stays a location, cleared as ever. With `region_lock`, a
-region is then in the logic once its map and the Paraglider are received, whether or not it borders a region in the
-logic (its tower still needs it), and `early_map` draws as without `region_lock`.
+- `beedle_shop_items`: Beedle sells that many Archipelago items, listed first, at each of his 16 shops (the 15
+  stables and Kara Kara Bazaar).
+- `stall_items`: that many Archipelago items, as jewels, spread at random over the 14 village stalls, 2 at most on
+  one.
 
-## Can the Master Cycle Zero go anywhere?
+Buying one checks its location ([what you see](ingame_en.md#shops-and-stalls)).
 
-The game refuses the Master Cycle Zero (the Champions' Ballad DLC) in the Gerudo Desert and on Death Mountain, and the
-invisible walls that stop horses, at the desert's entrances among others, stop it too. With the `bike_anywhere` option
-(off by default), it can be summoned and ridden there and goes through those walls. Indoors still refuse it, and flying
-onto the desert or Death Mountain from a cliff outside still throws Link off just before the landing. The logic does
-not change.
+### Weapon order
 
-## How are the weapons spread?
+`weapon_order` orders the weapons wherever they land in the multiworld, by the logic's spheres:
 
-The `weapon_order` option orders the weapons wherever they land in the multiworld, by the logic's spheres:
-
-- `smoothed` (the default): the weaker first, the stronger as the game goes on, the amiibo's treasures last;
+- `smoothed` (default): the weaker first, the stronger as the game goes on, the amiibo's treasures last;
 - `loosely_smoothed`: the same order, with some chance: a weapon may come a level earlier or later, never a treasure
   among the first;
 - `anywhere`: wherever the fill put them, a treasure on the Great Plateau too.
 
-The jokes come anywhere. Alone in a game, without the region maps as keys, the first sphere past the Great Plateau
-holds most of Hyrule: the Plateau gets the weakest weapons, the strongest wait behind the last items, and the rest is
-mixed. With them, each map opens a sphere of its own, and the weapons grow region after region.
+The jokes come anywhere. With the region maps as keys, each map opens a sphere of its own, and the weapons grow region
+after region.
 
-## What does DeathLink do?
+### Region maps
 
-With the `death_link` option, Link's death kills the other DeathLink players of the room, with what killed him
-("Player was slain by a Bokoblin", "Player froze to death"...), and their deaths kill Link.
-A received death is first announced in the Archipelago journal, then Link dies as he would of a lethal blow: the
-death animation, the Game Over screen and the reload of the last save. Mipha's Grace and fairies still save him, as
-they would from any lethal blow; the received death is then spent. It waits for a safe moment: not during a
-cutscene, a menu or a loading screen.
+A tower reveals one area of the game's map; each location belongs to the region of the tower whose map shows it.
+`tower_maps` makes these maps items:
 
-## What do traps do?
+| `tower_maps` | The 14 maps are items | The logic asks for them |
+|---|---|---|
+| `region_keys` (default) | yes | yes: a region's locations are in the logic once its map is received |
+| `items` | yes | no |
+| `vanilla` | no: each tower reveals its own map | no |
 
-With the `trap_percentage` option, that share of the filler (arrows, elixirs, weapons, gems and rupees) becomes traps, drawn
-by the `trap_weights` option (a trap of weight 0 or left out never comes up). A trap strikes when it is received,
-at a safe moment, and the Archipelago journal says what it did. The cuccos, the Yiga and the storm's lightning can
-kill Link.
+With the maps as items, climbing a tower still counts as its location and opens its travel point, but no longer
+reveals the map: a map received does, with the game's own animation.
+
+> [!TIP]
+> Nothing is locked in the game: a location done without its map counts all the same, it was just out of logic.
+> The trackers show it as possible but out of logic.
+
+With `region_keys`, the towers, the Great Plateau and Calamity Ganon need no map. A location whose quest goes through
+another region needs that region's map too: Tarrey Town's arrow stall (its quest recruits in Eldin, the Wasteland and
+Tabantha) and Shoqa Tatone (its quest wants pictures of Central Hyrule's Guardians).
+
+`early_map` places one map among the Great Plateau's first checks (its rune terminals and its tower), so that a region
+opens besides the towers once Link leaves the Plateau:
+
+- `gentle` (default): one of the regions the game leads to first (Dueling Peaks, Hateno, Lake or Faron);
+- `any`: one of the 14;
+- `none`: none early.
+
+### Region lock
+
+`region_lock` (with `tower_maps: region_keys` only) opens the regions from the Great Plateau outward, as the game's
+map cuts them: a region is in the logic once its map is received **and** it borders a region already in the logic.
+The Great Plateau borders Central, Dueling Peaks, Lake and the Wasteland. The logic leaves out the few borders the
+game offers no way across (the cliffs around the Gerudo Highlands, the climb from Ridgeland to Hebra).
+
+A tower then needs its region's map too, Calamity Ganon needs Central, a quest through another region needs to reach
+that region, and `early_map` draws only among the Great Plateau's neighbours. The client keeps Link out of the regions
+not yet in the logic ([what you see](ingame_en.md#region-borders)). Universal Tracker and the PopTracker pack follow
+this option, from the seed's own borders: a location whose regions are out of reach shows as out of logic.
+
+### Map travel points
+
+`map_travel_points` (with the maps as items) makes a map received also open the travel point of one shrine near
+where its region begins, once Link has the Paraglider, so that he can warp there at once; the game shows the shrine's name as it opens. The shrine stays
+a location, cleared as ever. With `region_lock`, a region is then in the logic once its map and the Paraglider are
+received, whether or not it borders a region in the logic (its tower still needs it), and `early_map` draws as without
+`region_lock`.
+
+### Master Cycle Zero anywhere
+
+The game refuses the Master Cycle Zero in the Gerudo Desert and on Death Mountain, and the invisible walls that stop
+horses stop it too. With `bike_anywhere`, it can be summoned and ridden there and goes through those walls. Indoors
+still refuse it, and flying onto the desert or Death Mountain from a cliff outside still throws Link off just before
+landing. The logic does not change.
+
+### DeathLink
+
+With `death_link`, Link's death kills the other DeathLink players of the room, with what killed him ("Player was slain
+by a Bokoblin", "Player froze to death"...), and their deaths kill Link, as a lethal blow would: the death animation,
+the Game Over screen and the reload of the last save. Mipha's Grace and fairies still save him; the received death is
+then spent. It waits for a safe moment: not during a cutscene, a menu or a loading screen.
+
+### Traps
+
+`trap_percentage` turns that share of the filler (arrows, elixirs, weapons, gems and rupees) into traps, drawn by
+`trap_weights` (a trap of weight 0 or left out never comes up). A trap strikes when it is received, at a safe moment.
 
 | Trap | What it does |
 |---|---|
-| Weapon Shatter | The melee weapon in Link's hand is deleted. Empty hands, or the Master Sword, which never breaks: nothing. |
-| Blood Moon | The Blood Moon rises at once: its cutscene plays and the defeated monsters come back. In a shrine or a place where the game allows none, the next midnight is the Blood Moon instead. |
+| Weapon Shatter | The melee weapon in Link's hand is deleted. Empty hands, or the Master Sword: nothing. |
+| Blood Moon | The Blood Moon rises at once and the defeated monsters come back. Where the game allows none, the next midnight is the Blood Moon instead. |
 | Rupoor | Takes up to 100 rupees: the largest of 100, 50, 20, 10, 5 or 1 the purse holds. |
 | Hearts Down | Takes up to two hearts, never the last quarter. |
-| Strip Down | Link's weapon, shield, bow and armor go back in the pouch, to equip again. |
-| Cucco Swarm | The angry cuccos' swarm rushes at Link from every side for 10 s. It can kill. |
+| Strip Down | Link's weapon, shield, bow and armor go back in the pouch. |
+| Cucco Swarm | The angry cuccos rush at Link from every side for 10 s. It can kill. |
 | Yiga Ambush | Two Yiga Footsoldiers and a Yiga archer appear around Link and attack. |
 | Paranoia | A Guardian takes aim at Link from behind, beeping, and vanishes just before it fires. |
-| Downpour | Rain for 2 minutes (the walls get slippery), or a thunderstorm for 90 s (its lightning strikes metal). Nothing shows in a shrine; a death or a reload ends it. |
+| Downpour | Rain for 2 minutes (the walls get slippery), or a thunderstorm for 90 s (its lightning strikes metal). Nothing in a shrine; a death or a reload ends it. |
 
-A trap given back after loading an older save is spent without effect: the save forgot the trap's effect with the
-rest, and a trap is not suffered twice.
-
-## What does another world's item look like in Breath of the Wild?
-
-Your own items appear as the game shows them. An item for another player is announced in the Archipelago journal, a
-line of text in the game's tip frame (top right of the screen). In shops and on stalls, it is shown as an Archipelago
-jewel, with the item's name and its recipient.
+A trap given back after loading an older save is spent without effect: a trap is not suffered twice.
 
 ## Current limitations
 
-- Only the Wii U version (European, American or Japanese), update v208, in Cemu on Windows, is supported.
-- A mod that changes an event the game pack changes too, or a graphic pack that patches the code it needs, is left
-  out of the Archipelago game, by name.
-- Each player's launcher builds a game pack for their seed, from their slot file (`.apbotw`, on the room's page
-  or in the seed's zip). The seed is generated with Archipelago on a computer, then hosted anywhere, archipelago.gg
-  included.
+- Only the Wii U version (European, American or Japanese), update v208, in Cemu on Windows.
+- A few mods are left out of the Archipelago game: see [Mods](mods_en.md#what-is-left-out).

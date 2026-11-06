@@ -131,8 +131,9 @@ environment whose versions differ, so that a release is the same wherever it is 
 ### Versions and publishing
 
 The version is one for the world, the client and the release: `world_version` in `botw_world/archipelago.json`
-(`botw_client/version.py`). The world writes it into each seed's slot data. A release plays every seed whose schemas it
-knows (`world_schema`, `client_schema`), whatever version generated it, and names the version needed otherwise; the
+(`botw_client/version.py`). The world writes it into each seed's slot data. A release plays every seed of its own world
+schema (`world_schema`) and of a client schema it knows (`client_schema`), whatever version generated it, and names the
+version needed otherwise (`tools/play_seed.py`); the
 launcher builds a seed's pack again when the sources it was built from changed, so an update applies to the seeds
 already prepared.
 

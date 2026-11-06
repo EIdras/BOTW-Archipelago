@@ -1,4 +1,14 @@
-# PopTracker Guide
+# Trackers
+
+[Setup](setup_en.md) · [In the game](ingame_en.md) · [Options](en_Breath%20of%20the%20Wild.md) · [Hosting](hosting_en.md) ·
+**Trackers** · [Mods](mods_en.md) · [Troubleshooting](troubleshooting_en.md)
+
+Two trackers follow a Breath of the Wild game: [PopTracker](#poptracker), a map of Hyrule, and
+[Universal Tracker](#universal-tracker), a list in Archipelago's own client.
+
+<!-- ![The PopTracker pack](../../docs/images/poptracker.png) -->
+
+## PopTracker
 
 [PopTracker](https://github.com/black-sliver/PopTracker) shows a map of Hyrule with every location of your seed,
 colored by what your items let you reach. It connects to the Archipelago room by itself: the items you receive and
@@ -7,12 +17,12 @@ the locations you check appear as you play, with nothing to click.
 There is no pack to download: the launcher builds it from your own copy of the game, in the release's folder, and
 you install it in PopTracker yourself.
 
-## Setting it up
+### Setting it up
 
 1. **Install PopTracker**, version 0.26.2 or later, from its
    [releases page](https://github.com/black-sliver/PopTracker/releases) (on Windows, the `win64` zip: unzip it
    anywhere).
-2. **Start a session with `BOTW Archipelago.cmd`**, as the [setup guide](setup_en.md#playing) says. Before Cemu
+2. **Start a session with `BOTW Archipelago.cmd`**, as the [setup guide](setup_en.md#your-first-session) says. Before Cemu
    starts, the launcher asks once whether you want the PopTracker pack:
 
        PopTracker pack: none in this folder yet. PopTracker is an optional map tracker that follows the room (see the PopTracker guide).
@@ -40,7 +50,7 @@ If you said no and change your mind, open a command prompt in the release's fold
 `python\python.exe -I tools\build_poptracker.py`: it fetches the icons and builds the pack in the same `PopTracker`
 folder.
 
-## Connecting to the room
+### Connecting to the room
 
 1. Open PopTracker and click **Load** (the folder icon at the top left).
 2. Choose **Breath of the Wild Archipelago**, variant **Map tracker**.
@@ -53,7 +63,7 @@ The tracker then fills in by itself: the items you already have, the locations a
 options (which locations exist, whether region maps are needed, what Ganon asks for). The same pack serves every
 seed of a version: next time, load it and click **AP** again.
 
-## Reading the map
+### Reading the map
 
 Each square is a place on the map; hover it to see its locations, click it to see them in a list.
 
@@ -68,14 +78,14 @@ A square holding several locations (a stable's two Beedle items, a plateau shrin
 than one color. Shops and stalls only appear when your seed has them. Once your slot has reached its goal and is
 released, every location is checked and the whole map turns grey.
 
-## The items panel
+### The items panel
 
 The panel next to the map shows the items that matter for the logic (runes, Paraglider, armor, Divine Beasts
 freed, shrines cleared...), and a few that it does not need but you may want to follow: Master Cycle Zero, the
 Travel Medallion, Epona, the Korok Mask and the pouch upgrades. A bright icon is an item you have; a number is how
 many you have (a progressive item, a pouch upgrade).
 
-## The regions panel
+### The regions panel
 
 The region maps have a panel of their own: a small map of Hyrule cut into its regions. A region stays grey until its map is received, then shows the
 game's own colours. With `region_lock`, a region whose map is received but that is not reached yet is amber and
@@ -90,7 +100,7 @@ seed. There are none when the towers reveal the maps (`tower_maps: vanilla`).
 Everything is updated from the room; you never need to click anything. Without a connection, you can still mark
 items and locations by hand with the mouse.
 
-## Icons
+### Icons
 
 The map and part of the icons (hearts, stamina, Divine Beasts, shrines...) are drawn from your own game. The
 launcher downloads the rest once, when it builds the pack, from the `tracker-icons` release of this project.
@@ -101,7 +111,7 @@ You can also use your own icons: put PNG files named after the items (`Paraglide
 subfolders are fine) in `%LOCALAPPDATA%\BOTW Archipelago\poptracker\icons`. The next session rebuilds the pack with
 them.
 
-## Troubleshooting
+### Troubleshooting
 
 - **No `PopTracker` folder in the release.** The pack is only built when you answer yes, at the start of a session.
   Look at the launcher's PopTracker line: it says why, and how to build the pack.
@@ -115,3 +125,18 @@ them.
   when it restarts on archipelago.gg: take the new one from the room's page.
 - **A location is red but you could get it.** The tracker follows the world's logic, which can be stricter than
   the game. You can do it anyway: it is checked all the same.
+
+## Universal Tracker
+
+[Universal Tracker](https://github.com/FarisTheAncient/Archipelago/releases) lists, in Archipelago's own client, what
+your items let you reach.
+
+1. Install Universal Tracker, and put `botw.apworld` in your Archipelago installation's `custom_worlds` folder.
+2. Connect it to the room with your slot name. It needs no YAML: it reads the seed's options from the room.
+
+`/explain <location>` says what a location still asks for. A location out of logic but possible (a region's map
+missing) shows as "glitched".
+
+---
+
+Next: [Mods](mods_en.md).

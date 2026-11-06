@@ -88,6 +88,10 @@ and counts the closure (`Cave.center_closures()`, packs of magic `HLD2`). The cl
 under the world's direct fog (the environment manager's `setFogDirect` fields, a timer held ahead), thickened over the
 same 25 m. The Archipelago lines never use this channel in play: they go to the journal.
 
+The console command `/ap-border` prints the border's state: the stage, Link's position and region, the closed regions
+and the nearest one, the fog, whether the message is held, the return to safe ground, and the longest gap between two
+border ticks since the last `/ap-border`.
+
 ## Connection status
 
 - **Journal**: the connection is announced once, then **one** line per outage (not one per attempt), then "Reconnected
@@ -99,8 +103,7 @@ same 25 m. The Archipelago lines never use this channel in play: they go to the 
   (the "Quest Complete" banner; the quest greyed, with its closing text). It rides on flags the game declares for a
   test quest it never shipped (`TurnTestQuest_Activated`, `_Finish`: saved, one-trigger): two entries,
   `Demo007_1<APQuestStart>` and `<APQuestFinish>`, raise each only when it is down; the client asks the first once per
-  connection, after the pending deliveries, and the second once the goal is sent. Every seed pack has it. Packs
-  before 0.2.0 had an "Archipelago" key item instead (`Demo007_1<APStatusItem>`), still given to them.
+  connection, after the pending deliveries, and the second once the goal is sent. Every seed pack has it.
 - **HUD**: the Archipelago logo at the bottom right, by the minimap, in color when connected, grey otherwise:
   [hud_indicator.md](hud_indicator.md).
 
@@ -159,7 +162,7 @@ without committing stops the client (possible mutation).
   in game: `Demo_OpenPickup` (`IsAddPorch`), the action the Rito brothers hand over materials with
   (`Rito_BrosRock`), calls that same function but showed nothing from our entry; called from the invoker, it shows
   (measured). The item map opts in with `"pickup": true` (Spirit Orb, Ancient Core, Star
-  Fragment, Korok Seed, Fairy; `validate_item_map` refuses it on a useful or progression item). A notification not
+  Fragment, Korok Seed, Fairy, the arrow bundles and the gems; `validate_item_map` refuses it on a useful or progression item). A notification not
   shown is only logged. Rupee bundles: their silent twin, `Demo_IncreaseRupee`, whose counter shows them. A unique,
   useful or progression item, or the first of a kind, keeps its window; so do an elixir and a weapon, every time
   (`"window": "always"`).
@@ -222,7 +225,8 @@ own gifts.
 - A new flowchart added to `TitleBG.pack` (`EventFlow/APDelivery.bfevfl`) is accepted by the game and never runs: an
   added file is not found the way the original resident flowcharts are.
 
-The console command `/ap-evt [n|reset]` decodes the trace of the game's event requests (`patch_event_request.asm`):
+The console command `/ap-evt [n|reset]` decodes the trace of the game's event requests (`patch_event_request.asm`, written by
+`tools/build_event_request_trace.py`):
 flowchart, entry, type and flags (`tools/cemu/event_request_trace.descriptor_fields`; Wii U offsets of `evt::Metadata`:
 type `+0xf8`, flags `+0x108`).
 
