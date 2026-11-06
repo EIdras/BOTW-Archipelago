@@ -196,6 +196,34 @@ class AdapterTests(unittest.TestCase):
                 self.assertEqual(self.queue.tick(self.backend), 'uncertain')
                 self.assertEqual(self.native.request.call_count, 1)
 
+    def test_a_window_read_at_length_is_not_timed_out(self):
+        self.make()
+        self.send()
+        self.state.update(phase='bound', bound_generation=1)
+        self.guard.return_value = False             # the window on screen
+        for minute in range(1, 11):
+            self.now = .22 + 60 * minute
+            self.assertEqual(self.queue.tick(self.backend), 'accepted')
+        self.guard.side_effect = RuntimeError('a loading')
+        self.now += 60
+        self.assertEqual(self.queue.tick(self.backend), 'accepted')
+
+    def test_a_bound_window_gone_with_link_playing_still_times_out(self):
+        self.make()
+        self.send()
+        self.state.update(phase='bound', bound_generation=1)
+        self.now = 1.
+        self.assertEqual(self.queue.tick(self.backend), 'accepted')
+        self.now = 122.
+        self.assertEqual(self.queue.tick(self.backend), 'uncertain')
+
+    def test_an_accepted_window_that_never_opens_still_times_out(self):
+        self.make()
+        self.send()
+        self.guard.return_value = False
+        self.now = 121.
+        self.assertEqual(self.queue.tick(self.backend), 'uncertain')
+
     def test_guard_resets_stability_and_fast_ticks_do_not_count(self):
         self.make()
         for _ in range(5): self.assertFalse(self.backend.ready())

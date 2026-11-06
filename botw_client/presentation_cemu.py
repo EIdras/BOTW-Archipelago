@@ -8,6 +8,8 @@ from ctypes import wintypes
 import time
 import uuid
 
+PLAY_CHECK_SECONDS = 0.5    # the game's screens read so often while a window waits
+
 
 def refusal_has_no_action(state, join, text, generation):
     """Positive native proof, not a timeout or a missing window."""
@@ -77,7 +79,14 @@ class CemuPresentationBackend:
         self.evidence = evidence
         self.evidence_error = None
         self.retry_after = 0.0
+        self.play_checked = float('-inf')
         self.wait_reason = 'checking native readiness'
+
+    def _playing(self):
+        try:
+            return bool(self.guard())
+        except Exception:  # noqa: BLE001 - unreadable (a loading): not playing
+            return False
 
     def _capture_evidence(self, phase):
         if self.evidence is not None:
@@ -213,7 +222,16 @@ class CemuPresentationBackend:
             if self.native.finished(state, join):
                 self.active = None
                 return dict(ticket, status='finished')
-            if state['phase'] not in ('accepted', 'bound', 'action_complete', 'released', 'finished') or self.clock() >= self.deadline:
+            if state['phase'] not in ('accepted', 'bound', 'action_complete', 'released', 'finished'):
+                raise RuntimeError('Native completion uncertain or timed out')
+            # Once bound, the window waits for the player as long as he reads it:
+            # only time with Link back in play, the request unfinished, counts.
+            now = self.clock()
+            if state['phase'] != 'accepted' and now >= self.play_checked + PLAY_CHECK_SECONDS:
+                self.play_checked = now
+                if not self._playing():
+                    self.deadline = now + self.timeout
+            if now >= self.deadline:
                 raise RuntimeError('Native completion uncertain or timed out')
             return dict(ticket, status='pending')
         except Exception:
