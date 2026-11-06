@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock
 
-from botw_client.message_text import MESSAGE_MAX_UNITS, clip_units, queued_text
+from botw_client.message_text import MESSAGE_MAX_UNITS, clip_units, queued_text, window_title
 from botw_client.presentation_session import clipped
 from botw_client.protocol import APMessage
 from botw_client.runtime import BotwClientRuntime, StateStore
@@ -39,6 +39,11 @@ class MessageTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(restored['text'], 'Hello  \ufffd{size:80}')
         self.assertEqual(restored['nodes'][0]['text'], '\ufffd')
         self.assertEqual(restored['nodes'][0]['extra'], [' '])
+
+    def test_a_long_progressive_title_keeps_its_end(self):
+        self.assertEqual(window_title('Progressive Sheikah Sensor'), 'Prog. Sheikah Sensor')
+        self.assertEqual(window_title("Progressive Mipha's Grace"), "Progressive Mipha's Grace")
+        self.assertEqual(window_title('A name of another game, too long'), 'A name of another game, t')
 
     def test_queue_retains_latest_hundred_messages_in_order(self):
         for number in range(105):

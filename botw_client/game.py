@@ -11,6 +11,7 @@ import zlib
 from .items import load_item_map, stage_delivery
 from .locations import (TOWER_TERMINALS, LocationTracker, alternate_targets, known_hashes,
                         load_targets, tower_activation_flag)
+from .message_text import window_title
 from .paths import DATA
 from .rune_selection import EQUIP_HASH, RuneSelectionSync, SyncOutcome
 
@@ -659,12 +660,12 @@ class BotwGame:
         lines = [f"From {sender}"[:40], f"({game})"[:40]]
         if extra:
             lines.extend(extra[i:i + 40] for i in range(0, len(extra), 40))
-        return self._show_item(name, name[:25], lines)
+        return self._show_item(name, window_title(name), lines)
 
     def show_location_reward(self, name: str, recipient: str,
                              game: str, location: str) -> bool:
         lines = [f"For {recipient}"[:40], f"({game})"[:40], location[:40]]
-        return self._show_item(name, name[:25], lines)
+        return self._show_item(name, window_title(name), lines)
 
     def show_ap_message(self, text: str) -> bool:
         """Show one short AP line in the verified, non-blocking center channel."""

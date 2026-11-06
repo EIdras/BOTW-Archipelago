@@ -30,6 +30,14 @@ def clip_units(text, units):
         'utf-16-be', errors='ignore')
 
 
+def window_title(name, units=25):
+    """An item's name as a window's title: "Progressive" shortened when the
+    whole name would not fit, so its end is not the part cut off."""
+    if len(literal_text(name).encode('utf-16-be')) > units * 2 and name.startswith('Progressive '):
+        name = 'Prog. ' + name.removeprefix('Progressive ')
+    return clip_units(name, units)
+
+
 def literal_metadata(value):
     """Keep JSON node metadata serializable even for malformed Unicode input."""
     if isinstance(value, str):

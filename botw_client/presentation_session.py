@@ -14,7 +14,7 @@ from types import SimpleNamespace
 from .presentation import PresentationQueue
 from .presentation_store import PresentationStore
 from .presentation_cemu import CemuPresentationBackend
-from .message_text import clip_units
+from .message_text import clip_units, window_title
 
 # How often a stopped adapter is renewed while the native owner stays held.
 RENEW_SECONDS = 2.0
@@ -152,7 +152,7 @@ class NativePresentationSession:
         def enqueue(key, title, lines):
             # Freeze payload at first enqueue; reconnect may change nicknames.
             if key not in entries:
-                entries[key] = queue.enqueue(key, clipped(title, 25),
+                entries[key] = queue.enqueue(key, window_title(title),
                     clipped('\n'.join(clipped(line, 40) for line in lines[:4]), 255))
 
         def location_payload(location_id):
