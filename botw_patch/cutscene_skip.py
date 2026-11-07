@@ -17,15 +17,22 @@ in the laboratory (lab/journal/etude_saut_cinematiques.md):
 * intro: a new game's code (0x02C2AE4C) requests the 48 s black-screen intro,
   Demo169_0<Timeline>, which no skip reaches (the controller never sees a
   timeline event). The request is never made; the wake-up follows at once.
-  Demo169_0 sets no flag.
+  Demo169_0 sets no flag;
+* forbidden: a cutscene was never skippable when its request forbids the skip
+  (0x20000, from the request's byte +0x22) or its .bdemo's SkipPolicy is Forbid.
+  The Great Plateau's first view, Demo103_0, is both; its only flag, its flow
+  sets again after it. Neither decides any more. Forbid is on three .bdemo only,
+  the other two played by event flows (below), which this test never sees.
 
-Kept as the game has them: cutscenes whose .bdemo forbids the skip (SkipPolicy
-Forbid: Demo700_0, Demo701_0, the Shrine of Resurrection's pedestal and exit, which
-activate its terminal) and those whose request forbids it (Demo103_0). Events
-played by an event flow (dialogues, pedestals, terminals) are not cutscenes the
-controller sees.
+Cutscenes played by an event flow's own actions are not timelines the controller
+sees: the Shrine of Resurrection's pedestal (Demo700_0) and exit (Demo701_0).
+Their flows are made cancellable the game's own way (botw_patch/event_cancel.py,
+generate()): + cancels them, and the cancel plays their effects again.
 """
 from __future__ import annotations
+
+from pathlib import Path
+import tempfile
 
 MODULE = 0x6267BFD0     # moduleMatches of the v208 executable, in every version
 GROUP = "BOTW_AP_CutsceneSkip_V208"
@@ -41,11 +48,27 @@ PATCHES = {
                  "fade: beq 0x02DD53C8, not skippable while the Fade screen runs"),
     0x02C2AE48: (0x40820058, ".int 0x48000058 ; b 0x02C2AEA0",
                  "intro: bne 0x02C2AEA0, Demo169_0<Timeline> requested only when not yet"),
+    0x031DE9B0: (0x4082001C, ".int 0x48000018 ; b 0x031DE9C8",
+                 "forbidden: bne 0x031DE9CC, then SkipPolicy Forbid, not skippable when either forbids it"),
 }
 NATIVE = (f"[{GROUP}]\nmoduleMatches = 0x{MODULE:08X}\n"
           + "".join(f"; {why}\n0x{address:08X} = {patch}\n"
                     for address, (_, patch, why) in PATCHES.items()))
-SOURCE_FILES = ("botw_patch/cutscene_skip.py",)
+SOURCE_FILES = ("botw_patch/cutscene_skip.py", "botw_patch/event_cancel.py")
+
+TABLE = "System/Resource/ResourceSizeTable.product.srsizetable"
+# The flows made cancellable: archive -> (flow, the event the segment follows, the
+# segment's last event, the effects a cancel plays again, in order).
+FLOWS = {
+    "Event/Demo700_0.sbeventpack": (
+        "Demo700_0", "Event7", "Event65",
+        # the Slate bound and taken (GetDemo), Open_FirstDoor, IsGet_PortableUnit, the last warp
+        ["Event85", "Event70", "Event61", "Event160", "Event29", "Event104", "Event62", "Event12", "Event96"]),
+    "Event/Demo701_0.sbeventpack": (
+        "Demo701_0", "Event99", "Event53",
+        # the Slate held and put away, the terminal on (Demo041_0), Open_Door, the light, the warp
+        ["Event41", "Event14", "Event2", "Event102", "Event106", "Event109", "Event42", "Event110", "Event50"]),
+}
 
 
 def enabled(status: dict | None) -> bool:
@@ -58,3 +81,43 @@ def patch_injection(text: str) -> str:
     if GROUP in text:
         raise ValueError("parent injection already has the cutscene skip")
     return text.rstrip("\n") + "\n\n" + NATIVE
+
+
+def cancellable(flow_name: str, after: str, last: str, expected: list[str]):
+    """The transform of a flow made cancellable, checked against what was studied."""
+    from botw_patch.event_cancel import make_cancellable
+    from botw_patch.events import read_flow, write_flow
+
+    def transform(raw: bytes) -> tuple[bytes, dict]:
+        flow = read_flow(raw)
+        if flow.flowchart.name != flow_name:
+            raise ValueError(f"expected the flow {flow_name}")
+        replayed = make_cancellable(flow, after, last)
+        if replayed != expected:
+            raise ValueError(f"{flow_name}: a cancel would play {replayed}, not {expected}")
+        return write_flow(flow), {"cancellable": [after, last], "replayed": replayed}
+    return transform
+
+
+def generate(files: dict[str, bytes], content) -> tuple[dict[str, bytes], list[dict]]:
+    """The flows of FLOWS made cancellable (the size table is read from `files`).
+    content: the update folder, or the game's files (botw_patch/game_files.py)."""
+    from botw_patch.game_files import GameFiles
+    from botw_patch.resources import ResourceBuilder
+    game = GameFiles.of(content)
+    if TABLE not in files:
+        raise ValueError(f"{TABLE} expected in the overlay")
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp:
+        stage = Path(temp)
+        for name in (*FLOWS, TABLE):
+            path = stage / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(files[name] if name in files else game.read(name))
+        builder = ResourceBuilder(stage)
+        for archive, (flow_name, after, last, expected) in FLOWS.items():
+            builder.patch_archive(archive, {f"EventFlow/{flow_name}.bfevfl":
+                                            cancellable(flow_name, after, last, expected)})
+        out = builder.finish()
+    files = dict(files)
+    files.update(out)
+    return files, builder.changes

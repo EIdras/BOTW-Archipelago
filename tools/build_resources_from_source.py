@@ -30,7 +30,7 @@ from tools.build_resource_base_from_source import INPUT_HASHES, generate_present
 from tools.build_game_data_mod import modify_gamedata_flags
 from tools import build_plateau_sensor_candidate as sensor
 from tools import build_master_sword_candidate as sword
-from botw_patch import (ballad_ends, beast_heart, bike_anywhere, camera_sensor, death_link, downpour,
+from botw_patch import (ballad_ends, beast_heart, bike_anywhere, camera_sensor, cutscene_skip, death_link, downpour,
                         ganon_gate, gerudo_outfit, goron_armor, horses, hud_layout, loading_icon,
                         pedestal, purah_upgrades, traps)
 from botw_patch.ap_quest import INPUT_HASHES as STATUS_INPUTS
@@ -125,7 +125,8 @@ def stage_names(shops: list | None = None, status: dict | None = None) -> list[s
     return ["checking the game's files", "the item deliveries", "the rewards and gifts",
             "DeathLink, traps and the HUD", *(["the shops"] if shops else []),
             *(["the Archipelago quest"] if status else []), *(["the region maps"] if tower_maps(status) else []),
-            *(["the Master Cycle Zero"] if bike_anywhere.enabled(status) else []), "the texts"]
+            *(["the Master Cycle Zero"] if bike_anywhere.enabled(status) else []),
+            *(["the cutscenes"] if cutscene_skip.enabled(status) else []), "the texts"]
 
 
 def generate(content, binding_token: int, shops: list | None = None,
@@ -335,6 +336,11 @@ def _generate(game: GameFiles, binding_token: int, shops: list | None, status: d
         # The cycle through the horse-only walls (botw_patch/bike_anywhere.py).
         files, edits = bike_anywhere.generate(files, game)
         changes.extend(edits)
+    if cutscene_skip.enabled(status):
+        stage()
+        # The flow-played cutscenes made cancellable (botw_patch/cutscene_skip.py).
+        files, edits = cutscene_skip.generate(files, game)
+        changes.extend(edits)
     stage()
     # Vilia's lines at the price she now asks (botw_patch/gerudo_outfit.py).
     files, edits = gerudo_outfit.generate_texts(files, game)
@@ -406,6 +412,11 @@ def build(content, output: Path, *, binding_token: int, shops: list | None = Non
         manifest["bike_anywhere"] = list(bike_anywhere.WALLS)
         manifest["source_hashes"].update({name: digest((ROOT / name).read_bytes())
                                           for name in bike_anywhere.SOURCE_FILES})
+    if cutscene_skip.enabled(status):
+        # Only for seeds that ask for it, so that the others keep their identity.
+        manifest["cutscene_skip"] = sorted(cutscene_skip.FLOWS)
+        manifest["source_hashes"].update({name: digest((ROOT / name).read_bytes())
+                                          for name in cutscene_skip.SOURCE_FILES})
     if region is not regions.EUR:
         # Only for the other versions, so that the European packs keep their identity.
         manifest["input_hashes"] = regions.inputs(manifest["input_hashes"], game.content)
