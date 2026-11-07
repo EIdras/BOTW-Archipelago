@@ -246,7 +246,8 @@ def our_addresses() -> frozenset[int]:
     maps add hooks), from the project's native sources."""
     from tools import build_native_from_source as native
     found = set()
-    for text in native.generate(resource_gate=True, event_gate=True, tower_maps=True).values():
+    for text in native.generate(resource_gate=True, event_gate=True, tower_maps=True,
+                                cutscene_skip=True).values():
         found |= addresses(text if isinstance(text, str) else text.decode("utf-8"))
     return frozenset(found)
 

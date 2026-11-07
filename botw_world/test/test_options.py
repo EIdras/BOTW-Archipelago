@@ -132,3 +132,15 @@ class TestBikeAnywhere(BotwTestBase):
 
     def test_the_slot_data_tells_the_pack_builder(self) -> None:
         self.assertEqual(self.world.fill_slot_data()["bike_anywhere"], 1)
+
+
+class TestCutsceneSkipOffByDefault(BotwTestBase):
+    def test_the_slot_data_tells_the_pack_builder(self) -> None:
+        self.assertEqual(self.world.fill_slot_data()["cutscene_skip"], 0)
+
+
+class TestCutsceneSkip(BotwTestBase):
+    options = {"cutscene_skip": True}
+
+    def test_the_slot_data_tells_the_pack_builder(self) -> None:
+        self.assertEqual(self.world.fill_slot_data()["cutscene_skip"], 1)

@@ -119,6 +119,7 @@ stamina vessels help without being required.
 | | [`region_lock`](#region-lock) | false | Regions open from the Great Plateau outward |
 | | [`map_travel_points`](#map-travel-points) | false | A map received opens a travel point |
 | Master Cycle Zero | [`bike_anywhere`](#master-cycle-zero-anywhere) | false | The bike in the desert and on Death Mountain |
+| Cutscenes | [`cutscene_skip`](#skip-cutscenes) | false | + alone skips a cutscene, from a first game on |
 | Traps | [`trap_percentage`, `trap_weights`](#traps) | 0 | Share of the filler turned into traps |
 | | `death_link` | false | [DeathLink](#deathlink) |
 
@@ -210,6 +211,14 @@ The game refuses the Master Cycle Zero in the Gerudo Desert and on Death Mountai
 horses stop it too. With `bike_anywhere`, it can be summoned and ridden there and goes through those walls. Indoors
 still refuse it, and flying onto the desert or Death Mountain from a cliff outside still throws Link off just before
 landing. The logic does not change.
+
+### Skip cutscenes
+
+With `cutscene_skip`, + alone skips a cutscene, without X first, and from a first game on: an Archipelago game always
+starts as one. The black-screen intro before Link wakes is gone, and a cutscene can be skipped while it fades in.
+The cutscenes the game never lets be skipped stay as they are: the Shrine of Resurrection's pedestal and exit, and the
+first view of the Great Plateau. Scenes the game plays as events, such as dialogues, terminals and pedestals, are not
+cutscenes and do not change. The logic does not change.
 
 ### DeathLink
 

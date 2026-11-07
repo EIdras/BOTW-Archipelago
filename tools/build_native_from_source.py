@@ -42,11 +42,12 @@ def encode(data):
 
 
 def generate(*, resource_gate=False, event_gate=False, tower_maps=False, bike_anywhere=False,
-             mem2_end=MEM2_END):
+             cutscene_skip=False, mem2_end=MEM2_END):
     """Pure native assembly generation; no dump, candidate or Cemu access.
     tower_maps: the seed's maps are items, the towers' icons read APTower_NN
     (tools/build_tower_maps_native.py; the map opening's fallback is in every pack).
     bike_anywhere: the Master Cycle Zero anywhere outdoors (botw_patch/bike_anywhere.py).
+    cutscene_skip: cutscenes skipped with + alone, from a first game on (botw_patch/cutscene_skip.py).
     The weather hold of the Downpour trap is in every pack (tools/build_weather_native.py),
     and so is the center message hold of the regions' border (tools/build_center_hold_native.py).
     mem2_end: where the game's main memory ends (tools/cemu/guest.py): the code follows
@@ -84,6 +85,9 @@ def generate(*, resource_gate=False, event_gate=False, tower_maps=False, bike_an
     if bike_anywhere:
         from botw_patch.bike_anywhere import patch_injection as bike_stage
         injection = bike_stage(injection)
+    if cutscene_skip:
+        from botw_patch.cutscene_skip import patch_injection as cutscene_stage
+        injection = cutscene_stage(injection)
     from tools.patch_lint import lint
     problems = lint(injection)
     if problems:
@@ -98,12 +102,12 @@ def generate(*, resource_gate=False, event_gate=False, tower_maps=False, bike_an
 
 
 def build(rpx: Path, output: Path, *, resource_gate=False, event_gate=False, tower_maps=False,
-          bike_anywhere=False, mem2_end=MEM2_END) -> Path:
+          bike_anywhere=False, cutscene_skip=False, mem2_end=MEM2_END) -> Path:
     raw = rpx.read_bytes()
     if digest(raw) != RPX_SHA256:
         raise ValueError('incompatible RPX: provide the verified Wii U EUR v208 dump')
     files = generate(resource_gate=resource_gate, event_gate=event_gate, tower_maps=tower_maps,
-                     bike_anywhere=bike_anywhere, mem2_end=mem2_end)
+                     bike_anywhere=bike_anywhere, cutscene_skip=cutscene_skip, mem2_end=mem2_end)
     source_hashes = {name: digest((ROOT / name).read_bytes()) for name in SOURCE_FILES}
     hashes = {name: digest(data) for name, data in sorted(files.items())}
     manifest = {
@@ -126,6 +130,11 @@ def build(rpx: Path, output: Path, *, resource_gate=False, event_gate=False, tow
         manifest['options']['bike_anywhere'] = True
         manifest['source_hashes'].update({name: digest((ROOT / name).read_bytes())
                                           for name in bike_stage.SOURCE_FILES})
+    if cutscene_skip:   # only then, so that the other packs keep their identity
+        from botw_patch import cutscene_skip as cutscene_stage
+        manifest['options']['cutscene_skip'] = True
+        manifest['source_hashes'].update({name: digest((ROOT / name).read_bytes())
+                                          for name in cutscene_stage.SOURCE_FILES})
     identity = digest(encode(manifest))[:16]
     manifest['build_id'] = identity
     files['manifest.json'] = encode(manifest)

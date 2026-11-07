@@ -164,6 +164,16 @@ class BikeAnywhere(Toggle):
     display_name = "Master Cycle Zero Anywhere"
 
 
+class CutsceneSkip(Toggle):
+    """Cutscenes are skipped with + alone, without X first, and from the first game on:
+    the opening on the Great Plateau too. A new game also starts without its black-screen
+    intro. The cutscenes the game never lets be skipped stay so (the Shrine of
+    Resurrection's pedestal and exit, the Great Plateau's first view). Scripted scenes
+    (dialogues, terminals, towers) are not cutscenes and do not change. The logic does
+    not change."""
+    display_name = "Skip Cutscenes"
+
+
 class TrapPercentage(Range):
     """Share of the filler (arrows, elixirs, weapons, gems and rupees) that becomes traps,
     chosen among the traps of Trap Weights. 0: no trap. A trap strikes when it is
@@ -208,6 +218,7 @@ class BotwOptions(PerGameCommonOptions):
     region_lock: RegionLock
     map_travel_points: MapTravelPoints
     bike_anywhere: BikeAnywhere
+    cutscene_skip: CutsceneSkip
     trap_percentage: TrapPercentage
     trap_weights: TrapWeights
 
@@ -220,6 +231,7 @@ OPTION_GROUPS = [
     OptionGroup("Weapons", [WeaponOrder]),
     OptionGroup("Maps", [TowerMaps, EarlyMap, RegionLock, MapTravelPoints]),
     OptionGroup("Master Cycle Zero", [BikeAnywhere]),
+    OptionGroup("Cutscenes", [CutsceneSkip]),
     OptionGroup("Traps", [TrapPercentage, TrapWeights]),
 ]
 

@@ -81,7 +81,8 @@ class BotwWorld(World):
     # The options that shape the world, given back by the slot data.
     SLOT_OPTIONS = ("goal", "goal_shrines", "sanctum_divine_beasts", "sanctum_shrines",
                     "sanctum_master_sword", "sanctum_runes", "beedle_shop_items", "stall_items", "tower_maps",
-                    "region_lock", "map_travel_points", "bike_anywhere")
+                    "region_lock", "map_travel_points", "bike_anywhere",
+                    "cutscene_skip")
     # The region each map opens: {item: region}.
     MAP_REGIONS = {item: region for region, item in MAPS.items()}
     # The stall locations of the slot data, when Universal Tracker regenerates.
