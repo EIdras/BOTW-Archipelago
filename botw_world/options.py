@@ -166,11 +166,11 @@ class BikeAnywhere(Toggle):
 
 class CutsceneSkip(Toggle):
     """Cutscenes are skipped with + alone, without X first, and from the first game on:
-    the opening on the Great Plateau too. A new game also starts without its black-screen
-    intro. The cutscenes the game never lets be skipped stay so (the Shrine of
-    Resurrection's pedestal and exit, the Great Plateau's first view). Scripted scenes
-    (dialogues, terminals, towers) are not cutscenes and do not change. The logic does
-    not change."""
+    the opening on the Great Plateau too. The + prompt shows as soon as a cutscene can be
+    skipped. A new game also starts without its black-screen intro. The cutscenes the game
+    never lets be skipped can be too (the Shrine of Resurrection's pedestal and exit, the
+    Great Plateau's first view). Other scripted scenes (dialogues, terminals, towers) do
+    not change yet. The logic does not change."""
     display_name = "Skip Cutscenes"
 
 

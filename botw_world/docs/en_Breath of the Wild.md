@@ -215,7 +215,8 @@ landing. The logic does not change.
 ### Skip cutscenes
 
 With `cutscene_skip`, + alone skips a cutscene, without X first, and from a first game on: an Archipelago game always
-starts as one. The black-screen intro before Link wakes is gone, and a cutscene can be skipped while it fades in.
+starts as one. The + prompt shows as soon as a cutscene can be skipped, without waiting for X. The black-screen intro
+before Link wakes is gone, and a cutscene can be skipped while it fades in.
 The cutscenes the game never lets be skipped can be too: the Shrine of Resurrection's pedestal and exit, and the first
 view of the Great Plateau. A skip leaves the game as the cutscene does: the Sheikah Slate taken, the doors open. Other
 scenes the game plays as events, such as dialogues and terminals, do not change yet. The logic does not change.

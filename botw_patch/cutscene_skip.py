@@ -11,6 +11,10 @@ in the laboratory (lab/journal/etude_saut_cinematiques.md):
 * + alone: state 1 waited for X. Without X, it now runs state 2's own confirm
   test (0x02DCD580): + asks the skip as it does after X, and X still opens the
   prompt. State 4 (prompt already shown, X skips) takes + as well;
+* prompt: the prompt shows in states 2 and 4 only, so it waited for X. A skippable
+  cutscene now enters state 2, the prompt shown at once; B no longer hides it.
+  + confirms whatever the cutscene (B did when the event's vfunc +0x34 is neither
+  1 nor 2), and the prompt always shows +, event flows' (state 4) included;
 * fade: a cutscene became skippable only once the Fade screen (UI 0x4E) is idle,
   some 5 s into the opening. The skip drives that same screen: it is allowed
   during the fade;
@@ -44,6 +48,14 @@ PATCHES = {
                  "+ alone: state 1 without X runs state 2's confirm test"),
     0x02DCD5E0: (0x55890739, ".int 0x71890808 ; andi. r9, r12, 0x808",
                  "+ alone: state 4 skips on X or +"),
+    0x02DCD7F0: (0x39200001, "li r9, 2",
+                 "prompt: a skippable cutscene enters state 2 (prompt shown), not 1"),
+    0x02DCD5B4: (0x4082001C, "nop",
+                 "prompt: bne 0x02DCD5D0, B no longer sends state 2 back to 1"),
+    0x02DCD524: (0x41820008, "nop",
+                 "prompt: beq 0x02DCD52C, + confirms in state 2 (not B) whatever the event"),
+    0x02DCD670: (0x7FE3FB78, "li r3, 1",
+                 "prompt: mr r3, r31, the prompt always shows + (state 4 showed X)"),
     0x02DD53C0: (0x41820008, "nop",
                  "fade: beq 0x02DD53C8, not skippable while the Fade screen runs"),
     0x02C2AE48: (0x40820058, ".int 0x48000058 ; b 0x02C2AEA0",
