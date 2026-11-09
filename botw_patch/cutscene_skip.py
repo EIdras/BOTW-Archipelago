@@ -26,7 +26,10 @@ in the laboratory (lab/journal/etude_saut_cinematiques.md):
   (0x20000, from the request's byte +0x22) or its .bdemo's SkipPolicy is Forbid.
   The Great Plateau's first view, Demo103_0, is both; its only flag, its flow
   sets again after it. Neither decides any more. Forbid is on three .bdemo only,
-  the other two played by event flows (below), which this test never sees.
+  the other two played by event flows (below), which this test never sees;
+* removed (the mode the pack's preset sets, REMOVED): state 2's confirm no longer
+  waits for +, and state 4 skips at once. A cutscene is skipped the frame it can
+  be, as + skips it: what it gives or opens is kept.
 
 Cutscenes played by an event flow's own actions are not timelines the controller
 sees: the Shrine of Resurrection's pedestal (Demo700_0) and exit (Demo701_0).
@@ -63,9 +66,32 @@ PATCHES = {
     0x031DE9B0: (0x4082001C, ".int 0x48000018 ; b 0x031DE9C8",
                  "forbidden: bne 0x031DE9CC, then SkipPolicy Forbid, not skippable when either forbids it"),
 }
+# The removed mode (the world's cutscene_skip on removed): a cutscene is skipped as soon
+# as it can be, as + does. The pack's Cutscenes preset (PRESETS) sets $cutsceneMode, so
+# that the player can change the mode after the build; fast keeps the game's word.
+MODES = {1: "Skipped with +", 2: "Removed (experimental)"}
+REMOVED = {
+    0x02DCD588: (0x41820028, "beq 0x02DCD5B0",
+                 "removed: state 2's confirm runs every frame, without +"),
+    0x02DCD5E4: (0x41820020, "beq 0x02DCD604",
+                 "removed: state 4 skips at once, without X or +"),
+}
 NATIVE = (f"[{GROUP}]\nmoduleMatches = 0x{MODULE:08X}\n"
           + "".join(f"; {why}\n0x{address:08X} = {patch}\n"
-                    for address, (_, patch, why) in PATCHES.items()))
+                    for address, (_, patch, why) in PATCHES.items())
+          + "".join(f"; {why} ({game}, the fast mode's)\n0x{address:08X} = .int "
+                    f"(($cutsceneMode == 1) * 0x{word:08X} + ($cutsceneMode == 2) * 0x60000000)\n"
+                    for address, (word, game, why) in REMOVED.items()))
+
+
+def presets(mode: int) -> str:
+    """The rules.txt sections of the Cutscenes preset, `mode` (1 or 2) chosen by default."""
+    if mode not in MODES:
+        raise ValueError(f"no cutscene mode {mode}")
+    return f"\n[Default]\n$cutsceneMode:int = {mode}\n" + "".join(
+        f"\n[Preset]\nname = {name}\ncategory = Cutscenes\n$cutsceneMode:int = {value}\n"
+        + ("default = 1\n" if value == mode else "")
+        for value, name in MODES.items())
 SOURCE_FILES = ("botw_patch/cutscene_skip.py", "botw_patch/event_cancel.py")
 
 TABLE = "System/Resource/ResourceSizeTable.product.srsizetable"

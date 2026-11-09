@@ -35,9 +35,13 @@ EARLIER_RULES = RULES.replace(b"The game pack of one Archipelago seed",
                               b"Native delivery and source reward replacement validation")
 
 
-def rules(region: regions.Region = regions.EUR, priority: int = PRIORITY) -> bytes:
+def rules(region: regions.Region = regions.EUR, priority: int = PRIORITY, cutscene_mode: int = 0) -> bytes:
     """The pack's rules.txt, for the game of its version (botw_client/regions.py),
-    at the fsPriority that wins the files it shares with the packs it is built over."""
+    at the fsPriority that wins the files it shares with the packs it is built over;
+    with the cutscenes skipped, the preset that picks their mode (botw_patch/cutscene_skip.py)."""
+    if cutscene_mode:
+        from botw_patch.cutscene_skip import presets
+        return rules(region, priority) + presets(cutscene_mode).encode("utf-8")
     return RULES.replace(regions.EUR.title_id().encode(), region.title_id().encode()).replace(
         f"fsPriority = {PRIORITY}\n".encode(), f"fsPriority = {priority}\n".encode())
 
@@ -175,8 +179,9 @@ def verify_pack(pack: Path, binding: dict | None = None) -> dict:
     if catalog["binding"]["seed_token"] != manifest["seed_binding"]["token"]:
         raise ValueError("pack catalog binding mismatch")
     priority = manifest.get("fs_priority", PRIORITY)
+    mode = manifest.get("cutscene_mode", 0)
     accepted = (RULES, EARLIER_RULES) if _region(manifest) is regions.EUR and priority == PRIORITY \
-        else (rules(_region(manifest), priority),)
+        and not mode else (rules(_region(manifest), priority, mode),)
     if (pack / "rules.txt").read_bytes() not in accepted:
         raise ValueError("pack rules mismatch")
     return manifest
@@ -197,6 +202,8 @@ def build(content: Path, rpx: Path, report: Path, slot: int, output: Path, *,
     binding, slot_data = _verified_seed(report, slot, archive)
     from botw_patch.shops import plan_from_manifest
     shops = plan_from_manifest(slot_data)
+    # 0 off, 1 fast, 2 removed (true in a slot made before the modes, botw_world/options.py)
+    cutscene_mode = int(slot_data.get("slot_data", {}).get("cutscene_skip") or 0)
     if digest(rpx.read_bytes()) != native.RPX_SHA256:
         raise ValueError("incompatible RPX: provide the verified Wii U EUR v208 dump")
     # A file the antivirus still holds may outlive the build here: the system's
@@ -213,7 +220,7 @@ def build(content: Path, rpx: Path, report: Path, slot: int, output: Path, *,
         native_dir = native.build(rpx, work / "native", resource_gate=resource_gate, event_gate=event_gate,
                                   tower_maps=bool(slot_data.get("slot_data", {}).get("tower_maps")),
                                   bike_anywhere=bool(slot_data.get("slot_data", {}).get("bike_anywhere")),
-                                  cutscene_skip=bool(slot_data.get("slot_data", {}).get("cutscene_skip")),
+                                  cutscene_skip=bool(cutscene_mode),
                                   mem2_end=mem2_end)
         game = resources.game_files(content)
         if layers:
@@ -230,7 +237,7 @@ def build(content: Path, rpx: Path, report: Path, slot: int, output: Path, *,
         files["delivery_catalog.json"] = (resource_dir / "delivery_catalog.json").read_bytes()
     region = regions.by_key(rm["revision"].split()[0])
     priority = max([PRIORITY, *(layer["priority"] + 1 for layer in layers)])
-    files["rules.txt"] = rules(region, priority)
+    files["rules.txt"] = rules(region, priority, cutscene_mode)
     step(names[-1])
     sources = {**nm["source_hashes"], **rm["source_hashes"]}
     for name in ("tools/build_pack_from_source.py", "botw_client/session.py"):
@@ -269,6 +276,8 @@ def build(content: Path, rpx: Path, report: Path, slot: int, output: Path, *,
         manifest["game_packs"] = [{key: layer[key] for key in ("pack", "priority", "fingerprint")}
                                   for layer in layers]
         manifest["fs_priority"] = priority
+    if cutscene_mode:   # only then, likewise: the mode its preset starts on
+        manifest["cutscene_mode"] = cutscene_mode
     if mem2_end != MEM2_END:    # only then, likewise: Extended Memory moves it
         manifest["mem2_end"] = mem2_end
     build_id = digest(encode(manifest))[:16]

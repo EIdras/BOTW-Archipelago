@@ -144,3 +144,10 @@ class TestCutsceneSkip(BotwTestBase):
 
     def test_the_slot_data_tells_the_pack_builder(self) -> None:
         self.assertEqual(self.world.fill_slot_data()["cutscene_skip"], 1)
+
+
+class TestCutsceneRemoved(BotwTestBase):
+    options = {"cutscene_skip": "removed"}
+
+    def test_the_slot_data_tells_the_pack_builder(self) -> None:
+        self.assertEqual(self.world.fill_slot_data()["cutscene_skip"], 2)

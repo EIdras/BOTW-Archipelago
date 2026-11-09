@@ -52,8 +52,8 @@ def used_names(line: str) -> list[str]:
         return []
     op, args = parts[0], parts[1:]
     names = []
-    if op == ".int":
-        names = [a for a in args if not re.fullmatch(r"-?(0x[0-9A-Fa-f]+|\d+)", a)]
+    if op == ".int":    # a word, a label or an expression; a $name is a preset's variable
+        names = re.findall(r"(?<![\w$])([A-Za-z_]\w*)", " ".join(args))
     elif op in BRANCHES:
         names = [a for a in args[-1:] if not a.startswith(("0x", "cr")) and not a.isdigit()]
     for arg in args:

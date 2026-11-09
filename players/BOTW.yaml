@@ -43,9 +43,11 @@ Breath of the Wild:
   # The Master Cycle Zero (Champions' Ballad DLC) in the Gerudo Desert and on Death Mountain, and through the
   # invisible walls that stop horses; indoors still refuse it
   bike_anywhere: false
-  # + alone skips a cutscene, without X first and from a first game on, its prompt shown at once; the black-screen
-  # intro before Link wakes is gone, and the Shrine of Resurrection and the plateau's first view can be skipped too
-  cutscene_skip: false
+  # off, fast or removed. fast: + alone skips a cutscene, without X first and from a first game on, its prompt shown
+  # at once; the black-screen intro before Link wakes is gone, and the Shrine of Resurrection and the plateau's first
+  # view can be skipped too. removed (experimental): what fast skips is skipped at once, its effects kept. The mode can
+  # be changed after the build, in Cemu (the Archipelago pack's Cutscenes preset)
+  cutscene_skip: off
   # Share of the filler (arrows, elixirs, weapons, gems, rupees) that becomes traps, 0 to 100, and how likely each is
   # compared with the others (a trap left out never comes up): Weapon Shatter, Blood Moon,
   # Rupoor, Hearts Down, Strip Down, Cucco Swarm, Yiga Ambush, Paranoia, Downpour. The cuccos, the Yiga

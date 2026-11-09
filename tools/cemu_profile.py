@@ -278,6 +278,7 @@ def prepare_play(pack: Path) -> Path:
     packs = root.find("GraphicPack")
     if packs is None:
         packs = ET.SubElement(root, "GraphicPack")
+    kept = kept_presets(packs, manifest["seed_binding"])
     packs.clear()
     destination = PORTABLE / "graphicPacks" / (PACK_PREFIX + pack.name)
     prune_packs(destination.parent, destination.name)
@@ -285,9 +286,26 @@ def prepare_play(pack: Path) -> Path:
         shutil.copytree(pack, destination)
     # An installed copy is checked like the pack itself: any change refuses it.
     verify_pack(destination, manifest["seed_binding"])
-    ET.SubElement(packs, "Entry", filename=f"graphicPacks/{destination.name}/rules.txt")
+    ET.SubElement(packs, "Entry", filename=f"graphicPacks/{destination.name}/rules.txt").extend(kept)
     settings.write(PORTABLE / "settings.xml", encoding="utf-8", xml_declaration=True)
     return PORTABLE
+
+
+def kept_presets(packs: ET.Element, binding: dict) -> list[ET.Element]:
+    """The presets chosen in Cemu for a pack of the same seed (the Cutscenes mode,
+    botw_patch/cutscene_skip.py): a session, or a rebuild, keeps them."""
+    kept = []
+    for entry in packs:
+        folder = Path(entry.get("filename") or "").parent
+        if folder.parent.as_posix() != "graphicPacks" or not folder.name.startswith(PACK_PREFIX):
+            continue
+        try:
+            manifest = json.loads((PORTABLE / folder / "manifest.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if manifest.get("seed_binding") == binding:
+            kept += entry.findall("Preset")
+    return kept
 
 
 if __name__ == "__main__":
