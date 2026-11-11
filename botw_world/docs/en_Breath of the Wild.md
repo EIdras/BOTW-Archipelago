@@ -92,8 +92,8 @@ its rune, and leaving it needs the Paraglider. Beyond, the logic asks only for w
 - **The Zora Set** up the waterfalls to Vah Ruta.
 - **The Gerudo Set** for Gerudo Town, for Vah Naboris, whose quest goes through the town, and for the shrine quests
   given in the town.
-- **Purah's upgrades** once her quest Locked Mementos is done. Each also asks for three ancient parts that Guardians
-  drop, which the logic leaves out, as it does food.
+- **Purah's upgrades** once her quest Locked Mementos is done, which Impa gives in Kakariko. Each also asks for
+  three ancient parts that Guardians drop, which the logic leaves out, as it does food.
 - **The Champions' Ballad** once the four Divine Beasts are freed; its trials on the Great Plateau want the four
   runes, and each song what the way to its champion's region asks.
 - **A freed Divine Beast** for its heart container, and for the shrines whose quest opens after it.
@@ -175,7 +175,8 @@ reveals the map: a map received does, with the game's own animation.
 
 With `region_keys`, the towers, the Great Plateau and Calamity Ganon need no map. A location whose quest goes through
 another region needs that region's map too: Tarrey Town's arrow stall (its quest recruits in Eldin, the Wasteland and
-Tabantha) and Shoqa Tatone (its quest wants pictures of Central Hyrule's Guardians).
+Tabantha), Purah's upgrades (Impa, in Kakariko, sends Link to her) and Shoqa Tatone (its quest wants pictures of
+Central Hyrule's Guardians, taken with Purah's camera).
 
 `early_map` places one map among the Great Plateau's first checks (its rune terminals and its tower), so that a region
 opens besides the towers once Link leaves the Plateau:

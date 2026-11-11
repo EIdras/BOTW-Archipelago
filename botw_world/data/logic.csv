@@ -79,7 +79,7 @@ Sasa Kai Shrine,Gerudo,Shrine,none,none,,yes,test of strength
 Ke'nai Shakah Shrine,Akkala,Shrine,none,Progressive Remote Bomb,,yes,cracked rocks block the entrance: Remote Bomb
 Mijah Rokee Shrine,Ridgeland,Shrine,none,none,,yes,test of strength
 Namika Ozz Shrine,Central,Shrine,none,none,,yes,test of strength
-Shoqa Tatone Shrine,Lake,Shrine,none,none,Hateno Map|Central Map,yes,"test of strength; Guardian Slideshow: the shrine rises once Loone sees pictures of a Guardian Skywatcher, Scout and Stalker, taken with the Camera that Purah gives in Hateno (Skywatchers and Stalkers in Central Hyrule)"
+Shoqa Tatone Shrine,Lake,Shrine,none,none,Hateno Map|Central Map|Dueling Peaks Map,yes,"test of strength; Guardian Slideshow: the shrine rises once Loone sees pictures of a Guardian Skywatcher, Scout and Stalker, taken with the Camera that Purah gives in Hateno once Impa sends Link there from Kakariko (Skywatchers and Stalkers in Central Hyrule)"
 Muwo Jeem Shrine,Faron,Shrine,none,none,,yes,test of strength
 Chaas Qeta Shrine,Hateno,Shrine,none,none,,yes,test of strength
 Tena Ko'sah Shrine,Tabantha,Shrine,none,none,,yes,test of strength
@@ -212,9 +212,9 @@ Zora's Domain - General Stall Item 1,Lanayru,Stall,none,,,yes,the merchant stand
 Zora's Domain - General Stall Item 2,Lanayru,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
 Hateno Village - General Stall Item 1,Hateno,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
 Hateno Village - General Stall Item 2,Hateno,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
-Hateno Ancient Tech Lab - Sheikah Sensor Upgrade,Hateno,Rune Upgrade,none,none,,yes,"Purah, once the lab's furnace has its blue flame: 3 ancient screws (Guardian Scouts: Chaas Qeta Shrine)"
-Hateno Ancient Tech Lab - Remote Bomb Upgrade,Hateno,Rune Upgrade,none,none,,yes,"Purah, once the lab's furnace has its blue flame: 3 ancient shafts (Guardian Scouts: Chaas Qeta Shrine)"
-Hateno Ancient Tech Lab - Stasis Upgrade,Hateno,Rune Upgrade,none,none,,yes,"Purah, once the lab's furnace has its blue flame: 3 ancient cores (Guardian Scouts: Chaas Qeta Shrine)"
+Hateno Ancient Tech Lab - Sheikah Sensor Upgrade,Hateno,Rune Upgrade,none,none,Dueling Peaks Map,yes,"Purah, whose lab quest Impa gives in Kakariko (CarryingBlueFireEXMini), once the lab's furnace has its blue flame: 3 ancient screws (Guardian Scouts: Chaas Qeta Shrine)"
+Hateno Ancient Tech Lab - Remote Bomb Upgrade,Hateno,Rune Upgrade,none,none,Dueling Peaks Map,yes,"Purah, whose lab quest Impa gives in Kakariko (CarryingBlueFireEXMini), once the lab's furnace has its blue flame: 3 ancient shafts (Guardian Scouts: Chaas Qeta Shrine)"
+Hateno Ancient Tech Lab - Stasis Upgrade,Hateno,Rune Upgrade,none,none,Dueling Peaks Map,yes,"Purah, whose lab quest Impa gives in Kakariko (CarryingBlueFireEXMini), once the lab's furnace has its blue flame: 3 ancient cores (Guardian Scouts: Chaas Qeta Shrine)"
 Revali's Song,Tabantha,Champions' Ballad,none,all,Freed - Divine Beast Vah Ruta|Freed - Divine Beast Vah Rudania|Freed - Divine Beast Vah Medoh|Freed - Divine Beast Vah Naboris|Hebra Map,yes,"the Champions' Ballad opens once the four beasts are freed; trials in Hebra, then Vah Medoh: every rune kept"
 Mipha's Song,Lanayru,Champions' Ballad,none,all,Freed - Divine Beast Vah Ruta|Freed - Divine Beast Vah Rudania|Freed - Divine Beast Vah Medoh|Freed - Divine Beast Vah Naboris|Zora Set,yes,"the Champions' Ballad opens once the four beasts are freed; trials in Lanayru, then Vah Ruta: every rune kept"
 Daruk's Song,Eldin,Champions' Ballad,heat,all,Freed - Divine Beast Vah Ruta|Freed - Divine Beast Vah Rudania|Freed - Divine Beast Vah Medoh|Freed - Divine Beast Vah Naboris,yes,"the Champions' Ballad opens once the four beasts are freed; trials in Eldin, then Vah Rudania: every rune kept"
