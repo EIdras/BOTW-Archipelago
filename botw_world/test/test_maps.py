@@ -76,10 +76,17 @@ class TestQuestsThroughOtherRegions(BotwTestBase):
         self.assertTrue(self.can_reach_location("Tarrey Town - Arrow Stall Item 1"))
 
     def test_shoqa_tatone_needs_the_camera_and_the_guardians(self) -> None:
-        self.collect_by_name(["Paraglider", "Lake Map", "Hateno Map"])
+        self.collect_by_name(["Paraglider", "Lake Map", "Hateno Map", "Dueling Peaks Map"])
         self.assertFalse(self.can_reach_location("Shoqa Tatone Shrine"))
         self.collect_by_name("Central Map")
         self.assertTrue(self.can_reach_location("Shoqa Tatone Shrine"))
+
+    def test_purahs_upgrades_need_impa_in_kakariko(self) -> None:
+        # Impa gives the lab's quest: Kakariko is in Dueling Peaks.
+        self.collect_by_name(["Paraglider", *RUNES, "Hateno Map"])
+        self.assertFalse(self.can_reach_location("Hateno Ancient Tech Lab - Stasis Upgrade"))
+        self.collect_by_name("Dueling Peaks Map")
+        self.assertTrue(self.can_reach_location("Hateno Ancient Tech Lab - Stasis Upgrade"))
 
     def test_every_keyed_location_names_maps_of_the_pool(self) -> None:
         names = set(MAPS.values())

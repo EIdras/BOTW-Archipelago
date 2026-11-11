@@ -92,11 +92,12 @@ class TestRegionLock(BotwTestBase):
         self.assertTrue(self.can_reach_region("Hyrule Castle"))
 
     def test_a_quest_through_another_region_needs_to_reach_it(self) -> None:
-        # Shoqa Tatone (Lake) goes through Hateno and Central: their maps are not
-        # enough while no neighbour leads to Hateno.
-        self.collect_by_name(["Paraglider", "Lake Map", "Hateno Map", "Central Map"])
+        # Shoqa Tatone (Lake) goes through Hateno and Central, and Kakariko for Impa
+        # (Dueling Peaks): Hateno reached by Faron is not enough without it.
+        self.collect_by_name(["Paraglider", "Lake Map", "Hateno Map", "Central Map", "Faron Map"])
+        self.assertTrue(self.can_reach_region("Hateno"))
         self.assertFalse(self.can_reach_location("Shoqa Tatone Shrine"))
-        self.collect_by_name("Faron Map")
+        self.collect_by_name("Dueling Peaks Map")
         self.assertTrue(self.can_reach_location("Shoqa Tatone Shrine"))
 
     def test_the_slot_data_tells_the_lock_and_its_borders(self) -> None:
