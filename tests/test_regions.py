@@ -109,6 +109,23 @@ class RegionTests(unittest.TestCase):
                               "e6e7593fb7e5aba3858fa3ff6d646585dd08d83562551ed392d28a9515dfd5f8"},   # Bootup_EUen.pack
                              pinned)
 
+    def test_every_pinned_resource_is_known_by_its_content(self):
+        # A resource pinned without its content in the table builds only from
+        # the pinned copy: any other version, or the European one compressed
+        # apart, refuses it ("unexpected update resource").
+        from tools.measure_region import pins
+        not_resources = {
+            "09c6057c14ecd01abb42df9d2975034c931bc93b95188599e866a6f211f24cd3",     # ICON_SHA256: the icon made
+            "35aab96ef4f45bae9c9af70eb7e7514d8b82d11546b7319ae680135a699b34f7",     # AIDED_SHA: a built output
+            "578e9a1081b8df42e9c6d2ac59352991cda82e76f854329b2c0803d5bcbd02e1",     # a model texture section
+            "9421fe88bf4101607c0802a67c7a1b787c9b23787cbc2b787cfe3b789001017c",     # code bytes, not a hash
+            "99fa97ee64cd691e1e4d24970de8a842079ff9193f97d16d337a8cad6f8e5f6d",     # LEGACY_SHA: our own asm
+            "ba58da5b95ce929e005d058ceb08b9b2788d1ab2bbc8a6c189bbadca0bb34d30",     # RPX_SHA256: the executable
+        }
+        known = set(json.loads(regions.CONTENTS.read_text(encoding="utf-8")).values())
+        self.assertEqual(sorted(pins() - known - not_resources), [],
+                         "run: venv\Scripts\python tools\measure_region.py contents (then USA, JPN)")
+
     @unittest.skipUnless((MLC / "0005000e/101c9400/content/Pack/Bootup.pack").is_file()
                          and (MLC / "0005000e/101c9500/content/Pack/Bootup.pack").is_file(),
                          "requires the European and American updates in Cemu")
