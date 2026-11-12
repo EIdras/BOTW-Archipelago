@@ -124,7 +124,7 @@ class RegionTests(unittest.TestCase):
         }
         known = set(json.loads(regions.CONTENTS.read_text(encoding="utf-8")).values())
         self.assertEqual(sorted(pins() - known - not_resources), [],
-                         "run: venv\Scripts\python tools\measure_region.py contents (then USA, JPN)")
+                         "run: tools/measure_region.py contents (then USA, JPN)")
 
     @unittest.skipUnless((MLC / "0005000e/101c9400/content/Pack/Bootup.pack").is_file()
                          and (MLC / "0005000e/101c9500/content/Pack/Bootup.pack").is_file(),
