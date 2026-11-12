@@ -78,6 +78,7 @@ class BotwGame:
         self.live = None
         self.locations = None
         self.shop_watch = None
+        self.pouch_watch = None
         self.item_map = load_item_map()
         self.flag_by_name = None
         self._window_was_busy = False
@@ -104,6 +105,7 @@ class BotwGame:
         if self.process:
             self.process.close()
         self.process = self.cave = self.live = self.locations = None
+        self.pouch_watch = None
         self._center_static = None
         self._safe_signature = None
         self._safe_since = None
@@ -256,6 +258,36 @@ class BotwGame:
                 self.shop_watch = False     # not found: no shop hints this session
                 return []
         return self.shop_watch.seen()
+
+    def pouch_shop_items(self) -> dict[int, dict] | None:
+        """The AP shop items in the pouch: {location ID: {"flag": APShop_<id>,
+        "shown": IsGet_AP_Shop_<id>}} (None for a value unread), or None when
+        the pouch cannot be read now (botw_client/pouch_watch.py)."""
+        from .pouch_watch import SHOP_ITEMS, PouchMoved, PouchWatch
+        from .shop_state import crc
+        if self.live is None:
+            return None
+        live = self.live
+        if not isinstance(self.pouch_watch, PouchWatch):
+            # Not found (a save loading, say): searched again a minute later.
+            if self.pouch_watch is not None and time.monotonic() < self.pouch_watch:
+                return None
+            try:
+                self.pouch_watch = PouchWatch(lambda guest, size: live.p.read(live.base + guest, size),
+                                              live.tp)
+            except RuntimeError:
+                self.pouch_watch = time.monotonic() + 60.0
+                return None
+        try:
+            names = self.pouch_watch.names()
+        except PouchMoved:
+            self.pouch_watch = None         # found again at the next poll
+            return None
+        if names is None:
+            return None
+        return {SHOP_ITEMS[name].id: {"flag": live.get(crc(SHOP_ITEMS[name].flag), "s32"),
+                                      "shown": live.get(crc(SHOP_ITEMS[name].shown_flag), "bool")}
+                for name in names if name in SHOP_ITEMS}
 
     def suppress_terminal_rune(self, location_name: str):
         """Undo only the vanilla rune associated with one AP terminal."""
