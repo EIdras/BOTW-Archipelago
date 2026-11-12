@@ -63,6 +63,9 @@ is done in the game's resources, built for each seed; the client only reads.
 - **Price**: a stall reads `Item.BuyingPrice` from the actor's `GeneralParamList`, while the list reads `ActorInfo`:
   each Archipelago actor has its own `GeneralParamList` with the seed's price.
 - **Purchase**: recorded as at Beedle's, after the merchant's `DisplayShop` event (checked on the 14 flows).
+  The game keeps one flow of a name, the first loaded, and the pack of the quest Kakariko's arrow merchant gives
+  (`Event/Kakariko_Ch_006.sbeventpack`) carries a copy of her flow: reached once the quest is offered, the copy
+  loads first and is the one that sells. It gets the same record (`FLOW_COPIES`, `botw_patch/stalls.py`).
 - **Safety net**: an AP shop item left in the pouch, its location unchecked and its flag 0, for 20 s of Link
   in the world, is a purchase the flow did not record (reported at Kakariko's arrow stall, cause unknown): the
   client sends its location and logs both flags ([`botw_client/pouch_watch.py`](../../botw_client/pouch_watch.py)).

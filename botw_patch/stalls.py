@@ -17,7 +17,10 @@ What is proper to a stall (botw_client/stall_catalog.py):
     input, a SaveFlag, Create links, e.g. BalladOfHeroGerudo_Activated);
   * the merchant's flow records the purchase after DisplayShop:Multiple
     (APShop_<id> = 1, IsGet_AP_Shop_<id> = 0, item out of the pouch), as
-    Beedle's does.
+    Beedle's does. The game keeps one flow of a name, the first loaded: every
+    event pack that carries a copy of the merchant's flow gets the same
+    record (FLOW_COPIES), or a purchase made after the copy loaded first
+    would go unrecorded.
 """
 from __future__ import annotations
 
@@ -58,6 +61,14 @@ INPUT_HASHES = {
     "Event/Npc_Zora002.sbeventpack": "68f0fc76728e86d5c991525796fd2276d55ed73d5505d5f75ef36929a1e98ecb",
     "Event/Npc_HatenoVillage002.sbeventpack": "64335815a9595aedd8b4fd37ddc85dbad1d5deef1236a022b427f2a53b73fb3b",
 }
+# The other event packs that carry a copy of a merchant's flow: a quest she
+# gives. Measured in the game at Kakariko's arrow stall: reached once her quest
+# is offered, the quest's pack loads first and its copy of her flow is the one
+# that sells.
+FLOW_COPIES = {"Npc_Kakariko010": ("Event/Kakariko_Ch_006.sbeventpack",)}
+INPUT_HASHES.update({
+    "Event/Kakariko_Ch_006.sbeventpack": "93120b6e8c702208df22be2cb224962978736b2740c31b695a4832e7c3d18831",
+})
 MAP_HASHES = {
     "Map/MainField/B-3/B-3_Static.smubin": "7c3e86af0c9e509f72440bdde0720e2050aed4591aca985268315d07dc4139b9",
     "Map/MainField/B-7/B-7_Static.smubin": "a92a406e27fa0226c9bd43c462ff2982040f9d25bff65785aa024400d22f533f",
@@ -201,12 +212,17 @@ def generate(builder, files: dict[str, bytes], content, aoc, locations: list[Sta
     for location in locations:
         merchants.setdefault(location.merchant.actor, []).append(location)
     for actor, located in sorted(merchants.items()):
-        pack = f"Event/{actor}.sbeventpack"
         records = [(l.actor, l.flag, l.shown_flag) for l in located]
-        builder.patch_archive(pack, {f"EventFlow/{actor}.bfevfl": lambda raw, records=records,
-                                     event=located[0].merchant.buy_event:
-                                     add_purchase_record(raw, event, records)})
+        for pack in flow_packs(actor):
+            builder.patch_archive(pack, {f"EventFlow/{actor}.bfevfl": lambda raw, records=records,
+                                         event=located[0].merchant.buy_event:
+                                         add_purchase_record(raw, event, records)})
     return changes
+
+
+def flow_packs(actor: str) -> tuple[str, ...]:
+    """Every event pack that carries the flow of the merchant `actor`."""
+    return (f"Event/{actor}.sbeventpack", *FLOW_COPIES.get(actor, ()))
 
 
 def stage_inputs(content) -> dict[str, bytes]:

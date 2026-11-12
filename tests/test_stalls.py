@@ -163,6 +163,12 @@ class GameFileTests(unittest.TestCase):
         self.assertEqual(files["aoc/0010/Pack/AocMainField.pack"], b"")
         self.assertIn("Event/Npc_Kakariko010.sbeventpack", files)
         self.assertIn("Event/Npc_HatenoVillage002.sbeventpack", files)
+        # Her quest's pack carries a copy of her flow: the same purchase record.
+        own, copy = (bytes(oead.Sarc(unpack(files[name])).get_file(
+            "EventFlow/Npc_Kakariko010.bfevfl").data)
+            for name in ("Event/Npc_Kakariko010.sbeventpack", "Event/Kakariko_Ch_006.sbeventpack"))
+        self.assertIn(b"APShopBought00", own)
+        self.assertEqual(own, copy)
         self.assertFalse(any("TripMaster" in name for name in files))
         for i in ids:
             self.assertIn(f"Actor/Pack/AP_Shop_{i}.sbactorpack", files)
