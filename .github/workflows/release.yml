@@ -59,4 +59,4 @@ jobs:
         run: |
           $version = "${{ github.ref_name }}".TrimStart("v")
           gh release create "${{ github.ref_name }}" (Get-ChildItem dist\*.zip).FullName dist\botw.apworld `
-            --draft --generate-notes --title "BOTW Archipelago $version"
+            --draft --generate-notes --title "BOTW AP $version"
