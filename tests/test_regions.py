@@ -157,6 +157,50 @@ def _installed(region: regions.Region) -> bool:
 OTHERS = [region for region in regions.REGIONS if region is not regions.EUR and _installed(region)]
 
 
+def _pinned_by_path() -> dict[str, set[str]]:
+    """{game path: its pinned hashes} written in the shipped sources as "path": "sha"."""
+    import re
+    pattern = re.compile(r"""["']([A-Za-z0-9_/.\-]+\.[A-Za-z0-9]+)["']\s*:\s*["']([0-9a-f]{64})["']""")
+    pinned: dict[str, set[str]] = {}
+    for folder in ("botw_patch", "botw_client", "tools"):
+        for source in (ROOT / folder).rglob("*.py"):
+            for path, sha in pattern.findall(source.read_text(encoding="utf-8")):
+                pinned.setdefault(path, set()).add(sha)
+    return pinned
+
+
+def _game_file(region: regions.Region, path: str) -> Path | None:
+    """`path` in the region's update, else in its DLC."""
+    for root in (MLC / "0005000e" / region.title / "content", MLC / "0005000c" / region.title / "content/0010"):
+        if (root / path).is_file():
+            return root / path
+    return None
+
+
+class OtherVersionInputTests(unittest.TestCase):
+    """Against the versions installed in Cemu: every game file the build reads,
+    pinned by its path, is known in each of them as the European one."""
+
+    @unittest.skipUnless(_installed(regions.EUR) and OTHERS,
+                         "requires the European update and another version's in Cemu")
+    def test_every_file_pinned_by_its_path_is_known_in_the_other_versions(self):
+        pinned = _pinned_by_path()
+        self.assertGreater(len(pinned), 50)
+        for region in OTHERS:
+            for path, shas in sorted(pinned.items()):
+                european = _game_file(regions.EUR, path)
+                if european is None or hashlib.sha256(european.read_bytes()).hexdigest() not in shas:
+                    continue            # not a file of this European copy (another distribution's pin)
+                if any(f"_{language}." in path for language in regions.EUR.languages):
+                    continue            # a European language: the version reads its own
+                with self.subTest(region=region.key, path=path):
+                    theirs = _game_file(region, path)
+                    self.assertIsNotNone(theirs, "missing")
+                    regions._named.clear()
+                    self.assertIn(regions.vanilla_digest(theirs.read_bytes()), shas,
+                                  "refused: run tools/measure_region.py contents, USA and JPN")
+
+
 class OtherVersionPackTests(unittest.TestCase):
     """Against the versions installed in Cemu: the American and Japanese packs."""
 
