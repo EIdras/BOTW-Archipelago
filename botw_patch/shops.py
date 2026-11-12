@@ -363,7 +363,7 @@ def generate(files: dict[str, bytes], content,
         outputs = builder.finish()
     expected = {ACTOR_INFO, TABLE, BOOTUP, *(f"Pack/Bootup_{l}.pack" for l in languages),
                 *(f"Event/{m.actor}.sbeventpack" for m in (MERCHANTS if beedle else ())),
-                *(f"Event/{l.merchant.actor}.sbeventpack" for l in stall),
+                *(pack for l in stall for pack in stall_stage.flow_packs(l.merchant.actor)),
                 *(f"Actor/Pack/{m.actor}.sbactorpack" for m, locs in by_merchant.items() if locs),
                 *(f"Model/{MODEL_FOLDER}{part}.sbfres" for part in MODEL_PARTS),
                 *(f"Actor/Pack/{p.location.actor}.sbactorpack" for p in placements),
