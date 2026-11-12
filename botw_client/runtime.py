@@ -12,12 +12,15 @@ from .backend import DeliveryCommand, DeliveryCoordinator, DeliveryStatus
 from .game import BotwGame, GameNotReady, game_starting
 from .locations import SCHEMA_LOCATION_COUNTS, load_targets, tower_activation_flag
 from .paths import DATA
+from .pouch_watch import StrayShopItems
 from .protocol import ArchipelagoClient, DeathLinkEvent, LocationInfo
 from .session import session_token
 from .message_text import clip_units, literal_metadata, literal_text, queued_text
 
 POLL_SECONDS = 0.2
 CHECK_RESEND_SECONDS = 2.0
+# The pouch's safety net (botw_client/pouch_watch.py) reads the pouch this often.
+POUCH_POLL_SECONDS = 2.0
 BLOCK_REFRESH_SECONDS = 0.5
 MESSAGE_MAX_CHARS = 39
 MESSAGE_SETTLE_SECONDS = 4.0
@@ -259,6 +262,8 @@ class BotwClientRuntime:
         self.delivery_factory = delivery_factory
         self.delivery_catalog_path = delivery_catalog_path
         self.deliveries = None
+        self._stray_shop_items = StrayShopItems()
+        self._pouch_poll_after = 0.0
         self._presentation_status = None
         self._presentation_recovery_request = None
         self._ap_session_ready = False
@@ -1292,6 +1297,43 @@ class BotwClientRuntime:
             hinted.extend(new)
             self.state_store.save()
             self.log(f"shop seen: hints for {len(new)} item(s)")
+
+    async def _poll_pouch(self):
+        """The safety net of a shop purchase the game did not record
+        (botw_client/pouch_watch.py): an AP shop item of this seed left in the
+        pouch, its location unchecked and its flag 0, for the hold time with
+        Link in the world, sends its location."""
+        now = time.monotonic()
+        seed = getattr(self.ap, "seed_locations", set())
+        read = getattr(self.game, "pouch_shop_items", None)
+        playing = getattr(getattr(self.deliveries, "backend", None), "playing", None)
+        if now < self._pouch_poll_after or not seed or read is None or playing is None:
+            return
+        self._pouch_poll_after = now + POUCH_POLL_SECONDS
+        # Link in the world first: an item read in the pouch after it was may
+        # not be one a purchase's event still holds (StrayShopItems).
+        in_world = await asyncio.to_thread(playing)
+        found = await asyncio.to_thread(read) if in_world else {}
+        if found is None:
+            return
+        known = self._known_checks() | set(self.state["pending_checks"])
+        items = {location: values for location, values in found.items()
+                 if location in seed and location not in self.ap.checked_locations
+                 and self.ap.location_name(location) not in known}
+        due = self._stray_shop_items.observe(
+            {location: values["flag"] for location, values in items.items()}, now, in_world)
+        for location in due:
+            name = self.ap.location_name(location)
+            values = items[location]
+            self.log(f"shop item left in the pouch: {name}, its flag {values['flag']}, "
+                     f"shown flag {values['shown']}: the purchase was not recorded, its check is sent")
+            self.state["observed_checks"].append(name)
+            self.state["pending_checks"].append(name)
+            self._queue_location_display(name)
+            self.log(f"check detected: {name}")
+        if due:
+            self.state_store.save()
+            await self._flush_checks()
 
     async def _poll_locations(self):
         names = await asyncio.to_thread(self.game.poll_locations)
@@ -2477,6 +2519,7 @@ class BotwClientRuntime:
                         and getattr(self.ap, 'items_synchronized', False))):
                     await self._poll_locations()
                     await self._poll_shops()
+                    await self._poll_pouch()
                     self._discover_received()
                     self._collect_messages()
                     self._mark_bulk()

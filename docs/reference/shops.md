@@ -63,6 +63,10 @@ is done in the game's resources, built for each seed; the client only reads.
 - **Price**: a stall reads `Item.BuyingPrice` from the actor's `GeneralParamList`, while the list reads `ActorInfo`:
   each Archipelago actor has its own `GeneralParamList` with the seed's price.
 - **Purchase**: recorded as at Beedle's, after the merchant's `DisplayShop` event (checked on the 14 flows).
+- **Safety net**: an AP shop item left in the pouch, its location unchecked and its flag 0, for 20 s of Link
+  in the world, is a purchase the flow did not record (reported at Kakariko's arrow stall, cause unknown): the
+  client sends its location and logs both flags ([`botw_client/pouch_watch.py`](../../botw_client/pouch_watch.py)).
+  The pouch's names are the string64 array `PorchItem`, read live; the item itself stays in the pouch.
 - **Pack**: the maps are written under `aoc/0010/…` at the root of the pack, with their size counted under
   `Aoc/0010/…` (`tools/build_resources_from_source.pack_path`). Cemu reads the `aoc/` folder of a graphic pack.
   The DLC serves every `Map/MainField` unit from `Pack/AocMainField.pack` once that archive loads, so the pack
