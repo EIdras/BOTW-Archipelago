@@ -171,13 +171,15 @@ class CutsceneSkip(Choice):
     on: the opening on the Great Plateau too. The + prompt shows as soon as a cutscene
     can be skipped. A new game also starts without its black-screen intro. The cutscenes
     the game never lets be skipped can be too (the Shrine of Resurrection's pedestal and
-    exit, the Great Plateau's first view).
+    exit, the Great Plateau's first view). A page of text shows at once, without its
+    pauses.
     removed (experimental): the same, and every cutscene fast skips is skipped at once,
     without +: what it gives or opens is kept.
     With fast or removed, the mode can be changed after the game pack is built, in Cemu's
     graphic packs (the Archipelago pack's Cutscenes preset), before the game starts; the
-    launcher keeps the choice for the seed. Other scripted scenes
-    (dialogues, terminals, towers) do not change yet. The logic does not change."""
+    launcher keeps the choice for the seed. Other scripted scenes (the animations
+    and waits of dialogues, terminals, towers) do not change yet. The logic does not
+    change."""
     display_name = "Skip Cutscenes"
     option_off = 0
     option_fast = 1

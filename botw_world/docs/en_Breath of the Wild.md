@@ -219,8 +219,9 @@ With `cutscene_skip` on `fast`, + alone skips a cutscene, without X first, and f
 starts as one. The + prompt shows as soon as a cutscene can be skipped, without waiting for X. The black-screen intro
 before Link wakes is gone, and a cutscene can be skipped while it fades in.
 The cutscenes the game never lets be skipped can be too: the Shrine of Resurrection's pedestal and exit, and the first
-view of the Great Plateau. A skip leaves the game as the cutscene does: the Sheikah Slate taken, the doors open. Other
-scenes the game plays as events, such as dialogues and terminals, do not change yet. The logic does not change.
+view of the Great Plateau. A skip leaves the game as the cutscene does: the Sheikah Slate taken, the doors open. A page of
+text shows at once, without its pauses. The animations and waits the game plays within dialogues, terminals and towers do
+not change yet. The logic does not change.
 
 On `removed` (experimental), every cutscene `fast` skips is skipped at once, without +: what it gives or opens is kept.
 The mode can be changed once the game pack is built: in Cemu, Options > Graphic packs, the Archipelago pack's Cutscenes

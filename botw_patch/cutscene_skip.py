@@ -27,6 +27,11 @@ in the laboratory (lab/journal/etude_saut_cinematiques.md):
   The Great Plateau's first view, Demo103_0, is both; its only flag, its flow
   sets again after it. Neither decides any more. Forbid is on three .bdemo only,
   the other two played by event flows (below), which this test never sees;
+* text: the typewriter every message window shares (0x03A2A51C, each frame: the
+  object of 0x03A2B110, +0x38 the characters shown, +0x2C a pause's countdown,
+  +0x20 its speed) reveals a page by its speed and stops at each pause for some
+  frames. The reveal target is now beyond any page, and a pause is cleared the
+  frame it is met, as the typewriter's own mode 2 does: a page shows at once;
 * removed (the mode the pack's preset sets, REMOVED): state 2's confirm no longer
   waits for +, and state 4 skips at once. A cutscene is skipped the frame it can
   be, as + skips it: what it gives or opens is kept.
@@ -65,6 +70,11 @@ PATCHES = {
                  "intro: bne 0x02C2AEA0, Demo169_0<Timeline> requested only when not yet"),
     0x031DE9B0: (0x4082001C, ".int 0x48000018 ; b 0x031DE9C8",
                  "forbidden: bne 0x031DE9CC, then SkipPolicy Forbid, not skippable when either forbids it"),
+    0x03A2A6B8: (0xEC0D007A, ".int 0xC006ACBC ; lfs f0, -0x5344(r6)",
+                 "text: fmadds f0, f13, f1, f0, the reveal target grows by the speed; now 100000.0 "
+                 "(the game's literal at 0x1035ACBC, r6 = 0x10360000): a page shows at once"),
+    0x03A2A5D0: (0x4082001C, "nop",
+                 "text: bne 0x03A2A5EC, a pause counted down unless the typewriter's mode is 2; cleared at once"),
 }
 # The removed mode (the world's cutscene_skip on removed): a cutscene is skipped as soon
 # as it can be, as + does. The pack's Cutscenes preset (PRESETS) sets $cutsceneMode, so

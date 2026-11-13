@@ -45,8 +45,9 @@ Breath of the Wild:
   bike_anywhere: false
   # off, fast or removed. fast: + alone skips a cutscene, without X first and from a first game on, its prompt shown
   # at once; the black-screen intro before Link wakes is gone, and the Shrine of Resurrection and the plateau's first
-  # view can be skipped too. removed (experimental): what fast skips is skipped at once, its effects kept. The mode can
-  # be changed after the build, in Cemu (the Archipelago pack's Cutscenes preset)
+  # view can be skipped too; a page of text shows at once, without its pauses. removed (experimental): what fast
+  # skips is skipped at once, its effects kept. The mode can be changed after the build, in Cemu (the Archipelago
+  # pack's Cutscenes preset)
   cutscene_skip: off
   # Share of the filler (arrows, elixirs, weapons, gems, rupees) that becomes traps, 0 to 100, and how likely each is
   # compared with the others (a trap left out never comes up): Weapon Shatter, Blood Moon,
