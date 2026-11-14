@@ -97,6 +97,13 @@ class TestQuestsThroughOtherRegions(BotwTestBase):
         for location in ("Kah Yah Shrine", "Shae Katha Shrine"):
             self.assertTrue(self.can_reach_location(location), location)
 
+    def test_kah_mael_is_reached_from_akkalas_cliffs(self) -> None:
+        # Tingel Island counts as Lanayru but stands too high to climb from the sea.
+        self.collect_by_name(["Paraglider", *RUNES, "Lanayru Map"])
+        self.assertFalse(self.can_reach_location("Kah Mael Shrine"))
+        self.collect_by_name("Akkala Map")
+        self.assertTrue(self.can_reach_location("Kah Mael Shrine"))
+
     def test_every_keyed_location_names_maps_of_the_pool(self) -> None:
         names = set(MAPS.values())
         for row in LOCATIONS:
