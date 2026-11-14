@@ -83,7 +83,7 @@ Shoqa Tatone Shrine,Lake,Shrine,none,none,Hateno Map|Central Map|Dueling Peaks M
 Muwo Jeem Shrine,Faron,Shrine,none,none,,yes,test of strength
 Chaas Qeta Shrine,Hateno,Shrine,none,none,,yes,test of strength
 Tena Ko'sah Shrine,Tabantha,Shrine,none,none,,yes,test of strength
-Tutsuwa Nima Shrine,Akkala,Shrine,none,none,,yes,test of strength
+Tutsuwa Nima Shrine,Akkala,Shrine,none,none,Dueling Peaks Map,yes,"test of strength; The Spring of Power: the door opens once a scale of Dinraal is offered at the spring, and Dinraal flies only once Link has met Impa in Kakariko (Seek Out Impa)"
 Kema Kosassa Shrine,Gerudo,Shrine,none,none,,yes,test of strength
 Goma Asaagh Shrine,Hebra,Shrine,none,none,,yes,test of strength
 Mozo Shenno Shrine,Hebra,Shrine,none,none,,yes,test of strength
@@ -206,8 +206,8 @@ Kakariko Village - General Stall Item 1,Dueling Peaks,Stall,none,,,yes,the merch
 Kakariko Village - General Stall Item 2,Dueling Peaks,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
 Lurelin Village - General Stall Item 1,Faron,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
 Lurelin Village - General Stall Item 2,Faron,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
-Tarrey Town - Arrow Stall Item 1,Akkala,Stall,heat,,Eldin Map|Wasteland Map|Tabantha Map,yes,"Fyson's stall opens in From the Ground Up, which recruits Greyson at the Southern Mine (Eldin, burning zone), Rhondson at Kara Kara Bazaar (Wasteland) and Fyson in Rito Village (Tabantha)"
-Tarrey Town - Arrow Stall Item 2,Akkala,Stall,heat,,Eldin Map|Wasteland Map|Tabantha Map,yes,"Fyson's stall opens in From the Ground Up, which recruits Greyson at the Southern Mine (Eldin, burning zone), Rhondson at Kara Kara Bazaar (Wasteland) and Fyson in Rito Village (Tabantha)"
+Tarrey Town - Arrow Stall Item 1,Akkala,Stall,heat,,Hateno Map|Eldin Map|Wasteland Map|Tabantha Map,yes,"Fyson's stall opens in From the Ground Up, which Hudson starts in Hateno once Link has bought the house there (Hylian Homeowner), then recruits Greyson at the Southern Mine (Eldin, burning zone), Rhondson at Kara Kara Bazaar (Wasteland) and Fyson in Rito Village (Tabantha)"
+Tarrey Town - Arrow Stall Item 2,Akkala,Stall,heat,,Hateno Map|Eldin Map|Wasteland Map|Tabantha Map,yes,"Fyson's stall opens in From the Ground Up, which Hudson starts in Hateno once Link has bought the house there (Hylian Homeowner), then recruits Greyson at the Southern Mine (Eldin, burning zone), Rhondson at Kara Kara Bazaar (Wasteland) and Fyson in Rito Village (Tabantha)"
 Zora's Domain - General Stall Item 1,Lanayru,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
 Zora's Domain - General Stall Item 2,Lanayru,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
 Hateno Village - General Stall Item 1,Hateno,Stall,none,,,yes,the merchant stands there from the start (no flag creates him in the map)
@@ -215,7 +215,7 @@ Hateno Village - General Stall Item 2,Hateno,Stall,none,,,yes,the merchant stand
 Hateno Ancient Tech Lab - Sheikah Sensor Upgrade,Hateno,Rune Upgrade,none,none,Dueling Peaks Map,yes,"Purah, whose lab quest Impa gives in Kakariko (CarryingBlueFireEXMini), once the lab's furnace has its blue flame: 3 ancient screws (Guardian Scouts: Chaas Qeta Shrine)"
 Hateno Ancient Tech Lab - Remote Bomb Upgrade,Hateno,Rune Upgrade,none,none,Dueling Peaks Map,yes,"Purah, whose lab quest Impa gives in Kakariko (CarryingBlueFireEXMini), once the lab's furnace has its blue flame: 3 ancient shafts (Guardian Scouts: Chaas Qeta Shrine)"
 Hateno Ancient Tech Lab - Stasis Upgrade,Hateno,Rune Upgrade,none,none,Dueling Peaks Map,yes,"Purah, whose lab quest Impa gives in Kakariko (CarryingBlueFireEXMini), once the lab's furnace has its blue flame: 3 ancient cores (Guardian Scouts: Chaas Qeta Shrine)"
-Revali's Song,Tabantha,Champions' Ballad,none,all,Freed - Divine Beast Vah Ruta|Freed - Divine Beast Vah Rudania|Freed - Divine Beast Vah Medoh|Freed - Divine Beast Vah Naboris|Hebra Map,yes,"the Champions' Ballad opens once the four beasts are freed; trials in Hebra, then Vah Medoh: every rune kept"
+Revali's Song,Tabantha,Champions' Ballad,none,all,Freed - Divine Beast Vah Ruta|Freed - Divine Beast Vah Rudania|Freed - Divine Beast Vah Medoh|Freed - Divine Beast Vah Naboris|Hebra Map|Ridgeland Map,yes,"the Champions' Ballad opens once the four beasts are freed; trials in Hebra and Ridgeland (the second one's shrine), then Vah Medoh: every rune kept"
 Mipha's Song,Lanayru,Champions' Ballad,none,all,Freed - Divine Beast Vah Ruta|Freed - Divine Beast Vah Rudania|Freed - Divine Beast Vah Medoh|Freed - Divine Beast Vah Naboris|Zora Set,yes,"the Champions' Ballad opens once the four beasts are freed; trials in Lanayru, then Vah Ruta: every rune kept"
 Daruk's Song,Eldin,Champions' Ballad,heat,all,Freed - Divine Beast Vah Ruta|Freed - Divine Beast Vah Rudania|Freed - Divine Beast Vah Medoh|Freed - Divine Beast Vah Naboris,yes,"the Champions' Ballad opens once the four beasts are freed; trials in Eldin, then Vah Rudania: every rune kept"
 Urbosa's Song,Wasteland,Champions' Ballad,none,all,Freed - Divine Beast Vah Ruta|Freed - Divine Beast Vah Rudania|Freed - Divine Beast Vah Medoh|Freed - Divine Beast Vah Naboris|Gerudo Set|Gerudo Map,yes,"the Champions' Ballad opens once the four beasts are freed; trials in the Gerudo Highlands and desert, then Vah Naboris: every rune kept"
