@@ -91,6 +91,26 @@ class ProfileTests(Folder):
         self.assertIn("DLC not installed", ui.text())
         create.assert_not_called()
 
+    def test_a_cemu_argument_skips_the_file_dialog(self):
+        exe = self.root / "Cemu.AppImage"
+        install = mock.Mock(game=Path("game"), update=Path("update"), dlc=Path("dlc"))
+        ui = Answers()   # no files: a dialog would return None and cancel
+        with mock.patch.object(cemu_install, "detect", return_value=install) as detect, \
+                mock.patch.object(launcher.cemu_profile, "create") as create:
+            launcher.ensure_profile(ui, exe)
+        detect.assert_called_once_with(exe)
+        create.assert_called_once_with(exe, install)
+
+    def test_a_bad_cemu_argument_does_not_reprompt(self):
+        ui = Answers()
+        with mock.patch.object(cemu_install, "detect",
+                               side_effect=cemu_install.CemuInstallError("DLC not installed")), \
+                mock.patch.object(launcher.cemu_profile, "create") as create:
+            with self.assertRaises(launcher.Cancelled):
+                launcher.ensure_profile(ui, self.root / "nope")
+        self.assertIn("DLC not installed", ui.text())
+        create.assert_not_called()
+
 
 class SeedTests(Folder):
     def test_prepared_seeds_the_last_played_first(self):
@@ -458,6 +478,16 @@ class TestAidTests(unittest.TestCase):
         with mock.patch.dict("sys.modules", {"tools.play_aids": None}):
             with self.assertRaisesRegex(ValueError, "not part of a release"):
                 launcher.test_aids(["--cheats"])
+
+    def test_a_cemu_argument_names_cemu_without_the_dialog(self):
+        exe = "path/to/Cemu.AppImage"
+        rest, cemu = launcher._take_cemu(["--cemu", exe, "seed.apbotw.json"])
+        self.assertEqual(rest, ["seed.apbotw.json"])          # the seed stays first
+        self.assertEqual(cemu, Path(exe))
+        rest, cemu = launcher._take_cemu(["--cemu=other", "seed.apbotw.json"])
+        self.assertEqual(rest, ["seed.apbotw.json"])
+        self.assertEqual(cemu, Path("other"))
+        self.assertEqual(launcher._take_cemu(["seed.apbotw.json"]), (["seed.apbotw.json"], None))
 
 
 if __name__ == "__main__":

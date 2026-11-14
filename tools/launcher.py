@@ -68,6 +68,9 @@ class Console:
             raise Cancelled from None
 
     def choose_file(self, title: str, kinds: list[tuple[str, str]]) -> Path | None:
+        # No display (remote/headless): skip the GUI, let the path be typed.
+        if not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
+            return Path(self.ask(f"{title} (path)").strip('"'))
         try:
             import tkinter
             from tkinter import filedialog
@@ -79,7 +82,7 @@ class Console:
             finally:
                 window.destroy()
         except Exception:       # noqa: BLE001 - no window here: the path is typed
-            chosen = self.ask(f"{title} (path)").strip('"')
+            return Path(self.ask(f"{title} (path)").strip('"'))
         return Path(chosen) if chosen else None
 
 
@@ -88,14 +91,17 @@ def yes(ui, prompt: str, default: bool = True) -> bool:
     return default if not answer else answer.startswith("y")
 
 
-def ensure_profile(ui) -> None:
+def ensure_profile(ui, cemu_path=None) -> None:
     """The isolated Cemu profile, made from the player's Cemu the first time."""
     if (cemu_profile.PROFILE / "isolation.json").is_file():
         return
     ui.say("First launch: the game runs in a Cemu profile of its own, copied once from your Cemu.")
     while True:
-        executable = ui.choose_file("Where is Cemu.exe?" if os.name == "nt" else "Where is Cemu?",
-                                    [("Cemu", "Cemu.exe") if os.name == "nt" else ("Cemu", "Cemu*.AppImage")])
+        if cemu_path is not None:
+            executable = cemu_path
+        else:
+            executable = ui.choose_file("Where is Cemu.exe?" if os.name == "nt" else "Where is Cemu?",
+                                        [("Cemu", "Cemu.exe") if os.name == "nt" else ("Cemu", "Cemu*.AppImage")])
         if executable is None:
             raise Cancelled
         try:
@@ -103,8 +109,9 @@ def ensure_profile(ui) -> None:
             break
         except cemu_install.CemuInstallError as exc:
             ui.say(str(exc))
-            if not yes(ui, "Choose Cemu.exe again?", default=False):
-                raise Cancelled from None
+            if cemu_path is None and yes(ui, "Choose Cemu.exe again?", default=False):
+                continue
+            raise Cancelled from None
     ui.say(f"Breath of the Wild: {install.game}\nUpdate v{cemu_install.UPDATE_VERSION}: {install.update}\n"
            f"DLC: {install.dlc}")
     ui.say(f"The profile copies Cemu, the update, the DLC and your saves (about 5 GB) into "
@@ -328,12 +335,24 @@ def test_aids(argv: list[str]) -> tuple[list[str], dict]:
     return rest, {"speed": known.speed, "aids": aids, "damage": damage}
 
 
+def _take_cemu(argv: list[str]) -> tuple[list[str], Path | None]:
+    """--cemu PATH (or --cemu=PATH): a remote/headless player's way to name Cemu
+    without the file dialog; removed from argv so the rest stays the seed."""
+    for index, arg in enumerate(argv):
+        if arg == "--cemu" and index + 1 < len(argv):
+            return argv[:index] + argv[index + 2:], Path(argv[index + 1])
+        if arg.startswith("--cemu="):
+            return argv[:index] + argv[index + 1:], Path(arg.split("=", 1)[1])
+    return argv, None
+
+
 def main(argv: list[str], ui=None) -> int:
     ui = ui or Console()
     ui.say("Breath of the Wild Archipelago")
     try:
+        argv, cemu_path = _take_cemu(argv)
         argv, aids = test_aids(argv)
-        ensure_profile(ui)
+        ensure_profile(ui, cemu_path)
         seed = choose_seed(ui, argv[0] if argv else None)
         address, password = choose_room(ui, seed)
     except Cancelled:
