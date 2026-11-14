@@ -70,10 +70,25 @@ class TestQuestsThroughOtherRegions(BotwTestBase):
     options = {"stall_items": 28, "early_map": "none"}
 
     def test_tarrey_towns_arrow_stall_needs_the_maps_of_its_recruits(self) -> None:
-        self.collect_by_name(["Paraglider", *RUNES, "Flamebreaker Set", "Akkala Map", "Eldin Map", "Wasteland Map"])
+        self.collect_by_name(["Paraglider", *RUNES, "Flamebreaker Set", "Akkala Map", "Eldin Map", "Wasteland Map",
+                              "Hateno Map"])
         self.assertFalse(self.can_reach_location("Tarrey Town - Arrow Stall Item 1"))
         self.collect_by_name("Tabantha Map")
         self.assertTrue(self.can_reach_location("Tarrey Town - Arrow Stall Item 1"))
+
+    def test_tarrey_towns_arrow_stall_needs_hudson_in_hateno(self) -> None:
+        # Hudson leaves Hateno for Akkala once Link has bought the house there.
+        self.collect_by_name(["Paraglider", *RUNES, "Flamebreaker Set", "Akkala Map", "Eldin Map", "Wasteland Map",
+                              "Tabantha Map"])
+        self.assertFalse(self.can_reach_location("Tarrey Town - Arrow Stall Item 2"))
+        self.collect_by_name("Hateno Map")
+        self.assertTrue(self.can_reach_location("Tarrey Town - Arrow Stall Item 2"))
+
+    def test_revalis_song_has_a_trial_in_ridgeland(self) -> None:
+        self.collect_all_but("Ridgeland Map")
+        self.assertFalse(self.can_reach_location("Revali's Song"))
+        self.collect_by_name("Ridgeland Map")
+        self.assertTrue(self.can_reach_location("Revali's Song"))
 
     def test_shoqa_tatone_needs_the_camera_and_the_guardians(self) -> None:
         self.collect_by_name(["Paraglider", "Lake Map", "Hateno Map", "Dueling Peaks Map"])
@@ -89,12 +104,13 @@ class TestQuestsThroughOtherRegions(BotwTestBase):
         self.assertTrue(self.can_reach_location("Hateno Ancient Tech Lab - Stasis Upgrade"))
 
     def test_impas_quests_need_kakariko(self) -> None:
-        # Purah's Camera (Kah Yah) and Farosh's scale (Shae Katha) come after Impa.
-        self.collect_by_name(["Paraglider", *RUNES, "Hateno Map", "Faron Map", "Lake Map"])
-        for location in ("Kah Yah Shrine", "Shae Katha Shrine"):
+        # Purah's Camera (Kah Yah) and the scales of Farosh (Shae Katha) and Dinraal (Tutsuwa Nima) come after Impa.
+        shrines = ("Kah Yah Shrine", "Shae Katha Shrine", "Tutsuwa Nima Shrine")
+        self.collect_by_name(["Paraglider", *RUNES, "Hateno Map", "Faron Map", "Lake Map", "Akkala Map"])
+        for location in shrines:
             self.assertFalse(self.can_reach_location(location), location)
         self.collect_by_name("Dueling Peaks Map")
-        for location in ("Kah Yah Shrine", "Shae Katha Shrine"):
+        for location in shrines:
             self.assertTrue(self.can_reach_location(location), location)
 
     def test_kah_mael_is_reached_from_akkalas_cliffs(self) -> None:

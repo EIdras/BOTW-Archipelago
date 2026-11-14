@@ -101,7 +101,7 @@ class PackTests(unittest.TestCase):
         # A tower asks for no map, but for its region with region_lock.
         self.assertNotIn(str(rows["Hebra Tower"]["id"]), keys)
         self.assertEqual(keys[str(rows["Tarrey Town - Arrow Stall Item 1"]["id"])],
-                         '{"akkala_map", "eldin_map", "wasteland_map", "tabantha_map"}')
+                         '{"akkala_map", "hateno_map", "eldin_map", "wasteland_map", "tabantha_map"}')
         codes = {entry["codes"] for entry in self.json("items/items.json") if "codes" in entry}
         self.assertLessEqual({poptracker.code(name) for name in self.cat.MAPS.values()}, codes)
         logic = self.pack.read("scripts/logic.lua").decode()
@@ -123,7 +123,7 @@ class PackTests(unittest.TestCase):
         # Its own region, a tower's too, and those of a quest's maps; Ganon's, in Central's area.
         self.assertEqual(regions[str(hebra)], '{"Hebra"}')
         self.assertEqual(regions[str(ids["Tarrey Town - Arrow Stall Item 1"])],
-                         '{"Akkala", "Eldin", "Wasteland", "Tabantha"}')
+                         '{"Akkala", "Hateno", "Eldin", "Wasteland", "Tabantha"}')
         self.assertEqual(regions[str(goal)], '{"Hyrule Castle"}')
         self.assertIn('INNER_REGIONS = {["Hyrule Castle"] = "Central"}', data)
         # The Great Plateau is always reached: its locations have no bracket.

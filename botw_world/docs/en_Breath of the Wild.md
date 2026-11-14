@@ -174,10 +174,12 @@ reveals the map: a map received does, with the game's own animation.
 > The trackers show it as possible but out of logic.
 
 With `region_keys`, the towers, the Great Plateau and Calamity Ganon need no map. A location whose quest goes through
-another region needs that region's map too: Tarrey Town's arrow stall (its quest recruits in Eldin, the Wasteland and
-Tabantha), Purah's upgrades (Impa, in Kakariko, sends Link to her), Shoqa Tatone (its quest wants pictures of
-Central Hyrule's Guardians, taken with Purah's camera), Kah Yah (its quest wants Purah's camera) and Shae Katha
-(its door wants a scale of Farosh, who flies only once Link has met Impa).
+another region needs that region's map too: Tarrey Town's arrow stall (its quest starts in Hateno once Link owns the
+house there, then recruits in Eldin, the Wasteland and Tabantha), Purah's upgrades (Impa, in Kakariko, sends Link to
+her), Shoqa Tatone (its quest wants pictures of Central Hyrule's Guardians, taken with Purah's camera), Kah Yah (its
+quest wants Purah's camera), Shae Katha and Tutsuwa Nima (their doors want a scale of Farosh or Dinraal, who fly only
+once Link has met Impa), Kah Mael (reached from Akkala's cliffs) and Revali's Song (one of its trials is in
+Ridgeland).
 
 `early_map` places one map among the Great Plateau's first checks (its rune terminals and its tower), so that a region
 opens besides the towers once Link leaves the Plateau:
