@@ -7,7 +7,7 @@ Cemu keeps its settings (settings.xml) and the list of the games it found
 folder: the "portable" folder next to Cemu.exe when there is one, else
 %APPDATA%\\Cemu. The update and the DLC are titles installed in its mlc01
 folder (settings.xml can move it); the base game is wherever its game paths
-found it, as a folder or a .wud/.wua file.
+found it, as a folder, a .wud/.wux/.wua file or a NUS folder (title.tmd).
 
 detect() finds the three titles of a supported version (botw_client/regions.py:
 the European one first, then the American and the Japanese ones, unless one is named) and checks
@@ -30,8 +30,9 @@ EUR = regions.EUR.title
 BASE, UPDATE, DLC = "00050000", "0005000e", "0005000c"
 UPDATE_VERSION = 208
 DLC_VERSION = 80                # DLC 3.0, The Champions' Ballad
-# Cemu's TitleDataFormat: a folder, a disc image, a Wii U archive.
-FOLDER, WUD, WUA = 1, 2, 3
+# Cemu's TitleDataFormat: a folder, a disc image (.wud/.wux), a Wii U archive,
+# a NUS title (title.tmd, title.tik and its encrypted .app files).
+FOLDER, WUD, WUA, NUS = 1, 2, 3, 4
 
 
 class CemuInstallError(RuntimeError):
@@ -49,7 +50,7 @@ class Title:
 class CemuInstall:
     user_data: Path
     mlc: Path
-    game: Path          # what Cemu launches (-g): the base game's U-King.rpx, or its .wud/.wua
+    game: Path          # what Cemu launches (-g): the base game's U-King.rpx, .wud/.wua or title.tmd
     update: Path        # the v208 update folder: code/, content/, meta/
     dlc: Path
     region: regions.Region = regions.EUR
@@ -119,14 +120,18 @@ def _launch_path(base: Title, region: regions.Region) -> Path:
         rpx = base.path / "code" / "U-King.rpx"
         if rpx.is_file():
             return rpx
-    elif base.format in (WUD, WUA) and base.path.is_file():
+    elif base.format in (WUD, WUA, NUS) and base.path.is_file():
         return base.path
+    elif base.format not in (WUD, WUA, NUS):
+        raise CemuInstallError(f"Breath of the Wild ({region.key}) is listed by Cemu at {base.path}, in a form "
+                               f"the launcher does not know (Cemu's format {base.format}): install the game as a "
+                               "folder (code, content, meta), a .wud/.wux or a .wua file")
     raise CemuInstallError(f"Breath of the Wild ({region.key}) is listed by Cemu at {base.path}, but is not "
                            "there any more: start Cemu so that it lists it again")
 
 
 def base_game(user_data: Path, region: regions.Region = regions.EUR) -> Path:
-    """What Cemu launches for Breath of the Wild (`region`): its U-King.rpx or its .wud/.wua."""
+    """What Cemu launches for Breath of the Wild (`region`): its U-King.rpx, .wud/.wua or title.tmd."""
     known = titles(user_data, mlc_of(user_data))
     return _base(known, _region(known, region))
 

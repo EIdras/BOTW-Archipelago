@@ -117,7 +117,7 @@ them.
   Look at the launcher's PopTracker line: it says why, and how to build the pack.
 - **PopTracker still shows the old pack.** Drag the new `botw_archipelago.zip` onto its window again, then load the
   pack.
-- **The map is a plain grid.** The launcher's line says why. Either your game is a `.wud` or `.wua` file (the map
+- **The map is a plain grid.** The launcher's line says why. Either your game is a `.wud` or `.wua` file, or a folder of `title.tmd` and `.app` files (the map
   is drawn from a game installed as a folder, with `code`, `content` and `meta`), or the drive holding it was not
   connected while the pack was built: plug it back, and the next session builds the map again. The tracker works
   all the same.
