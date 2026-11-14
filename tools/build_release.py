@@ -43,7 +43,8 @@ PINS = ROOT / "requirements-player.txt"
 PROJECT = ("botw_client", "botw_patch", "tools", "native", "data", "botw_world/data", "botw_world/docs",
            "botw_world/catalog.py",
            "botw_world/archipelago.json", "assets/wiiu",
-           "assets/models/ap_item/wiiu", "players/BOTW.yaml", "BOTW Archipelago.cmd", "README.md", "LICENSE")
+           "assets/models/ap_item/wiiu", "players/BOTW.yaml", "BOTW Archipelago.cmd",
+           "bootstrap.sh", "BOTW Archipelago.sh", "Play.sh", "run-tests.sh", "README.md", "LICENSE")
 # Test aids of source checkouts, never in a release: the speed multiplier, the play aids.
 DEVELOPMENT_ONLY = ("tools/play_speed.py", "tools/build_plateau_speed.py", "tools/play_aids.py")
 PYTHON_FILES = ("python.exe", "pythonw.exe", "python3.dll", f"python3{sys.version_info.minor}.dll",
