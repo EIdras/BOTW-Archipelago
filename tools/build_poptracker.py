@@ -927,8 +927,8 @@ def fetch_icons_said(say) -> None:
 def plain_map_reason(content: Path | None) -> str:
     """Why the map is a plain grid, said after the pack's path."""
     if content is None:
-        return (" (plain map: no base game folder found, as with a .wud/.wua game or a drive not "
-                "connected)")
+        return (" (plain map: no base game folder found, as with a .wud/.wua/title.tmd game or a "
+                "drive not connected)")
     return f" (plain map: the base game could not be read in {content}; the next session builds it again)"
 
 

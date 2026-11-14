@@ -37,6 +37,11 @@ class Install:
             self.base = root / "games" / "BOTW"
             (self.base / "code").mkdir(parents=True)
             (self.base / "code/U-King.rpx").write_bytes(b"base")
+        elif base_format == ci.NUS:
+            self.base = root / "games" / "BOTW" / "title.tmd"
+            self.base.parent.mkdir(parents=True)
+            self.base.write_bytes(b"tmd")
+            (self.base.parent / "title.tik").write_bytes(b"ticket")
         else:
             self.base = root / "games" / "BOTW.wua"
             self.base.parent.mkdir(parents=True)
@@ -147,6 +152,18 @@ class DetectionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             install = Install(Path(temp), base_format=ci.WUA)
             self.assertEqual(detect(install).game, install.base)
+
+    def test_a_base_game_in_nus_form_is_launched_by_its_title_tmd(self):
+        for region in (ci.EUR, "101c9400", "101c9300"):
+            with self.subTest(region=region), tempfile.TemporaryDirectory() as temp:
+                install = Install(Path(temp), region=region, base_format=ci.NUS)
+                self.assertEqual(detect(install).game, install.base)
+
+    def test_a_base_game_in_an_unknown_form_is_said(self):
+        with tempfile.TemporaryDirectory() as temp:
+            install = Install(Path(temp), base_format=5)
+            with self.assertRaisesRegex(ci.CemuInstallError, "does not know.*format 5"):
+                detect(install)
 
     def test_the_japanese_version_is_found(self):
         with tempfile.TemporaryDirectory() as temp:

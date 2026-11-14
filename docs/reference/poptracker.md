@@ -26,7 +26,7 @@ game, so that no file of the game is in the repository.
   (`0x431`), tile mode 4, addressed as `tools/bitemico.py` does (for 64-bit blocks, the micro-tile order is
   x0 y0 x1 x2 y1 y2, checked on the map's roads). The layer `MapTex2` (200 px a section) gives a 2400 x 2000 map. A
   section's variants (`_0`, `_16`...) are other states of the place; the plain name is used. Without a base game
-  folder (a `.wud`/`.wua` game), the map is a plain grid; so it is when the map cannot be read (its drive
+  folder (a `.wud`/`.wua` game, or a NUS one: `title.tmd` and encrypted `.app` files), the map is a plain grid; so it is when the map cannot be read (its drive
   disconnected), and the stamp is then the one of no game, so that the next session builds it again.
 - **The regions panel** (`tools/poptracker_regions.py`), the maps' place in the tracker: one mini-map of Hyrule made
   of a piece a region (a `canvas`, each piece cut to its region, transparent around it); without the game's map, and
