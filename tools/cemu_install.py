@@ -5,9 +5,11 @@
 Cemu keeps its settings (settings.xml) and the list of the games it found
 (title_list_cache.xml: path, format and version of every title) in its user
 folder: the "portable" folder next to Cemu.exe when there is one, else
-%APPDATA%\\Cemu. The update and the DLC are titles installed in its mlc01
-folder (settings.xml can move it); the base game is wherever its game paths
-found it, as a folder or a .wud/.wua file.
+%APPDATA%\\Cemu. On Linux these two files may sit in different XDG folders
+(settings in the config dir, the list in the data dir), so the list is searched
+in every folder Cemu uses. The update and the DLC are titles installed in its
+mlc01 folder (settings.xml can move it); the base game is wherever its game
+paths found it, as a folder or a .wud/.wua file.
 
 detect() finds the three titles of a supported version (botw_client/regions.py:
 the European one first, then the American and the Japanese ones, unless one is named) and checks
@@ -63,14 +65,27 @@ class CemuInstall:
         return self.update / "code" / "U-King.rpx"
 
 
-def user_data_of(executable: Path | None = None, environ=os.environ) -> Path:
-    """Cemu's user folder: portable next to Cemu.exe, else its install data.
+def emu_folders(executable: Path | None = None, environ=os.environ) -> list[Path]:
+    """The folders Cemu may keep its game list in. On Linux the list of titles
+    (title_list_cache.xml) may sit in a different XDG folder from settings.xml,
+    and the split differs by distro, so every candidate is searched."""
+    folders: list[Path] = []
+    if executable is not None:
+        folders.append(Path(executable).parent)
+    appdata = environ.get("APPDATA")
+    if appdata:
+        folders.append(Path(appdata) / "Cemu")
+    if os.name != "nt":
+        xdg_config = Path(environ.get("XDG_CONFIG_HOME") or (Path.home() / ".config"))
+        xdg_data = Path(environ.get("XDG_DATA_HOME") or (Path.home() / ".local" / "share"))
+        folders += [xdg_config / "Cemu", xdg_data / "Cemu"]
+    return folders
 
-    On Windows that is %APPDATA%\\Cemu; on Linux a non-portable Cemu keeps
-    settings.xml in one of the XDG folders ($XDG_CONFIG_HOME/Cemu, else
-    ~/.config/Cemu, or $XDG_DATA_HOME/Cemu, else ~/.local/share/Cemu): the one
-    that holds it is used.
-    """
+
+def user_data_of(executable: Path | None = None, environ=os.environ) -> Path:
+    """Cemu's user folder: the one holding settings.xml. Portable next to Cemu.exe,
+    else %APPDATA%\\Cemu on Windows, else the XDG folder (config, then data) that
+    holds it; the conventional data folder when none do (the error points there)."""
     if executable is not None:
         folder = Path(executable).parent
         if (folder / "portable").is_dir():
@@ -107,9 +122,12 @@ def _meta_version(folder: Path) -> int | None:
         return None
 
 
-def titles(user_data: Path, mlc: Path) -> dict[str, Title]:
+def titles(user_data: Path, mlc: Path, cache_dirs: list[Path] | None = None) -> dict[str, Title]:
     """Every title Cemu knows, by lowercase title id: installed in mlc01 first
-    (their meta.xml is current), then from its game list."""
+    (their meta.xml is current), then from its game list. The list is searched
+    in every folder Cemu keeps data in, because on Linux it may sit in a
+    different XDG folder from settings.xml."""
+    cache_dirs = cache_dirs or [user_data]
     found: dict[str, Title] = {}
     root = mlc / "usr" / "title"
     for kind in (BASE, UPDATE, DLC):
@@ -117,15 +135,16 @@ def titles(user_data: Path, mlc: Path) -> dict[str, Title]:
             version = _meta_version(folder)
             if version is not None:
                 found[kind + folder.name.lower()] = Title(folder, FOLDER, version)
-    cache = user_data / "title_list_cache.xml"
-    if cache.is_file():
-        for entry in ET.parse(cache).getroot().iter("title"):
-            try:
-                title = Title(Path(entry.findtext("path", "")), int(entry.findtext("format", "0")),
-                              int(entry.get("version", "0")))
-            except ValueError:
-                continue
-            found.setdefault(entry.get("titleId", "").lower(), title)
+    for folder in cache_dirs:
+        cache = folder / "title_list_cache.xml"
+        if cache.is_file():
+            for entry in ET.parse(cache).getroot().iter("title"):
+                try:
+                    title = Title(Path(entry.findtext("path", "")), int(entry.findtext("format", "0")),
+                                  int(entry.get("version", "0")))
+                except ValueError:
+                    continue
+                found.setdefault(entry.get("titleId", "").lower(), title)
     return found
 
 
@@ -140,9 +159,10 @@ def _launch_path(base: Title, region: regions.Region) -> Path:
                            "there any more: start Cemu so that it lists it again")
 
 
-def base_game(user_data: Path, region: regions.Region = regions.EUR) -> Path:
+def base_game(user_data: Path, region: regions.Region = regions.EUR,
+              cache_dirs: list[Path] | None = None) -> Path:
     """What Cemu launches for Breath of the Wild (`region`): its U-King.rpx or its .wud/.wua."""
-    known = titles(user_data, mlc_of(user_data))
+    known = titles(user_data, mlc_of(user_data), cache_dirs)
     return _base(known, _region(known, region))
 
 
@@ -170,9 +190,11 @@ def detect(executable: Path | None = None, user_data: Path | None = None,
            environ=os.environ, region: regions.Region | None = None) -> CemuInstall:
     """The Breath of the Wild of a Cemu installation (`region`, else the first
     supported version it has), checked."""
-    user_data = Path(user_data) if user_data is not None else user_data_of(executable, environ)
+    user_given = user_data is not None
+    user_data = Path(user_data) if user_given else user_data_of(executable, environ)
+    cache_dirs = [user_data] if user_given else emu_folders(executable, environ)   # spread across XDG dirs when discovered
     mlc = mlc_of(user_data)
-    known = titles(user_data, mlc)
+    known = titles(user_data, mlc, cache_dirs)
     region = _region(known, region)
     game = _base(known, region)
     update = known.get(UPDATE + region.title)

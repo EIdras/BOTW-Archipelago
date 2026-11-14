@@ -115,8 +115,11 @@ one, and only one holds the game's memory:
 
 - `tools/cemu_install.py` falls back to `%APPDATA%\\Cemu`. On Linux Cemu is usually a portable AppImage
   (`portable/` next to the binary); `user_data_of()` already handles a given executable plus a portable folder.
-  A non-portable Cemu on Linux stores its user data in the XDG **data** directory, `$XDG_DATA_HOME/Cemu`
-  (falling back to `~/.local/share/Cemu/`), confirmed against the AppImage — not an XDG config directory.
+  A non-portable Cemu keeps its two list files in the XDG folders, and on this machine they split: `settings.xml`
+  in the **config** dir (`$XDG_CONFIG_HOME/Cemu`, else `~/.config/Cemu`) while `title_list_cache.xml` is in the
+  **data** dir (`$XDG_DATA_HOME/Cemu`, else `~/.local/share/Cemu`). `detect()` therefore searches every XDG
+  folder Cemu uses (config, then data) for the game list, and `user_data_of()` returns the one that holds
+  `settings.xml`.
 - `tools/cemu/mailbox.py` sets `DEFAULT_LOG` to `%APPDATA%/Cemu/log.txt`. In a non-portable install Cemu writes
   it to `~/.local/share/Cemu/log.txt`; in the isolated profile it is written into the profile's data folder,
   and `BOTW_CEMU_LOG` overrides both. Make the non-portable default XDG-data-aware.

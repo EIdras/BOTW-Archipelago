@@ -150,6 +150,34 @@ class UserFolderTests(unittest.TestCase):
             (cemu_c / "settings.xml").unlink(); (cemu_d / "settings.xml").unlink()  # neither: data, the error points here
             self.assertEqual(ci.user_data_of(None, environ), cemu_d)
 
+    def test_detect_finds_the_update_when_the_cache_is_in_the_data_folder(self):
+        """settings.xml and title_list_cache.xml may be in different XDG folders
+        (config and data): detect() must search both to find the update."""
+        if os.name == "nt":
+            self.skipTest("XDG directories are a Linux convention")
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            environ = {"XDG_CONFIG_HOME": str(root / "config"), "XDG_DATA_HOME": str(root / "data")}
+            cfg, data, mlc = root / "config" / "Cemu", root / "data" / "Cemu", root / "mlc01"
+            for folder in (cfg, data, mlc / "usr" / "title"):
+                folder.mkdir(parents=True)
+            ET.ElementTree(ET.fromstring(f"<content><mlc_path>{mlc.as_posix()}</mlc_path></content>")).write(cfg / "settings.xml")
+            base = mlc / "usr" / "title" / ci.BASE / regions.USA.title
+            (base / "code").mkdir(parents=True); (base / "code/U-King.rpx").write_bytes(b"base")  # region found here
+            meta(base, 0)
+            update = mlc / "usr" / "title" / ci.UPDATE / regions.USA.title
+            (update / "content/Pack").mkdir(parents=True); (update / "code").mkdir(parents=True)
+            (update / "code/U-King.rpx").write_bytes(RPX); meta(update, 208)          # update listed only in the cache
+            dlc = mlc / "usr" / "title" / ci.DLC / regions.USA.title                   # DLC in the mlc folder
+            (dlc / "content").mkdir(parents=True); meta(dlc, 80)
+            titles = ET.Element("title_list")
+            Install.title(titles, ci.UPDATE + regions.USA.title, update, ci.FOLDER, 208)
+            ET.ElementTree(titles).write(data / "title_list_cache.xml")
+            with mock.patch("tools.build_native_from_source.RPX_SHA256", hashlib.sha256(RPX).hexdigest()):
+                found = ci.detect(None, environ=environ, region=regions.USA)
+            self.assertEqual(found.region, regions.USA)
+            self.assertEqual(found.update, update)
+
 
 class DetectionTests(unittest.TestCase):
     def test_the_three_titles_wherever_cemu_has_them(self):
