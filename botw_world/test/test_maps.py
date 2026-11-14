@@ -88,6 +88,15 @@ class TestQuestsThroughOtherRegions(BotwTestBase):
         self.collect_by_name("Dueling Peaks Map")
         self.assertTrue(self.can_reach_location("Hateno Ancient Tech Lab - Stasis Upgrade"))
 
+    def test_impas_quests_need_kakariko(self) -> None:
+        # Purah's Camera (Kah Yah) and Farosh's scale (Shae Katha) come after Impa.
+        self.collect_by_name(["Paraglider", *RUNES, "Hateno Map", "Faron Map", "Lake Map"])
+        for location in ("Kah Yah Shrine", "Shae Katha Shrine"):
+            self.assertFalse(self.can_reach_location(location), location)
+        self.collect_by_name("Dueling Peaks Map")
+        for location in ("Kah Yah Shrine", "Shae Katha Shrine"):
+            self.assertTrue(self.can_reach_location(location), location)
+
     def test_every_keyed_location_names_maps_of_the_pool(self) -> None:
         names = set(MAPS.values())
         for row in LOCATIONS:
