@@ -25,6 +25,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+import os
 from pathlib import Path
 import sys
 
@@ -93,7 +94,8 @@ def ensure_profile(ui) -> None:
         return
     ui.say("First launch: the game runs in a Cemu profile of its own, copied once from your Cemu.")
     while True:
-        executable = ui.choose_file("Where is Cemu.exe?", [("Cemu", "Cemu.exe")])
+        executable = ui.choose_file("Where is Cemu.exe?" if os.name == "nt" else "Where is Cemu?",
+                                    [("Cemu", "Cemu.exe") if os.name == "nt" else ("Cemu", "Cemu*.AppImage")])
         if executable is None:
             raise Cancelled
         try:

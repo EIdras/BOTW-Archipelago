@@ -164,8 +164,15 @@ def check_tag(tag: str) -> None:
 
 
 def build(output: Path = ROOT / "dist", *, allow_dirty: bool = False) -> Path:
-    if sys.platform != "win32" or sys.version_info[:2] != (3, 12):
-        raise RuntimeError("a release is built on Windows with Python 3.12, the one it ships")
+    # The Windows release bundles the pinned Python; the Linux release ships a venv bootstrap instead.
+    if sys.platform == "win32":
+        if sys.version_info[:2] != (3, 12):
+            raise RuntimeError("a release is built on Windows with Python 3.12, the one it ships")
+        return _build_windows(output, allow_dirty)
+    return _build_linux(output, allow_dirty)
+
+
+def _build_windows(output: Path, allow_dirty: bool) -> Path:
     dirty = bool(git("status", "--porcelain", "--", *PROJECT).strip())
     if dirty and not allow_dirty:
         raise RuntimeError("the release's files have uncommitted changes: commit them, or --allow-dirty")
@@ -183,6 +190,29 @@ def build(output: Path = ROOT / "dist", *, allow_dirty: bool = False) -> Path:
         "version": version(), "commit": commit + ("-dirty" if dirty else ""),
         "python": sys.version.split()[0], "packages": packages}, indent=2) + "\n", encoding="utf-8")
     archive = zip_folder(release, output / f"{release.name}-Windows.zip")
+    from tools.package_native import package
+    package(output / "botw.apworld")
+    return archive
+
+
+def _build_linux(output: Path, allow_dirty: bool) -> Path:
+    dirty = bool(git("status", "--porcelain", "--", *PROJECT).strip())
+    if dirty and not allow_dirty:
+        raise RuntimeError("the release's files have uncommitted changes: commit them, or --allow-dirty")
+    release = output / f"{NAME}-{version()}"
+    if release.exists():
+        shutil.rmtree(release)
+    for name in project_files():
+        if name.endswith(".cmd"):
+            continue  # the launcher is a shell script on Linux
+        destination = release / name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / name, destination)
+    commit = git("rev-parse", "HEAD").strip()
+    (release / RELEASE_MARKER).write_text(json.dumps({
+        "version": version(), "commit": commit + ("-dirty" if dirty else ""),
+        "platform": "linux", "bootstrap": "bootstrap.sh"}, indent=2) + "\n", encoding="utf-8")
+    archive = zip_folder(release, output / f"{release.name}-Linux.zip")
     from tools.package_native import package
     package(output / "botw.apworld")
     return archive

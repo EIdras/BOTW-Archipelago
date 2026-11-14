@@ -29,8 +29,13 @@ def data_folder(root: Path = ROOT, environ=os.environ) -> Path:
     if environ.get(DATA_VARIABLE):
         return Path(environ[DATA_VARIABLE])
     if (root / RELEASE_MARKER).is_file():
-        local = environ.get("LOCALAPPDATA")
-        return (Path(local) if local else Path.home() / "AppData" / "Local") / RELEASE_FOLDER
+        if os.name == "nt":
+            # A Windows release keeps its state under LOCALAPPDATA across updates.
+            local = environ.get("LOCALAPPDATA")
+            return (Path(local) if local else Path.home() / "AppData" / "Local") / RELEASE_FOLDER
+        # On Linux the client's state lives in the XDG data directory.
+        xdg = environ.get("XDG_DATA_HOME") or (Path.home() / ".local" / "share")
+        return Path(xdg) / RELEASE_FOLDER
     return root / ".build"
 
 

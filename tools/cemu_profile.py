@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -193,6 +194,9 @@ def check_isolated() -> None:
 
 def cemu_running() -> bool:
     """A Cemu runs, whichever installation it comes from."""
+    if os.name != "nt":
+        from tools.cemu import linux_proc
+        return linux_proc.find_cemu_pid() is not None
     running = subprocess.run(["powershell", "-NoProfile", "-Command",
                               "Get-Process Cemu -ErrorAction SilentlyContinue "
                               "| Select-Object -ExpandProperty Id"],

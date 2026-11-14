@@ -5,6 +5,7 @@ adapter to another process or reuse it after an uncertain outcome.
 """
 import ctypes
 from ctypes import wintypes
+import os
 import time
 import uuid
 
@@ -27,25 +28,36 @@ def refusal_has_no_action(state, join, text, generation):
 
 
 def process_incarnation(process):
-    if not process.h:
-        raise RuntimeError('Cemu handle closed')
-    kernel = ctypes.WinDLL('kernel32', use_last_error=True)
-    kernel.GetProcessTimes.argtypes = [wintypes.HANDLE] + [ctypes.POINTER(wintypes.FILETIME)] * 4
-    kernel.GetProcessTimes.restype = wintypes.BOOL
-    kernel.GetExitCodeProcess.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
-    kernel.GetExitCodeProcess.restype = wintypes.BOOL
-    times = [wintypes.FILETIME() for _ in range(4)]
-    code = wintypes.DWORD()
-    if not kernel.GetProcessTimes(process.h, *(ctypes.byref(t) for t in times)):
-        raise ctypes.WinError(ctypes.get_last_error())
-    if not kernel.GetExitCodeProcess(process.h, ctypes.byref(code)):
-        raise ctypes.WinError(ctypes.get_last_error())
-    if code.value != 259 or times[1].dwHighDateTime or times[1].dwLowDateTime:
+    if os.name == "nt":
+        if not process.h:
+            raise RuntimeError('Cemu handle closed')
+        kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+        kernel.GetProcessTimes.argtypes = [wintypes.HANDLE] + [ctypes.POINTER(wintypes.FILETIME)] * 4
+        kernel.GetProcessTimes.restype = wintypes.BOOL
+        kernel.GetExitCodeProcess.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
+        kernel.GetExitCodeProcess.restype = wintypes.BOOL
+        times = [wintypes.FILETIME() for _ in range(4)]
+        code = wintypes.DWORD()
+        if not kernel.GetProcessTimes(process.h, *(ctypes.byref(t) for t in times)):
+            raise ctypes.WinError(ctypes.get_last_error())
+        if not kernel.GetExitCodeProcess(process.h, ctypes.byref(code)):
+            raise ctypes.WinError(ctypes.get_last_error())
+        if code.value != 259 or times[1].dwHighDateTime or times[1].dwLowDateTime:
+            raise RuntimeError('Cemu process exited')
+        created = times[0].dwHighDateTime << 32 | times[0].dwLowDateTime
+        if not created:
+            raise RuntimeError('Cemu creation time unavailable')
+        return f'{process.pid}:{created:016x}'
+    # Linux: the start time in /proc/<pid>/stat changes on every Cemu boot, and a
+    # missing process directory means Cemu exited. comm (field 2) may hold spaces
+    # and parentheses, so split on the last ')' before counting to field 22.
+    try:
+        with open(f'/proc/{process.pid}/stat', 'r') as stream:
+            content = stream.read()
+    except FileNotFoundError:
         raise RuntimeError('Cemu process exited')
-    created = times[0].dwHighDateTime << 32 | times[0].dwLowDateTime
-    if not created:
-        raise RuntimeError('Cemu creation time unavailable')
-    return f'{process.pid}:{created:016x}'
+    start_time = int(content.rsplit(')', 1)[1].split()[19])
+    return f'{process.pid}:{start_time:016x}'
 
 
 class CemuPresentationBackend:

@@ -13,15 +13,33 @@ import re
 import sys
 import time
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from winmem import Process
+_cemu_dir = pathlib.Path(__file__).resolve().parent
+for _p in (_cemu_dir, _cemu_dir.parent.parent):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
+from tools.cemu import Process
 from guest import in_guest
 
 MAGIC = b"APMBOX01\x00"
 VERSION = 0x0BADF00E
 HOOK_GUEST = 0x031FA9B4          # guest address where our bla must be
-DEFAULT_LOG = pathlib.Path.home() / "AppData/Roaming/Cemu/log.txt"
 LOG = None   # explicit override; otherwise BOTW_CEMU_LOG, read at call time
+
+
+def _default_log_path() -> pathlib.Path:
+    """Cemu's own log in a non-portable install: %APPDATA%\\Cemu\\log.txt on
+    Windows, $XDG_DATA_HOME/Cemu/log.txt (else ~/.local/share/Cemu/log.txt) on
+    Linux. Read at call time, not import: a harness that sets XDG_DATA_HOME or
+    BOTW_CEMU_LOG after import must still be honoured, exactly like BOTW_CEMU_LOG."""
+    if os.name == "nt":
+        base = os.environ.get("APPDATA") or str(Path.home() / "AppData" / "Roaming")
+    else:
+        xdg = os.environ.get("XDG_DATA_HOME") or str(Path.home() / ".local" / "share")
+        base = xdg
+    return pathlib.Path(base) / "Cemu" / "log.txt"
+
+
+DEFAULT_LOG = None   # resolved lazily by _default_log_path() at call time
 
 
 def log_path():
@@ -34,7 +52,10 @@ def log_path():
     """
     if LOG is not None:
         return pathlib.Path(LOG)
-    return pathlib.Path(os.environ.get("BOTW_CEMU_LOG", str(DEFAULT_LOG)))
+    override = os.environ.get("BOTW_CEMU_LOG")
+    if override:
+        return pathlib.Path(override)
+    return _default_log_path()
 
 
 def cemu_pid():
@@ -43,6 +64,9 @@ def cemu_pid():
         if not selected.isdigit() or int(selected) <= 0:
             raise ValueError("BOTW_CEMU_PID must be a positive process ID")
         return int(selected)
+    if os.name != "nt":
+        from tools.cemu import linux_proc
+        return linux_proc.find_cemu_pid()
     import subprocess
     out = subprocess.run(
         ["powershell", "-NoProfile", "-Command",

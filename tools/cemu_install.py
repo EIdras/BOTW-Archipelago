@@ -64,7 +64,11 @@ class CemuInstall:
 
 
 def user_data_of(executable: Path | None = None, environ=os.environ) -> Path:
-    """Cemu's user folder: portable next to Cemu.exe, else %APPDATA%\\Cemu."""
+    """Cemu's user folder: portable next to Cemu.exe, else its install data.
+
+    On Windows that is %APPDATA%\\Cemu; on Linux a non-portable Cemu stores its
+    data in the XDG data directory ($XDG_DATA_HOME/Cemu, else ~/.local/share/Cemu).
+    """
     if executable is not None:
         folder = Path(executable).parent
         if (folder / "portable").is_dir():
@@ -72,7 +76,12 @@ def user_data_of(executable: Path | None = None, environ=os.environ) -> Path:
         if (folder / "settings.xml").is_file():     # Cemu 1.x kept it next to the executable
             return folder
     appdata = environ.get("APPDATA")
-    return (Path(appdata) if appdata else Path.home() / "AppData" / "Roaming") / "Cemu"
+    if appdata:
+        return Path(appdata) / "Cemu"
+    if os.name == "nt":
+        return Path.home() / "AppData" / "Roaming" / "Cemu"
+    xdg = environ.get("XDG_DATA_HOME") or (Path.home() / ".local" / "share")
+    return Path(xdg) / "Cemu"
 
 
 def mlc_of(user_data: Path) -> Path:
