@@ -1,6 +1,7 @@
 """The player's Cemu installation (tools/cemu_install.py) and the profile made from it."""
 import hashlib
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -131,6 +132,23 @@ class UserFolderTests(unittest.TestCase):
             self.assertEqual(ci.user_data_of(exe, {}), exe.parent)
             (exe.parent / "portable").mkdir()
             self.assertEqual(ci.user_data_of(exe, {}), exe.parent / "portable")
+
+    def test_on_linux_the_config_or_the_data_dir_holds_settings(self):
+        if os.name == "nt":
+            self.skipTest("XDG directories are a Linux convention")
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            environ = {"XDG_CONFIG_HOME": str(root / "c"), "XDG_DATA_HOME": str(root / "d")}
+            cemu_c, cemu_d = root / "c" / "Cemu", root / "d" / "Cemu"
+            cemu_c.mkdir(parents=True); cemu_d.mkdir(parents=True)
+            (cemu_c / "settings.xml").write_text("<content/>")                # config holds it: used
+            self.assertEqual(ci.user_data_of(None, environ), cemu_c)
+            (cemu_c / "settings.xml").unlink(); (cemu_d / "settings.xml").write_text("<content/>")  # only data: used
+            self.assertEqual(ci.user_data_of(None, environ), cemu_d)
+            (cemu_c / "settings.xml").write_text("<content/>")               # both: config is preferred
+            self.assertEqual(ci.user_data_of(None, environ), cemu_c)
+            (cemu_c / "settings.xml").unlink(); (cemu_d / "settings.xml").unlink()  # neither: data, the error points here
+            self.assertEqual(ci.user_data_of(None, environ), cemu_d)
 
 
 class DetectionTests(unittest.TestCase):
