@@ -1,11 +1,11 @@
 # Breath of the Wild dans Archipelago : démarrage rapide
 
-Ce guide court permet de jouer à Breath of the Wild dans une partie Archipelago, sous Windows, dans l'émulateur Cemu.
+Ce guide court permet de jouer à Breath of the Wild dans une partie Archipelago, sous Windows ou Linux, dans l'émulateur Cemu.
 Le reste de la documentation est en anglais : chaque section renvoie à sa page.
 
 ## Ce qu'il faut
 
-- Windows 10 ou 11 et [Cemu](https://cemu.info/) 2.x.
+- Windows ou Linux et [Cemu](https://cemu.info/) 2.x (l'AppImage Cemu sous Linux).
 - Breath of the Wild **Wii U**, version européenne, américaine ou japonaise, depuis votre propre console, avec sa
   **mise à jour v208** et le **DLC** installés dans Cemu (Fichier > Installer un titre, une mise à jour ou un DLC).
   Lancez le jeu une fois dans Cemu. La version Switch n'est pas prise en charge.
@@ -34,6 +34,17 @@ ordinateur, choisir « Informations complémentaires », puis « Exécuter quand
 Cemu démarre, et le client Archipelago tourne dans la fenêtre du lanceur. **Commencez une nouvelle partie** pour une
 nouvelle seed : une sauvegarde reste liée à sa seed. Fermer Cemu termine la session ; laissez la fenêtre du lanceur
 ouverte jusque-là.
+
+## Sous Linux
+
+Le même jeu avec l'[AppImage Cemu](https://cemu.info/). Téléchargez `BOTW-Archipelago-<version>-Linux.zip`,
+décompressez-le, et lancez `bootstrap.sh` la première fois : il construit l'environnement virtuel à partir de
+`requirements-player.txt`. Puis lancez `BOTW Archipelago.sh`, ou dépos dessus votre fichier de slot.
+
+La première fois, le lanceur demande où est `Cemu.exe` : pointez-le vers l'AppImage Cemu. Le lanceur vérifie le jeu,
+sa mise à jour et le DLC, puis copie Cemu et vos sauvegardes dans un profil à lui (environ 5 Go). Votre installation
+de Cemu n'est jamais modifiée. Sous Linux, votre profil, vos seeds et vos sauvegardes sont dans `$XDG_DATA_HOME/Cemu`
+(ou `~/.local/share/Cemu`), et le journal du lanceur est dans `~/.local/share/Cemu/log.txt`.
 
 Le guide complet, en anglais : [Setup guide](setup_en.md).
 

@@ -7,7 +7,8 @@
 
 **The launcher refuses your Cemu.**
 Its message says what is missing: another version of the game, the update or the DLC not installed, a game listed by
-Cemu that moved... Fix it in Cemu, start the game once there, and launch again.
+Cemu that moved... Fix it in Cemu, start the game once there, and launch again. On Linux, point the launcher at the
+Cemu AppImage.
 
 **"Close Cemu before preparing a session".**
 The launcher starts Cemu itself: close yours first.
@@ -33,9 +34,9 @@ See the [trackers' troubleshooting](poptracker_en.md#troubleshooting).
 
 ## Logs
 
-Each session writes its logs to `%LOCALAPPDATA%\BOTW Archipelago\play-seeds\<seed>\sessions\<date>\`: the client's
-log, Cemu's log and a summary. Attach that folder when you
-[report a problem](https://github.com/EIdras/BOTW-Archipelago/issues).
+Each session writes its logs to `%LOCALAPPDATA%\BOTW Archipelago\play-seeds\<seed>\sessions\<date>\` (on Linux,
+`$XDG_DATA_HOME/Cemu/play-seeds/<seed>/sessions/<date>/`): the client's log, Cemu's log and a summary. Attach that
+folder when you [report a problem](https://github.com/EIdras/BOTW-Archipelago/issues).
 
 ## Test commands
 
