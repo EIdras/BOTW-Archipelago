@@ -30,6 +30,7 @@ SOURCE_FILES = (
     'tools/build_request_reject_trace.py', 'tools/build_tip_channel.py',
     'botw_client/tip_protocol.py', 'tools/build_tower_maps_native.py',
     'tools/build_weather_native.py', 'tools/build_center_hold_native.py', 'tools/cemu/guest.py',
+    'tools/build_gale_glide_native.py',
 )
 
 
@@ -49,7 +50,8 @@ def generate(*, resource_gate=False, event_gate=False, tower_maps=False, bike_an
     bike_anywhere: the Master Cycle Zero anywhere outdoors (botw_patch/bike_anywhere.py).
     cutscene_skip: cutscenes skipped with + alone, from a first game on (botw_patch/cutscene_skip.py).
     The weather hold of the Downpour trap is in every pack (tools/build_weather_native.py),
-    and so is the center message hold of the regions' border (tools/build_center_hold_native.py).
+    and so is the center message hold of the regions' border (tools/build_center_hold_native.py),
+    and Revali's Gale's paraglider check (tools/build_gale_glide_native.py).
     mem2_end: where the game's main memory ends (tools/cemu/guest.py): the code follows
     no pointer beyond (Extended Memory moves it, tools/player_packs.py mem2_end())."""
     from tools.build_scoped_text import scoped_source
@@ -82,6 +84,9 @@ def generate(*, resource_gate=False, event_gate=False, tower_maps=False, bike_an
     # The border message of the regions, held frame after frame (in every pack).
     from tools.build_center_hold_native import patch_injection as center_hold_stage
     injection = center_hold_stage(injection)
+    # Revali's Gale opens no paraglider the game would refuse (in every pack).
+    from tools.build_gale_glide_native import patch_injection as gale_stage
+    injection = gale_stage(injection)
     if bike_anywhere:
         from botw_patch.bike_anywhere import patch_injection as bike_stage
         injection = bike_stage(injection)
