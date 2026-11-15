@@ -417,7 +417,7 @@ def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = Fals
     print("Archipelago session: Cemu starts on the play account. Play normally and "
           "save whenever you like; close Cemu to end the session. "
           "Do not close this window before Cemu.", flush=True)
-    process = subprocess.Popen([str(profile.PROFILE / "Cemu.exe"), "-m", str(portable / "mlc01"),
+    process = subprocess.Popen([str(profile.cemu()), "-m", str(portable / "mlc01"),
                                 "-g", str(game)], cwd=profile.PROFILE)
     os.environ["BOTW_CEMU_PID"] = str(process.pid)
     os.environ["BOTW_CEMU_LOG"] = str(portable / "log.txt")

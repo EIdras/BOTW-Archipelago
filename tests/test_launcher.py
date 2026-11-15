@@ -81,6 +81,13 @@ class ProfileTests(Folder):
         create.assert_called_once_with(exe, install)
         self.assertIn("about 5 GB", ui.text())
 
+    def test_the_profile_cemu_keeps_the_native_extension(self):
+        cemu = launcher.cemu_profile.cemu(self.root)
+        if os.name == "nt":
+            self.assertEqual(cemu.name, "Cemu.exe")
+        else:
+            self.assertEqual(cemu.name, "Cemu.AppImage")
+
     def test_a_refused_installation_says_why(self):
         ui = Answers(answers=["n"], files=[self.root / "Cemu.exe"])
         with mock.patch.object(cemu_install, "detect",

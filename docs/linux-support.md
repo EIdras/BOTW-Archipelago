@@ -141,9 +141,9 @@ one, and only one holds the game's memory:
 
 A play session must run Cemu in the isolated profile (the copies of the update, DLC, saves, accounts and packs
 in `tools/cemu_profile.py`), exactly as Windows does. Today `tools/play_session.py` launches
-`PROFILE/Cemu.exe -m <portable/mlc01> -g <game>` with `cwd=PROFILE`, so Cemu uses the `portable/` folder next to
+`PROFILE/Cemu.AppImage -m <portable/mlc01> -g <game>` with `cwd=PROFILE`, so Cemu uses the `portable/` folder next to
 it. The implemented Linux approach keeps the faithful parallel to Windows: the AppImage is copied into the
-profile (as `PROFILE/Cemu.exe`) and launched there, so Cemu uses the `portable/` folder next to it. An
+profile (as `PROFILE/Cemu.AppImage`) and launched there, so Cemu uses the `portable/` folder next to it. An
 alternative — pointing the user's AppImage at the profile with the `WX_CEMU_DATA_DIR` env var (Cemu honours it
 on Unix, Cemu PR #316) — was confirmed viable but not used. The session sets `BOTW_CEMU_PID` and `BOTW_CEMU_LOG`
 from the launched process, exactly as Windows does.
@@ -211,7 +211,7 @@ has internet and should not need a Rust toolchain; the AppImage runs as two proc
   override its data/prefix path. Verified against Cemu 2.6. Smoke-test the exact behaviour on the user's AppImage
   before relying on it for save isolation.
 - **Copy the AppImage into the profile, or use the env var?** — **DECIDED: copy.** `tools/play_session.py`
-  launches `PROFILE/Cemu.exe -m <portable/mlc01> -g <game>` with `cwd=PROFILE`, so Cemu runs from the copied
+  launches `PROFILE/Cemu.AppImage -m <portable/mlc01> -g <game>` with `cwd=PROFILE`, so Cemu runs from the copied
   AppImage and uses the `portable/` folder next to it — the faithful parallel to Windows, and save isolation
   rides on the same mechanism Windows already has. The `WX_CEMU_DATA_DIR` env-var path (confirmed viable) was
   not used.
