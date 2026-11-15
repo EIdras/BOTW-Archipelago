@@ -142,10 +142,11 @@ one, and only one holds the game's memory:
 A play session must run Cemu in the isolated profile (the copies of the update, DLC, saves, accounts and packs
 in `tools/cemu_profile.py`), exactly as Windows does. Today `tools/play_session.py` launches
 `PROFILE/Cemu.exe -m <portable/mlc01> -g <game>` with `cwd=PROFILE`, so Cemu uses the `portable/` folder next to
-it. The preferred Linux approach is to Point the AppImage at the profile with an env var. Cemu on Unix honours
-`WX_CEMU_DATA_DIR` to override its data/prefix path (Cemu PR #316). Launching the user's AppImage directly with
-`WX_CEMU_DATA_DIR=<profile>` needs a real smoke test before it is trusted for save isolation. The session sets
-`BOTW_CEMU_PID` and `BOTW_CEMU_LOG` from the launched process, exactly as Windows does.
+it. The implemented Linux approach keeps the faithful parallel to Windows: the AppImage is copied into the
+profile (as `PROFILE/Cemu.exe`) and launched there, so Cemu uses the `portable/` folder next to it. An
+alternative — pointing the user's AppImage at the profile with the `WX_CEMU_DATA_DIR` env var (Cemu honours it
+on Unix, Cemu PR #316) — was confirmed viable but not used. The session sets `BOTW_CEMU_PID` and `BOTW_CEMU_LOG`
+from the launched process, exactly as Windows does.
 
 ### 6. Launcher and entry scripts
 
@@ -209,8 +210,11 @@ has internet and should not need a Rust toolchain; the AppImage runs as two proc
   honours `WX_APPNAME_DATA_DIR`, where APPNAME is the upper-cased `GetAppName()` (`CEMU` → `WX_CEMU_DATA_DIR`), to
   override its data/prefix path. Verified against Cemu 2.6. Smoke-test the exact behaviour on the user's AppImage
   before relying on it for save isolation.
-- **Copy the AppImage into the profile, or use the env var?** — the env-var path is now viable (confirmed above);
-  still decide after the smoke test. The copy remains the faithful parallel to Windows.
+- **Copy the AppImage into the profile, or use the env var?** — **DECIDED: copy.** `tools/play_session.py`
+  launches `PROFILE/Cemu.exe -m <portable/mlc01> -g <game>` with `cwd=PROFILE`, so Cemu runs from the copied
+  AppImage and uses the `portable/` folder next to it — the faithful parallel to Windows, and save isolation
+  rides on the same mechanism Windows already has. The `WX_CEMU_DATA_DIR` env-var path (confirmed viable) was
+  not used.
 - **Which venv tool does the bootstrap use?** — **Recommend stdlib `venv` + `pip`.** It is what
   `.github/workflows/release.yml` already uses, needs no second download, and the pinned deps wheel on it. Use
   `uv` only if first-launch speed becomes a problem.
