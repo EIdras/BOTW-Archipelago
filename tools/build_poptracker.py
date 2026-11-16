@@ -95,7 +95,27 @@ ROWS = [
     [("Master Cycle Zero", "MCZ", GEAR), ("Travel Medallion", "TRV", GEAR), ("Epona", "EPO", GEAR),
      ("Weapon Pouch Upgrade", "WPN", LIFE), ("Bow Pouch Upgrade", "BOW", LIFE),
      ("Shield Pouch Upgrade", "SHLD", LIFE)],
+    # Epona and the Master Cycle Zero above: the seeds before the Progressive Horse.
+    [("Progressive Horse", "HRS", GEAR), ("Sand Boots", "SAND", ARMOR), ("Snow Boots", "SNWB", ARMOR),
+     ("Thunder Helm", "THDR", ARMOR), ("Hylian Set", "HYLS", ARMOR), ("Soldier's Set", "SOLD", ARMOR)],
+    # The bonus items (botw_world/data/items.json "bonus").
+    [("Ruby Circlet", "RUBY", ARMOR), ("Sapphire Circlet", "SAPH", ARMOR), ("Diamond Circlet", "DIAM", ARMOR),
+     ("Topaz Earrings", "TOPZ", ARMOR), ("Opal Earrings", "OPAL", ARMOR), ("Amber Earrings", "AMBR", ARMOR)],
+    [("Bokoblin Mask", "BOKO", ARMOR), ("Moblin Mask", "MOBL", ARMOR), ("Lizalfos Mask", "LIZA", ARMOR),
+     ("Lynel Mask", "LYNL", ARMOR), ("Majora's Mask", "MAJO", ARMOR), ("Midna's Helmet", "MIDN", ARMOR)],
+    [("Zant's Helmet", "ZANT", ARMOR), ("Ravio's Hood", "RAVI", ARMOR), ("Phantom Set", "PHAN", ARMOR),
+     ("Tingle's Set", "TING", ARMOR), ("Fierce Deity Set", "FDEI", ARMOR), ("Royal Guard Set", "RGRD", ARMOR)],
+    [("Hero of Time Set", "TIME", ARMOR), ("Hero of the Wild Set", "WILD", ARMOR),
+     ("Hero of the Sky Set", "SKY", ARMOR), ("Hero of Twilight Set", "TWIL", ARMOR),
+     ("Hero of the Wind Set", "WIND", ARMOR)],
+    [("Traveler's Saddle", "TSAD", GEAR), ("Traveler's Bridle", "TBRI", GEAR), ("Knight's Saddle", "KSAD", GEAR),
+     ("Knight's Bridle", "KBRI", GEAR), ("Royal Saddle", "RSAD", GEAR), ("Royal Bridle", "RBRI", GEAR)],
+    [("Monster Saddle", "MSAD", GEAR), ("Monster Bridle", "MBRI", GEAR), ("Extravagant Saddle", "XSAD", GEAR),
+     ("Extravagant Bridle", "XBRI", GEAR)],
 ]
+# A progressive item whose stages have names of their own.
+STAGE_TITLES = {"Progressive Horse": ("Giant Horse", "Royal White Stallion", "Lord of the Mountain", "Epona",
+                                      "Master Cycle Zero")}
 # The regions panel (tools/poptracker_regions.py): a tile a region of the tower
 # maps (the world's tower_maps option), laid out as Hyrule; the Great Plateau's,
 # where the game starts, always lit. Its label stands for its map when the pack
@@ -135,6 +155,7 @@ FONT = {
     "Y": "10001 10001 01010 00100 00100 00100 00100", "Z": "11111 00001 00010 00100 01000 10000 11111",
     "0": "01110 10001 10011 10101 11001 10001 01110", "1": "00100 01100 00100 00100 00100 00100 01110",
     "2": "01110 10001 00001 00010 00100 01000 11111", "3": "11110 00001 00001 01110 00001 00001 11110",
+    "4": "00010 00110 01010 10010 11111 00010 00010", "5": "11111 10000 11110 00001 00001 10001 01110",
 }
 
 
@@ -229,6 +250,26 @@ ICON_NAMES = {
     "ancient_saddle": ["Ancient Saddle"], "korok_mask": ["Korok Mask"],
     "master_cycle_zero": ["Master Cycle Zero", "Master Cycle Rune", "Master Cycle"],
     "travel_medallion": ["Travel Medallion"], "epona": ["Epona"],
+    "progressive_horse_1": ["Giant Horse"], "progressive_horse_2": ["Royal White Stallion", "White Horse"],
+    "progressive_horse_3": ["Lord of the Mountain"], "progressive_horse_4": ["Epona"],
+    "progressive_horse_5": ["Master Cycle Zero", "Master Cycle Rune", "Master Cycle"],
+    "sand_boots": ["Sand Boots"], "snow_boots": ["Snow Boots"], "thunder_helm": ["Thunder Helm"],
+    "hylian_set": ["Hylian Tunic"], "soldiers_set": ["Soldier's Armor"],
+    "ruby_circlet": ["Ruby Circlet"], "sapphire_circlet": ["Sapphire Circlet"],
+    "diamond_circlet": ["Diamond Circlet"], "topaz_earrings": ["Topaz Earrings"],
+    "opal_earrings": ["Opal Earrings"], "amber_earrings": ["Amber Earrings"],
+    "bokoblin_mask": ["Bokoblin Mask"], "moblin_mask": ["Moblin Mask"], "lizalfos_mask": ["Lizalfos Mask"],
+    "lynel_mask": ["Lynel Mask"], "majoras_mask": ["Majora's Mask"], "midnas_helmet": ["Midna's Helmet"],
+    "zants_helmet": ["Zant's Helmet"], "ravios_hood": ["Ravio's Hood"], "phantom_set": ["Phantom Armor"],
+    "tingles_set": ["Tingle's Shirt"], "fierce_deity_set": ["Fierce Deity Armor"],
+    "royal_guard_set": ["Royal Guard Uniform"], "hero_of_time_set": ["Tunic of Time"],
+    "hero_of_the_wild_set": ["Tunic of the Wild"], "hero_of_the_sky_set": ["Tunic of the Sky"],
+    "hero_of_twilight_set": ["Tunic of Twilight"], "hero_of_the_wind_set": ["Tunic of the Wind"],
+    "travelers_saddle": ["Traveler's Saddle"], "travelers_bridle": ["Traveler's Bridle"],
+    "knights_saddle": ["Knight's Saddle"], "knights_bridle": ["Knight's Bridle"],
+    "royal_saddle": ["Royal Saddle"], "royal_bridle": ["Royal Bridle"],
+    "monster_saddle": ["Monster Saddle"], "monster_bridle": ["Monster Bridle"],
+    "extravagant_saddle": ["Extravagant Saddle"], "extravagant_bridle": ["Extravagant Bridle"],
     "weapon_pouch_upgrade": ["Weapon Pouch Upgrade", "Weapon Pouch"],
     "bow_pouch_upgrade": ["Bow Pouch Upgrade", "Bow Pouch"],
     "shield_pouch_upgrade": ["Shield Pouch Upgrade", "Shield Pouch"],
@@ -479,6 +520,8 @@ def items(cat, icons: dict[str, bytes] | None = None) -> tuple[list, dict, dict]
                     # The item, then its "+".
                     plain = name.removeprefix("Progressive ")
                     badge, title = (label, plain) if stage == 1 else (label[:3] + "+", plain + "+")
+                elif name in STAGE_TITLES:
+                    badge, title = label[:3] + str(stage), STAGE_TITLES[name][stage - 1]
                 else:
                     badge, title = label[:3] + str(stage), f"{name} ({stage}/{count})"
                 image(stage_path, f"{item_code}_{stage}", badge, colour)
