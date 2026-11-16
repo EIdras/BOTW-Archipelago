@@ -52,6 +52,9 @@ class ApShopItem:
     # Name of the model inside its file (ActorInfo mainModel, ModelList
     # UnitName); None keeps the model item's.
     model_unit: str | None = None
+    # Actor whose UI/StockItem icon this one shows (ActorInfo itemUseIconActorName),
+    # so that many actors share one icon file; None: an icon of its own.
+    icon_actor: str | None = None
 
 
 def crc(name: str) -> int:
@@ -96,6 +99,8 @@ def add_declarations(raw: bytes, items: list[ApShopItem]) -> tuple[bytes, dict]:
             clone["bfres"] = item.model_folder
         if item.model_unit:
             clone["mainModel"] = item.model_unit
+        if item.icon_actor:
+            clone["itemUseIconActorName"] = item.icon_actor
         value = crc(item.actor)
         index = next((i for i, v in enumerate(values) if v > value), len(values))
         actors.insert(index, clone)
