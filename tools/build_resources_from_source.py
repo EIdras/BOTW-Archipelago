@@ -33,6 +33,7 @@ from tools import build_master_sword_candidate as sword
 from botw_patch import (ballad_ends, beast_heart, bike_anywhere, camera_sensor, death_link, downpour,
                         ganon_gate, gerudo_outfit, goron_armor, horses, hud_layout, loading_icon,
                         pedestal, purah_upgrades, shrine_chests, traps)
+from botw_patch import ap_bolt
 from botw_patch.ap_quest import INPUT_HASHES as STATUS_INPUTS
 
 TITLE = "Pack/TitleBG.pack"
@@ -86,7 +87,7 @@ SOURCE_FILES = (
     "botw_patch/horses.py", "botw_patch/downpour.py", "botw_patch/game_files.py",
     *gerudo_outfit.SOURCE_FILES, *ganon_gate.SOURCE_FILES, *beast_heart.SOURCE_FILES,
     *goron_armor.SOURCE_FILES, *pedestal.SOURCE_FILES, *camera_sensor.SOURCE_FILES,
-    *purah_upgrades.SOURCE_FILES, *ballad_ends.SOURCE_FILES,
+    *purah_upgrades.SOURCE_FILES, *ballad_ends.SOURCE_FILES, *ap_bolt.SOURCE_FILES,
 )
 
 
@@ -358,6 +359,10 @@ def _generate(game: GameFiles, binding_token: int, shops: list | None, status: d
         # The cycle through the horse-only walls (botw_patch/bike_anywhere.py).
         files, edits = bike_anywhere.generate(files, game)
         changes.extend(edits)
+    # The Lightning Strike trap's quicker bolt (botw_patch/ap_bolt.py), after the
+    # stages that build ActorInfo from the game's own.
+    files, edits = ap_bolt.generate(files, game)
+    changes.extend(edits)
     if shrine_chests.enabled(status):
         stage()
         # The drawn shrine chests give a green rupee of their own, named after their

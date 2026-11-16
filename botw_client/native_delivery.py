@@ -611,13 +611,21 @@ class CemuNativeDeliveryBackend:
         since = self._frames_since_commit()
         if since is not None and since < SETTLE_FRAMES:
             return f"the trap's event closing ({since}/{SETTLE_FRAMES} frames of 1/30 s)"
+        from .elemental_strike import BOLT_LEAD, BOLTS
         outcome: dict[str, int] = {}
+        # A bolt first, then the field on Link as it lands (botw_client/elemental_strike.py).
+        parts = ("bolt", "field") if effect in BOLTS else ("all",)
+        for index, part in enumerate(parts):
+            if index:
+                time.sleep(BOLT_LEAD)
 
-        def work(read, write):
-            outcome.update(strike(read, write, self._call, effect))
-            return "ok"
-        status = self._in_one_turn(work)
-        return outcome if status == "ok" else status
+            def work(read, write, part=part):
+                outcome.update(strike(read, write, self._call, effect, part=part))
+                return "ok"
+            status = self._in_one_turn(work)
+            if status != "ok":
+                return outcome if outcome else status
+        return outcome
 
     def downpour(self, kind: int, frames: int) -> bool:
         """Hold the weather `kind` for `frames` frames of the world (the Downpour

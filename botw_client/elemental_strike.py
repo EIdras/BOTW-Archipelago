@@ -12,17 +12,16 @@ shape that spreads, Actor/Chemical/Expand*Field.bchemical):
   * Lightning Strike: ExpandElectricField, the burst of an Electric Chuchu
     (ElectricChuchu_Exp), which shocks Link: he drops his weapon and shield.
 
-Seen in play: Lightning Strike shocks Link (damage, electrified), but no bolt shows.
-So it also calls a bolt from the sky a few metres from him (BOLT_DISTANCE):
-LastBossThunder, Calamity Ganon's lightning, an actor of its own (a Bullet, no
-model; LastBossThunderAppear, a warning sign for SignTime, the strike, its
-effects by its ELink), its 24 of damage kept off Link by the distance: the field
-on him still does the damage and the status. Read in the game's files only, not
-yet seen in play: its effects may be loaded only in Ganon's fight (then the bolt
-strikes unseen), and where it strikes when created alone is not known. The
-weather's lightning is no actor (the storm's, Downpour's, strikes metal by
-itself), and the Thunderstorm Rod's (ThunderRodLv2Thunder) is a ball its rod
-throws, not a bolt.
+Lightning Strike also calls a bolt from the sky a few metres from Link
+(BOLT_DISTANCE): AP_Thunder, Calamity Ganon's lightning (LastBossThunder) with a
+warning sign of SIGN_FRAMES instead of 30 (botw_patch/ap_bolt.py), its 24 of damage
+kept off Link by the distance. The bolt first (part "bolt"), then, BOLT_LEAD
+seconds later as it lands, the field on Link (part "field"), which does the damage
+and the status: two turns of the invoker, the client waits between them
+(CemuNativeDeliveryBackend.elemental_strike). Seen in play with Ganon's own bolt:
+it shows, but came about a second after the damage. The weather's lightning is no
+actor (the storm's, Downpour's, strikes metal by itself), and the Thunderstorm
+Rod's (ThunderRodLv2Thunder) is a ball its rod throws, not a bolt.
 
 The memory of each creation is the actor heap's, never reused: without a handle,
 nothing says when the creator is done with its name and its place.
@@ -34,6 +33,8 @@ import random
 import struct
 from typing import Callable
 
+from botw_patch.ap_bolt import ACTOR as BOLT_ACTOR, SIGN_FRAMES
+
 from .cucco_swarm import (CREATOR, HEAP_HOLDER, NEW_IN_HEAP, PACK_ADD, PACK_CTOR, PLAYER_INFO,
                           REQUEST_CREATE, SAFESTRING_VTABLE)
 from .item_drop import MEMORY, PACK_ROOM, POSITION
@@ -44,16 +45,18 @@ FIELDS = {"freeze": ("ExpandIceField",), "fire": ("ExpandFireField",),
 NAMES = {"freeze": "Freeze", "fire": "Fire", "lightning": "Lightning Strike"}
 UP = 0.5                    # above his feet, metres
 # What strikes beside Link, by effect: a bolt from the sky.
-BOLTS = {"lightning": "LastBossThunder"}
-BOLT_DISTANCE = 4.0         # metres from Link, on the ground's plane
+BOLTS = {"lightning": BOLT_ACTOR}
+BOLT_DISTANCE = 3.0         # metres from Link, on the ground's plane
+BOLT_LEAD = SIGN_FRAMES / 30    # seconds from the bolt's creation to its strike
 
 
 def strike(read: Callable, write: Callable, call: Callable, effect: str,
-           rng: random.Random | None = None) -> dict[str, int]:
+           rng: random.Random | None = None, part: str = "all") -> dict[str, int]:
     """Create the effect's actors on Link: {outcome: count}, 'ok' for each one the
     game took. read(guest, size), write(guest, data), call(address, *args) -> r3 or
-    None, as the ambush's."""
-    actors = FIELDS[effect]
+    None, as the ambush's. part: "field" (the field on Link), "bolt" (the bolt beside
+    him, of an effect that has one) or "all"."""
+    actors = FIELDS[effect] if part in ("all", "field") else ()
 
     def u32(guest):
         raw = read(guest, 4)
@@ -71,7 +74,7 @@ def strike(read: Callable, write: Callable, call: Callable, effect: str,
     for actor in actors:
         outcome = _create(write, call, creator, heap, actor, (x, y + UP, z))
         results[outcome] = results.get(outcome, 0) + 1
-    if effect in BOLTS:
+    if effect in BOLTS and part in ("all", "bolt"):
         bearing = (rng or random.Random()).uniform(0.0, 2.0 * math.pi)
         at = (x + BOLT_DISTANCE * math.cos(bearing), y, z + BOLT_DISTANCE * math.sin(bearing))
         outcome = _create(write, call, creator, heap, BOLTS[effect], at)

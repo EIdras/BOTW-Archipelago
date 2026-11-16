@@ -238,12 +238,33 @@ class ElementalStrikeTests(unittest.TestCase):
         self.assertEqual(result, {"ok": 1, "bolt ok": 1})
         requests = [args for address, args in memory.calls if address == REQUEST_CREATE]
         self.assertEqual([memory.written[args[1]] for args in requests],
-                         [b"ExpandElectricField\0", b"LastBossThunder\0"])
+                         [b"ExpandElectricField\0", b"AP_Thunder\0"])
         places = [struct.unpack(">fff", data) for data in memory.written.values() if len(data) == 12]
         self.assertEqual(places[0], (100.0, 50.5, 200.0))
         x, y, z = places[1]
         self.assertAlmostEqual(math.hypot(x - 100.0, z - 200.0), elemental_strike.BOLT_DISTANCE, places=4)
         self.assertEqual(y, 50.0)
+        # In parts: the bolt alone, the field alone.
+        for part, actor in (("bolt", b"AP_Thunder\0"), ("field", b"ExpandElectricField\0")):
+            memory = Memory()
+            elemental_strike.strike(memory.read, memory.write, memory.call, "lightning", part=part)
+            requests = [args for address, args in memory.calls if address == REQUEST_CREATE]
+            self.assertEqual([memory.written[args[1]] for args in requests], [actor])
+
+    def test_the_backend_strikes_the_bolt_then_the_field_as_it_lands(self):
+        from unittest import mock
+        from botw_client.native_delivery import CemuNativeDeliveryBackend
+        backend = CemuNativeDeliveryBackend.__new__(CemuNativeDeliveryBackend)
+        backend._drop_blocked = lambda: None
+        backend._frames_since_commit = lambda: None
+        memory, waits = Memory(), []
+        backend._call = memory.call
+        backend._in_one_turn = lambda work: work(memory.read, memory.write)
+        with mock.patch("time.sleep", waits.append):
+            self.assertEqual(backend.elemental_strike("lightning"), {"bolt ok": 1, "ok": 1})
+        self.assertEqual(waits, [elemental_strike.BOLT_LEAD])
+        requests = [args for address, args in memory.calls if address == REQUEST_CREATE]
+        self.assertEqual([memory.written[args[1]] for args in requests], [b"AP_Thunder\0", b"ExpandElectricField\0"])
 
     def test_no_player_no_strike(self):
         memory = Memory()
