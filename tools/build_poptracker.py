@@ -303,6 +303,8 @@ UI_ICONS = {
     "champions_tunic": "Nt_PauseIcon_03^s",
     "weapon_pouch_upgrade": "Nt_PauseIcon_00^s", "bow_pouch_upgrade": "Nt_PauseIcon_01^s",
     "shield_pouch_upgrade": "Nt_PauseIcon_02^s", "epona": "Nt_MapHorseIconL_00^t",
+    # The Progressive Horse's horses: the map's horse, numbered by ui_icons.
+    **{f"progressive_horse_{n}": "Nt_MapHorseIconL_00^t" for n in (1, 2, 3, 4)},
     **{f"progressive_climbing_gear_{n}": "Nt_PauseIconMountain_00^t" for n in (1, 2, 3)},
     **{f"progressive_stealth_set_{n}": "Nt_PauseIconNoise_00^t" for n in (1, 2, 3)},
     "freed_divine_beast_vah_rudania": "Nt_IconSinJuNew_00^d",
@@ -324,7 +326,28 @@ UI_TINTS = {"progressive_sheikah_sensor_1": (70, 190, 255),
 # is not square (PopTracker stretches it). Under the player's icons, over the interface's.
 STOCK_ICONS = {"magnesis": "Obj_Magnetglove", "cryonis": "Obj_IceMaker",
                "progressive_remote_bomb_1": "Obj_RemoteBombBall", "progressive_remote_bomb_2": "Obj_RemoteBombBall2",
-               "progressive_stasis_1": "Obj_StopTimer", "progressive_stasis_2": "Obj_StopTimerLv2"}
+               "progressive_stasis_1": "Obj_StopTimer", "progressive_stasis_2": "Obj_StopTimerLv2",
+               # The items of client schema 13: a set by its chest piece; the jewelry by the
+               # icon its parameters name (Item.UseIconActorName: Obj_Head_024...).
+               "sand_boots": "Armor_049_Lower", "snow_boots": "Armor_141_Lower", "thunder_helm": "Armor_115_Head",
+               "diamond_circlet": "Obj_Head_024", "ruby_circlet": "Obj_Head_025",
+               "sapphire_circlet": "Obj_Head_026", "topaz_earrings": "Obj_Head_027",
+               "opal_earrings": "Obj_Head_028", "amber_earrings": "Obj_Head_029",
+               "hylian_set": "Armor_001_Upper", "soldiers_set": "Armor_020_Upper",
+               "bokoblin_mask": "Armor_022_Head", "moblin_mask": "Armor_045_Head",
+               "lizalfos_mask": "Armor_055_Head", "lynel_mask": "Armor_056_Head",
+               "majoras_mask": "Armor_172_Head", "midnas_helmet": "Armor_173_Head",
+               "zants_helmet": "Armor_178_Head", "ravios_hood": "Armor_177_Head",
+               "phantom_set": "Armor_171_Upper", "tingles_set": "Armor_174_Upper",
+               "fierce_deity_set": "Armor_225_Upper", "royal_guard_set": "Armor_179_Upper",
+               "hero_of_time_set": "Armor_200_Upper", "hero_of_the_wild_set": "Armor_005_Upper",
+               "hero_of_the_sky_set": "Armor_215_Upper", "hero_of_twilight_set": "Armor_210_Upper",
+               "hero_of_the_wind_set": "Armor_205_Upper",
+               **{f"{code(gear)}_{kind.lower()}": f"GameRomHorse{'Reins' if kind == 'Bridle' else kind}_{n}"
+                  for gear, n in (("Traveler's", "01"), ("Knight's", "03"), ("Royal", "02"),
+                                  ("Monster", "04"), ("Extravagant", "05")) for kind in ("Saddle", "Bridle")},
+               # The Progressive Horse's last stage, the Master Cycle Zero (its horses: UI_ICONS).
+               "progressive_horse_5": "Obj_Motorcycle", "master_cycle_zero": "Obj_Motorcycle"}
 
 
 # The icons of every item of the grid, published apart from the code: the
