@@ -123,7 +123,7 @@ class Prepared:
 
 def prepared_seeds() -> list[Prepared]:
     """The prepared seeds, the last played first."""
-    from botw_client.locations import WORLD_SCHEMA
+    from botw_client.locations import PLAYABLE_WORLD_SCHEMAS
     seeds = []
     folders = sorted(play_seed.PLAY_SEEDS.iterdir()) if play_seed.PLAY_SEEDS.is_dir() else []
     for folder in folders:
@@ -137,7 +137,7 @@ def prepared_seeds() -> list[Prepared]:
         audit = report["audit"]
         schema = audit.get("world_schema")
         seeds.append(Prepared(folder.name, slot, sessions[-1] if sessions else "",
-                              audit.get("world_version") or "", schema is None or schema == WORLD_SCHEMA))
+                              audit.get("world_version") or "", schema is None or schema in PLAYABLE_WORLD_SCHEMAS))
     return sorted(seeds, key=lambda seed: seed.last_played, reverse=True)
 
 

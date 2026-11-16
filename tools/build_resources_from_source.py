@@ -32,7 +32,7 @@ from tools import build_plateau_sensor_candidate as sensor
 from tools import build_master_sword_candidate as sword
 from botw_patch import (ballad_ends, beast_heart, bike_anywhere, camera_sensor, death_link, downpour,
                         ganon_gate, gerudo_outfit, goron_armor, horses, hud_layout, loading_icon,
-                        pedestal, purah_upgrades, traps)
+                        pedestal, purah_upgrades, shrine_chests, traps)
 from botw_patch.ap_quest import INPUT_HASHES as STATUS_INPUTS
 
 TITLE = "Pack/TitleBG.pack"
@@ -125,7 +125,8 @@ def stage_names(shops: list | None = None, status: dict | None = None) -> list[s
     return ["checking the game's files", "the item deliveries", "the rewards and gifts",
             "DeathLink, traps and the HUD", *(["the shops"] if shops else []),
             *(["the Archipelago quest"] if status else []), *(["the region maps"] if tower_maps(status) else []),
-            *(["the Master Cycle Zero"] if bike_anywhere.enabled(status) else []), "the texts"]
+            *(["the Master Cycle Zero"] if bike_anywhere.enabled(status) else []),
+            *(["the shrine chests"] if shrine_chests.enabled(status) else []), "the texts"]
 
 
 def generate(content, binding_token: int, shops: list | None = None,
@@ -335,6 +336,13 @@ def _generate(game: GameFiles, binding_token: int, shops: list | None, status: d
         # The cycle through the horse-only walls (botw_patch/bike_anywhere.py).
         files, edits = bike_anywhere.generate(files, game)
         changes.extend(edits)
+    if shrine_chests.enabled(status):
+        stage()
+        # The drawn shrine chests give a green rupee (botw_patch/shrine_chests.py).
+        for name, transforms in shrine_chests.stages(status):
+            files[name] = files[name] if name in files else shrine_chests.read_pack(game, name)
+            files, edits = patch_stage(files, name, transforms)
+            changes.extend(edits)
     stage()
     # Vilia's lines at the price she now asks (botw_patch/gerudo_outfit.py).
     files, edits = gerudo_outfit.generate_texts(files, game)
@@ -406,6 +414,11 @@ def build(content, output: Path, *, binding_token: int, shops: list | None = Non
         manifest["bike_anywhere"] = list(bike_anywhere.WALLS)
         manifest["source_hashes"].update({name: digest((ROOT / name).read_bytes())
                                           for name in bike_anywhere.SOURCE_FILES})
+    if shrine_chests.enabled(status):
+        # Only for seeds that draw shrine chests, so that the others keep their identity.
+        manifest["shrine_chests"] = [row["id"] for row in shrine_chests.drawn(status)]
+        manifest["source_hashes"].update({name: digest((ROOT / name).read_bytes())
+                                          for name in shrine_chests.SOURCE_FILES})
     if region is not regions.EUR:
         # Only for the other versions, so that the European packs keep their identity.
         manifest["input_hashes"] = regions.inputs(manifest["input_hashes"], game.content)

@@ -1250,7 +1250,8 @@
       "Travel"
     ],
     "useful": true,
-    "id": 156
+    "id": 156,
+    "count": 0
   },
   {
     "name": "Travel Medallion",
@@ -1274,7 +1275,8 @@
       "Travel"
     ],
     "useful": true,
-    "id": 159
+    "id": 159,
+    "count": 0
   },
   {
     "name": "Hebra Map",
@@ -1402,5 +1404,509 @@
     "name": "Paranoia",
     "trap": true,
     "id": 176
+  },
+  {
+    "name": "Progressive Horse",
+    "category": [
+      "Travel"
+    ],
+    "useful": true,
+    "count": 5,
+    "id": 177
+  },
+  {
+    "name": "Sand Boots",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 178,
+    "bonus": true
+  },
+  {
+    "name": "Snow Boots",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 179,
+    "bonus": true
+  },
+  {
+    "name": "Thunder Helm",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 180,
+    "bonus": true
+  },
+  {
+    "name": "Ruby Circlet",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 181,
+    "bonus": true
+  },
+  {
+    "name": "Sapphire Circlet",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 182,
+    "bonus": true
+  },
+  {
+    "name": "Diamond Circlet",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 183,
+    "bonus": true
+  },
+  {
+    "name": "Topaz Earrings",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 184,
+    "bonus": true
+  },
+  {
+    "name": "Opal Earrings",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 185,
+    "bonus": true
+  },
+  {
+    "name": "Amber Earrings",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 186,
+    "bonus": true
+  },
+  {
+    "name": "Hylian Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 187,
+    "bonus": true
+  },
+  {
+    "name": "Soldier's Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 188,
+    "bonus": true
+  },
+  {
+    "name": "Bokoblin Mask",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 189,
+    "bonus": true
+  },
+  {
+    "name": "Moblin Mask",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 190,
+    "bonus": true
+  },
+  {
+    "name": "Lizalfos Mask",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 191,
+    "bonus": true
+  },
+  {
+    "name": "Lynel Mask",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 192,
+    "bonus": true
+  },
+  {
+    "name": "Traveler's Saddle",
+    "useful": true,
+    "id": 193,
+    "bonus": true
+  },
+  {
+    "name": "Traveler's Bridle",
+    "useful": true,
+    "id": 194,
+    "bonus": true
+  },
+  {
+    "name": "Knight's Saddle",
+    "useful": true,
+    "id": 195,
+    "bonus": true
+  },
+  {
+    "name": "Knight's Bridle",
+    "useful": true,
+    "id": 196,
+    "bonus": true
+  },
+  {
+    "name": "Royal Saddle",
+    "useful": true,
+    "id": 197,
+    "bonus": true
+  },
+  {
+    "name": "Royal Bridle",
+    "useful": true,
+    "id": 198,
+    "bonus": true
+  },
+  {
+    "name": "Monster Saddle",
+    "useful": true,
+    "id": 199,
+    "bonus": true
+  },
+  {
+    "name": "Monster Bridle",
+    "useful": true,
+    "id": 200,
+    "bonus": true
+  },
+  {
+    "name": "Extravagant Saddle",
+    "useful": true,
+    "id": 201,
+    "bonus": true
+  },
+  {
+    "name": "Extravagant Bridle",
+    "useful": true,
+    "id": 202,
+    "bonus": true
+  },
+  {
+    "name": "Phantom Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 203,
+    "bonus": true
+  },
+  {
+    "name": "Tingle's Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 204,
+    "bonus": true
+  },
+  {
+    "name": "Fierce Deity Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 205,
+    "bonus": true
+  },
+  {
+    "name": "Hero of Time Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 206,
+    "bonus": true
+  },
+  {
+    "name": "Hero of the Wild Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 207,
+    "bonus": true
+  },
+  {
+    "name": "Hero of the Sky Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 208,
+    "bonus": true
+  },
+  {
+    "name": "Hero of Twilight Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 209,
+    "bonus": true
+  },
+  {
+    "name": "Hero of the Wind Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 210,
+    "bonus": true
+  },
+  {
+    "name": "Majora's Mask",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 211,
+    "bonus": true
+  },
+  {
+    "name": "Midna's Helmet",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 212,
+    "bonus": true
+  },
+  {
+    "name": "Zant's Helmet",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 213,
+    "bonus": true
+  },
+  {
+    "name": "Ravio's Hood",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 214,
+    "bonus": true
+  },
+  {
+    "name": "Royal Guard Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 215,
+    "bonus": true
+  },
+  {
+    "name": "Freeze",
+    "trap": true,
+    "id": 216
+  },
+  {
+    "name": "Lightning Strike",
+    "trap": true,
+    "id": 217
+  },
+  {
+    "name": "Fire",
+    "trap": true,
+    "id": 218
+  },
+  {
+    "name": "Farosh's Scale",
+    "filler": true,
+    "count": 0,
+    "id": 219
+  },
+  {
+    "name": "Farosh's Claw",
+    "filler": true,
+    "count": 0,
+    "id": 220
+  },
+  {
+    "name": "Shard of Farosh's Fang",
+    "filler": true,
+    "count": 0,
+    "id": 221
+  },
+  {
+    "name": "Shard of Farosh's Horn",
+    "filler": true,
+    "count": 0,
+    "id": 222
+  },
+  {
+    "name": "Dinraal's Scale",
+    "filler": true,
+    "count": 0,
+    "id": 223
+  },
+  {
+    "name": "Dinraal's Claw",
+    "filler": true,
+    "count": 0,
+    "id": 224
+  },
+  {
+    "name": "Shard of Dinraal's Fang",
+    "filler": true,
+    "count": 0,
+    "id": 225
+  },
+  {
+    "name": "Shard of Dinraal's Horn",
+    "filler": true,
+    "count": 0,
+    "id": 226
+  },
+  {
+    "name": "Naydra's Scale",
+    "filler": true,
+    "count": 0,
+    "id": 227
+  },
+  {
+    "name": "Naydra's Claw",
+    "filler": true,
+    "count": 0,
+    "id": 228
+  },
+  {
+    "name": "Shard of Naydra's Fang",
+    "filler": true,
+    "count": 0,
+    "id": 229
+  },
+  {
+    "name": "Shard of Naydra's Horn",
+    "filler": true,
+    "count": 0,
+    "id": 230
+  },
+  {
+    "name": "Lynel Horn",
+    "filler": true,
+    "count": 0,
+    "id": 231
+  },
+  {
+    "name": "Lynel Hoof",
+    "filler": true,
+    "count": 0,
+    "id": 232
+  },
+  {
+    "name": "Lynel Guts",
+    "filler": true,
+    "count": 0,
+    "id": 233
+  },
+  {
+    "name": "Ancient Screw",
+    "filler": true,
+    "count": 0,
+    "id": 234
+  },
+  {
+    "name": "Ancient Spring",
+    "filler": true,
+    "count": 0,
+    "id": 235
+  },
+  {
+    "name": "Ancient Gear",
+    "filler": true,
+    "count": 0,
+    "id": 236
+  },
+  {
+    "name": "Ancient Shaft",
+    "filler": true,
+    "count": 0,
+    "id": 237
+  },
+  {
+    "name": "Luminous Stone",
+    "filler": true,
+    "count": 0,
+    "id": 238
+  },
+  {
+    "name": "Hearty Durian",
+    "filler": true,
+    "count": 0,
+    "id": 239
+  },
+  {
+    "name": "Big Hearty Truffle",
+    "filler": true,
+    "count": 0,
+    "id": 240
+  },
+  {
+    "name": "Mighty Bananas",
+    "filler": true,
+    "count": 0,
+    "id": 241
+  },
+  {
+    "name": "Silent Princess",
+    "filler": true,
+    "count": 0,
+    "id": 242
+  },
+  {
+    "name": "Hearty Simmered Fruit",
+    "filler": true,
+    "count": 0,
+    "id": 243
+  },
+  {
+    "name": "Hearty Mushroom Skewer",
+    "filler": true,
+    "count": 0,
+    "id": 244
+  },
+  {
+    "name": "Mighty Simmered Fruit",
+    "filler": true,
+    "count": 0,
+    "id": 245
+  },
+  {
+    "name": "20 Bomb Arrows",
+    "filler": true,
+    "count": 0,
+    "id": 246
   }
 ]

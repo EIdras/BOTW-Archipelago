@@ -13,7 +13,9 @@ from botw_client import regions
 from botw_patch.resources import digest, unpack
 from botw_patch.shop_items import read_labels
 
-HORSES = ("GameRomHorseEpona",)
+# Epona, and the Progressive Horse's: the Giant Horse, the Royal White Stallion
+# ("White Horse" at a stable) and the Lord of the Mountain.
+HORSES = ("GameRomHorseEpona", "GameRomHorse00L", "GameRomHorseZelda", "GameRomHorseNushi")
 MESSAGES = "ActorType/Horse.msbt"
 
 

@@ -59,15 +59,17 @@ PLAY_SEEDS = DATA / "play-seeds"
 PACKS = DATA / "packs-from-source"
 ORPHAN_AGE = 600        # seconds: see orphan_packs
 SCOPE = "generated_ap_seed"
-CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12)    # 4: the Gerudo Set; 5: the goal and the sanctum; 6: the
-#                                                      new filler; 7: the weapons; 8: the travel items; 9: Epona;
-#                                                      10: maps; 11: the Downpour, Yiga Ambush and
-#                                                      Paranoia traps; 12: the travel points
+CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)    # 4: the Gerudo Set; 5: the goal and the sanctum;
+#                                                      6: the new filler; 7: the weapons; 8: the travel items;
+#                                                      9: Epona; 10: maps; 11: the Downpour, Yiga Ambush and
+#                                                      Paranoia traps; 12: the travel points; 13: the chests,
+#                                                      bosses, Progressive Horse, new items and traps
 GAME = "Breath of the Wild"
 _ROWS = json.loads((ROOT / "botw_world/data/locations.json").read_text(encoding="utf-8"))
-# Every location but the goal, shops apart: they depend on beedle_shop_items
-# and stall_items.
-PLACEMENTS = sum(1 for row in _ROWS if row["category"] not in ("Goal", "Shop", "Stall"))
+# Every location but the goal, shops, chests and bosses apart: they depend on
+# beedle_shop_items, stall_items, shrine_chests, field_chests and boss_kills.
+PLACEMENTS = sum(1 for row in _ROWS if row["category"] not in ("Goal", "Shop", "Stall", "Shrine Chest", "Chest",
+                                                                "Boss"))
 
 
 def expected_placements(slot_data: dict) -> int:
@@ -76,7 +78,8 @@ def expected_placements(slot_data: dict) -> int:
     # had stall_shop_items on each stall.
     stalls = (int(slot_data["stall_items"]) if "stall_items" in slot_data
               else len(stall_catalog.MERCHANTS) * int(slot_data.get("stall_shop_items", 0)))
-    return (PLACEMENTS + len(shop_catalog.MERCHANTS) * int(slot_data.get("beedle_shop_items", 0)) + stalls)
+    return (PLACEMENTS + len(shop_catalog.MERCHANTS) * int(slot_data.get("beedle_shop_items", 0)) + stalls
+            + len(slot_data.get("extra_locations", ())))
 
 
 def sha(path: Path) -> str:
@@ -98,13 +101,13 @@ def verified_manifest(manifest: dict) -> dict:
 
 
 def check_compatible(slot_data: dict) -> None:
-    """This version can play a seed of its own world schema, whatever the world's
-    version that generated it; otherwise the player needs that version. An
-    earlier schema is not played: its pack would take Purah's upgrades and the
-    Champions' Ballad's powers away, without their locations."""
-    from botw_client.locations import WORLD_SCHEMA
+    """This version can play a seed of the world schemas it knows (PLAYABLE_WORLD_SCHEMAS),
+    whatever the world's version that generated it; otherwise the player needs that
+    version. A schema before 5 is not played: its pack would take Purah's upgrades and
+    the Champions' Ballad's powers away, without their locations."""
+    from botw_client.locations import PLAYABLE_WORLD_SCHEMAS
     from botw_client.version import VERSION
-    if (slot_data.get("world_schema") != WORLD_SCHEMA
+    if (slot_data.get("world_schema") not in PLAYABLE_WORLD_SCHEMAS
             or slot_data.get("client_schema") not in CLIENT_SCHEMAS):
         made = slot_data.get("world_version", "an earlier version")
         raise ValueError(f"this seed was generated with the Breath of the Wild world {made}, which this "

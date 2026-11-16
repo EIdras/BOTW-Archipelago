@@ -15,6 +15,11 @@ from tools.build_pack_from_source import slot_manifests
 RUNTIME = Path(__file__).resolve().parents[1] / ".build/ap-runtime"
 
 
+# 159 locations and 200 field chests, 122 declared items (no map: tower_maps vanilla), the 38
+# bonus items: 199 places of filler, all traps at trap_percentage 100.
+TRAPS_OF_200_CHESTS = 199
+
+
 @unittest.skipUnless((RUNTIME / "BaseClasses.py").is_file(), "prepare official AP runtime first")
 class NativeWorldTests(unittest.TestCase):
     @classmethod
@@ -110,7 +115,7 @@ class NativeWorldTests(unittest.TestCase):
                 manifest = slot_manifests(next(Path(temp).glob("*.apbotw")))[0]
             self.assertEqual(len(manifest["placements"]), expected)
             self.assertEqual(len(manifest["shops"]), 16 * beedle + stall)
-            self.assertEqual(manifest["slot_data"]["world_schema"], 5)
+            self.assertEqual(manifest["slot_data"]["world_schema"], 6)
             self.assertEqual(manifest["slot_data"]["stall_items"], stall)
             stalls = [row for row in manifest["shops"] if 186 <= row["location_id"] <= 213]
             self.assertEqual(len(stalls), stall)
@@ -118,15 +123,16 @@ class NativeWorldTests(unittest.TestCase):
 
     def test_traps_replace_a_share_of_the_filler_by_weight(self):
         from BaseClasses import ItemClassification
-        mw = self.make_world(seed=3)
+        # Field chests: filler enough for every trap to come up.
+        mw = self.make_world(seed=3, field_chests=200)
         self.assertFalse([i for i in mw.itempool if i.classification == ItemClassification.trap])
-        everything = self.make_world(seed=3, trap_percentage=100)
+        everything = self.make_world(seed=3, trap_percentage=100, field_chests=200)
         traps = [i.name for i in everything.itempool if i.classification == ItemClassification.trap]
-        self.assertEqual(len(traps), 40)
+        self.assertEqual(len(traps), TRAPS_OF_200_CHESTS)
         self.assertEqual(len(everything.itempool), len(mw.itempool))
         self.assertEqual(set(traps), {"Weapon Shatter", "Blood Moon", "Rupoor", "Hearts Down",
                                       "Strip Down", "Cucco Swarm", "Downpour", "Yiga Ambush",
-                                      "Paranoia"})
+                                      "Paranoia", "Freeze", "Lightning Strike", "Fire"})
         weighted = self.make_world(seed=3, trap_percentage=100,
                                    trap_weights={"Hearts Down": 5, "Strip Down": 1})
         names = [i.name for i in weighted.itempool if i.classification == ItemClassification.trap]
@@ -155,8 +161,8 @@ class NativeWorldTests(unittest.TestCase):
                     self.assertTrue(trapped)
                     self.assertTrue(all(p["item_name"] in {
                         "Weapon Shatter", "Blood Moon", "Rupoor", "Hearts Down", "Strip Down",
-                        "Cucco Swarm", "Downpour", "Yiga Ambush", "Paranoia"}
-                        for p in trapped))
+                        "Cucco Swarm", "Downpour", "Yiga Ambush", "Paranoia", "Freeze", "Lightning Strike",
+                        "Fire"} for p in trapped))
 
     def test_trap_weights_leave_no_trap_to_draw(self):
         from Options import OptionError

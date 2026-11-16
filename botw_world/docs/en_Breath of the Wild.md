@@ -32,6 +32,9 @@ template with "Generate Template Options". Every option is explained [below](#op
 | Songs of the Champions' Ballad | 4 |
 | Beedle's shops (option) | 0 to 32 |
 | Village stalls (option) | 0 to 28 |
+| Chests inside the shrines (option) | 0 to 174 |
+| Chests of the field (option) | 0 to 1312 |
+| Hinoxes, Taluses and Moldugas defeated (option) | 0 to 86 |
 
 ## Items
 
@@ -55,13 +58,24 @@ template with "Generate Template Options". Every option is explained [below](#op
 - The Master Sword, the Hylian Shield, the Champion's Tunic, the Ancient Bridle and Saddle, the Barbarian, Ancient
   and Radiant sets.
 - Pouch upgrades: 4 for weapons, 3 for bows, 4 for shields. Each one is one of Hestu's, who offers one fewer.
-- The Master Cycle Zero (The Champions' Ballad), the Travel Medallion and the Korok Mask (The Master Trials).
-- Epona, registered at the stables.
+- The **Progressive Horse** (5 copies): the Giant Horse, the Royal White Stallion, the Lord of the Mountain and
+  Epona, each registered at the stables, then the Master Cycle Zero (The Champions' Ballad).
+- The Travel Medallion and the Korok Mask (The Master Trials).
+- Bonus items, which take up to half the places left once the items above are placed (all of them once the chests or
+  bosses add enough locations): the Sand Boots, Snow Boots and Thunder Helm, the Gerudo jewelry (Ruby, Sapphire and
+  Diamond Circlets, Topaz, Opal and Amber Earrings), the Hylian and Soldier's sets, the Bokoblin, Moblin, Lizalfos
+  and Lynel masks, the Traveler's, Knight's, Royal, Monster and Extravagant saddles and bridles, the Phantom, Tingle's,
+  Fierce Deity and Royal Guard sets, the sets of the Hero of Time, the Wild, the Sky, Twilight and the Wind,
+  Majora's Mask, Midna's and Zant's Helmets and Ravio's Hood. None of them is needed by the logic.
 - Spirit Orbs, Ancient Cores, Star Fragments and Fairies. The Koroks still give their seeds, as in the game.
 
 **Filler**
 
-- Arrows (normal, fire, ice, shock, bomb, ancient), elixirs, gems and rupees.
+- Arrows (normal, fire, ice, shock, bomb, ancient, 20 bomb arrows), elixirs, gems and rupees.
+- Upgrade materials: the dragons' scales, claws and shards of fang and horn, the Lynels' horns, hooves and guts,
+  ancient screws, springs, gears and shafts, Luminous Stones.
+- Hearty and mighty food: Hearty Durians, Big Hearty Truffles, Mighty Bananas, Silent Princesses, and dishes cooked
+  from them.
 - Weapons, bows and shields: 83 of the game's, from the soldiers' to the Lynels', elemental and ancient ones, a few
   jokes (a Soup Ladle, a Pot Lid) and, rarely, the amiibo's treasures (Biggoron's Sword, the Twilight Bow...).
 - [Traps](#traps), with the `trap_percentage` option.
@@ -113,6 +127,9 @@ stamina vessels help without being required.
 | | [`sanctum_runes`](#the-sealed-sanctum) | true | The four runes before Ganon |
 | Shops | [`beedle_shop_items`](#shops-and-stalls) | 0 | Archipelago items at each of Beedle's 16 shops (0 to 2) |
 | | [`stall_items`](#shops-and-stalls) | 0 | Archipelago items on the village stalls (0 to 28) |
+| Chests and Bosses | [`shrine_chests`](#chests-and-bosses) | 0 | Chests inside the shrines (0 to 174) |
+| | [`field_chests`](#chests-and-bosses) | 0 | Chests of the field (0 to 1312) |
+| | [`boss_kills`](#chests-and-bosses) | 0 | Hinoxes, Taluses and Moldugas defeated (0 to 86) |
 | Weapons | [`weapon_order`](#weapon-order) | `smoothed` | Weaker weapons first, stronger later |
 | Maps | [`tower_maps`](#region-maps) | `region_keys` | Region maps are items, and keys of the logic |
 | | [`early_map`](#region-maps) | `gentle` | One map among the Great Plateau's first checks |
@@ -142,6 +159,21 @@ nothing. Three levels, as the options' presets set them:
   one.
 
 Buying one checks its location ([what you see](ingame_en.md#shops-and-stalls)).
+
+### Chests and bosses
+
+Each option draws that many locations at random among its own; the seed's are listed in the tracker.
+
+- `shrine_chests`: chests inside the 120 shrines (the 12 holding a shrine's small key are left out). A drawn chest
+  no longer holds its own treasure: it gives a green rupee, and opening it checks its location. Its logic is its
+  shrine's.
+- `field_chests`: chests of the Great Plateau and of Hyrule's field. They keep their own treasure. A buried chest
+  asks for Magnesis in the logic, one on Death Mountain's burning slopes the Flamebreaker Set.
+- `boss_kills`: the first defeat of a Hinox (Stalnoxes too), a Stone Talus (Igneo, Frost and the others too) or a
+  Molduga. A Blood Moon brings it back; its location stays checked.
+
+A location is named after its map cell, the game's map split in squares A to J from west to east and 1 to 8 from
+north to south: "Chest F-4 #3", "Black Hinox E-2 #1", or after its shrine: "Oman Au Shrine Chest 1".
 
 ### Weapon order
 
@@ -238,6 +270,9 @@ then spent. It waits for a safe moment: not during a cutscene, a menu or a loadi
 | Yiga Ambush | Two Yiga Footsoldiers and a Yiga archer appear around Link and attack. |
 | Paranoia | A Guardian takes aim at Link from behind, beeping, and vanishes just before it fires. |
 | Downpour | Rain for 2 minutes (the walls get slippery), or a thunderstorm for 90 s (its lightning strikes metal). Nothing in a shrine; a death or a reload ends it. |
+| Freeze | An ice field bursts at Link's feet and freezes him. (Not yet seen in play.) |
+| Lightning Strike | An electric field bursts at Link's feet and shocks him: he drops his weapon and shield. (Not yet seen in play.) |
+| Fire | A fire field bursts at Link's feet and sets him on fire, and the grass around him. (Not yet seen in play.) |
 
 A trap given back after loading an older save is spent without effect: a trap is not suffered twice.
 

@@ -60,17 +60,29 @@ WEAPON_LEVELS = {name: level for _weight, level, names in WEAPONS.values() for n
 # its weight, then one of its items by theirs (smaller sums of rupees more often,
 # a weapon by its group's weight).
 FILLER = {
-    "arrows": (30, {"10 Arrows": 1, "10 Fire Arrows": 1, "10 Ice Arrows": 1, "10 Shock Arrows": 1,
-                    "10 Bomb Arrows": 1, "5 Ancient Arrows": 1}),
-    "elixirs": (25, {name: 1 for name in (
+    "arrows": (25, {"10 Arrows": 1, "10 Fire Arrows": 1, "10 Ice Arrows": 1, "10 Shock Arrows": 1,
+                    "10 Bomb Arrows": 1, "5 Ancient Arrows": 1, "20 Bomb Arrows": 0.5}),
+    "elixirs": (20, {name: 1 for name in (
         "Hasty Elixir", "Electro Elixir", "Tough Elixir", "Hearty Elixir", "Fireproof Elixir",
         "Chilly Elixir", "Spicy Elixir", "Mighty Elixir", "Sneaky Elixir", "Energizing Elixir",
         "Enduring Elixir", "Fairy Tonic")}),
-    "weapons": (25, {name: weight / len(names) for weight, _level, names in WEAPONS.values()
+    "weapons": (22, {name: weight / len(names) for weight, _level, names in WEAPONS.values()
                      for name in names}),
-    "gems": (10, {name: 1 for name in ("Diamond", "Ruby", "Sapphire", "Topaz", "Opal", "Amber")}),
-    "rupees": (10, {"Blue Rupee": 30, "Red Rupee": 35, "Purple Rupee": 20, "Silver Rupee": 10,
+    "gems": (8, {name: 1 for name in ("Diamond", "Ruby", "Sapphire", "Topaz", "Opal", "Amber")}),
+    "rupees": (9, {"Blue Rupee": 30, "Red Rupee": 35, "Purple Rupee": 20, "Silver Rupee": 10,
                     "Gold Rupee": 5}),
+    # What upgrades armor at the Great Fairies: the dragons' parts, the Lynels', the
+    # Guardians' and the Luminous Stone.
+    "materials": (9, {name: 1 for name in (
+        "Farosh's Scale", "Farosh's Claw", "Shard of Farosh's Fang", "Shard of Farosh's Horn",
+        "Dinraal's Scale", "Dinraal's Claw", "Shard of Dinraal's Fang", "Shard of Dinraal's Horn",
+        "Naydra's Scale", "Naydra's Claw", "Shard of Naydra's Fang", "Shard of Naydra's Horn",
+        "Lynel Horn", "Lynel Hoof", "Lynel Guts", "Ancient Screw", "Ancient Spring", "Ancient Gear",
+        "Ancient Shaft", "Luminous Stone")}),
+    # Hearty and mighty food, raw or cooked.
+    "food": (7, {name: 1 for name in (
+        "Hearty Durian", "Big Hearty Truffle", "Mighty Bananas", "Silent Princess",
+        "Hearty Simmered Fruit", "Hearty Mushroom Skewer", "Mighty Simmered Fruit")}),
 }
 PLATEAU_RUNES = {name: row["runes"] for name, row in LOGIC.items()
                  if name in ("Oman Au Shrine", "Ja Baij Shrine", "Owa Daim Shrine", "Keh Namut Shrine")}

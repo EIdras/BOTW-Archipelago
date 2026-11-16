@@ -71,7 +71,13 @@ class BotwWorld(World):
         "Stalls": {r["name"] for r in LOCATIONS if "Stall" in categories(r)},
         "Rune Upgrades": {r["name"] for r in LOCATIONS if "Rune Upgrade" in categories(r)},
         "Champions' Ballad": {r["name"] for r in LOCATIONS if "Champions' Ballad" in categories(r)},
+        "Shrine Chests": {r["name"] for r in LOCATIONS if "Shrine Chest" in categories(r)},
+        "Field Chests": {r["name"] for r in LOCATIONS if "Chest" in categories(r)},
+        "Bosses": {r["name"] for r in LOCATIONS if "Boss" in categories(r)},
     }
+    # The locations drawn by an option of their own, by category: {category: option}.
+    EXTRA_CATEGORIES = {"Shrine Chest": "shrine_chests", "Chest": "field_chests", "Boss": "boss_kills"}
+    EXTRA_IDS = frozenset(r["id"] for r in LOCATIONS if categories(r) & {"Shrine Chest", "Chest", "Boss"})
     # Shop prices drawn by the seed, in rupees: SHOP_PRICE_STEPS * 5.
     SHOP_PRICE_STEPS = (4, 40)
     shop_prices: dict[int, int]
@@ -81,11 +87,15 @@ class BotwWorld(World):
     # The options that shape the world, given back by the slot data.
     SLOT_OPTIONS = ("goal", "goal_shrines", "sanctum_divine_beasts", "sanctum_shrines",
                     "sanctum_master_sword", "sanctum_runes", "beedle_shop_items", "stall_items", "tower_maps",
-                    "region_lock", "map_travel_points", "bike_anywhere")
+                    "region_lock", "map_travel_points", "bike_anywhere", "shrine_chests", "field_chests",
+                    "boss_kills")
     # The region each map opens: {item: region}.
     MAP_REGIONS = {item: region for region, item in MAPS.items()}
     # The stall locations of the slot data, when Universal Tracker regenerates.
     passed_stalls: set[int] | None = None
+    # The chests and bosses of the slot data, when Universal Tracker regenerates.
+    passed_extra: set[int] | None = None
+    extra_locations: set[int]
 
     @staticmethod
     def interpret_slot_data(slot_data: dict[str, Any]) -> dict[str, Any]:
@@ -110,6 +120,8 @@ class BotwWorld(World):
         # drawn again, and may differ from the seed's.
         if "stall_locations" in passed:
             self.passed_stalls = set(passed["stall_locations"])
+        if "extra_locations" in passed:
+            self.passed_extra = set(passed["extra_locations"])
 
     def create_regions(self) -> None:
         menu = Region("Menu", self.player, self.multiworld)
@@ -128,7 +140,10 @@ class BotwWorld(World):
         # them, so it ends up with none, one or two.
         stalls = self.passed_stalls if self.passed_stalls is not None else set(self.random.sample(
             sorted(r["id"] for r in LOCATIONS if "Stall" in categories(r)), self.options.stall_items.value))
+        self.extra_locations = self.passed_extra if self.passed_extra is not None else self.draw_extra()
         for row in LOCATIONS:
+            if row["id"] in self.EXTRA_IDS and row["id"] not in self.extra_locations:
+                continue
             shop = categories(row) & {"Shop", "Stall"}
             if shop:
                 if ("Shop" in shop and row["slot"] > self.options.beedle_shop_items.value
@@ -150,6 +165,15 @@ class BotwWorld(World):
                 region.locations.append(event)
         goal = self.multiworld.get_location(GOAL_LOCATION, self.player)
         goal.place_locked_item(BotwItem("Victory", ItemClassification.progression, None, self.player))
+
+    def draw_extra(self) -> set[int]:
+        """The chests and bosses of the seed: as many of each category, at random,
+        as its option asks."""
+        drawn: set[int] = set()
+        for category, option in self.EXTRA_CATEGORIES.items():
+            ids = sorted(r["id"] for r in LOCATIONS if category in categories(r))
+            drawn.update(self.random.sample(ids, getattr(self.options, option).value))
+        return drawn
 
     def connect_neighbours(self, regions: dict[str, Region]) -> None:
         """region_lock: a region entered from each of its neighbours with its map,
@@ -265,13 +289,21 @@ class BotwWorld(World):
         return list(MAPS.values())
 
     def create_items(self) -> None:
-        pool = [self.create_item(row["name"]) for row in ITEMS if not row.get("trap")
+        pool = [self.create_item(row["name"]) for row in ITEMS if not row.get("trap") and not row.get("bonus")
                 and row["name"] not in MAPS.values() for _ in range(int(row.get("count", 1)))]
         pool += [self.create_item(name) for name in self.maps()]
         # Main.py applies start_inventory_from_pool centrally after create_items.
         capacity = len(self.multiworld.get_unfilled_locations(self.player))
         if len(pool) > capacity:
             raise ValueError("BOTW item pool exceeds available locations")
+        # The bonus items (armor, masks, horse gear: useful, never in the logic) take
+        # up to half the places left, in a random order, the other half staying
+        # filler and traps: all of them once the chests or bosses add enough
+        # locations, some of them otherwise.
+        bonus = [self.create_item(row["name"]) for row in ITEMS if row.get("bonus")
+                 for _ in range(int(row.get("count", 1)))]
+        self.random.shuffle(bonus)
+        pool += bonus[:(capacity - len(pool)) // 2]
         pool.extend(self.create_item(name) for name in self.trap_names(capacity - len(pool)))
         pool.extend(self.create_item(self.get_filler_item_name()) for _ in range(capacity - len(pool)))
         self.multiworld.itempool.extend(pool)
@@ -338,14 +370,20 @@ class BotwWorld(World):
         # 10: the tower maps, as items, which one of 9 cannot deliver nor tell from the towers.
         # 11: the Downpour, Yiga Ambush and Paranoia traps, which one of 10 cannot play.
         # 12: map_travel_points, the travel points a map opens, which one of 11 cannot open.
+        # 13: the shrine chests, field chests and bosses (world schema 6), the Progressive Horse,
+        #     the new armor and filler, and the Freeze, Lightning Strike and Fire traps, which a
+        #     client of 12 cannot track nor deliver.
         # stall_locations: the stalls drawn by the seed, for Universal Tracker.
+        # extra_locations: the chests and bosses drawn by the seed, for Universal Tracker and the
+        #     pack (botw_patch/shrine_chests.py replaces the drawn shrine chests' treasure).
         # region_borders: with region_lock, the borders the seed's logic crosses.
         # travel_shrines: with map_travel_points, the shrine each map opens and its terminal's flag.
-        return {"client_schema": 12, "world_schema": 5, "world_version": WORLD_VERSION,
+        return {"client_schema": 13, "world_schema": 6, "world_version": WORLD_VERSION,
                 "death_link": bool(self.options.death_link.value),
                 **self.options.as_dict(*self.SLOT_OPTIONS),
                 "stall_locations": sorted(location_id for location_id in self.shop_prices
                                           if location_id in self.STALL_IDS),
+                "extra_locations": sorted(self.extra_locations),
                 **({"region_borders": [list(pair) for pair in OPEN_BORDERS]} if self.options.region_lock else {}),
                 **({"travel_shrines": self.travel_shrines()} if self.options.map_travel_points else {})}
 
@@ -371,6 +409,8 @@ class BotwWorld(World):
         placements = []
         for row in LOCATIONS:
             if categories(row) & {"Shop", "Stall"} and row["id"] not in self.shop_prices:
+                continue
+            if row["id"] in self.EXTRA_IDS and row["id"] not in self.extra_locations:
                 continue
             loc = self.multiworld.get_location(row["name"], self.player)
             if loc.address is not None and loc.item and loc.item.code is not None:

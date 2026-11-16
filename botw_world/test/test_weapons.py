@@ -70,7 +70,8 @@ class TestTwoWorldsSmoothed(unittest.TestCase):
     ordered by the spheres of the whole multiworld."""
 
     def test_each_players_weapons_are_ordered(self) -> None:
-        multiworld = setup_multiworld([BotwWorld, BotwWorld], options=SHOPS)
+        # Field chests: room for the bonus items and enough weapons among the filler.
+        multiworld = setup_multiworld([BotwWorld, BotwWorld], options={**SHOPS, "field_chests": 60})
         distribute_items_restrictive(multiworld)
         call_all(multiworld, "post_fill")
         before = Counter((location.item.player, location.item.name)

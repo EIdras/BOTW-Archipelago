@@ -70,8 +70,10 @@ CLIENT_SCHEMA = 2
 # The client schemas of BOTW seeds this client plays: 4 added the Gerudo Set, 5 the
 # goal and the sanctum's requirements, 6 the new filler, 7 the weapons, 8 the travel items,
 # 9 Epona and the Master Cycle Zero selected only when no rune is, 10 the tower maps,
-# 11 the Downpour, Yiga Ambush and Paranoia traps, 12 the travel points a map opens.
-BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
+# 11 the Downpour, Yiga Ambush and Paranoia traps, 12 the travel points a map opens,
+# 13 the chests and bosses, the Progressive Horse, the new armor and filler, and the
+# Freeze, Lightning Strike and Fire traps.
+BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)
 # The mutations that present the item themselves: no AP window before them.
 VANILLA_WINDOWS = ("get_demo_actor", "champion_actor", "rune_download", "rune_power_up", "trap",
                    "native_trap",
@@ -1790,8 +1792,16 @@ class BotwClientRuntime:
             self._native_trap_task = asyncio.create_task(
                 asyncio.to_thread(play, self._swarm_should_stop, self._native_trap_strike.set),
                 name="Paranoia")
-        elif effect == "yiga_ambush":
-            play = getattr(backend, "yiga_ambush", None)
+        elif effect in ("yiga_ambush", "freeze", "lightning", "fire"):
+            # Played at once, as soon as Link is free (botw_client/yiga_ambush.py,
+            # elemental_strike.py).
+            from .elemental_strike import NAMES
+            label = NAMES.get(effect, "Yiga Ambush")
+            if effect == "yiga_ambush":
+                play = getattr(backend, "yiga_ambush", None)
+            else:
+                strike = getattr(backend, "elemental_strike", None)
+                play = (lambda: strike(effect)) if strike is not None else None
             result = await asyncio.to_thread(play) if play is not None else None
             if isinstance(result, str):
                 # Link out of the world, an entry running, the invoker busy:
@@ -1800,9 +1810,9 @@ class BotwClientRuntime:
                     self._native_trap_since = time.monotonic()
                 if time.monotonic() - self._native_trap_since < NATIVE_TRAP_PATIENCE_SECONDS:
                     return
-                self.log(f"Yiga Ambush given up: {result}")
+                self.log(f"{label} given up: {result}")
             elif result is not None:
-                self.log(f"Yiga Ambush played: {result}")
+                self.log(f"{label} played: {result}")
             self._native_traps.pop(0)
             self._native_trap_since = None
             self._native_trap_struck(self._native_trap_notes.pop(0) if self._native_trap_notes else [])
