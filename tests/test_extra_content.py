@@ -121,6 +121,9 @@ class ShrineChestTests(unittest.TestCase):
         for flags, tier in ((2, "Seems useful."), (0, "Seems like junk."), (4, "Seems like junk."),
                             (3, "Seems important.")):
             self.assertTrue(shrine_chests.texts({**placement, "flags": flags})[1].replace("\n", " ").endswith(tier))
+        # The icon in colour for what seems important or useful, grey for junk and traps.
+        self.assertEqual([shrine_chests.bright({"flags": f}) for f in (1, 2, 3, 0, 4, 5)],
+                         [True, True, True, False, False, False])
         long = {**placement, "item_name": "Progressive Something Very Long Indeed " * 3,
                 "recipient_name": "AVeryLongPlayerName1234"}
         name, description = shrine_chests.texts(long)

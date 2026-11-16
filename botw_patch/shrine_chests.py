@@ -38,11 +38,10 @@ ACTOR_INFO = "Actor/ActorInfo.product.sbyml"
 TABLE = "System/Resource/ResourceSizeTable.product.srsizetable"
 MSBT = "ActorType/Item.msbt"
 NAME_LIMIT = 30
-# PutRupee's parameters, and the icon its clones name (UI/StockItem/Item_AP.sbitemico,
-# in every pack: tools/build_resource_base_from_source.py).
-PARAMS = "Rupee_Green"
-ICON = "Item_AP"
-SOURCE_FILES = ("botw_patch/shrine_chests.py", "botw_world/data/locations.json")
+# The AP logo the rupees' icons are made of, and its side in pixels.
+ICON_SOURCE = ROOT / "assets/wiiu/Item_AP.sbitemico"
+ICON_SIDE = 512
+SOURCE_FILES = ("botw_patch/shrine_chests.py", "botw_world/data/locations.json", "assets/wiiu/Item_AP.sbitemico")
 
 
 def actor(row: dict) -> str:
@@ -188,26 +187,44 @@ def items(status: dict) -> list:
     return out
 
 
-def with_icon(pack: bytes, actor: str) -> bytes:
-    """The cloned rupee's pack with parameters of its own (PutRupee's, Rupee_Green), whose
-    Item.UseIconActorName is ICON: the icon its get window shows, the one AP logo of every
-    pack, by reference (as the Gerudo jewelry names Obj_Head_024...), not a copy a chest.
-    Seen in play: a rupee of its own, named otherwise, showed no icon."""
-    archive = oead.Sarc(unpack(pack))
-    writer = oead.SarcWriter.from_sarc(archive)
-    link_name = f"Actor/ActorLink/{actor}.bxml"
-    link = oead.aamp.ParameterIO.from_binary(bytes(archive.get_file(link_name).data))
-    target = link.objects["LinkTarget"].params
-    if str(target["GParamUser"].v) != PARAMS:
-        raise ValueError(f"{actor}: unexpected parameters {target['GParamUser'].v}")
-    target["GParamUser"] = oead.aamp.Parameter(actor)
-    old = f"Actor/GeneralParamList/{PARAMS}.bgparamlist"
-    params = oead.aamp.ParameterIO.from_binary(bytes(archive.get_file(old).data))
-    params.objects["Item"].params["UseIconActorName"] = oead.aamp.Parameter(oead.FixedSafeString64(ICON))
-    del writer.files[old]
-    writer.files[f"Actor/GeneralParamList/{actor}.bgparamlist"] = bytes(params.to_binary())
-    writer.files[link_name] = bytes(link.to_binary())
-    return bytes(oead.yaz0.compress(bytes(writer.write()[1])))
+def bright(placement: dict) -> bool:
+    """The tier's icon: in colour for an item that seems important or useful, grey for
+    one that seems like junk (filler, and a trap, which passes for junk)."""
+    from botw_patch.shops import PROGRESSION, TRAP, USEFUL
+    flags = int(placement.get("flags", 0))
+    return not flags & TRAP and bool(flags & (PROGRESSION | USEFUL))
+
+
+def icons(game) -> dict[bool, bytes]:
+    """{bright: .sbitemico} of the rupees' get window, which loads
+    UI/StockItem/<actor>.sbitemico by the actor's own name (seen in play: it ignores
+    Item.UseIconActorName, which only the inventory reads). The game's own green rupee
+    icon (96 px RGBA, about 7 KB) as the template, the project's AP logo shrunk into it;
+    grey as the HUD's offline logo (botw_patch/hud_layout.grey)."""
+    import numpy as np
+    from botw_patch.hud_layout import grey, logo_rgba
+    from tools.bitemico import Icon
+    template = game.read(f"UI/StockItem/{MODEL}.sbitemico")
+    width, height, rgba = logo_rgba(ICON_SOURCE.read_bytes())
+    out = {}
+    for lit in (True, False):
+        icon = Icon(unpack(template))
+        size = icon.width
+        if (icon.height, width, height) != (size, ICON_SIDE, ICON_SIDE) or (ICON_SIDE * 3) % size:
+            raise ValueError(f"unexpected icon sizes: {icon.width}x{icon.height}, logo {width}x{height}")
+        # Alpha weighted area average: the logo three times larger (nearest), then
+        # blocks of (3 * 512 / size) pixels.
+        image = np.frombuffer(rgba, np.uint8).reshape(height, width, 4).astype(np.float64)
+        image = image.repeat(3, 0).repeat(3, 1)
+        step = image.shape[0] // size
+        blocks = image.reshape(size, step, size, step, 4)
+        alpha = blocks[..., 3:4]
+        colour = (blocks[..., :3] * alpha).sum((1, 3)) / np.maximum(alpha.sum((1, 3)), 1)
+        small = np.concatenate([colour, alpha.mean((1, 3))], -1).round().clip(0, 255).astype(np.uint8)
+        pixels = small.tobytes()
+        icon.write_rgba(pixels if lit else grey(pixels))
+        out[lit] = bytes(oead.yaz0.compress(bytes(icon.raw)))
+    return out
 
 
 def add_rupees(files: dict[str, bytes], game, status: dict) -> tuple[dict[str, bytes], list[dict]]:
@@ -222,13 +239,16 @@ def add_rupees(files: dict[str, bytes], game, status: dict) -> tuple[dict[str, b
     files[ACTOR_INFO], detail = add_declarations(info, rupees)
     table = rstb.ResourceSizeTable(unpack(files[TABLE]), True)
     model = game.read(f"Actor/Pack/{MODEL}.sbactorpack")
+    placements = {row["location_id"]: row for row in status.get("placements", [])}
+    lit = {actor(row): bright(placements[row["id"]]) for row in drawn(status)}
+    variants = icons(game)
+    icon_size = table.get_size(f"UI/StockItem/{MODEL}.bitemico") or len(unpack(variants[True])) + 8192
     for rupee in rupees:
-        cloned, _ = clone_actor_pack(model, MODEL, rupee.actor)
-        files[f"Actor/Pack/{rupee.actor}.sbactorpack"] = with_icon(cloned, rupee.actor)
+        files[f"Actor/Pack/{rupee.actor}.sbactorpack"], _ = clone_actor_pack(model, MODEL, rupee.actor)
         for kind, ext in (("Actor/Pack", "bactorpack"), ("Actor/ActorLink", "bxml")):
             table.set_size(f"{kind}/{rupee.actor}.{ext}", table.get_size(f"{kind}/{MODEL}.{ext}"))
-        table.set_size(f"Actor/GeneralParamList/{rupee.actor}.bgparamlist",
-                       table.get_size(f"Actor/GeneralParamList/{PARAMS}.bgparamlist"))
+        files[f"UI/StockItem/{rupee.actor}.sbitemico"] = variants[lit[rupee.actor]]
+        table.set_size(f"UI/StockItem/{rupee.actor}.bitemico", icon_size)
     stream = io.BytesIO()
     table.write(stream, True)
     files[TABLE] = bytes(oead.yaz0.compress(stream.getvalue()))
