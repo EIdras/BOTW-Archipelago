@@ -367,6 +367,7 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.flag = True
         self.result = "survived"                    # Mipha saved Link, flag left set
         await self.kill()
+        await self.tick()                           # alive, the flag set: it landed
         with patch.object(runtime_module, "DEATHLINK_FLAG_SECONDS", 0.0), \
                 patch.object(runtime_module, "DEATHLINK_ECHO_SECONDS", 0.0):
             self.game.dead = True
@@ -387,6 +388,41 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.game.dead = False
         await self.tick()
         with patch.object(runtime_module, "DEATHLINK_ECHO_SECONDS", 0.0):
+            self.game.dead = True
+            await self.tick()
+        self.ap.send_death.assert_awaited_once()
+
+    async def test_a_request_run_late_is_ours_whatever_the_time_and_flag(self):
+        self.result = "taken"                       # accepted, run once the game is free
+        await self.kill()
+        await self.tick(2)                          # still alive: in flight
+        with patch.object(runtime_module, "DEATHLINK_ECHO_SECONDS", 0.0):
+            self.game.dead = True                   # it lands, its flag read as unset
+            await self.tick()
+        self.ap.send_death.assert_not_awaited()
+        self.game.dead = False
+        await self.tick()
+        with patch.object(runtime_module, "DEATHLINK_ECHO_SECONDS", 0.0):
+            self.game.dead = True                   # the next death is Link's own
+            await self.tick()
+        self.ap.send_death.assert_awaited_once()
+
+    async def test_a_survived_request_leaves_the_next_death_to_link(self):
+        self.result = "taken"
+        await self.kill()
+        self.flag = True                            # the entry ran: alive, flag set
+        await self.tick()
+        self.flag = False                           # then cleared, as it should be
+        with patch.object(runtime_module, "DEATHLINK_ECHO_SECONDS", 0.0):
+            self.game.dead = True
+            await self.tick()
+        self.ap.send_death.assert_awaited_once()
+
+    async def test_a_request_never_run_stops_owning_deaths(self):
+        self.result = "taken"
+        await self.kill()
+        with patch.object(runtime_module, "DEATHLINK_ECHO_SECONDS", 0.0), \
+                patch.object(runtime_module, "DEATHLINK_INFLIGHT_SECONDS", 0.0):
             self.game.dead = True
             await self.tick()
         self.ap.send_death.assert_awaited_once()

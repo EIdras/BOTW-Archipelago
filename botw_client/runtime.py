@@ -45,9 +45,16 @@ GAME_START_PATIENCE_SECONDS = 300.0
 # falls back on the time alone (measured: Link dies in the frame the entry
 # runs). A death still waiting after DEATHLINK_EXPIRY_SECONDS (Link busy in an
 # event...) is dropped.
+# A request the game took may run only once the game is free (seen in a room:
+# Link died 5 s after the request, its flag read as unset, and the death was
+# sent back). So the request stays in flight until it lands: Link's next death
+# is its, whenever it comes, unless Link was seen alive with the flag set (the
+# entry ran and he survived it). DEATHLINK_INFLIGHT_SECONDS bounds a request
+# the game took but never ran.
 DEATHLINK_LEAD_SECONDS = 3.0
 DEATHLINK_ECHO_SECONDS = 5.0
 DEATHLINK_FLAG_SECONDS = 60.0
+DEATHLINK_INFLIGHT_SECONDS = 120.0
 DEATHLINK_EXPIRY_SECONDS = 120.0
 # A Yiga Ambush committed while Link was leaving the world (a menu opened in
 # between) waits for him; after this long, it is given up.
@@ -319,6 +326,7 @@ class BotwClientRuntime:
         self._deathlink_retry_after = 0.0
         self._deathlink_announced_at = None
         self._death_requested_at = None
+        self._death_request_landed = False
         # Native traps (botw_client/cucco_swarm.py, yiga_ambush.py, downpour.py):
         # the committed ones waiting to be played, since when the first one
         # waits for Link, and the swarm playing.
@@ -1614,6 +1622,10 @@ class BotwClientRuntime:
             return
         if not dead:
             self._alive_seen = True
+            if (self._death_requested_at is not None and not self._death_request_landed
+                    and await self._death_link_flag()):
+                # The entry ran and Link survived it (Mipha's Grace, a fairy).
+                self._death_request_landed = True
         if (self.ap.death_link_enabled and self._alive_seen and dead
                 and self._last_dead is False):
             if await self._killed_by_death_link():
@@ -1668,6 +1680,7 @@ class BotwClientRuntime:
                      "rebuild it with tools/play_seed.py")
             return
         self._death_requested_at = time.monotonic()
+        self._death_request_landed = False
         self.log(f"DeathLink applied: {event['source']}")
 
     def _pickup_actor(self, name: str) -> str | None:
@@ -1854,22 +1867,33 @@ class BotwClientRuntime:
     async def _killed_by_death_link(self) -> bool:
         """Did the DeathLink we requested cause this death? A death within
         DEATHLINK_ECHO_SECONDS of the request is its; later, its flag says so.
-        A death so recognised uses the request up.
+        A request still in flight (not seen to land) owns Link's next death,
+        whatever the flag says. A death so recognised uses the request up.
 
         Seen in a room: a death in the second the DeathLink applied was sent
-        back, its flag read as not set; the time alone keeps it home."""
+        back, its flag read as not set; the time alone keeps it home. Seen
+        later: a request run only once the game was free killed Link 5 s
+        after it, past that time, and was sent back; hence the flight."""
         if self._death_requested_at is None:
             return False
         since = time.monotonic() - self._death_requested_at
-        ask = getattr(getattr(self.deliveries, "backend", None), "killed_by_death_link", None)
-        try:
-            flag = await asyncio.to_thread(ask) if ask is not None else None
-        except Exception:  # noqa: BLE001 - unreadable: the time decides
-            flag = None
-        ours = since < DEATHLINK_ECHO_SECONDS or bool(flag and since < DEATHLINK_FLAG_SECONDS)
+        flag = await self._death_link_flag()
+        in_flight = not self._death_request_landed and since < DEATHLINK_INFLIGHT_SECONDS
+        ours = (since < DEATHLINK_ECHO_SECONDS or in_flight
+                or bool(flag and since < DEATHLINK_FLAG_SECONDS))
         if ours:
             self._death_requested_at = None
+            self._death_request_landed = False
         return ours
+
+    async def _death_link_flag(self) -> bool | None:
+        """The DeathLink entry's flag (set on a death it caused), or None when
+        the pack has none or it cannot be read."""
+        ask = getattr(getattr(self.deliveries, "backend", None), "killed_by_death_link", None)
+        try:
+            return await asyncio.to_thread(ask) if ask is not None else None
+        except Exception:  # noqa: BLE001 - unreadable: the time decides
+            return None
 
     async def _death_cause(self) -> str:
         """The cause sent with Link's death: what killed him, when the game says."""
