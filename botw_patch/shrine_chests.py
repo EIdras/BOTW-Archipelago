@@ -5,13 +5,19 @@ client sends it once the game sets its saved flag, CDungeon_<actor>_<HashId>, as
 the chest opens. Its own treasure would then come on top of the Archipelago item:
 in the shrine's map unit (Pack/DungeonNNN.pack, Map/CDungeon/DungeonNNN/
 DungeonNNN_Static.smubin), the chest's DropActor, what it gives, becomes a green
-rupee (PutRupee). Read in the game's files: every shrine chest names its
+rupee of its own. Read in the game's files: every shrine chest names its
 treasure there, in DropActor (174 of them, the 12 holding a small key apart).
 
 A green rupee rather than an Archipelago item of its own: an item made for AP
 goes into the pouch, and only a flow can take it out again (the shops' purchase
 record, botw_patch/shop_items.py), while the chest's opening is the game's own,
-with no flow of ours. A rupee needs no cleaning. Not yet seen in play.
+with no flow of ours. A rupee goes to the purse: nothing to clean.
+
+Each drawn chest has its own rupee, PutRupee_AP<location id>: PutRupee's actor
+pack and ActorInfo entry cloned (its model, parameters and behaviour shared; the
+name keeps the PutRupee prefix, should the game tell rupees by name), named in
+ActorType/Item.msbt after what the chest holds: "<slot>'s <item>", the same
+English text in every language, as the shop items. Not yet seen in play.
 
 Only for seeds that draw shrine chests, so that the others keep their identity.
 """
@@ -27,8 +33,17 @@ from botw_patch.resources import unpack
 ROOT = Path(__file__).resolve().parents[1]
 LOCATIONS = ROOT / "botw_world/data/locations.json"
 CATEGORY = "Shrine Chest"
-REPLACEMENT = "PutRupee"
+MODEL = "PutRupee"
+ACTOR_INFO = "Actor/ActorInfo.product.sbyml"
+TABLE = "System/Resource/ResourceSizeTable.product.srsizetable"
+MSBT = "ActorType/Item.msbt"
+NAME_LIMIT = 30
 SOURCE_FILES = ("botw_patch/shrine_chests.py", "botw_world/data/locations.json")
+
+
+def actor(row: dict) -> str:
+    """The green rupee of a drawn chest."""
+    return f"{MODEL}_AP{row['id']:04d}"
 
 
 def chests() -> dict[int, dict]:
@@ -101,8 +116,8 @@ def patch_unit(raw: bytes, rows: list[dict]) -> tuple[bytes, list[dict]]:
         params = obj["!Parameters"]
         if str(params["DropActor"]) != treasure(row):
             raise ValueError(f"{row['name']}: holds {params['DropActor']}, not {treasure(row)}")
-        params["DropActor"] = REPLACEMENT
-        edits.append({"chest": row["name"], "hash_id": hash_id(row), "from": treasure(row), "to": REPLACEMENT})
+        params["DropActor"] = actor(row)
+        edits.append({"chest": row["name"], "hash_id": hash_id(row), "from": treasure(row), "to": actor(row)})
     out = bytes(oead.byml.to_binary(doc, big_endian=True, version=2))
     return (bytes(oead.yaz0.compress(out)) if raw[:4] == b"Yaz0" else out), edits
 
@@ -114,3 +129,74 @@ def stages(status: dict | None) -> list[tuple[str, dict]]:
         by_shrine.setdefault(dungeon(row), []).append(row)
     return [(pack(name), {member(name): (lambda raw, rows=rows: patch_unit(raw, rows))})
             for name, rows in sorted(by_shrine.items())]
+
+
+def _short(text: str, limit: int) -> str:
+    return text if len(text) <= limit else text[:limit - 3].rstrip() + "..."
+
+
+def texts(placement: dict) -> tuple[str, str]:
+    """(name, description) of a chest's rupee: "<slot>'s <item>", then "You got
+    <slot>'s <item>!" with the item's game."""
+    from botw_patch.shop_items import wrap_description
+    player, item, game = placement["recipient_name"], placement["item_name"], placement["recipient_game"]
+    name = _short(f"{player}'s {item}", NAME_LIMIT)
+    for item_limit, player_limit, game_limit in ((80, 32, 40), (40, 16, 24), (24, 12, 16)):
+        body = (f"You got {_short(player, player_limit)}'s {_short(item, item_limit)}! "
+                f"An Archipelago item ({_short(game, game_limit)}).")
+        try:
+            return name, wrap_description(body)
+        except ValueError:
+            continue
+    raise ValueError(f"description does not fit: {placement['location_name']}")
+
+
+def items(status: dict) -> list:
+    """The ApShopItem of each drawn chest's rupee (no price: not sold)."""
+    from botw_patch.shop_items import ApShopItem
+    placements = {row["location_id"]: row for row in status.get("placements", [])}
+    out = []
+    for row in drawn(status):
+        placement = placements.get(row["id"])
+        if placement is None:
+            raise ValueError(f"shrine chest without an item: {row['name']}")
+        out.append(ApShopItem(actor(row), None, *texts(placement), model_actor=MODEL))
+    return out
+
+
+def add_rupees(files: dict[str, bytes], game, status: dict) -> tuple[dict[str, bytes], list[dict]]:
+    """The rupees' ActorInfo entries and actor packs, with their size table entries
+    (PutRupee's), into `files`, which holds the size table."""
+    import io
+    import rstb
+    from botw_patch.shop_items import add_declarations, clone_actor_pack
+    files = dict(files)
+    rupees = items(status)
+    info = files[ACTOR_INFO] if ACTOR_INFO in files else game.read(ACTOR_INFO)
+    files[ACTOR_INFO], detail = add_declarations(info, rupees)
+    table = rstb.ResourceSizeTable(unpack(files[TABLE]), True)
+    model = game.read(f"Actor/Pack/{MODEL}.sbactorpack")
+    for rupee in rupees:
+        files[f"Actor/Pack/{rupee.actor}.sbactorpack"], _ = clone_actor_pack(model, MODEL, rupee.actor)
+        for kind, ext in (("Actor/Pack", "bactorpack"), ("Actor/ActorLink", "bxml")):
+            table.set_size(f"{kind}/{rupee.actor}.{ext}", table.get_size(f"{kind}/{MODEL}.{ext}"))
+    stream = io.BytesIO()
+    table.write(stream, True)
+    files[TABLE] = bytes(oead.yaz0.compress(stream.getvalue()))
+    return files, [{"resource": ACTOR_INFO, "declarations": detail},
+                   {"resource": "actors", "actors": [rupee.actor for rupee in rupees], "cloned_from": MODEL}]
+
+
+def messages(status: dict, language: str) -> dict:
+    """{member: transform} of Bootup_<language>.pack: the rupees' names."""
+    from botw_patch.shop_items import add_item_texts
+    rupees = items(status)
+
+    def transform(raw):
+        archive = oead.Sarc(unpack(raw))
+        writer = oead.SarcWriter.from_sarc(archive)
+        new, detail = add_item_texts(bytes(archive.get_file(MSBT).data), rupees)
+        writer.files[MSBT] = new
+        packed = bytes(writer.write()[1])
+        return (bytes(oead.yaz0.compress(packed)) if raw[:4] == b"Yaz0" else packed), detail
+    return {f"Message/Msg_{language}.product.ssarc": transform}

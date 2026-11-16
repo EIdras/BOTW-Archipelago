@@ -101,15 +101,36 @@ class ShrineChestTests(unittest.TestCase):
         return bytes(oead.yaz0.compress(bytes(oead.byml.to_binary(doc, big_endian=True, version=2))))
 
     def row(self, drop="Weapon_Sword_001", hash_id=1234):
-        return {"name": "Oman Au Shrine Chest 1", "notes": f"Dungeon004, {drop}",
+        return {"id": 231, "name": "Oman Au Shrine Chest 1", "notes": f"Dungeon004, {drop}",
                 "gamedata_flag": f"CDungeon_TBox_Dungeon_Stone_{hash_id}"}
 
-    def test_the_drawn_chest_gives_a_green_rupee(self):
+    def test_the_drawn_chest_gives_a_green_rupee_of_its_own(self):
         out, edits = shrine_chests.patch_unit(self.unit(), [self.row()])
         self.assertEqual(out[:4], b"Yaz0")
         obj = oead.byml.from_binary(oead.yaz0.decompress(out))["Objs"][0]
-        self.assertEqual(str(obj["!Parameters"]["DropActor"]), "PutRupee")
+        self.assertEqual(str(obj["!Parameters"]["DropActor"]), "PutRupee_AP0231")
         self.assertEqual(edits[0]["from"], "Weapon_Sword_001")
+
+    def test_the_rupee_is_named_after_the_chests_item(self):
+        placement = {"location_id": 231, "location_name": "Oman Au Shrine Chest 1", "item_name": "Hookshot",
+                     "recipient_name": "Alice", "recipient_game": "A Link to the Past"}
+        name, description = shrine_chests.texts(placement)
+        self.assertEqual(name, "Alice's Hookshot")
+        self.assertEqual(description.replace("\n", " "),
+                         "You got Alice's Hookshot! An Archipelago item (A Link to the Past).")
+        long = {**placement, "item_name": "Progressive Something Very Long Indeed " * 3,
+                "recipient_name": "AVeryLongPlayerName1234"}
+        name, description = shrine_chests.texts(long)
+        self.assertLessEqual(len(name), shrine_chests.NAME_LIMIT)
+        self.assertLessEqual(len(description.split("\n")), 4)
+        chest = next(iter(shrine_chests.chests().values()))
+        status = {"slot_data": {"extra_locations": [chest["id"]]},
+                  "placements": [{**placement, "location_id": chest["id"]}]}
+        (rupee,) = shrine_chests.items(status)
+        self.assertEqual((rupee.actor, rupee.model_actor, rupee.price),
+                         (f"PutRupee_AP{chest['id']:04d}", "PutRupee", None))
+        with self.assertRaises(ValueError):
+            shrine_chests.items({**status, "placements": []})
 
     def test_a_chest_holding_something_else_is_refused(self):
         with self.assertRaises(ValueError):

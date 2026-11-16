@@ -338,7 +338,15 @@ def _generate(game: GameFiles, binding_token: int, shops: list | None, status: d
         changes.extend(edits)
     if shrine_chests.enabled(status):
         stage()
-        # The drawn shrine chests give a green rupee (botw_patch/shrine_chests.py).
+        # The drawn shrine chests give a green rupee of their own, named after their
+        # item (botw_patch/shrine_chests.py).
+        files, edits = shrine_chests.add_rupees(files, game, status)
+        changes.extend(edits)
+        for language in regions.of_content(game.content).languages:
+            name = f"Pack/Bootup_{language}.pack"
+            files[name] = files[name] if name in files else game.read(name)
+            files, edits = patch_stage(files, name, shrine_chests.messages(status, language))
+            changes.extend(edits)
         for name, transforms in shrine_chests.stages(status):
             files[name] = files[name] if name in files else shrine_chests.read_pack(game, name)
             files, edits = patch_stage(files, name, transforms)

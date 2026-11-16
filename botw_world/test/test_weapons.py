@@ -9,8 +9,9 @@ from . import BotwTestBase
 from .. import BotwWorld
 from ..catalog import WEAPON_LEVELS
 
-# Every shop and stall location: about 26 weapons drawn.
-SHOPS = {"beedle_shop_items": 2, "stall_items": 28}
+# Every shop and stall location, and field chests: room for the bonus items and
+# enough weapons drawn among the filler, whatever the seed.
+SHOPS = {"beedle_shop_items": 2, "stall_items": 28, "field_chests": 60}
 
 
 def fill(multiworld) -> None:
@@ -70,8 +71,7 @@ class TestTwoWorldsSmoothed(unittest.TestCase):
     ordered by the spheres of the whole multiworld."""
 
     def test_each_players_weapons_are_ordered(self) -> None:
-        # Field chests: room for the bonus items and enough weapons among the filler.
-        multiworld = setup_multiworld([BotwWorld, BotwWorld], options={**SHOPS, "field_chests": 60})
+        multiworld = setup_multiworld([BotwWorld, BotwWorld], options=SHOPS)
         distribute_items_restrictive(multiworld)
         call_all(multiworld, "post_fill")
         before = Counter((location.item.player, location.item.name)
