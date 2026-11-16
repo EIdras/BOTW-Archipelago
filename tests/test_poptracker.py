@@ -47,6 +47,26 @@ class PackTests(unittest.TestCase):
         self.assertEqual((min(xs), min(ys)), (poptracker.MARGIN, poptracker.MARGIN))
         self.assertEqual((width - max(xs), height - max(ys)), (poptracker.MARGIN, poptracker.MARGIN))
 
+    def test_chests_and_bosses_are_stacked_and_shown_once_drawn(self):
+        places = {place["name"]: place for place in self.json("locations/locations.json")}
+        kinds = {row["name"]: row["category"] for row in self.cat.LOCATIONS}
+        # A shrine's chests are sections of the shrine's square, which stays shown.
+        shrine = places["Oman Au Shrine"]
+        self.assertNotIn("visibility_rules", shrine)
+        chests = [s for s in shrine["sections"] if kinds[s["name"]] == "Shrine Chest"]
+        self.assertTrue(chests)
+        self.assertTrue(all(s["visibility_rules"][0][0].startswith("$botw_drawn|") for s in chests))
+        # Field chests and bosses: one square a map cell for each kind.
+        grouped = [p for p in places.values() if p["name"].startswith(("Chests ", "Bosses "))]
+        self.assertLess(len(grouped), 160)
+        self.assertEqual(sum(len(p["sections"]) for p in grouped), 1312 + 86)
+        for place in grouped:
+            marker = place["map_locations"][0]
+            self.assertEqual((marker["shape"], marker["size"]),
+                             ("rect", 20) if place["name"].startswith("Chests ") else ("diamond", 22))
+            self.assertEqual(len(place["visibility_rules"]), len(place["sections"]))
+        self.assertIn("function botw_drawn(id)", self.pack.read("scripts/logic.lua").decode())
+
     def test_each_region_has_its_marker_on_the_map_checked_once_open(self):
         markers = {place["name"].removesuffix(" Region"): place for place in self.json("locations/regions.json")}
         if poptracker.region_lookup() is None:

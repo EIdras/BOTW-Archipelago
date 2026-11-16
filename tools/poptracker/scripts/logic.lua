@@ -171,6 +171,12 @@ function botw_in_seed(id)
     return SEED_LOCATIONS == nil or SEED_LOCATIONS[tonumber(id)] == true
 end
 
+-- The locations the seed's options draw (shops, stalls, chests, bosses): shown
+-- once connected, when the seed has them; none before.
+function botw_drawn(id)
+    return SEED_LOCATIONS ~= nil and SEED_LOCATIONS[tonumber(id)] == true
+end
+
 -- Hyrule Castle's sanctum stays sealed until the seed's requirements are met
 -- (botw_patch/ganon_gate.py, slot data "sanctum_*").
 function botw_ganon()

@@ -599,8 +599,14 @@ DOT = {"Shrine": "#3a8fd6", "Tower": "#e08a2c", "Divine Beast": "#c94a4a", "Shop
        "Stall": "#2fa36b", "Great Fairy": "#d65fb5", "Master Sword": "#e6d23a",
        "Rune Terminal": "#3ac0c9", "Rune Upgrade": "#3ac0c9", "Champions' Ballad": "#c94a4a",
        "Goal": "#ffffff", "Shrine Chest": "#3a8fd6", "Chest": "#a0703a", "Boss": "#8a3ac9"}
-# The locations a seed may leave out (its options draw them): shown when the seed has them.
+# The locations a seed may leave out (its options draw them): shown once connected,
+# when the seed has them.
 OPTIONAL = {"Shop", "Stall", "Shrine Chest", "Chest", "Boss"}
+# The field chests and the bosses: stacked, one square a map cell (A-1 to J-8) for
+# each kind, at the middle of the cell's drawn ones; smaller than a check's square,
+# a square for the chests, a diamond for the bosses.
+GROUPS = {"Chest": "Chests", "Boss": "Bosses"}
+GROUP_MARKERS = {"Chest": {"size": 20, "shape": "rect"}, "Boss": {"size": 22, "shape": "diamond"}}
 
 
 def place_of(row: dict) -> str:
@@ -610,6 +616,9 @@ def place_of(row: dict) -> str:
     name, kinds = row["name"], set(row["category"].split("|"))
     if "Shrine Chest" in kinds:
         return re.sub(r" Chest \d+$", "", name)
+    if kinds & {"Chest", "Boss"}:
+        # "Chest F-4 #3", "Black Hinox E-2 #1": one square a map cell for each kind.
+        return f"{GROUPS[next(iter(kinds & set(GROUPS)))]} {name.rsplit(' ', 2)[-2]}"
     if kinds & {"Shop", "Stall"}:
         return re.sub(r" Item \d+$", "", name)
     if "Rune Upgrade" in kinds:
@@ -657,9 +666,10 @@ def world_regions(cat, row: dict) -> tuple[str, ...]:
     return tuple(name for name in dict.fromkeys(names) if name != "Great Plateau")
 
 
-def crop_box(positions: dict) -> tuple[int, int, int, int]:
-    """(left, top, right, bottom) of the map shown, in pixels of the whole map."""
-    xs, ys = zip(*(maptex.pixel(x, z, SCALE) for x, z in positions.values()))
+def crop_box(places: list) -> tuple[int, int, int, int]:
+    """(left, top, right, bottom) of the map shown, in pixels of the whole map:
+    MARGIN around the squares of `places` (locations() at the origin)."""
+    xs, ys = zip(*((place["map_locations"][0]["x"], place["map_locations"][0]["y"]) for place in places))
     width, height = int(12000 * SCALE), int(10000 * SCALE)
     return (max(0, min(xs) - MARGIN), max(0, min(ys) - MARGIN),
             min(width, max(xs) + MARGIN), min(height, max(ys) + MARGIN))
@@ -670,6 +680,7 @@ def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[l
     the maps each location asks for when the maps are region keys, and the
     regions it asks to reach with region_lock."""
     places: dict[str, dict] = {}
+    members: dict[str, list[tuple[int, int]]] = {}
     sections, requirements, maps, regions = {}, {}, {}, {}
     for row in cat.LOCATIONS:
         name = row["name"]
@@ -682,10 +693,13 @@ def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[l
         kind = next(k for k in DOT if k in kinds) if kinds & set(DOT) else "Shrine"
         x, y = maptex.pixel(*positions[name], SCALE)
         x, y = x - origin[0], y - origin[1]
+        group = next(iter(kinds & set(GROUP_MARKERS)), None)
         place = places.setdefault(key, {
             "name": key, "chest_unopened_img": f"images/dots/{code(kind)}.png",
             "chest_opened_img": "images/dots/opened.png",
-            "map_locations": [{"map": MAP, "x": x, "y": y}], "sections": []})
+            "map_locations": [{"map": MAP, "x": x, "y": y, **GROUP_MARKERS.get(group, {})}], "sections": []})
+        if group:
+            members.setdefault(key, []).append((x, y))
         section = {"name": name, "item_count": 1}
         if name == cat.GOAL_LOCATION:
             section["access_rules"] = [["$botw_ganon"]]
@@ -704,12 +718,16 @@ def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[l
             section["access_rules"][0] += [f"$botw_regions|{row['id']}", f"[$botw_maps|{row['id']}]"]
             regions[row["id"]] = reach
         if kinds & OPTIONAL:
-            # Shown when the seed has it (one of a place's items is enough); a
-            # shrine's square, always shown, holds its chests too.
-            section["visibility_rules"] = [[f"$botw_in_seed|{row['id']}"]]
+            # Shown once connected, when the seed has it (one of a place's items is
+            # enough); a shrine's square, always shown, holds its chests too.
+            section["visibility_rules"] = [[f"$botw_drawn|{row['id']}"]]
             if "Shrine Chest" not in kinds:
-                place.setdefault("visibility_rules", []).append([f"$botw_in_seed|{row['id']}"])
+                place.setdefault("visibility_rules", []).append([f"$botw_drawn|{row['id']}"])
         place["sections"].append(section)
+    for key, points in members.items():
+        marker = places[key]["map_locations"][0]
+        marker["x"] = round(sum(x for x, _ in points) / len(points))
+        marker["y"] = round(sum(y for _, y in points) / len(points))
     return list(places.values()), sections, requirements, maps, regions
 
 
@@ -891,7 +909,7 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
     update = update_content()
     found = {**ui_icons(update), **stock_icons(update), **game_icons(icons)}
     item_entries, images, item_ids = items(cat, found)
-    left, top, right, bottom = crop_box(positions)
+    left, top, right, bottom = crop_box(locations(cat, positions)[0])
     place_entries, sections, requirements, maps, regions = locations(cat, positions, (left, top))
     files["scripts/data.lua"] = data_lua(cat, item_ids, sections, requirements, maps, regions).encode()
     for kind, colour in DOT.items():
