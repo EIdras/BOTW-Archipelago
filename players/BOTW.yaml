@@ -27,6 +27,10 @@ Breath of the Wild:
   shrine_chests: 0
   field_chests: 0
   boss_kills: 0
+  # !!! MASTER MODE !!! true only if you play this seed in a MASTER MODE save (The Master Trials DLC):
+  # 118 field chests exist only in Master Mode and may then be drawn. The client STOPS if the save's
+  # mode does not match this setting.
+  master_mode: false
   # When you die, everyone with DeathLink dies; when they die, so do you
   # (Mipha's Grace and fairies still save Link)
   death_link: true

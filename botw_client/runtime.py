@@ -652,6 +652,26 @@ class BotwClientRuntime:
                     pass
                 self._border = None
 
+    def _check_save_mode(self):
+        """A seed of master_mode is played in a Master Mode save, any other in a Normal
+        mode one: the save's mode is AoC_HardMode_Enabled, a bool kept in each save's
+        caption.sav (IsLastPlayHardMode, in option.sav, is the last mode played, not
+        the save's). Read once the session is bound to a loaded save; the other mode
+        stops the client (the user's choice: block, not warn)."""
+        slot = getattr(self.ap, "slot_data", None)
+        live = getattr(self.game, "live", None)
+        if not isinstance(slot, dict) or "master_mode" not in slot or not live:
+            return
+        import zlib
+        value = live.get(zlib.crc32(b"AoC_HardMode_Enabled") & 0xFFFFFFFF, "bool")
+        if value is None or bool(value) == bool(slot["master_mode"]):
+            return
+        wanted, loaded = ("MASTER MODE", "Normal mode") if slot["master_mode"] else ("NORMAL MODE", "Master Mode")
+        raise FatalClientError(
+            f"WRONG GAME MODE: this seed is set for {wanted}, but the save you loaded is a {loaded} save. "
+            f"Its locations differ (118 chests exist only in Master Mode): load a {wanted.title()} save, "
+            "then start the client again.")
+
     async def _region_report_tick(self):
         """Link's region, written to the server's data storage when it changes, for the
         trackers' maps (botw_client/region_report.py): looked at once a second."""
@@ -2567,6 +2587,7 @@ class BotwClientRuntime:
                     self._collect_messages()
                     self._mark_bulk()
                     await self._region_report_tick()
+                    self._check_save_mode()
                     # A reload back to an unbound save unbinds the session.
                     session_bound = not self.native_delivery or self._native_session_bound
                 # A swarm playing has the invoker for its 10 s: the events

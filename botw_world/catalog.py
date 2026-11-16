@@ -23,6 +23,9 @@ CLIMATES = {
     "heat": (("Flamebreaker Set",),),                   # Death Mountain's burning zone
 }
 GOAL_LOCATION = "Defeat Calamity Ganon"
+# The locations that exist only in Master Mode (the chests of IsHardModeActor,
+# tools/build_extra_locations.py): drawn only with the master_mode option.
+MASTER_MODE_ONLY = frozenset(row["id"] for row in LOCATIONS if "master mode only" in row["notes"])
 # The weapons of the filler: a group by its weight, then one of its weapons.
 # Its level orders the weapons through the game (the weapon_order option):
 # 1 first, 5 last; 0, the jokes, stay wherever the fill put them.

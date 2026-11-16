@@ -63,6 +63,8 @@ BOSSES = {
     "Enemy_SandwormR": "Molduga",
 }
 CATEGORY_ORDER = ("Shrine Chest", "Chest", "Boss")
+# In a location's notes: it exists only in Master Mode (botw_world/catalog.py MASTER_MODE_ONLY).
+MASTER_MODE_NOTE = "master mode only"
 
 
 def signed(value: int) -> int:
@@ -156,11 +158,14 @@ def field_locations(aoc: Path, towers: Beco, areas: Beco, climates: dict[int, st
             counts[label] = counts.get(label, 0) + 1
             params = obj["!Parameters"] if "!Parameters" in obj else {}
             buried = label == "Chest" and "IsInGround" in params and bool(params["IsInGround"])
+            # Only in Master Mode (IsHardModeActor): the world's master_mode option.
+            master = "IsHardModeActor" in params and bool(params["IsHardModeActor"])
             out.append({"name": f"{label} {cell} #{counts[label]}", "region": region,
                         "category": "Chest" if label == "Chest" else "Boss", "gamedata_flag": flag,
                         "position": [x, z], "climate": "heat" if climates.get(areas.at(x, z)) in HOT else "none",
                         "runes": "Magnesis" if buried else "none",
-                        "notes": f"{cell}, {actor}" + (", buried" if buried else "")})
+                        "notes": f"{cell}, {actor}" + (", buried" if buried else "")
+                        + (f", {MASTER_MODE_NOTE}" if master else "")})
     return chests + bosses
 
 

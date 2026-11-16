@@ -45,6 +45,27 @@ class TestDrawn(BotwTestBase):
         self.assertFalse(self.world.location_name_groups["Shrines"] & self.world.location_name_groups["Shrine Chests"])
 
 
+class TestNormalModeChests(BotwTestBase):
+    options = {"field_chests": 1312}
+
+    def test_no_master_mode_chest_in_normal_mode(self) -> None:
+        from ..catalog import MASTER_MODE_ONLY
+        self.assertEqual(len(MASTER_MODE_ONLY), 118)
+        self.assertFalse(self.world.extra_locations & MASTER_MODE_ONLY)
+        self.assertEqual(len(self.world.extra_locations), 1312 - 118)
+        self.assertFalse(self.world.fill_slot_data()["master_mode"])
+
+
+class TestMasterModeChests(BotwTestBase):
+    options = {"field_chests": 1312, "master_mode": True}
+
+    def test_every_chest_in_master_mode(self) -> None:
+        from ..catalog import MASTER_MODE_ONLY
+        self.assertLessEqual(MASTER_MODE_ONLY, self.world.extra_locations)
+        self.assertEqual(len(self.world.extra_locations), 1312)
+        self.assertTrue(self.world.fill_slot_data()["master_mode"])
+
+
 class TestTrackerRegenerates(BotwTestBase):
     options = {"field_chests": 30, "boss_kills": 5}
 

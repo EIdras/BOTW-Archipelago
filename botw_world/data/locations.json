@@ -5456,7 +5456,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3090346856",
     "flag_hash": "2067400595",
-    "notes": "B-3, TBox_Field_Iron",
+    "notes": "B-3, TBox_Field_Iron, master mode only",
     "id": 534
   },
   {
@@ -5526,7 +5526,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2123040883",
     "flag_hash": "-1992631915",
-    "notes": "B-4, TBox_Field_Iron",
+    "notes": "B-4, TBox_Field_Iron, master mode only",
     "id": 541
   },
   {
@@ -5566,7 +5566,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3884079561",
     "flag_hash": "-591279075",
-    "notes": "B-4, TBox_Field_Iron",
+    "notes": "B-4, TBox_Field_Iron, master mode only",
     "id": 545
   },
   {
@@ -6006,7 +6006,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1680416200",
     "flag_hash": "-1944468012",
-    "notes": "B-6, TBox_Field_Iron",
+    "notes": "B-6, TBox_Field_Iron, master mode only",
     "id": 589
   },
   {
@@ -6036,7 +6036,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1794283002",
     "flag_hash": "-1566953210",
-    "notes": "B-6, TBox_Field_Iron",
+    "notes": "B-6, TBox_Field_Iron, master mode only",
     "id": 592
   },
   {
@@ -6696,7 +6696,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_278435547",
     "flag_hash": "-521004558",
-    "notes": "C-2, TBox_Field_Wood",
+    "notes": "C-2, TBox_Field_Wood, master mode only",
     "id": 658
   },
   {
@@ -6706,7 +6706,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_422501104",
     "flag_hash": "975684830",
-    "notes": "C-2, TBox_Field_Iron",
+    "notes": "C-2, TBox_Field_Iron, master mode only",
     "id": 659
   },
   {
@@ -6726,7 +6726,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_873002914",
     "flag_hash": "1744071870",
-    "notes": "C-2, TBox_Field_Iron",
+    "notes": "C-2, TBox_Field_Iron, master mode only",
     "id": 661
   },
   {
@@ -6746,7 +6746,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_1125107508",
     "flag_hash": "1735129551",
-    "notes": "C-2, TBox_Field_Wood",
+    "notes": "C-2, TBox_Field_Wood, master mode only",
     "id": 663
   },
   {
@@ -6766,7 +6766,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_1766076031",
     "flag_hash": "875156862",
-    "notes": "C-2, TBox_Field_Wood",
+    "notes": "C-2, TBox_Field_Wood, master mode only",
     "id": 665
   },
   {
@@ -6966,7 +6966,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_4272592660",
     "flag_hash": "-837779684",
-    "notes": "C-3, TBox_Field_Wood",
+    "notes": "C-3, TBox_Field_Wood, master mode only",
     "id": 685
   },
   {
@@ -6986,7 +6986,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1326734489",
     "flag_hash": "-682947022",
-    "notes": "C-4, TBox_Field_Iron",
+    "notes": "C-4, TBox_Field_Iron, master mode only",
     "id": 687
   },
   {
@@ -7316,7 +7316,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_725308796",
     "flag_hash": "-357549287",
-    "notes": "C-7, TBox_Field_Wood",
+    "notes": "C-7, TBox_Field_Wood, master mode only",
     "id": 720
   },
   {
@@ -7376,7 +7376,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2989622470",
     "flag_hash": "-473345492",
-    "notes": "C-7, TBox_Field_Iron",
+    "notes": "C-7, TBox_Field_Iron, master mode only",
     "id": 726
   },
   {
@@ -7686,7 +7686,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_1370307555",
     "flag_hash": "491510137",
-    "notes": "D-4, TBox_Field_Wood",
+    "notes": "D-4, TBox_Field_Wood, master mode only",
     "id": 757
   },
   {
@@ -7726,7 +7726,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2194167583",
     "flag_hash": "895799394",
-    "notes": "D-4, TBox_Field_Iron",
+    "notes": "D-4, TBox_Field_Iron, master mode only",
     "id": 761
   },
   {
@@ -7736,7 +7736,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_3054835428",
     "flag_hash": "554030138",
-    "notes": "D-4, TBox_Field_Wood",
+    "notes": "D-4, TBox_Field_Wood, master mode only",
     "id": 762
   },
   {
@@ -7746,7 +7746,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_3239192178",
     "flag_hash": "597676933",
-    "notes": "D-4, TBox_Field_Wood",
+    "notes": "D-4, TBox_Field_Wood, master mode only",
     "id": 763
   },
   {
@@ -7846,7 +7846,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1930580661",
     "flag_hash": "-877017193",
-    "notes": "D-5, TBox_Field_Iron",
+    "notes": "D-5, TBox_Field_Iron, master mode only",
     "id": 773
   },
   {
@@ -7866,7 +7866,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3102932533",
     "flag_hash": "1453371817",
-    "notes": "D-5, TBox_Field_Iron",
+    "notes": "D-5, TBox_Field_Iron, master mode only",
     "id": 775
   },
   {
@@ -7876,7 +7876,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3488992931",
     "flag_hash": "-972672780",
-    "notes": "D-5, TBox_Field_Iron",
+    "notes": "D-5, TBox_Field_Iron, master mode only",
     "id": 776
   },
   {
@@ -7946,7 +7946,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_695521123",
     "flag_hash": "1519282881",
-    "notes": "D-6, TBox_Field_Iron",
+    "notes": "D-6, TBox_Field_Iron, master mode only",
     "id": 783
   },
   {
@@ -7956,7 +7956,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_773393274",
     "flag_hash": "-780493646",
-    "notes": "D-6, TBox_Field_Iron",
+    "notes": "D-6, TBox_Field_Iron, master mode only",
     "id": 784
   },
   {
@@ -8006,7 +8006,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1495153644",
     "flag_hash": "-890852117",
-    "notes": "D-6, TBox_Field_Iron",
+    "notes": "D-6, TBox_Field_Iron, master mode only",
     "id": 789
   },
   {
@@ -8016,7 +8016,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1584660469",
     "flag_hash": "-1336697771",
-    "notes": "D-6, TBox_Field_Iron",
+    "notes": "D-6, TBox_Field_Iron, master mode only",
     "id": 790
   },
   {
@@ -8026,7 +8026,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1633197501",
     "flag_hash": "1255299099",
-    "notes": "D-6, TBox_Field_Iron",
+    "notes": "D-6, TBox_Field_Iron, master mode only",
     "id": 791
   },
   {
@@ -8066,7 +8066,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_2961022681",
     "flag_hash": "1921005119",
-    "notes": "D-6, TBox_Field_Wood",
+    "notes": "D-6, TBox_Field_Wood, master mode only",
     "id": 795
   },
   {
@@ -8086,7 +8086,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_3071302336",
     "flag_hash": "2051294345",
-    "notes": "D-6, TBox_Field_Wood",
+    "notes": "D-6, TBox_Field_Wood, master mode only",
     "id": 797
   },
   {
@@ -8106,7 +8106,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_3222760022",
     "flag_hash": "-1890431798",
-    "notes": "D-6, TBox_Field_Wood",
+    "notes": "D-6, TBox_Field_Wood, master mode only",
     "id": 799
   },
   {
@@ -8116,7 +8116,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3382781565",
     "flag_hash": "1623731301",
-    "notes": "D-6, TBox_Field_Iron",
+    "notes": "D-6, TBox_Field_Iron, master mode only",
     "id": 800
   },
   {
@@ -8156,7 +8156,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3908874605",
     "flag_hash": "-1833488663",
-    "notes": "D-6, TBox_Field_Iron",
+    "notes": "D-6, TBox_Field_Iron, master mode only",
     "id": 804
   },
   {
@@ -8166,7 +8166,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_4058480684",
     "flag_hash": "-1016540000",
-    "notes": "D-6, TBox_Field_Wood",
+    "notes": "D-6, TBox_Field_Wood, master mode only",
     "id": 805
   },
   {
@@ -8186,7 +8186,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_4166110215",
     "flag_hash": "-156078948",
-    "notes": "D-6, TBox_Field_Wood",
+    "notes": "D-6, TBox_Field_Wood, master mode only",
     "id": 807
   },
   {
@@ -8286,7 +8286,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1116013200",
     "flag_hash": "950547496",
-    "notes": "D-7, TBox_Field_Iron",
+    "notes": "D-7, TBox_Field_Iron, master mode only",
     "id": 817
   },
   {
@@ -8296,7 +8296,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_1272405920",
     "flag_hash": "479379212",
-    "notes": "D-7, TBox_Field_Wood",
+    "notes": "D-7, TBox_Field_Wood, master mode only",
     "id": 818
   },
   {
@@ -8986,7 +8986,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_1613917961",
     "flag_hash": "435874628",
-    "notes": "E-4, TBox_Field_Wood",
+    "notes": "E-4, TBox_Field_Wood, master mode only",
     "id": 887
   },
   {
@@ -9616,7 +9616,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2276860653",
     "flag_hash": "-2083764519",
-    "notes": "E-5, TBox_Field_Iron",
+    "notes": "E-5, TBox_Field_Iron, master mode only",
     "id": 950
   },
   {
@@ -9836,7 +9836,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_2056288946",
     "flag_hash": "-1002209963",
-    "notes": "E-6, TBox_Field_Wood",
+    "notes": "E-6, TBox_Field_Wood, master mode only",
     "id": 972
   },
   {
@@ -9966,7 +9966,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_3841257233",
     "flag_hash": "182047533",
-    "notes": "E-6, TBox_Field_Wood",
+    "notes": "E-6, TBox_Field_Wood, master mode only",
     "id": 985
   },
   {
@@ -10106,7 +10106,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2170253242",
     "flag_hash": "1141510261",
-    "notes": "E-7, TBox_Field_Iron",
+    "notes": "E-7, TBox_Field_Iron, master mode only",
     "id": 999
   },
   {
@@ -10636,7 +10636,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_328352811",
     "flag_hash": "-1868903525",
-    "notes": "F-3, TBox_Field_Iron",
+    "notes": "F-3, TBox_Field_Iron, master mode only",
     "id": 1052
   },
   {
@@ -10996,7 +10996,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2772519871",
     "flag_hash": "-1744533147",
-    "notes": "F-4, TBox_Field_Iron",
+    "notes": "F-4, TBox_Field_Iron, master mode only",
     "id": 1088
   },
   {
@@ -11036,7 +11036,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3527834409",
     "flag_hash": "1063032044",
-    "notes": "F-4, TBox_Field_Iron",
+    "notes": "F-4, TBox_Field_Iron, master mode only",
     "id": 1092
   },
   {
@@ -11076,7 +11076,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_974581977",
     "flag_hash": "-1260506593",
-    "notes": "F-5, TBox_Field_Wood",
+    "notes": "F-5, TBox_Field_Wood, master mode only",
     "id": 1096
   },
   {
@@ -11096,7 +11096,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2719018821",
     "flag_hash": "-915745141",
-    "notes": "F-5, TBox_Field_Iron",
+    "notes": "F-5, TBox_Field_Iron, master mode only",
     "id": 1098
   },
   {
@@ -11136,7 +11136,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3575111635",
     "flag_hash": "-1423068483",
-    "notes": "F-5, TBox_Field_Iron",
+    "notes": "F-5, TBox_Field_Iron, master mode only",
     "id": 1102
   },
   {
@@ -11226,7 +11226,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_562547623",
     "flag_hash": "-790575393",
-    "notes": "F-6, TBox_Field_Iron",
+    "notes": "F-6, TBox_Field_Iron, master mode only",
     "id": 1111
   },
   {
@@ -11256,7 +11256,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_652873662",
     "flag_hash": "-1132985858",
-    "notes": "F-6, TBox_Field_Wood",
+    "notes": "F-6, TBox_Field_Wood, master mode only",
     "id": 1114
   },
   {
@@ -11366,7 +11366,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2215561456",
     "flag_hash": "59179417",
-    "notes": "F-6, TBox_Field_Iron",
+    "notes": "F-6, TBox_Field_Iron, master mode only",
     "id": 1125
   },
   {
@@ -11446,7 +11446,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2973292086",
     "flag_hash": "455769583",
-    "notes": "F-6, TBox_Field_Iron",
+    "notes": "F-6, TBox_Field_Iron, master mode only",
     "id": 1133
   },
   {
@@ -11746,7 +11746,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_1594546169",
     "flag_hash": "828572510",
-    "notes": "F-7, TBox_Field_Wood",
+    "notes": "F-7, TBox_Field_Wood, master mode only",
     "id": 1163
   },
   {
@@ -11996,7 +11996,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_1498602253",
     "flag_hash": "-730842412",
-    "notes": "F-8, TBox_Field_Wood",
+    "notes": "F-8, TBox_Field_Wood, master mode only",
     "id": 1188
   },
   {
@@ -12016,7 +12016,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1894318025",
     "flag_hash": "-1069793501",
-    "notes": "F-8, TBox_Field_Iron",
+    "notes": "F-8, TBox_Field_Iron, master mode only",
     "id": 1190
   },
   {
@@ -12126,7 +12126,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3763855960",
     "flag_hash": "1896712247",
-    "notes": "F-8, TBox_Field_Iron",
+    "notes": "F-8, TBox_Field_Iron, master mode only",
     "id": 1201
   },
   {
@@ -12326,7 +12326,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_1382540366",
     "flag_hash": "1532221779",
-    "notes": "G-3, TBox_Field_Wood",
+    "notes": "G-3, TBox_Field_Wood, master mode only",
     "id": 1221
   },
   {
@@ -12336,7 +12336,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_3137618299",
     "flag_hash": "-483939263",
-    "notes": "G-3, TBox_Field_Wood",
+    "notes": "G-3, TBox_Field_Wood, master mode only",
     "id": 1222
   },
   {
@@ -12366,7 +12366,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_232214255",
     "flag_hash": "-1709560198",
-    "notes": "G-4, TBox_Field_Iron",
+    "notes": "G-4, TBox_Field_Iron, master mode only",
     "id": 1225
   },
   {
@@ -12706,7 +12706,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2299645687",
     "flag_hash": "-1512481676",
-    "notes": "G-6, TBox_Field_Iron",
+    "notes": "G-6, TBox_Field_Iron, master mode only",
     "id": 1259
   },
   {
@@ -12796,7 +12796,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_4039997011",
     "flag_hash": "-2012036004",
-    "notes": "G-6, TBox_Field_Iron",
+    "notes": "G-6, TBox_Field_Iron, master mode only",
     "id": 1268
   },
   {
@@ -12826,7 +12826,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_520058780",
     "flag_hash": "-1797283234",
-    "notes": "G-7, TBox_Field_Iron",
+    "notes": "G-7, TBox_Field_Iron, master mode only",
     "id": 1271
   },
   {
@@ -12936,7 +12936,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1777878794",
     "flag_hash": "1339818726",
-    "notes": "G-7, TBox_Field_Iron",
+    "notes": "G-7, TBox_Field_Iron, master mode only",
     "id": 1282
   },
   {
@@ -13076,7 +13076,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_10976894",
     "flag_hash": "-1215695137",
-    "notes": "G-8, TBox_Field_Iron",
+    "notes": "G-8, TBox_Field_Iron, master mode only",
     "id": 1296
   },
   {
@@ -13166,7 +13166,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_392677133",
     "flag_hash": "454522255",
-    "notes": "G-8, TBox_Field_Wood",
+    "notes": "G-8, TBox_Field_Wood, master mode only",
     "id": 1305
   },
   {
@@ -13216,7 +13216,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_848370940",
     "flag_hash": "-1284071934",
-    "notes": "G-8, TBox_Field_Wood",
+    "notes": "G-8, TBox_Field_Wood, master mode only",
     "id": 1310
   },
   {
@@ -13296,7 +13296,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_1123805299",
     "flag_hash": "708298988",
-    "notes": "G-8, TBox_Field_Wood",
+    "notes": "G-8, TBox_Field_Wood, master mode only",
     "id": 1318
   },
   {
@@ -13306,7 +13306,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1167469674",
     "flag_hash": "-1657556251",
-    "notes": "G-8, TBox_Field_Iron",
+    "notes": "G-8, TBox_Field_Iron, master mode only",
     "id": 1319
   },
   {
@@ -13396,7 +13396,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1478906314",
     "flag_hash": "-697690984",
-    "notes": "G-8, TBox_Field_Iron",
+    "notes": "G-8, TBox_Field_Iron, master mode only",
     "id": 1328
   },
   {
@@ -13426,7 +13426,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_1616967579",
     "flag_hash": "-415737628",
-    "notes": "G-8, TBox_Field_Wood",
+    "notes": "G-8, TBox_Field_Wood, master mode only",
     "id": 1331
   },
   {
@@ -13546,7 +13546,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2059226658",
     "flag_hash": "-714183",
-    "notes": "G-8, TBox_Field_Iron",
+    "notes": "G-8, TBox_Field_Iron, master mode only",
     "id": 1343
   },
   {
@@ -13566,7 +13566,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2110818875",
     "flag_hash": "-1180608285",
-    "notes": "G-8, TBox_Field_Iron",
+    "notes": "G-8, TBox_Field_Iron, master mode only",
     "id": 1345
   },
   {
@@ -13626,7 +13626,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2279135900",
     "flag_hash": "1117256312",
-    "notes": "G-8, TBox_Field_Iron",
+    "notes": "G-8, TBox_Field_Iron, master mode only",
     "id": 1351
   },
   {
@@ -13746,7 +13746,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2711765565",
     "flag_hash": "-871153961",
-    "notes": "G-8, TBox_Field_Iron",
+    "notes": "G-8, TBox_Field_Iron, master mode only",
     "id": 1363
   },
   {
@@ -13786,7 +13786,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2793753996",
     "flag_hash": "-47602346",
-    "notes": "G-8, TBox_Field_Iron",
+    "notes": "G-8, TBox_Field_Iron, master mode only",
     "id": 1367
   },
   {
@@ -13826,7 +13826,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3102980308",
     "flag_hash": "856407754",
-    "notes": "G-8, TBox_Field_Iron",
+    "notes": "G-8, TBox_Field_Iron, master mode only",
     "id": 1371
   },
   {
@@ -13946,7 +13946,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_3820232600",
     "flag_hash": "1735556649",
-    "notes": "G-8, TBox_Field_Wood",
+    "notes": "G-8, TBox_Field_Wood, master mode only",
     "id": 1383
   },
   {
@@ -13976,7 +13976,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3921992523",
     "flag_hash": "-853661775",
-    "notes": "G-8, TBox_Field_Iron",
+    "notes": "G-8, TBox_Field_Iron, master mode only",
     "id": 1386
   },
   {
@@ -14016,7 +14016,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_4041206282",
     "flag_hash": "-1217238268",
-    "notes": "G-8, TBox_Field_Wood",
+    "notes": "G-8, TBox_Field_Wood, master mode only",
     "id": 1390
   },
   {
@@ -14076,7 +14076,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1347548770",
     "flag_hash": "-26225520",
-    "notes": "H-3, TBox_Field_Iron",
+    "notes": "H-3, TBox_Field_Iron, master mode only",
     "id": 1396
   },
   {
@@ -14106,7 +14106,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_3107083095",
     "flag_hash": "1808938378",
-    "notes": "H-3, TBox_Field_Wood",
+    "notes": "H-3, TBox_Field_Wood, master mode only",
     "id": 1399
   },
   {
@@ -14156,7 +14156,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_20632817",
     "flag_hash": "-480073268",
-    "notes": "H-4, TBox_Field_Iron",
+    "notes": "H-4, TBox_Field_Iron, master mode only",
     "id": 1404
   },
   {
@@ -14296,7 +14296,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2139859020",
     "flag_hash": "539921050",
-    "notes": "H-4, TBox_Field_Iron",
+    "notes": "H-4, TBox_Field_Iron, master mode only",
     "id": 1418
   },
   {
@@ -14326,7 +14326,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2560994464",
     "flag_hash": "947183513",
-    "notes": "H-4, TBox_Field_Iron",
+    "notes": "H-4, TBox_Field_Iron, master mode only",
     "id": 1421
   },
   {
@@ -14416,7 +14416,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3790552559",
     "flag_hash": "-479741598",
-    "notes": "H-4, TBox_Field_Iron",
+    "notes": "H-4, TBox_Field_Iron, master mode only",
     "id": 1430
   },
   {
@@ -14446,7 +14446,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_266157088",
     "flag_hash": "857890527",
-    "notes": "H-5, TBox_Field_Wood",
+    "notes": "H-5, TBox_Field_Wood, master mode only",
     "id": 1433
   },
   {
@@ -14466,7 +14466,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1979810948",
     "flag_hash": "726884362",
-    "notes": "H-5, TBox_Field_Iron",
+    "notes": "H-5, TBox_Field_Iron, master mode only",
     "id": 1435
   },
   {
@@ -14486,7 +14486,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2674008497",
     "flag_hash": "1195640485",
-    "notes": "H-5, TBox_Field_Iron",
+    "notes": "H-5, TBox_Field_Iron, master mode only",
     "id": 1437
   },
   {
@@ -14656,7 +14656,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_2353666242",
     "flag_hash": "1622199947",
-    "notes": "H-6, TBox_Field_Wood",
+    "notes": "H-6, TBox_Field_Wood, master mode only",
     "id": 1454
   },
   {
@@ -14756,7 +14756,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_4230016077",
     "flag_hash": "596039382",
-    "notes": "H-6, TBox_Field_Iron",
+    "notes": "H-6, TBox_Field_Iron, master mode only",
     "id": 1464
   },
   {
@@ -14796,7 +14796,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2243965962",
     "flag_hash": "-191927966",
-    "notes": "H-7, TBox_Field_Iron",
+    "notes": "H-7, TBox_Field_Iron, master mode only",
     "id": 1468
   },
   {
@@ -15186,7 +15186,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_382308894",
     "flag_hash": "-1161520754",
-    "notes": "I-3, TBox_Field_Iron",
+    "notes": "I-3, TBox_Field_Iron, master mode only",
     "id": 1507
   },
   {
@@ -15216,7 +15216,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_558118130",
     "flag_hash": "1951413564",
-    "notes": "I-3, TBox_Field_Iron",
+    "notes": "I-3, TBox_Field_Iron, master mode only",
     "id": 1510
   },
   {
@@ -15226,7 +15226,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_837372312",
     "flag_hash": "2065448902",
-    "notes": "I-3, TBox_Field_Wood",
+    "notes": "I-3, TBox_Field_Wood, master mode only",
     "id": 1511
   },
   {
@@ -15236,7 +15236,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_914656641",
     "flag_hash": "-455216327",
-    "notes": "I-3, TBox_Field_Iron",
+    "notes": "I-3, TBox_Field_Iron, master mode only",
     "id": 1512
   },
   {
@@ -15246,7 +15246,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1099152663",
     "flag_hash": "1145309143",
-    "notes": "I-3, TBox_Field_Iron",
+    "notes": "I-3, TBox_Field_Iron, master mode only",
     "id": 1513
   },
   {
@@ -15256,7 +15256,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_1190033678",
     "flag_hash": "648076418",
-    "notes": "I-3, TBox_Field_Wood",
+    "notes": "I-3, TBox_Field_Wood, master mode only",
     "id": 1514
   },
   {
@@ -15286,7 +15286,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1752755875",
     "flag_hash": "-991606415",
-    "notes": "I-3, TBox_Field_Iron",
+    "notes": "I-3, TBox_Field_Iron, master mode only",
     "id": 1517
   },
   {
@@ -15316,7 +15316,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2411774884",
     "flag_hash": "-1860255092",
-    "notes": "I-3, TBox_Field_Iron",
+    "notes": "I-3, TBox_Field_Iron, master mode only",
     "id": 1520
   },
   {
@@ -15346,7 +15346,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_2833258530",
     "flag_hash": "-1134233782",
-    "notes": "I-3, TBox_Field_Wood",
+    "notes": "I-3, TBox_Field_Wood, master mode only",
     "id": 1523
   },
   {
@@ -15356,7 +15356,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_2945309755",
     "flag_hash": "1555981309",
-    "notes": "I-3, TBox_Field_Wood",
+    "notes": "I-3, TBox_Field_Wood, master mode only",
     "id": 1524
   },
   {
@@ -15376,7 +15376,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_3338410485",
     "flag_hash": "-1480229870",
-    "notes": "I-3, TBox_Field_Wood",
+    "notes": "I-3, TBox_Field_Wood, master mode only",
     "id": 1526
   },
   {
@@ -15396,7 +15396,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3632983213",
     "flag_hash": "1146878448",
-    "notes": "I-3, TBox_Field_Iron",
+    "notes": "I-3, TBox_Field_Iron, master mode only",
     "id": 1528
   },
   {
@@ -15426,7 +15426,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_158219254",
     "flag_hash": "1155902525",
-    "notes": "I-4, TBox_Field_Iron",
+    "notes": "I-4, TBox_Field_Iron, master mode only",
     "id": 1531
   },
   {
@@ -15456,7 +15456,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_574842933",
     "flag_hash": "-425892117",
-    "notes": "I-4, TBox_Field_Iron",
+    "notes": "I-4, TBox_Field_Iron, master mode only",
     "id": 1534
   },
   {
@@ -15486,7 +15486,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_674475238",
     "flag_hash": "1435441561",
-    "notes": "I-4, TBox_Field_Wood",
+    "notes": "I-4, TBox_Field_Wood, master mode only",
     "id": 1537
   },
   {
@@ -15546,7 +15546,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1378458810",
     "flag_hash": "764590388",
-    "notes": "I-4, TBox_Field_Iron",
+    "notes": "I-4, TBox_Field_Iron, master mode only",
     "id": 1543
   },
   {
@@ -15576,7 +15576,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_1597283440",
     "flag_hash": "-1568592763",
-    "notes": "I-4, TBox_Field_Wood",
+    "notes": "I-4, TBox_Field_Wood, master mode only",
     "id": 1546
   },
   {
@@ -15616,7 +15616,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2160727846",
     "flag_hash": "-271217712",
-    "notes": "I-4, TBox_Field_Iron",
+    "notes": "I-4, TBox_Field_Iron, master mode only",
     "id": 1550
   },
   {
@@ -15636,7 +15636,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2534059605",
     "flag_hash": "-1231564156",
-    "notes": "I-4, TBox_Field_Iron",
+    "notes": "I-4, TBox_Field_Iron, master mode only",
     "id": 1552
   },
   {
@@ -15676,7 +15676,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2973433180",
     "flag_hash": "-673305036",
-    "notes": "I-4, TBox_Field_Iron",
+    "notes": "I-4, TBox_Field_Iron, master mode only",
     "id": 1556
   },
   {
@@ -15696,7 +15696,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3096228215",
     "flag_hash": "1289450231",
-    "notes": "I-4, TBox_Field_Iron",
+    "notes": "I-4, TBox_Field_Iron, master mode only",
     "id": 1558
   },
   {
@@ -15726,7 +15726,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_3325939146",
     "flag_hash": "-2103849435",
-    "notes": "I-4, TBox_Field_Wood",
+    "notes": "I-4, TBox_Field_Wood, master mode only",
     "id": 1561
   },
   {
@@ -15746,7 +15746,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3497027845",
     "flag_hash": "-770971519",
-    "notes": "I-4, TBox_Field_Iron",
+    "notes": "I-4, TBox_Field_Iron, master mode only",
     "id": 1563
   },
   {
@@ -15796,7 +15796,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_4269501339",
     "flag_hash": "-1894364287",
-    "notes": "I-4, TBox_Field_Iron",
+    "notes": "I-4, TBox_Field_Iron, master mode only",
     "id": 1568
   },
   {
@@ -16026,7 +16026,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3402792126",
     "flag_hash": "49668133",
-    "notes": "I-6, TBox_Field_Iron",
+    "notes": "I-6, TBox_Field_Iron, master mode only",
     "id": 1591
   },
   {
@@ -16616,7 +16616,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_1338350447",
     "flag_hash": "151917687",
-    "notes": "J-4, TBox_Field_Wood",
+    "notes": "J-4, TBox_Field_Wood, master mode only",
     "id": 1650
   },
   {
@@ -16646,7 +16646,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_1701427516",
     "flag_hash": "1991605694",
-    "notes": "J-4, TBox_Field_Wood",
+    "notes": "J-4, TBox_Field_Wood, master mode only",
     "id": 1653
   },
   {
@@ -16686,7 +16686,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2714499651",
     "flag_hash": "-29400524",
-    "notes": "J-4, TBox_Field_Iron",
+    "notes": "J-4, TBox_Field_Iron, master mode only",
     "id": 1657
   },
   {
@@ -16726,7 +16726,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_3603745493",
     "flag_hash": "-402066468",
-    "notes": "J-4, TBox_Field_Wood",
+    "notes": "J-4, TBox_Field_Wood, master mode only",
     "id": 1661
   },
   {

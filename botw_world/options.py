@@ -97,11 +97,21 @@ class FieldChests(Range):
     """Treasure chests of the Great Plateau and Hyrule's field that become
     Archipelago locations, drawn at random among 1312. Opening one sends its
     Archipelago item; the chest keeps its own treasure. A buried chest asks for
-    Magnesis, one on Death Mountain's burning slopes the Flamebreaker Set. 0: none."""
+    Magnesis, one on Death Mountain's burning slopes the Flamebreaker Set. 118 of them
+    exist only in Master Mode: drawn only with Master Mode on; in Normal mode at most
+    1194 are drawn. 0: none."""
     display_name = "Field Chests"
     range_start = 0
     range_end = 1312
     default = 0
+
+
+class MasterMode(Toggle):
+    """You play this seed in MASTER MODE (The Master Trials DLC), in a Master Mode save.
+    118 chests of the field exist only there, on Master Mode's floating platforms among
+    others: with this option they may be drawn by Field Chests; without it (Normal mode)
+    they never are. The client refuses to play a save of the other mode."""
+    display_name = "Master Mode"
 
 
 class BossKills(Range):
@@ -240,6 +250,7 @@ class BotwOptions(PerGameCommonOptions):
     shrine_chests: ShrineChests
     field_chests: FieldChests
     boss_kills: BossKills
+    master_mode: MasterMode
     death_link: DeathLink
     weapon_order: WeaponOrder
     tower_maps: TowerMaps
@@ -256,7 +267,7 @@ OPTION_GROUPS = [
     OptionGroup("Hyrule Castle's Sanctum",
                 [SanctumDivineBeasts, SanctumShrines, SanctumMasterSword, SanctumRunes]),
     OptionGroup("Shops", [BeedleShopItems, StallItems]),
-    OptionGroup("Chests and Bosses", [ShrineChests, FieldChests, BossKills]),
+    OptionGroup("Chests and Bosses", [ShrineChests, FieldChests, BossKills, MasterMode]),
     OptionGroup("Weapons", [WeaponOrder]),
     OptionGroup("Maps", [TowerMaps, EarlyMap, RegionLock, MapTravelPoints]),
     OptionGroup("Master Cycle Zero", [BikeAnywhere]),

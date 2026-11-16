@@ -163,6 +163,20 @@ def warn_newer(ui, seed: str) -> None:
                f"({VERSION}): if something is missing, update BOTW Archipelago.")
 
 
+def say_mode(ui, slot_data: dict) -> None:
+    """The game mode the seed is played in, hard to miss: a Master Mode seed in a
+    Normal mode save, or the other way round, stops the client (botw_client/runtime.py)."""
+    if "master_mode" not in slot_data:
+        return
+    if slot_data["master_mode"]:
+        ui.say("*" * 72)
+        ui.say("*  THIS SEED IS SET FOR MASTER MODE (The Master Trials DLC).")
+        ui.say("*  Load a MASTER MODE save: the client stops on a Normal mode save.")
+        ui.say("*" * 72)
+    else:
+        ui.say("This seed is set for Normal mode: load a Normal mode save, not Master Mode.")
+
+
 def prepare_file(ui, path: Path) -> str:
     """Prepare the seed of a slot file or zip, unless it already is; its name."""
     from tools.build_pack_from_source import slot_manifests
@@ -180,6 +194,8 @@ def prepare_file(ui, path: Path) -> str:
         for number, name in enumerate(names, 1):
             ui.say(f"  {number}. {name}")
         slot = names[pick(ui, "Which player are you?", len(names)) - 1]
+    say_mode(ui, next(manifest for manifest in slot_manifests(path)
+                      if manifest.get("slot_name") == slot).get("slot_data", {}))
     folder = play_seed.PLAY_SEEDS / seed
     if (folder / "analysis.json").is_file() and (folder / path.name).is_file()             and play_seed.sha(folder / path.name) == play_seed.sha(path):
         return fresh(ui, seed)

@@ -144,6 +144,9 @@ def texts(manifest: dict) -> dict[str, str]:
     """The quest's texts: title, place, giver, what it asks, what it says once over."""
     data = manifest.get("slot_data", {})
     facts = f"Seed {manifest['seed']}\nPlayer: {manifest['slot_name']} (slot {manifest['slot']})"
+    if data.get("master_mode"):
+        # Hard to miss: a Master Mode seed in a Normal save stops the client.
+        facts += "\nMASTER MODE seed"
     asked = _wrap([INTRO, goal(data), facts])
     if len(asked) > LINES:              # the goal and the facts first
         asked = _wrap([goal(data), facts])

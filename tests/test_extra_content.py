@@ -288,6 +288,37 @@ class ElementalStrikeTests(unittest.TestCase):
         self.assertEqual(len(turns), 1)
 
 
+class MasterModeTests(unittest.TestCase):
+    def runtime(self, master_mode, save_hard):
+        from botw_client.runtime import BotwClientRuntime
+        runtime = BotwClientRuntime.__new__(BotwClientRuntime)
+        runtime.ap = SimpleNamespace(slot_data={"master_mode": master_mode})
+        runtime.game = SimpleNamespace(live=SimpleNamespace(get=lambda hash_u32, kind: save_hard))
+        return runtime
+
+    def test_a_save_of_the_other_mode_stops_the_client(self):
+        from botw_client.runtime import FatalClientError
+        self.runtime(True, 1)._check_save_mode()
+        self.runtime(False, 0)._check_save_mode()
+        self.runtime(True, None)._check_save_mode()          # unreadable: not judged
+        with self.assertRaisesRegex(FatalClientError, "MASTER MODE"):
+            self.runtime(True, 0)._check_save_mode()
+        with self.assertRaisesRegex(FatalClientError, "NORMAL MODE"):
+            self.runtime(False, 1)._check_save_mode()
+
+    def test_the_master_mode_chests_are_marked(self):
+        marked = [row for row in NEW if "master mode only" in row["notes"]]
+        self.assertEqual(len(marked), 118)
+        self.assertTrue(all(row["category"] == "Chest" for row in marked))
+        self.assertIn("Chest B-3 #9", {row["name"] for row in marked})
+
+    def test_the_quest_says_master_mode(self):
+        from botw_patch.ap_quest import texts
+        manifest = {"seed": "1", "slot_name": "Unix", "slot": 1, "slot_data": {"master_mode": True}}
+        self.assertIn("MASTER MODE", texts(manifest)["desc"])
+        self.assertNotIn("MASTER MODE", texts({**manifest, "slot_data": {}})["desc"])
+
+
 class RegionReportTests(unittest.TestCase):
     def test_links_region_in_the_field_only(self):
         from botw_client import region_report

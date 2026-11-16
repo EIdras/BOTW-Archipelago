@@ -13,7 +13,7 @@ from Options import OptionError
 from rule_builder.rules import And, CanReachRegion, Has, HasAll, HasAny, HasFromList, Or, Rule, True_
 
 from .catalog import (FILLER, GAME, GENTLE_REGIONS, GOAL_LOCATION, INNER_REGIONS, ITEMS, LOCATIONS, MAPS, NEIGHBOURS,
-                      OPEN_BORDERS, TRAPS, TRAVEL_SHRINES, TRAVEL_TERMINALS, WEAPON_LEVELS, WORLD_VERSION, categories,
+                      MASTER_MODE_ONLY, OPEN_BORDERS, TRAPS, TRAVEL_SHRINES, TRAVEL_TERMINALS, WEAPON_LEVELS, WORLD_VERSION, categories,
                       map_keys, requirements)
 from .options import OPTION_GROUPS, PRESETS, BotwOptions, EarlyMap, TowerMaps, WeaponOrder
 from .slot_file import BotwSlotFile
@@ -88,7 +88,7 @@ class BotwWorld(World):
     SLOT_OPTIONS = ("goal", "goal_shrines", "sanctum_divine_beasts", "sanctum_shrines",
                     "sanctum_master_sword", "sanctum_runes", "beedle_shop_items", "stall_items", "tower_maps",
                     "region_lock", "map_travel_points", "bike_anywhere", "shrine_chests", "field_chests",
-                    "boss_kills")
+                    "boss_kills", "master_mode")
     # The region each map opens: {item: region}.
     MAP_REGIONS = {item: region for region, item in MAPS.items()}
     # The stall locations of the slot data, when Universal Tracker regenerates.
@@ -168,11 +168,13 @@ class BotwWorld(World):
 
     def draw_extra(self) -> set[int]:
         """The chests and bosses of the seed: as many of each category, at random,
-        as its option asks."""
+        as its option asks, among those of the seed's mode (master_mode: the 118
+        chests of Master Mode only too); at most all of them."""
         drawn: set[int] = set()
         for category, option in self.EXTRA_CATEGORIES.items():
-            ids = sorted(r["id"] for r in LOCATIONS if category in categories(r))
-            drawn.update(self.random.sample(ids, getattr(self.options, option).value))
+            ids = sorted(r["id"] for r in LOCATIONS if category in categories(r)
+                         and (self.options.master_mode or r["id"] not in MASTER_MODE_ONLY))
+            drawn.update(self.random.sample(ids, min(getattr(self.options, option).value, len(ids))))
         return drawn
 
     def connect_neighbours(self, regions: dict[str, Region]) -> None:
@@ -373,6 +375,7 @@ class BotwWorld(World):
         # 13: the shrine chests, field chests and bosses (world schema 6), the Progressive Horse,
         #     the new armor and filler, and the Freeze, Lightning Strike and Fire traps, which a
         #     client of 12 cannot track nor deliver.
+        # master_mode: the seed is played in Master Mode (the client refuses a save of the other).
         # stall_locations: the stalls drawn by the seed, for Universal Tracker.
         # extra_locations: the chests and bosses drawn by the seed, for Universal Tracker and the
         #     pack (botw_patch/shrine_chests.py replaces the drawn shrine chests' treasure).

@@ -130,6 +130,7 @@ stamina vessels help without being required.
 | Chests and Bosses | [`shrine_chests`](#chests-and-bosses) | 0 | Chests inside the shrines (0 to 174) |
 | | [`field_chests`](#chests-and-bosses) | 0 | Chests of the field (0 to 1312) |
 | | [`boss_kills`](#chests-and-bosses) | 0 | Hinoxes, Taluses and Moldugas defeated (0 to 86) |
+| | [`master_mode`](#master-mode) | false | **You play in a Master Mode save** |
 | Weapons | [`weapon_order`](#weapon-order) | `smoothed` | Weaker weapons first, stronger later |
 | Maps | [`tower_maps`](#region-maps) | `region_keys` | Region maps are items, and keys of the logic |
 | | [`early_map`](#region-maps) | `gentle` | One map among the Great Plateau's first checks |
@@ -171,6 +172,17 @@ Each option draws that many locations at random among its own; the seed's are li
   asks for Magnesis in the logic, one on Death Mountain's burning slopes the Flamebreaker Set.
 - `boss_kills`: the first defeat of a Hinox (Stalnoxes too), a Stone Talus (Igneo, Frost and the others too) or a
   Molduga. A Blood Moon brings it back; its location stays checked.
+
+### Master Mode
+
+> **`master_mode: true` means you play the seed in a MASTER MODE save (The Master Trials DLC).**
+
+118 chests of the field exist only in Master Mode (many on its floating platforms). With
+`master_mode`, `field_chests` may draw them; without it (Normal mode, the default) it never does,
+and draws at most 1194 chests. The client reads the loaded save's mode and **stops** if it does not
+match the seed's: a Master Mode seed needs a Master Mode save, a Normal one a Normal save. The
+launcher says which mode a seed expects when it prepares it. No other location differs between the
+modes: the bosses are the same (only their rank changes), and the shrines are the same.
 
 A location is named after its map cell, the game's map split in squares A to J from west to east and 1 to 8 from
 north to south: "Chest F-4 #3", "Black Hinox E-2 #1", or after its shrine: "Oman Au Shrine Chest 1".
