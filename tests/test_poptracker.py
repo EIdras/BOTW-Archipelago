@@ -66,7 +66,8 @@ class PackTests(unittest.TestCase):
         chest, boss = places["Chest F-4 #1"], next(p for name, p in places.items()
                                                     if name in rows and rows[name]["category"] == "Boss")
         self.assertEqual([spot["map"] for spot in chest["map_locations"]], [rows["Chest F-4 #1"]["region"]])
-        self.assertEqual((chest["map_locations"][0]["shape"], chest["map_locations"][0]["size"]), ("rect", 20))
+        self.assertEqual((chest["map_locations"][0]["shape"], chest["map_locations"][0]["size"]), ("trapezoid", 20))
+        self.assertEqual(self.json("manifest.json")["min_poptracker_version"], "0.32.0")
         self.assertEqual([spot["map"] for spot in boss["map_locations"]],
                          [poptracker.MAP, poptracker.map_region(rows[boss["name"]])])
         self.assertTrue(all((spot["shape"], spot["size"]) == ("diamond", 22) for spot in boss["map_locations"]))

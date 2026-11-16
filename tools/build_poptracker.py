@@ -602,12 +602,12 @@ DOT = {"Shrine": "#3a8fd6", "Tower": "#e08a2c", "Divine Beast": "#c94a4a", "Shop
 # The locations a seed may leave out (its options draw them): shown once connected,
 # when the seed has them.
 OPTIONAL = {"Shop", "Stall", "Shrine Chest", "Chest", "Boss"}
-# The field chests and the bosses: smaller than a check's square, a square for the
-# chests, a diamond for the bosses. Each at its own place on its region's map; on the
+# The field chests and the bosses: smaller than a check's square, a trapezoid for the
+# chests (PopTracker 0.32.0), a diamond for the bosses. Each at its own place on its region's map; on the
 # overview, the bosses at theirs too, the chests stacked by landmark
 # (data/chest_landmarks.json, tools/build_extra_locations.py): one square a landmark,
 # whose sections refer to the chests' own.
-GROUP_MARKERS = {"Chest": {"size": 20, "shape": "rect"}, "Boss": {"size": 22, "shape": "diamond"}}
+GROUP_MARKERS = {"Chest": {"size": 20, "shape": "trapezoid"}, "Boss": {"size": 22, "shape": "diamond"}}
 LANDMARKS = ROOT / "data/chest_landmarks.json"
 # A map a region (botw_world regions; Hyrule Castle's locations on Central's), the
 # region's locations cut out of the whole map, REGION_MARGIN pixels around them,
@@ -1008,7 +1008,7 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
     files["manifest.json"] = json.dumps({
         "name": "Breath of the Wild Archipelago", "game_name": cat.GAME,
         "package_uid": PACK_NAME, "package_version": cat.WORLD_VERSION,
-        "platform": "wiiu", "author": "EIdras", "min_poptracker_version": "0.26.2",
+        "platform": "wiiu", "author": "EIdras", "min_poptracker_version": "0.32.0",
         "variants": {"map": {"display_name": "Map tracker", "flags": ["ap"]}}}, indent=1).encode()
     output.mkdir(parents=True, exist_ok=True)
     target = output / f"{PACK_NAME}.zip"
