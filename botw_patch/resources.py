@@ -29,13 +29,29 @@ def canonical(name: str) -> str:
     return path.with_suffix("." + ext[2:]).as_posix() if ext.startswith(".s") and ext != ".sarc" else path.as_posix()
 
 
+class Overlay:
+    """The files of an overlay being built ({name: bytes}), read as the game's
+    are (botw_patch/game_files.py): a ResourceBuilder goes on from them in
+    memory, without a folder to hold them."""
+    content = None
+
+    def __init__(self, files: dict[str, bytes]):
+        self.files = files
+
+    def read(self, name: str) -> bytes:
+        if name not in self.files:
+            raise FileNotFoundError(f"no {name} in the overlay")
+        return self.files[name]
+
+
 class ResourceBuilder:
     def __init__(self, content, platform: str = "wiiu"):
-        """content: a content folder, or the game's files (botw_patch/game_files.py)."""
+        """content: a content folder, the game's files (botw_patch/game_files.py),
+        or an overlay being built (Overlay)."""
         from .game_files import GameFiles
         if platform not in {"wiiu", "switch"}:
             raise ValueError(f"unknown platform: {platform}")
-        self.game = GameFiles.of(content)
+        self.game = content if isinstance(content, Overlay) else GameFiles.of(content)
         self.content = self.game.content
         self.platform = platform
         self.big_endian = platform == "wiiu"

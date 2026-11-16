@@ -75,14 +75,17 @@ def modify_gamedata_flags(raw: bytes, flags, is_save: bool, kind: str = "s32",
          if file.name.startswith(f"/{kind}_data_") and file.name.endswith(".bgdata")),
         key=lambda name: int(name.rsplit("_", 1)[1].split(".", 1)[0]))
     objects = []
-    entries = []
+    existing = set()
+    hashes = {}
     for name in names:
         obj = oead.byml.from_binary(bytes(sarc.get_file(name).data))
         objects.append(obj)
-        entries.extend(oead.byml.Hash(dict(entry)) for entry in obj[f"{kind}_data"])
-    existing = {str(dict(entry)["DataName"]) for entry in entries}
-    hashes = {int(dict(entry)["HashValue"]): str(dict(entry)["DataName"])
-              for entry in entries}
+        # Entries are read in place: copying each of the table's tens of
+        # thousands out to Python took seconds, a dozen times in a build.
+        for entry in obj[f"{kind}_data"]:
+            data_name = str(entry["DataName"])
+            existing.add(data_name)
+            hashes[int(entry["HashValue"])] = data_name
     for flag in flags:
         if flag not in existing:
             collision = hashes.get(signed_crc(flag))
@@ -140,35 +143,42 @@ def modify_saveformat(raw: bytes, flags=FLAGS) -> bytes:
     sarc = open_yaz_sarc(raw)
     objects = {}
     headers = {}
-    all_entries = []
+    all_entries = []    # (hash, entry) of every page
+    existing = set()
     page_names = [f"/saveformat_{number}.bgsvdata" for number in range(6)]
     for name in page_names:
         obj = oead.byml.from_binary(bytes(sarc.get_file(name).data))
         objects[name] = obj
-        # Copy BYML nodes: pybind views are owned by their parent document and
-        # become empty when the loop releases that document.
         headers[name] = oead.byml.Hash(dict(obj["file_list"][0]))
-        all_entries.extend(oead.byml.Hash(dict(entry))
-                           for entry in obj["file_list"][1])
+        # The entries are pybind views into their document, read in place
+        # (copying each of them out to Python took seconds): they are valid
+        # as long as `objects` holds the document with the page they are in.
+        for entry in obj["file_list"][1]:
+            existing.add(str(entry["DataName"]))
+            all_entries.append((int(entry["HashValue"]), entry))
 
-    existing = {str(dict(entry)["DataName"]) for entry in all_entries}
     for flag in flags:
         if flag not in existing:
-            all_entries.append(oead.byml.Hash({
-                "DataName": flag, "HashValue": oead.S32(signed_crc(flag))}))
-    all_entries.sort(key=lambda entry: int(dict(entry)["HashValue"]))
+            crc = signed_crc(flag)
+            all_entries.append((crc, oead.byml.Hash({
+                "DataName": flag, "HashValue": oead.S32(crc)})))
+    all_entries.sort(key=lambda pair: pair[0])
 
-    replacements = {}
+    # Every new page is built (an Array copies its entries) before any takes
+    # the place of an old one: an entry may come from another document's page.
+    pages = {}
     offset = 0
     for number, name in enumerate(page_names):
         count = 8192 if number < 5 else len(all_entries) - offset
-        page = oead.byml.Array(all_entries[offset:offset + count])
-        objects[name]["file_list"] = oead.byml.Array([headers[name], page])
-        replacements[name] = bytes(oead.byml.to_binary(
-            objects[name], big_endian=True, version=2))
+        pages[name] = oead.byml.Array([entry for _, entry in all_entries[offset:offset + count]])
         offset += count
     if offset != len(all_entries):
         raise RuntimeError("saveformat pages did not consume every entry")
+    replacements = {}
+    for name in page_names:
+        objects[name]["file_list"] = oead.byml.Array([headers[name], pages[name]])
+        replacements[name] = bytes(oead.byml.to_binary(
+            objects[name], big_endian=True, version=2))
     return bytes(oead.yaz0.compress(write_sarc(sarc, replacements)))
 
 

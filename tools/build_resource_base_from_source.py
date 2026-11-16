@@ -9,7 +9,6 @@ import argparse
 import json
 from pathlib import Path
 import sys
-import tempfile
 
 import oead
 
@@ -19,7 +18,7 @@ sys.path[:] = [str(ROOT)] + [p for p in sys.path
 
 from botw_patch.game_files import GameFiles  # noqa: E402
 from botw_patch.ledger_experiment import patch_campfire_delivery  # noqa: E402
-from botw_patch.resources import ResourceBuilder, digest, unpack, vanilla_digest  # noqa: E402
+from botw_patch.resources import Overlay, ResourceBuilder, digest, unpack, vanilla_digest  # noqa: E402
 from tools.build_delivery_control import presentation_call  # noqa: E402
 from tools.build_game_data_mod import modify_gamedata, modify_saveformat, verify  # noqa: E402
 from tools.build_ui_close_trace import wait_for_message_close  # noqa: E402
@@ -63,24 +62,18 @@ def generate(content) -> tuple[dict[str, bytes], list[dict]]:
 def patch_stage(files: dict[str, bytes], name: str, transforms: dict, *,
                 extra_archive: tuple[str, dict] | None = None,
                 icon: bytes | None = None, new_members=()) -> tuple[dict, list]:
-    """Apply a historic stage with its own resource-size table accounting."""
-    # A file the antivirus still holds may outlive the build here: the system's
-    # temporary folder takes it, rather than failing the pack.
-    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp:
-        stage_content = Path(temp)
-        for filename, raw in files.items():
-            path = stage_content / filename
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(raw)
-        builder = ResourceBuilder(stage_content)
-        builder.patch_archive(name, transforms, new_members=new_members)
-        if extra_archive is not None:
-            builder.patch_archive(*extra_archive)
-        if icon is not None:
-            builder.outputs["UI/StockItem/Item_AP.sbitemico"] = icon
-            builder.table.set_size("UI/StockItem/Item_AP.bitemico", len(unpack(icon)) + 8192)
-        files.update(builder.finish())
-        return files, builder.changes
+    """Apply a historic stage with its own resource-size table accounting.
+    The stage reads `files` in memory and updates them: a build chains dozens
+    of stages, and none writes a file."""
+    builder = ResourceBuilder(Overlay(files))
+    builder.patch_archive(name, transforms, new_members=new_members)
+    if extra_archive is not None:
+        builder.patch_archive(*extra_archive)
+    if icon is not None:
+        builder.outputs["UI/StockItem/Item_AP.sbitemico"] = icon
+        builder.table.set_size("UI/StockItem/Item_AP.bitemico", len(unpack(icon)) + 8192)
+    files.update(builder.finish())
+    return files, builder.changes
 
 
 def generate_presentation(content, stage: str = "presentation") -> tuple[dict[str, bytes], list[dict]]:
