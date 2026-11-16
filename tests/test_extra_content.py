@@ -155,10 +155,26 @@ class ShrineChestTests(unittest.TestCase):
             update = Path(temp, "usr/title/0005000e/101c9500/content")
             base = Path(temp, "usr/title/00050000/101c9500/content")
             update.mkdir(parents=True)
+            nowhere = Path(temp, "nowhere/code/U-King.rpx")
             with self.assertRaises(FileNotFoundError):
-                shrine_chests.base_content(update)
+                shrine_chests.base_content(update, launched=nowhere)
             base.mkdir(parents=True)
-            self.assertEqual(shrine_chests.base_content(update), base.resolve())
+            self.assertEqual(shrine_chests.base_content(update, launched=nowhere), base.resolve())
+
+    def test_the_base_game_is_found_where_cemu_lists_it(self):
+        # The launcher's profile copies only the update and DLC into its own mlc01:
+        # the base game is where the player's Cemu launches it from.
+        import tempfile
+        with tempfile.TemporaryDirectory() as temp:
+            update = Path(temp, "profile/mlc01/usr/title/0005000e/101c9400/content")
+            update.mkdir(parents=True)
+            game = Path(temp, "games/BotW [00050000101c9400]")
+            (game / "code").mkdir(parents=True)
+            (game / "content").mkdir()
+            rpx = game / "code" / "U-King.rpx"
+            self.assertEqual(shrine_chests.base_content(update, launched=rpx), (game / "content").resolve())
+            with self.assertRaises(FileNotFoundError):        # a .wua is not read
+                shrine_chests.base_content(update, launched=Path(temp, "games/BotW.wua"))
 
 
 class ItemTests(unittest.TestCase):

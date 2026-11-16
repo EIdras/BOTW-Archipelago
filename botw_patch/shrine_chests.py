@@ -83,17 +83,34 @@ def pack(name: str) -> str:
     return f"Pack/{name}.pack"
 
 
-def base_content(update: Path) -> Path:
-    """The base game's content/ beside the update's in Cemu's mlc01 folder
-    (usr/title/0005000e/<title>/content -> usr/title/00050000/<title>/content): the
-    shrines' packs are the base game's, the update has none."""
+def base_content(update: Path, launched=None) -> Path:
+    """The base game's content/: the shrines' packs are the base game's, the
+    update has none. Beside the update in Cemu's mlc01 folder
+    (usr/title/0005000e/<title>/content -> usr/title/00050000/<title>/content),
+    else where Cemu lists the game it launches: the launcher's profile copies
+    only the update and the DLC into its own mlc01 (tools/cemu_profile.py), the
+    base game stays in the player's game paths. `launched`: what Cemu launches
+    (its U-King.rpx), found by tools/cemu_profile.game() when not given."""
     update = Path(update).resolve()
     title, kind = update.parent, update.parent.parent
-    base = kind.parent / "00050000" / title.name / "content"
-    if kind.name.lower() != "0005000e" or not base.is_dir():
-        raise FileNotFoundError(f"the shrine chests need the base game's files, beside the update in Cemu's "
-                                f"mlc01 folder (looked for {base})")
-    return base
+    beside = kind.parent / "00050000" / title.name / "content"
+    if kind.name.lower() == "0005000e" and beside.is_dir():
+        return beside
+    if launched is None:
+        try:
+            from tools import cemu_profile
+            launched = cemu_profile.game()
+        except Exception:  # noqa: BLE001 - no profile or no game listed: the message below
+            launched = None
+    listed = None
+    if launched is not None and Path(launched).name.lower() == "u-king.rpx":
+        listed = Path(launched).resolve().parent.parent / "content"
+        if listed.is_dir():
+            return listed
+    where = f"looked for {beside}" + (f" and {listed}" if listed is not None else "")
+    raise FileNotFoundError(
+        "the shrine chests need the base game's files as a folder (code, content, meta): beside the "
+        f"update in Cemu's mlc01 folder, or where Cemu lists the game; a .wud/.wua is not read ({where})")
 
 
 def read_pack(game, name: str) -> bytes:
