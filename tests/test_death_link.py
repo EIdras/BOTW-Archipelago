@@ -367,6 +367,7 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.flag = True
         self.result = "survived"                    # Mipha saved Link, flag left set
         await self.kill()
+        await self.tick()                           # alive, the flag set: it landed
         with patch.object(runtime_module, "DEATHLINK_FLAG_SECONDS", 0.0), \
                 patch.object(runtime_module, "DEATHLINK_ECHO_SECONDS", 0.0):
             self.game.dead = True
@@ -387,6 +388,156 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.game.dead = False
         await self.tick()
         with patch.object(runtime_module, "DEATHLINK_ECHO_SECONDS", 0.0):
+            self.game.dead = True
+            await self.tick()
+        self.ap.send_death.assert_awaited_once()
+
+    async def test_a_request_run_late_is_ours_whatever_the_time_and_flag(self):
+        self.result = "taken"                       # accepted, run once the game is free
+        await self.kill()
+        await self.tick(2)                          # still alive: in flight
+        with patch.object(runtime_module, "DEATHLINK_ECHO_SECONDS", 0.0):
+            self.game.dead = True                   # it lands, its flag read as unset
+            await self.tick()
+        self.ap.send_death.assert_not_awaited()
+        self.game.dead = False
+        await self.tick()
+        with patch.object(runtime_module, "DEATHLINK_ECHO_SECONDS", 0.0):
+            self.game.dead = True                   # the next death is Link's own
+            await self.tick()
+        self.ap.send_death.assert_awaited_once()
+
+    async def test_a_survived_request_leaves_the_next_death_to_link(self):
+        self.result = "taken"
+        await self.kill()
+        self.flag = True                            # the entry ran: alive, flag set
+        await self.tick()
+        self.flag = False                           # then cleared, as it should be
+        with patch.object(runtime_module, "DEATHLINK_ECHO_SECONDS", 0.0):
+            self.game.dead = True
+            await self.tick()
+        self.ap.send_death.assert_awaited_once()
+
+    async def test_the_kill_waits_while_link_is_busy(self):
+        busy = [True]                               # a cutscene, a dialogue...
+        self.runtime.deliveries.backend._busy = lambda: busy[0]
+        await self.tick()
+        await self.receive()
+        with patch.object(runtime_module, "DEATHLINK_LEAD_SECONDS", 0.0):
+            await self.tick(3)
+            self.assertEqual(self.runtime._journal_notes, [])   # not even announced
+            busy[0] = False
+            await self.tick()                       # announced
+            busy[0] = True                          # a cutscene starts meanwhile
+            await self.tick()
+            self.assertEqual(self.requests, [])
+            self.runtime._deathlink_retry_after = 0.0
+            busy[0] = False
+            await self.tick()
+        self.assertEqual(len(self.requests), 1)
+
+    STUCK_NOTE = ("{0}DeathLink{/}: Link frozen. Freeing him...", None)
+
+    async def test_a_death_link_stuck_at_zero_hearts_is_given_a_quarter_heart_once(self):
+        restored = []
+        self.game.restore_life = restored.append
+        await self.kill()
+        await self.tick()                           # dead of it, never reloaded
+        self.assertNotIn(self.STUCK_NOTE, self.runtime._journal_notes)
+        with patch.object(runtime_module, "DEATHLINK_STUCK_SECONDS", -1.0):
+            await self.tick(3)
+        self.assertEqual(restored, [runtime_module.DEATHLINK_RESCUE_QUARTERS])
+        self.assertEqual(self.runtime._journal_notes.count(self.STUCK_NOTE), 1)
+        self.assertEqual(self.runtime.state["pending_deathlinks"], [])   # nothing asked again
+        self.assertEqual(len(self.requests), 1)
+        self.ap.send_death.assert_not_awaited()
+
+    def unfreezable(self, answers):
+        """The backend's request_unfreeze, answering from `answers` in turn."""
+        asked = []
+
+        def request_unfreeze():
+            asked.append(time.monotonic())
+            return answers[min(len(asked), len(answers)) - 1]
+        self.runtime.deliveries.backend.request_unfreeze = request_unfreeze
+        return asked
+
+    async def test_a_stuck_link_gets_a_quarter_heart_then_the_unfreeze_event(self):
+        restored = []
+        self.game.restore_life = lambda q: (restored.append(q), setattr(self.game, "dead", False))
+        asked = self.unfreezable([False, True])      # refused once (settling), then taken
+        await self.kill()
+        await self.tick()                           # dead of it, never reloaded
+        with patch.object(runtime_module, "DEATHLINK_STUCK_SECONDS", -1.0):
+            await self.tick()                       # stuck: a quarter heart
+        self.assertEqual(restored, [1])
+        self.assertEqual(asked, [])
+        await self.tick()                           # alive: asked, refused
+        self.assertEqual(len(asked), 1)
+        self.runtime._unfreeze_retry_after = 0.0
+        await self.tick()                           # asked again, taken
+        await self.tick(3)                          # nothing more
+        self.assertEqual(len(asked), 2)
+        self.assertEqual(len(self.requests), 1)     # the DeathLink is not asked again
+        self.ap.send_death.assert_not_awaited()
+
+    async def test_the_unfreeze_event_is_not_asked_while_hearts_are_empty(self):
+        self.game.restore_life = lambda q: None     # written, yet still read as dead
+        asked = self.unfreezable([True])
+        await self.kill()
+        await self.tick()
+        with patch.object(runtime_module, "DEATHLINK_STUCK_SECONDS", -1.0):
+            await self.tick(3)
+        self.assertEqual(asked, [])
+
+    async def test_the_unfreeze_event_gives_up_after_a_while(self):
+        self.game.restore_life = lambda q: setattr(self.game, "dead", False)
+        asked = self.unfreezable([False])
+        await self.kill()
+        await self.tick()
+        with patch.object(runtime_module, "DEATHLINK_STUCK_SECONDS", -1.0):
+            await self.tick()
+        with patch.object(runtime_module, "UNFREEZE_SECONDS", -1.0):
+            await self.tick()
+            self.runtime._unfreeze_retry_after = 0.0
+            await self.tick(2)
+        self.assertEqual(len(asked), 1)
+        self.assertIn((runtime_module.UNFREEZE_FAILED_NOTE, None), self.runtime._journal_notes)
+
+    async def test_console_unfreeze_restores_then_asks(self):
+        await self.tick()
+        self.game.dead = True                       # frozen at 0 hearts
+        restored = []
+        self.game.restore_life = lambda q: (restored.append(q), setattr(self.game, "dead", False))
+        asked = self.unfreezable([True])
+        self.assertTrue(self.runtime.handle_local_command("/ap-unfreeze"))
+        await asyncio.sleep(0.05)                   # the console's task
+        await self.tick()
+        self.assertEqual(restored, [1])
+        self.assertEqual(len(asked), 1)
+
+    async def test_a_natural_death_never_says_stuck(self):
+        await self.tick()
+        self.game.dead = True
+        with patch.object(runtime_module, "DEATHLINK_STUCK_SECONDS", -1.0):
+            await self.tick(3)
+        self.assertNotIn(self.STUCK_NOTE, self.runtime._journal_notes)
+
+    async def test_a_death_link_reloaded_in_time_never_says_stuck(self):
+        await self.kill()
+        await self.tick()                           # dead of it
+        self.game.dead = False                      # Game Over, reload
+        await self.tick()
+        self.game.dead = True                       # dies again later, on its own
+        with patch.object(runtime_module, "DEATHLINK_STUCK_SECONDS", -1.0):
+            await self.tick(2)
+        self.assertNotIn(self.STUCK_NOTE, self.runtime._journal_notes)
+
+    async def test_a_request_never_run_stops_owning_deaths(self):
+        self.result = "taken"
+        await self.kill()
+        with patch.object(runtime_module, "DEATHLINK_ECHO_SECONDS", 0.0), \
+                patch.object(runtime_module, "DEATHLINK_INFLIGHT_SECONDS", 0.0):
             self.game.dead = True
             await self.tick()
         self.ap.send_death.assert_awaited_once()

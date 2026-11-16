@@ -114,6 +114,14 @@ class NativeDeliveryCatalog:
             return None
         return str(value["flow"]), str(value["entry"]), tuple(str(f) for f in value.get("flags", ()))
 
+    def unfreeze_entry(self) -> tuple[str, str] | None:
+        """(flow, entry) of the pack's event that hands a frozen Link back
+        (botw_patch/unfreeze.py); None for a pack built before it."""
+        value = self.data.get("unfreeze")
+        if not isinstance(value, dict) or not value.get("entry") or not value.get("flow"):
+            return None
+        return str(value["flow"]), str(value["entry"])
+
     def death_link_flag(self) -> str | None:
         """The volatile flag the DeathLink entry leaves set on the deaths it causes."""
         value = self.data.get("death_link")
@@ -496,6 +504,16 @@ class CemuNativeDeliveryBackend:
         pack has no such entry. An unknown outcome counts as taken: a death
         requested twice would kill twice."""
         found = self.catalog.death_link_entry()
+        if found is None:
+            return None
+        return self._request_once(*found) is not False
+
+    def request_unfreeze(self) -> bool | None:
+        """Play the pack's small event that hands a frozen Link back: True once
+        the game took the request, False when it is to be asked again later
+        (Link's hearts still empty, the game busy), None when the pack has no
+        such entry. Harmless twice: Link puts the Slate away and waits."""
+        found = self.catalog.unfreeze_entry()
         if found is None:
             return None
         return self._request_once(*found) is not False

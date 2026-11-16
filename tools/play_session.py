@@ -187,6 +187,7 @@ async def console(runtime, context, log, slot_name: str) -> None:
         "/ap-tip <text> (in-game journal); /ap-disconnect [s] (simulated AP outage); "
         "/ap-evt [n|reset] (event requests seen by the game); "
         "/ap-deathlink [cause] (test: a DeathLink received, sent to nobody); "
+        "/ap-unfreeze (Link frozen in place: a quarter heart if he has none, then a small event); "
         "any other text goes to the AP chat.")
     try:
         while not runtime.stop_event.is_set():

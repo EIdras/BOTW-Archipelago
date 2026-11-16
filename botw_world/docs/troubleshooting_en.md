@@ -47,4 +47,5 @@ The client adds a few commands to the launcher's window, for tests and bug repor
 | `/ap-disconnect [s]` | Simulate a server disconnection for `s` seconds |
 | `/ap-evt [n\|reset]` | List the game's last event requests |
 | `/ap-deathlink [cause]` | Kill Link as a received DeathLink would (sent to nobody) |
+| `/ap-unfreeze` | Link frozen in place (hearts empty, no death): a quarter heart if he has none, then a small event that hands him back |
 | `/ap-border` | With `region_lock`: Link's position, the nearest closed region and the return to safe ground |

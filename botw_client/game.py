@@ -751,3 +751,12 @@ class BotwGame:
         DeathLink entry of the pack does (botw_patch/death_link.py).
         """
         return self._read_flag("CurrentHart", "s32") <= 0
+
+    def restore_life(self, quarters: int = 1) -> None:
+        """Give Link `quarters` quarter hearts back, after a DeathLink that
+        emptied them in a cutscene where the game never starts his death
+        (botw_client/runtime.py, DEATHLINK_STUCK_SECONDS). Alone it does not
+        free him; the next event the game plays does (seen: an item's pickup
+        animation), and the deliveries wait for Link alive. Raises when the
+        write does not read back."""
+        self._write_flag("CurrentHart", int(quarters), "s32")

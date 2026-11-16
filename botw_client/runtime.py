@@ -48,9 +48,32 @@ GAME_START_PATIENCE_SECONDS = 300.0
 # falls back on the time alone (measured: Link dies in the frame the entry
 # runs). A death still waiting after DEATHLINK_EXPIRY_SECONDS (Link busy in an
 # event...) is dropped.
+# A request the game took may run only once the game is free (seen in a room:
+# Link died 5 s after the request, its flag read as unset, and the death was
+# sent back). So the request stays in flight until it lands: Link's next death
+# is its, whenever it comes, unless Link was seen alive with the flag set (the
+# entry ran and he survived it). DEATHLINK_INFLIGHT_SECONDS bounds a request
+# the game took but never ran.
 DEATHLINK_LEAD_SECONDS = 3.0
 DEATHLINK_ECHO_SECONDS = 5.0
 DEATHLINK_FLAG_SECONDS = 60.0
+DEATHLINK_INFLIGHT_SECONDS = 120.0
+# A kill run during a cutscene empties Link's hearts but the game never starts
+# his death: he cannot move or save (seen in a room, after the Great Plateau
+# Tower's cutscene). The kill is only asked while Link is in the world and no
+# entry runs; yet the game may hold a request it took and run it later (seen:
+# asked while Link climbed the tower, run at the end of its cutscene). Link
+# held at 0 hearts past DEATHLINK_STUCK_SECONDS (a death's Game Over takes ~9 s
+# of game time) gets DEATHLINK_RESCUE_QUARTERS back: that alone does not free
+# him, but the deliveries, held while he is dead, go again, and the next
+# event the game plays frees him (seen: an item's pickup animation). The
+# DeathLink is not asked again: a kill asked of a frozen Link never runs.
+DEATHLINK_STUCK_SECONDS = 45.0
+DEATHLINK_RESCUE_QUARTERS = 1
+# So the rescue then asks the pack's small event (botw_patch/unfreeze.py), as
+# soon as the game takes events again, for at most UNFREEZE_SECONDS.
+UNFREEZE_SECONDS = 60.0
+UNFREEZE_FAILED_NOTE = "{0}DeathLink{/}: couldn't free Link. Load your last save"
 DEATHLINK_EXPIRY_SECONDS = 120.0
 # A Yiga Ambush committed while Link was leaving the world (a menu opened in
 # between) waits for him; after this long, it is given up.
@@ -324,6 +347,11 @@ class BotwClientRuntime:
         self._deathlink_retry_after = 0.0
         self._deathlink_announced_at = None
         self._death_requested_at = None
+        self._death_request_landed = False
+        self._death_request_event = None      # the received death last asked
+        self._death_link_dead_since = None    # Link dead of it, since (monotonic)
+        self._unfreeze_since = None           # the unfreeze event wanted, since (monotonic)
+        self._unfreeze_retry_after = 0.0
         # Native traps (botw_client/cucco_swarm.py, yiga_ambush.py, downpour.py):
         # the committed ones waiting to be played, since when the first one
         # waits for Link, and the swarm playing.
@@ -1656,10 +1684,15 @@ class BotwClientRuntime:
             return
         if not dead:
             self._alive_seen = True
+            if (self._death_requested_at is not None and not self._death_request_landed
+                    and await self._death_link_flag()):
+                # The entry ran and Link survived it (Mipha's Grace, a fairy).
+                self._death_request_landed = True
         if (self.ap.death_link_enabled and self._alive_seen and dead
                 and self._last_dead is False):
             if await self._killed_by_death_link():
                 self.log("Link died of the received DeathLink: not sent back")
+                self._death_link_dead_since = time.monotonic()
             else:
                 cause = await self._death_cause()
                 if self.ap.connected:
@@ -1668,6 +1701,13 @@ class BotwClientRuntime:
                     state["pending_outgoing_death"] = cause
                     self.state_store.save()
         self._last_dead = dead
+        if not dead:
+            self._death_link_dead_since = None
+        elif (self._death_link_dead_since is not None
+                and time.monotonic() - self._death_link_dead_since > DEATHLINK_STUCK_SECONDS):
+            await self._rescue_stuck_death()
+            return
+        await self._unfreeze_tick(dead)
 
         pending_out = state["pending_outgoing_death"]
         if self.ap.connected and self.ap.death_link_enabled and pending_out:
@@ -1689,13 +1729,18 @@ class BotwClientRuntime:
             self.state_store.save()
             return
         if self._deathlink_announced_at is None:
-            if not await asyncio.to_thread(self.game.safe_for_delivery):
+            if (not await asyncio.to_thread(self.game.safe_for_delivery)
+                    or not await self._free_for_death()):
                 return
             from .ap_journal import death_link_line
             self._journal_note(death_link_line(event["source"], event["cause"]))
             self._deathlink_announced_at = time.monotonic()
             return
         if time.monotonic() - self._deathlink_announced_at < DEATHLINK_LEAD_SECONDS:
+            return
+        if not await self._free_for_death():
+            # A cutscene, a dialogue or an entry since the announcement: wait.
+            self._deathlink_retry_after = time.monotonic() + 1.0
             return
         request = getattr(getattr(self.deliveries, "backend", None), "request_death", None)
         result = await asyncio.to_thread(request) if request is not None else None
@@ -1710,7 +1755,87 @@ class BotwClientRuntime:
                      "rebuild it with tools/play_seed.py")
             return
         self._death_requested_at = time.monotonic()
+        self._death_request_landed = False
+        self._death_request_event = dict(event)
         self.log(f"DeathLink applied: {event['source']}")
+
+    async def _free_for_death(self) -> bool:
+        """Link in the world (no cutscene, event, dialogue, menu or loading) and
+        no entry of the pack running: the delivery backend's own guard. A
+        backend without it does not hold the DeathLink."""
+        busy = getattr(getattr(self.deliveries, "backend", None), "_busy", None)
+        if busy is None:
+            return True
+        try:
+            return not await asyncio.to_thread(busy)
+        except Exception:  # noqa: BLE001 - unreadable: not now
+            return False
+
+    async def _rescue_stuck_death(self):
+        """Link held at 0 hearts by the received DeathLink, never dying (its
+        kill ran in a cutscene): give him DEATHLINK_RESCUE_QUARTERS back, so
+        that the deliveries go again and the next event frees him; tell the
+        player how out. The DeathLink is spent, not asked again. Once per death."""
+        self._death_link_dead_since = None
+        self._death_request_event = None
+        self.log("Link stuck at 0 hearts after a DeathLink (its kill ran in a cutscene)")
+        if await self._restore_quarter_heart():
+            self._want_unfreeze()
+            self._journal_note("{0}DeathLink{/}: Link frozen. Freeing him...")
+        else:
+            self.log("Link stuck: load your last save")
+            self._journal_note(UNFREEZE_FAILED_NOTE)
+
+    async def _console_unfreeze(self):
+        try:
+            dead = await asyncio.to_thread(self.game.is_dead)
+        except Exception:  # noqa: BLE001 - unreadable: ask the event anyway
+            dead = False
+        if dead and not await self._restore_quarter_heart():
+            self.log("/ap-unfreeze: Link's hearts are empty and could not be restored")
+            return
+        self._death_link_dead_since = None
+        self._want_unfreeze()
+        self.log("/ap-unfreeze: the unfreeze event is asked at the next safe moment")
+
+    async def _restore_quarter_heart(self) -> bool:
+        restore = getattr(self.game, "restore_life", None)
+        if restore is None:
+            return False
+        try:
+            await asyncio.to_thread(restore, DEATHLINK_RESCUE_QUARTERS)
+        except Exception as exc:  # noqa: BLE001 - the write did not hold
+            self.log(f"Link's hearts not restored: {type(exc).__name__}: {exc}")
+            return False
+        self.log("a quarter heart restored")
+        return True
+
+    def _want_unfreeze(self):
+        self._unfreeze_since = time.monotonic()
+        self._unfreeze_retry_after = 0.0
+
+    async def _unfreeze_tick(self, dead: bool):
+        """Ask the pack's unfreeze event (botw_patch/unfreeze.py) while it is
+        wanted: once the game takes it, or after UNFREEZE_SECONDS of refusals."""
+        if (self._unfreeze_since is None or dead
+                or time.monotonic() < self._unfreeze_retry_after):
+            return
+        request = getattr(getattr(self.deliveries, "backend", None), "request_unfreeze", None)
+        result = await asyncio.to_thread(request) if request is not None else None
+        if result is False:
+            if time.monotonic() - self._unfreeze_since > UNFREEZE_SECONDS:
+                self._unfreeze_since = None
+                self.log("unfreeze event not taken by the game: load your last save")
+                self._journal_note(UNFREEZE_FAILED_NOTE)
+            else:
+                self._unfreeze_retry_after = time.monotonic() + 1.0
+            return
+        self._unfreeze_since = None
+        if result is None:
+            self.log("no unfreeze event in this pack (built before it): load your last save")
+            self._journal_note(UNFREEZE_FAILED_NOTE)
+            return
+        self.log("unfreeze event asked: Link puts the Slate away and should move again")
 
     def _pickup_actor(self, name: str) -> str | None:
         """The actor of the game's pickup notification for this item, if the
@@ -1896,22 +2021,33 @@ class BotwClientRuntime:
     async def _killed_by_death_link(self) -> bool:
         """Did the DeathLink we requested cause this death? A death within
         DEATHLINK_ECHO_SECONDS of the request is its; later, its flag says so.
-        A death so recognised uses the request up.
+        A request still in flight (not seen to land) owns Link's next death,
+        whatever the flag says. A death so recognised uses the request up.
 
         Seen in a room: a death in the second the DeathLink applied was sent
-        back, its flag read as not set; the time alone keeps it home."""
+        back, its flag read as not set; the time alone keeps it home. Seen
+        later: a request run only once the game was free killed Link 5 s
+        after it, past that time, and was sent back; hence the flight."""
         if self._death_requested_at is None:
             return False
         since = time.monotonic() - self._death_requested_at
-        ask = getattr(getattr(self.deliveries, "backend", None), "killed_by_death_link", None)
-        try:
-            flag = await asyncio.to_thread(ask) if ask is not None else None
-        except Exception:  # noqa: BLE001 - unreadable: the time decides
-            flag = None
-        ours = since < DEATHLINK_ECHO_SECONDS or bool(flag and since < DEATHLINK_FLAG_SECONDS)
+        flag = await self._death_link_flag()
+        in_flight = not self._death_request_landed and since < DEATHLINK_INFLIGHT_SECONDS
+        ours = (since < DEATHLINK_ECHO_SECONDS or in_flight
+                or bool(flag and since < DEATHLINK_FLAG_SECONDS))
         if ours:
             self._death_requested_at = None
+            self._death_request_landed = False
         return ours
+
+    async def _death_link_flag(self) -> bool | None:
+        """The DeathLink entry's flag (set on a death it caused), or None when
+        the pack has none or it cannot be read."""
+        ask = getattr(getattr(self.deliveries, "backend", None), "killed_by_death_link", None)
+        try:
+            return await asyncio.to_thread(ask) if ask is not None else None
+        except Exception:  # noqa: BLE001 - unreadable: the time decides
+            return None
 
     async def _death_cause(self) -> str:
         """The cause sent with Link's death: what killed him, when the game says."""
@@ -2246,6 +2382,11 @@ class BotwClientRuntime:
                     time.time(), 'Console',
                     line[len('/ap-deathlink'):].strip() or 'DeathLink test'))
                 self.log('DeathLink test: Link dies at the next safe moment.')
+            return True
+        if parts and parts[0] == '/ap-unfreeze':
+            # Link frozen in place: a quarter heart if his are empty (the game
+            # takes no event then), then the pack's unfreeze event.
+            asyncio.get_running_loop().create_task(self._console_unfreeze())
             return True
         if parts and parts[0] == '/ap-disconnect':
             # Test of the connection status: a real close, the usual

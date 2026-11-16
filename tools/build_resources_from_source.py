@@ -32,7 +32,7 @@ from tools import build_plateau_sensor_candidate as sensor
 from tools import build_master_sword_candidate as sword
 from botw_patch import (ballad_ends, beast_heart, bike_anywhere, camera_sensor, death_link, downpour,
                         ganon_gate, gerudo_outfit, goron_armor, horses, hud_layout, loading_icon,
-                        pedestal, purah_upgrades, traps)
+                        pedestal, purah_upgrades, traps, unfreeze)
 from botw_patch.ap_quest import INPUT_HASHES as STATUS_INPUTS
 
 TITLE = "Pack/TitleBG.pack"
@@ -86,7 +86,7 @@ SOURCE_FILES = (
     "botw_patch/horses.py", "botw_patch/downpour.py", "botw_patch/game_files.py",
     *gerudo_outfit.SOURCE_FILES, *ganon_gate.SOURCE_FILES, *beast_heart.SOURCE_FILES,
     *goron_armor.SOURCE_FILES, *pedestal.SOURCE_FILES, *camera_sensor.SOURCE_FILES,
-    *purah_upgrades.SOURCE_FILES, *ballad_ends.SOURCE_FILES,
+    *purah_upgrades.SOURCE_FILES, *ballad_ends.SOURCE_FILES, *unfreeze.SOURCE_FILES,
 )
 
 
@@ -278,6 +278,12 @@ def _generate(game: GameFiles, binding_token: int, shops: list | None, status: d
     files, edits = patch_stage(files, TITLE, {QUIET_MEMBER: pedestal.add_entry},
                                extra_archive=(BOOTUP, {pedestal.EVENT_INFO: pedestal.add_event_info}))
     changes.extend(edits)
+    # The event that hands a frozen Link back (botw_patch/unfreeze.py): requested
+    # by the client after a DeathLink left him at 0 hearts without dying.
+    files, edits = patch_stage(files, TITLE, {MEMBER: unfreeze.add_entry},
+                               extra_archive=(BOOTUP, {unfreeze.EVENT_INFO: unfreeze.add_event_info}))
+    changes.extend(edits)
+    catalog["unfreeze"] = {"entry": unfreeze.ENTRY, "flow": MEMBER_FLOW}
     files, edits = patch_stage(files, BOOTUP, {ganon_gate.GAMEDATA: ganon_gate.add_flags})
     changes.extend(edits)
     files, edits = patch_stage(files, BOOTUP, {purah_upgrades.GAMEDATA: purah_upgrades.add_flags,
