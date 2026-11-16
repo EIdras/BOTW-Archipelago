@@ -602,11 +602,44 @@ DOT = {"Shrine": "#3a8fd6", "Tower": "#e08a2c", "Divine Beast": "#c94a4a", "Shop
 # The locations a seed may leave out (its options draw them): shown once connected,
 # when the seed has them.
 OPTIONAL = {"Shop", "Stall", "Shrine Chest", "Chest", "Boss"}
-# The field chests and the bosses: stacked, one square a map cell (A-1 to J-8) for
-# each kind, at the middle of the cell's drawn ones; smaller than a check's square,
-# a square for the chests, a diamond for the bosses.
-GROUPS = {"Chest": "Chests", "Boss": "Bosses"}
+# The field chests and the bosses: smaller than a check's square, a square for the
+# chests, a diamond for the bosses. Each at its own place on its region's map; on the
+# overview, the bosses at theirs too, the chests stacked by landmark
+# (data/chest_landmarks.json, tools/build_extra_locations.py): one square a landmark,
+# whose sections refer to the chests' own.
 GROUP_MARKERS = {"Chest": {"size": 20, "shape": "rect"}, "Boss": {"size": 22, "shape": "diamond"}}
+LANDMARKS = ROOT / "data/chest_landmarks.json"
+# A map a region (botw_world regions; Hyrule Castle's locations on Central's), the
+# region's locations cut out of the whole map, REGION_MARGIN pixels around them,
+# enlarged so that its longer side is about REGION_SIDE pixels (REGION_ZOOM at most).
+REGION_MARGIN = 30
+REGION_SIDE = 1400
+REGION_ZOOM = (2, 6)
+
+
+def map_region(row: dict) -> str:
+    """The region map a location is shown on."""
+    return "Central" if row["region"] == "Hyrule Castle" else row["region"]
+
+
+def region_map_image(region: str) -> str:
+    return f"images/maps/{code(region)}.png"
+
+
+def region_frames(cat, positions: dict) -> dict[str, tuple[int, int, int, int, int]]:
+    """{region: (left, top, right, bottom, zoom)} of each region's map, in pixels of the whole map."""
+    points: dict[str, list[tuple[int, int]]] = {}
+    for row in cat.LOCATIONS:
+        points.setdefault(map_region(row), []).append(maptex.pixel(*positions[row["name"]], SCALE))
+    width, height = int(12000 * SCALE), int(10000 * SCALE)
+    frames = {}
+    for region, spots in sorted(points.items()):
+        xs, ys = zip(*spots)
+        left, top = max(0, min(xs) - REGION_MARGIN), max(0, min(ys) - REGION_MARGIN)
+        right, bottom = min(width, max(xs) + REGION_MARGIN), min(height, max(ys) + REGION_MARGIN)
+        zoom = max(REGION_ZOOM[0], min(REGION_ZOOM[1], REGION_SIDE // max(right - left, bottom - top)))
+        frames[region] = (left, top, right, bottom, zoom)
+    return frames
 
 
 def place_of(row: dict) -> str:
@@ -616,9 +649,6 @@ def place_of(row: dict) -> str:
     name, kinds = row["name"], set(row["category"].split("|"))
     if "Shrine Chest" in kinds:
         return re.sub(r" Chest \d+$", "", name)
-    if kinds & {"Chest", "Boss"}:
-        # "Chest F-4 #3", "Black Hinox E-2 #1": one square a map cell for each kind.
-        return f"{GROUPS[next(iter(kinds & set(GROUPS)))]} {name.rsplit(' ', 2)[-2]}"
     if kinds & {"Shop", "Stall"}:
         return re.sub(r" Item \d+$", "", name)
     if "Rune Upgrade" in kinds:
@@ -667,21 +697,31 @@ def world_regions(cat, row: dict) -> tuple[str, ...]:
 
 
 def crop_box(places: list) -> tuple[int, int, int, int]:
-    """(left, top, right, bottom) of the map shown, in pixels of the whole map:
-    MARGIN around the squares of `places` (locations() at the origin)."""
-    xs, ys = zip(*((place["map_locations"][0]["x"], place["map_locations"][0]["y"]) for place in places))
+    """(left, top, right, bottom) of the overview map, in pixels of the whole map:
+    MARGIN around the squares of `places` on it (locations() at the origin)."""
+    xs, ys = zip(*((spot["x"], spot["y"]) for place in places for spot in place["map_locations"]
+                   if spot["map"] == MAP))
     width, height = int(12000 * SCALE), int(10000 * SCALE)
     return (max(0, min(xs) - MARGIN), max(0, min(ys) - MARGIN),
             min(width, max(xs) + MARGIN), min(height, max(ys) + MARGIN))
 
 
-def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[list, dict, dict, dict, dict]:
+def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0),
+              frames: dict | None = None, landmarks: dict | None = None) -> tuple[list, dict, dict, dict, dict]:
     """locations.json, the AP id -> section path map, the Lua requirement table,
     the maps each location asks for when the maps are region keys, and the
-    regions it asks to reach with region_lock."""
+    regions it asks to reach with region_lock. origin: the overview's corner;
+    frames (region_frames): each location on its region's map too; landmarks
+    (data/chest_landmarks.json): the field chests stacked by landmark on the
+    overview, else left off it."""
     places: dict[str, dict] = {}
-    members: dict[str, list[tuple[int, int]]] = {}
+    stacks: dict[str, dict] = {}
     sections, requirements, maps, regions = {}, {}, {}, {}
+
+    def overview(x, z):
+        px, py = maptex.pixel(x, z, SCALE)
+        return px - origin[0], py - origin[1]
+
     for row in cat.LOCATIONS:
         name = row["name"]
         kinds = set(row["category"].split("|"))
@@ -691,15 +731,29 @@ def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[l
             key = next(r["name"] for r in cat.LOCATIONS if "Shrine" in r["category"].split("|")
                        and positions[r["name"]] == positions[name])
         kind = next(k for k in DOT if k in kinds) if kinds & set(DOT) else "Shrine"
-        x, y = maptex.pixel(*positions[name], SCALE)
-        x, y = x - origin[0], y - origin[1]
+        x, y = overview(*positions[name])
         group = next(iter(kinds & set(GROUP_MARKERS)), None)
-        place = places.setdefault(key, {
-            "name": key, "chest_unopened_img": f"images/dots/{code(kind)}.png",
-            "chest_opened_img": "images/dots/opened.png",
-            "map_locations": [{"map": MAP, "x": x, "y": y, **GROUP_MARKERS.get(group, {})}], "sections": []})
-        if group:
-            members.setdefault(key, []).append((x, y))
+        marker = GROUP_MARKERS.get(group, {})
+        if key not in places:
+            spots = [] if group == "Chest" else [{"map": MAP, "x": x, "y": y, **marker}]
+            if frames is not None:
+                region = map_region(row)
+                left, top, _right, _bottom, zoom = frames[region]
+                px, py = maptex.pixel(*positions[name], SCALE)
+                spots.append({"map": region, "x": (px - left) * zoom, "y": (py - top) * zoom, **marker})
+            places[key] = {"name": key, "chest_unopened_img": f"images/dots/{code(kind)}.png",
+                           "chest_opened_img": "images/dots/opened.png", "map_locations": spots, "sections": []}
+        place = places[key]
+        if group == "Chest" and landmarks is not None:
+            landmark = landmarks["chests"][name]
+            stack = stacks.setdefault(landmark, {
+                "name": f"Chests: {landmark}", "chest_unopened_img": "images/dots/chest.png",
+                "chest_opened_img": "images/dots/opened.png",
+                "map_locations": [{"map": MAP, **dict(zip("xy", overview(*landmarks["places"][landmark]))),
+                                   **marker}],
+                "visibility_rules": [], "sections": []})
+            stack["sections"].append({"ref": f"{key}/{name}"})
+            stack["visibility_rules"].append([f"$botw_drawn|{row['id']}"])
         section = {"name": name, "item_count": 1}
         if name == cat.GOAL_LOCATION:
             section["access_rules"] = [["$botw_ganon"]]
@@ -724,11 +778,7 @@ def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[l
             if "Shrine Chest" not in kinds:
                 place.setdefault("visibility_rules", []).append([f"$botw_drawn|{row['id']}"])
         place["sections"].append(section)
-    for key, points in members.items():
-        marker = places[key]["map_locations"][0]
-        marker["x"] = round(sum(x for x, _ in points) / len(points))
-        marker["y"] = round(sum(y for _, y in points) / len(points))
-    return list(places.values()), sections, requirements, maps, regions
+    return [*places.values(), *stacks.values()], sections, requirements, maps, regions
 
 
 def lua_value(value) -> str:
@@ -779,7 +829,10 @@ def data_lua(cat, item_ids: dict, sections: dict, requirements: dict, maps: dict
     return "\n".join(lines)
 
 
-def layouts(cat, drawn: poptracker_regions.Drawn | None = None) -> dict:
+def layouts(cat, drawn: poptracker_regions.Drawn | None = None, region_maps: list[str] = ()) -> dict:
+    """The layouts: the items, the regions panel, and the maps, a tab each: the
+    overview (MAP), then a region's (titled with its name: the autotracker activates
+    the tab of the region Link enters, scripts/autotracking/archipelago.lua)."""
     grid = [[code(name) for name, _label, _colour in row] for row in ROWS]
     grid.append([code(name) for name, _ in BEAST_ROW] + ["shrines_cleared"])
     tiles = [[f"{code(region)}_tile" if region == START_REGION else f"{code(cat.MAPS[region])}_tile"
@@ -811,7 +864,8 @@ def layouts(cat, drawn: poptracker_regions.Drawn | None = None) -> dict:
                     {"type": "group", "header": "Pinned locations", "content": {
                         "type": "recentpins", "style": "wrapped", "h_alignment": "stretch",
                         "v_alignment": "stretch", "compact": True}}]},
-                {"type": "map", "maps": [MAP]}]}},
+                {"type": "tabbed", "tabs": [{"title": name, "content": {"type": "map", "maps": [name]}}
+                                            for name in (MAP, *region_maps)]}]}},
         "tracker_broadcast": {"type": "array", "orientation": "vertical", "content": [
             {"type": "layout", "key": "item_grid"}, {"type": "layout", "key": "region_tiles"}]},
     }
@@ -883,7 +937,7 @@ def regions_on_map(cat, crop: np.ndarray, box: tuple[int, int, int, int], places
         where = lookup(np.arange(left, right), np.arange(top, bottom))
     except (OSError, ValueError, KeyError):
         return []
-    checks = [(spot["x"], spot["y"]) for place in places for spot in place["map_locations"]]
+    checks = [(spot["x"], spot["y"]) for place in places for spot in place["map_locations"] if spot["map"] == MAP]
     regions = [START_REGION, *sorted(cat.MAPS)]
     drawn = poptracker_regions.on_map(crop, where, regions, checks, lambda text: glyphs(text, 3, 2))
     markers = []
@@ -910,7 +964,9 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
     found = {**ui_icons(update), **stock_icons(update), **game_icons(icons)}
     item_entries, images, item_ids = items(cat, found)
     left, top, right, bottom = crop_box(locations(cat, positions)[0])
-    place_entries, sections, requirements, maps, regions = locations(cat, positions, (left, top))
+    frames = region_frames(cat, positions)
+    landmarks = json.loads(LANDMARKS.read_text(encoding="utf-8"))
+    place_entries, sections, requirements, maps, regions = locations(cat, positions, (left, top), frames, landmarks)
     files["scripts/data.lua"] = data_lua(cat, item_ids, sections, requirements, maps, regions).encode()
     for kind, colour in DOT.items():
         images[f"images/dots/{code(kind)}.png"] = found.get(f"dot_{code(kind)}", dot(colour, True))
@@ -929,6 +985,11 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
     markers = regions_on_map(cat, crop, (left, top, right, bottom), place_entries, lookup)
     alpha = np.full(crop.shape[:2] + (1,), 255, dtype=np.uint8)
     images["images/map.png"] = np.concatenate([crop, alpha], 2)
+    for region, (r_left, r_top, r_right, r_bottom, zoom) in frames.items():
+        # The region's piece of the whole map, enlarged (each pixel zoom x zoom).
+        piece = np.repeat(np.repeat(image[r_top:r_bottom, r_left:r_right], zoom, 0), zoom, 1)
+        images[region_map_image(region)] = np.concatenate(
+            [piece, np.full(piece.shape[:2] + (1,), 255, dtype=np.uint8)], 2)
     drawn = regions_panel(cat, image, (left, top, right, bottom), lookup) if game_map else None
     region_entries, region_images = region_items(cat, drawn)
     item_entries += region_entries
@@ -940,8 +1001,10 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
     files["locations/regions.json"] = json.dumps(markers, indent=1).encode()
     files["maps/maps.json"] = json.dumps([{
         "name": MAP, "location_size": 30, "location_border_thickness": 3,
-        "img": "images/map.png"}], indent=1).encode()
-    files["layouts/tracker.json"] = json.dumps(layouts(cat, drawn), indent=1).encode()
+        "img": "images/map.png"}, *({"name": region, "location_size": 30, "location_border_thickness": 3,
+                                     "img": region_map_image(region)} for region in frames)],
+        indent=1).encode()
+    files["layouts/tracker.json"] = json.dumps(layouts(cat, drawn, sorted(frames)), indent=1).encode()
     files["manifest.json"] = json.dumps({
         "name": "Breath of the Wild Archipelago", "game_name": cat.GAME,
         "package_uid": PACK_NAME, "package_version": cat.WORLD_VERSION,

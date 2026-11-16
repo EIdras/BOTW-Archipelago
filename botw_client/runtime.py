@@ -310,6 +310,11 @@ class BotwClientRuntime:
         # last zone logged, why it cannot run (logged once).
         self._border = None
         self._border_areas = None
+        # Link's region for the trackers (botw_client/region_report.py): the last one
+        # written to the server, when it was looked at, why it cannot be (logged once).
+        self._region_reported = None
+        self._region_report_at = 0.0
+        self._region_report_failure = None
         self._border_zone = None
         self._border_return = None
         self._border_missed = self._border_closures = 0
@@ -646,6 +651,34 @@ class BotwClientRuntime:
                 except Exception:  # noqa: BLE001 - Cemu may be gone: the timers lapse alone
                     pass
                 self._border = None
+
+    async def _region_report_tick(self):
+        """Link's region, written to the server's data storage when it changes, for the
+        trackers' maps (botw_client/region_report.py): looked at once a second."""
+        from .region_report import SECONDS, link_region, set_command
+        now = time.monotonic()
+        if (now < self._region_report_at or not getattr(self.ap, "connected", False)
+                or getattr(self.ap, "team", None) is None or getattr(self.ap, "game", None) != "Breath of the Wild"
+                or not getattr(self.game, "cave", None) or not hasattr(self.game, "process")):
+            return
+        self._region_report_at = now + SECONDS
+        try:
+            if self._border_areas is None:
+                from .region_border import load_areas
+                self._border_areas = await asyncio.to_thread(load_areas)
+            process, cave = self.game.process, self.game.cave
+            region = await asyncio.to_thread(
+                link_region, lambda guest, size: process.read(cave.base + guest, size), self._border_areas)
+            if region is None or region == self._region_reported:
+                return
+            await self.ap.send(set_command(self.ap.team, self.ap.slot, region))
+            self._region_reported = region
+        except Exception as exc:  # noqa: BLE001 - the trackers' map must not stop the session
+            failure = f"{type(exc).__name__}: {exc}"
+            if failure != self._region_report_failure:
+                self.log(f"region for the trackers unavailable: {failure}")
+                self._region_report_failure = failure
+            self._region_report_at = now + 30.0
 
     def _make_border(self, slot):
         import zlib
@@ -2533,6 +2566,7 @@ class BotwClientRuntime:
                     self._discover_received()
                     self._collect_messages()
                     self._mark_bulk()
+                    await self._region_report_tick()
                     # A reload back to an unbound save unbinds the session.
                     session_bound = not self.native_delivery or self._native_session_bound
                 # A swarm playing has the invoker for its 10 s: the events

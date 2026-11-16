@@ -51,6 +51,7 @@ MASTER = ROOT / "data/locations_master.csv"
 LOCATIONS = ROOT / "botw_world/data/locations.json"
 LOGIC = ROOT / "botw_world/data/logic.csv"
 POSITIONS = ROOT / "data/location_positions.json"
+LANDMARKS = ROOT / "data/chest_landmarks.json"
 SCHEMA_5_ROWS = 220
 SHRINES = 120
 HOT = ("EldinClimateLv1", "EldinClimateLv2")
@@ -250,7 +251,41 @@ def main(argv=None) -> int:
         print(category, sum(row["category"] == category for row in rows))
     if args.write:
         write(rows)
+        text = json.dumps(landmarks(args.content, args.aoc), ensure_ascii=False, indent=1) + "\n"
+        LANDMARKS.write_bytes(text.encode("utf-8"))
     return 0
+
+
+def landmarks(content: Path, aoc: Path) -> dict:
+    """The tracker's landmarks (tools/build_poptracker.py, its overview map): the places the
+    game's map names, LocationPointer (Hebra Great Skeleton...) and the LocationMarker
+    of no shrine nor tower (villages, stables...), named in English
+    (StaticMsg/LocationMarker.msbt); and the landmark of each field chest, the nearest.
+    {"places": {name: [x, z]}, "chests": {chest: name}}."""
+    from botw_patch.shop_items import read_labels
+    static = oead.byml.from_binary(unpack((aoc / "Map/MainField/Static.smubin").read_bytes()))
+    boot = oead.Sarc((content / "Pack/Bootup_USen.pack").read_bytes())
+    messages = oead.Sarc(unpack(bytes(boot.get_file("Message/Msg_USen.product.ssarc").data)))
+    labels = read_labels(bytes(messages.get_file("StaticMsg/LocationMarker.msbt").data))
+    places: dict[str, list[float]] = {}
+    for kind in ("LocationPointer", "LocationMarker"):
+        for marker in static[kind]:
+            message = str(marker["MessageID"]) if "MessageID" in marker else ""
+            name = labels.get(message, "").strip("\0").strip()
+            if not name or message.startswith(("Dungeon", "Tower", "Remains")):
+                continue
+            translate = marker["Translate"]
+            where = [round(float(translate["X"]), 1), round(float(translate["Z"]), 1)]
+            places.setdefault(name, where)      # a name twice: its first place
+    positions = json.loads(POSITIONS.read_text(encoding="utf-8"))
+    rows = json.loads(LOCATIONS.read_text(encoding="utf-8"))
+    chests = {}
+    for row in rows:
+        if row["category"] == "Chest":
+            x, z = positions[row["name"]]
+            chests[row["name"]] = min(places, key=lambda name: (places[name][0] - x) ** 2 + (places[name][1] - z) ** 2)
+    used = set(chests.values())
+    return {"places": {name: where for name, where in sorted(places.items()) if name in used}, "chests": chests}
 
 
 if __name__ == "__main__":

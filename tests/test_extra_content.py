@@ -247,5 +247,34 @@ class ElementalStrikeTests(unittest.TestCase):
         self.assertEqual(len(turns), 1)
 
 
+class RegionReportTests(unittest.TestCase):
+    def test_links_region_in_the_field_only(self):
+        from botw_client import region_report
+        from botw_client.region_border import MAP_TYPE
+
+        class Areas:
+            @staticmethod
+            def region_at(x, z):
+                return "Hebra" if (x, z) == (100.0, 200.0) else None
+
+        memory = Memory()
+        words = {**memory.words}
+
+        def read(guest, size, stage=b"MainField"):
+            if guest == MAP_TYPE:
+                return stage + bytes(size - len(stage))
+            if size == 4 and guest in words:
+                return words[guest].to_bytes(4, "big")
+            return None
+        # The player's pointers of Memory are low addresses: accepted as the game's here.
+        import unittest.mock as mock
+        with mock.patch.object(region_report, "in_guest", lambda address: bool(address)):
+            self.assertEqual(region_report.link_region(read, Areas), "Hebra")
+            self.assertIsNone(region_report.link_region(lambda g, s: read(g, s, b"CDungeon"), Areas))
+        self.assertEqual(region_report.set_command(0, 2, "Hebra"), {
+            "cmd": "Set", "key": "botw_region_0_2", "default": "", "want_reply": False,
+            "operations": [{"operation": "replace", "value": "Hebra"}]})
+
+
 if __name__ == "__main__":
     unittest.main()
