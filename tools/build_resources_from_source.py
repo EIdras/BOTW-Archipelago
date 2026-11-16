@@ -129,6 +129,28 @@ def stage_names(shops: list | None = None, status: dict | None = None) -> list[s
             *(["the shrine chests"] if shrine_chests.enabled(status) else []), "the texts"]
 
 
+def patch_archives(files: dict[str, bytes], archives: list) -> tuple[dict[str, bytes], list[dict]]:
+    """Several archives patched at once, as patch_stage patches one, with the size
+    table's accounting: only they and the size table are staged on disk (patch_stage
+    stages every file of the pack so far, seconds each time: the shrine chests patch
+    up to a hundred archives). archives: (name, {member: transform}, read(name) for
+    an archive not in `files` yet)."""
+    import tempfile
+    from botw_patch.resources import ResourceBuilder
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp:
+        stage_content = Path(temp)
+        staged = {TABLE: files[TABLE], **{name: files[name] if name in files else read(name)
+                                          for name, _transforms, read in archives}}
+        for name, raw in staged.items():
+            path = stage_content / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(raw)
+        builder = ResourceBuilder(stage_content)
+        for name, transforms, _read in archives:
+            builder.patch_archive(name, transforms)
+        return {**files, **builder.finish()}, builder.changes
+
+
 def generate(content, binding_token: int, shops: list | None = None,
              status: dict | None = None, aoc: Path | None = None, progress=None
              ) -> tuple[dict[str, bytes], dict, list[dict]]:
@@ -342,15 +364,12 @@ def _generate(game: GameFiles, binding_token: int, shops: list | None, status: d
         # item (botw_patch/shrine_chests.py).
         files, edits = shrine_chests.add_rupees(files, game, status)
         changes.extend(edits)
-        for language in regions.of_content(game.content).languages:
-            name = f"Pack/Bootup_{language}.pack"
-            files[name] = files[name] if name in files else game.read(name)
-            files, edits = patch_stage(files, name, shrine_chests.messages(status, language))
-            changes.extend(edits)
-        for name, transforms in shrine_chests.stages(status):
-            files[name] = files[name] if name in files else shrine_chests.read_pack(game, name)
-            files, edits = patch_stage(files, name, transforms)
-            changes.extend(edits)
+        archives = [(f"Pack/Bootup_{language}.pack", shrine_chests.messages(status, language), game.read)
+                    for language in regions.of_content(game.content).languages]
+        archives += [(name, transforms, lambda name: shrine_chests.read_pack(game, name))
+                     for name, transforms in shrine_chests.stages(status)]
+        files, edits = patch_archives(files, archives)
+        changes.extend(edits)
     stage()
     # Vilia's lines at the price she now asks (botw_patch/gerudo_outfit.py).
     files, edits = gerudo_outfit.generate_texts(files, game)

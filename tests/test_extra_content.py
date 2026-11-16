@@ -213,8 +213,7 @@ class ItemTests(unittest.TestCase):
 
 class ElementalStrikeTests(unittest.TestCase):
     def test_each_trap_creates_its_field_at_links_feet(self):
-        for effect, actor in (("freeze", b"ExpandIceField\0"), ("fire", b"ExpandFireField\0"),
-                              ("lightning", b"ExpandElectricField\0")):
+        for effect, actor in (("freeze", b"ExpandIceField\0"), ("fire", b"ExpandFireField\0")):
             memory = Memory()
             self.assertEqual(elemental_strike.strike(memory.read, memory.write, memory.call, effect), {"ok": 1})
             (request,) = [args for address, args in memory.calls if address == REQUEST_CREATE]
@@ -224,6 +223,21 @@ class ElementalStrikeTests(unittest.TestCase):
             self.assertEqual(places, [(100.0, 50.5, 200.0)])
             adds = [args for address, args in memory.calls if address == PACK_ADD]
             self.assertEqual([(args[3], args[4]) for args in adds], [(0xC, 4)])
+
+    def test_lightning_shocks_link_and_a_bolt_strikes_beside_him(self):
+        import math
+        import random
+        memory = Memory()
+        result = elemental_strike.strike(memory.read, memory.write, memory.call, "lightning", rng=random.Random(2))
+        self.assertEqual(result, {"ok": 1, "bolt ok": 1})
+        requests = [args for address, args in memory.calls if address == REQUEST_CREATE]
+        self.assertEqual([memory.written[args[1]] for args in requests],
+                         [b"ExpandElectricField\0", b"LastBossThunder\0"])
+        places = [struct.unpack(">fff", data) for data in memory.written.values() if len(data) == 12]
+        self.assertEqual(places[0], (100.0, 50.5, 200.0))
+        x, y, z = places[1]
+        self.assertAlmostEqual(math.hypot(x - 100.0, z - 200.0), elemental_strike.BOLT_DISTANCE, places=4)
+        self.assertEqual(y, 50.0)
 
     def test_no_player_no_strike(self):
         memory = Memory()

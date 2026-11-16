@@ -12,15 +12,25 @@ shape that spreads, Actor/Chemical/Expand*Field.bchemical):
   * Lightning Strike: ExpandElectricField, the burst of an Electric Chuchu
     (ElectricChuchu_Exp), which shocks Link: he drops his weapon and shield.
 
-Read in the game's files only: none of the three has been seen in play yet. The
-Thunderstorm Rod's bolt (ThunderRodLv2Thunder) would look more like a strike,
-but it is created by its rod, which an actor created alone has not: left out.
+Seen in play: Lightning Strike shocks Link (damage, electrified), but no bolt shows.
+So it also calls a bolt from the sky a few metres from him (BOLT_DISTANCE):
+LastBossThunder, Calamity Ganon's lightning, an actor of its own (a Bullet, no
+model; LastBossThunderAppear, a warning sign for SignTime, the strike, its
+effects by its ELink), its 24 of damage kept off Link by the distance: the field
+on him still does the damage and the status. Read in the game's files only, not
+yet seen in play: its effects may be loaded only in Ganon's fight (then the bolt
+strikes unseen), and where it strikes when created alone is not known. The
+weather's lightning is no actor (the storm's, Downpour's, strikes metal by
+itself), and the Thunderstorm Rod's (ThunderRodLv2Thunder) is a ball its rod
+throws, not a bolt.
 
 The memory of each creation is the actor heap's, never reused: without a handle,
 nothing says when the creator is done with its name and its place.
 """
 from __future__ import annotations
 
+import math
+import random
 import struct
 from typing import Callable
 
@@ -33,9 +43,13 @@ FIELDS = {"freeze": ("ExpandIceField",), "fire": ("ExpandFireField",),
           "lightning": ("ExpandElectricField",)}
 NAMES = {"freeze": "Freeze", "fire": "Fire", "lightning": "Lightning Strike"}
 UP = 0.5                    # above his feet, metres
+# What strikes beside Link, by effect: a bolt from the sky.
+BOLTS = {"lightning": "LastBossThunder"}
+BOLT_DISTANCE = 4.0         # metres from Link, on the ground's plane
 
 
-def strike(read: Callable, write: Callable, call: Callable, effect: str) -> dict[str, int]:
+def strike(read: Callable, write: Callable, call: Callable, effect: str,
+           rng: random.Random | None = None) -> dict[str, int]:
     """Create the effect's actors on Link: {outcome: count}, 'ok' for each one the
     game took. read(guest, size), write(guest, data), call(address, *args) -> r3 or
     None, as the ambush's."""
@@ -57,6 +71,11 @@ def strike(read: Callable, write: Callable, call: Callable, effect: str) -> dict
     for actor in actors:
         outcome = _create(write, call, creator, heap, actor, (x, y + UP, z))
         results[outcome] = results.get(outcome, 0) + 1
+    if effect in BOLTS:
+        bearing = (rng or random.Random()).uniform(0.0, 2.0 * math.pi)
+        at = (x + BOLT_DISTANCE * math.cos(bearing), y, z + BOLT_DISTANCE * math.sin(bearing))
+        outcome = _create(write, call, creator, heap, BOLTS[effect], at)
+        results[f"bolt {outcome}"] = results.get(f"bolt {outcome}", 0) + 1
     return results
 
 
