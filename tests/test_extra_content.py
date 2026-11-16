@@ -113,11 +113,14 @@ class ShrineChestTests(unittest.TestCase):
 
     def test_the_rupee_is_named_after_the_chests_item(self):
         placement = {"location_id": 231, "location_name": "Oman Au Shrine Chest 1", "item_name": "Hookshot",
-                     "recipient_name": "Alice", "recipient_game": "A Link to the Past"}
+                     "recipient_name": "Alice", "recipient_game": "A Link to the Past", "flags": 1}
         name, description = shrine_chests.texts(placement)
         self.assertEqual(name, "Alice's Hookshot")
-        self.assertEqual(description.replace("\n", " "),
-                         "You got Alice's Hookshot! An Archipelago item (A Link to the Past).")
+        self.assertEqual(description.replace("\n", " "), "You got Alice's Hookshot! Seems important.")
+        # The tier by the item's classification; a trap passes for junk.
+        for flags, tier in ((2, "Seems useful."), (0, "Seems like junk."), (4, "Seems like junk."),
+                            (3, "Seems important.")):
+            self.assertTrue(shrine_chests.texts({**placement, "flags": flags})[1].replace("\n", " ").endswith(tier))
         long = {**placement, "item_name": "Progressive Something Very Long Indeed " * 3,
                 "recipient_name": "AVeryLongPlayerName1234"}
         name, description = shrine_chests.texts(long)

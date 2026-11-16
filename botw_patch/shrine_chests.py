@@ -38,6 +38,10 @@ ACTOR_INFO = "Actor/ActorInfo.product.sbyml"
 TABLE = "System/Resource/ResourceSizeTable.product.srsizetable"
 MSBT = "ActorType/Item.msbt"
 NAME_LIMIT = 30
+# PutRupee's parameters, and the icon its clones name (UI/StockItem/Item_AP.sbitemico,
+# in every pack: tools/build_resource_base_from_source.py).
+PARAMS = "Rupee_Green"
+ICON = "Item_AP"
 SOURCE_FILES = ("botw_patch/shrine_chests.py", "botw_world/data/locations.json")
 
 
@@ -154,13 +158,16 @@ def _short(text: str, limit: int) -> str:
 
 def texts(placement: dict) -> tuple[str, str]:
     """(name, description) of a chest's rupee: "<slot>'s <item>", then "You got
-    <slot>'s <item>!" with the item's game."""
+    <slot>'s <item>!" and its tier: important (progression), useful, or junk (filler,
+    and a trap, which the shops too describe as an ordinary item)."""
     from botw_patch.shop_items import wrap_description
-    player, item, game = placement["recipient_name"], placement["item_name"], placement["recipient_game"]
+    from botw_patch.shops import PROGRESSION, TRAP, USEFUL
+    player, item, flags = placement["recipient_name"], placement["item_name"], int(placement.get("flags", 0))
+    tier = ("Seems like junk." if flags & TRAP else "Seems important." if flags & PROGRESSION
+            else "Seems useful." if flags & USEFUL else "Seems like junk.")
     name = _short(f"{player}'s {item}", NAME_LIMIT)
-    for item_limit, player_limit, game_limit in ((80, 32, 40), (40, 16, 24), (24, 12, 16)):
-        body = (f"You got {_short(player, player_limit)}'s {_short(item, item_limit)}! "
-                f"An Archipelago item ({_short(game, game_limit)}).")
+    for item_limit, player_limit in ((80, 32), (40, 16), (24, 12)):
+        body = f"You got {_short(player, player_limit)}'s {_short(item, item_limit)}! {tier}"
         try:
             return name, wrap_description(body)
         except ValueError:
@@ -181,6 +188,28 @@ def items(status: dict) -> list:
     return out
 
 
+def with_icon(pack: bytes, actor: str) -> bytes:
+    """The cloned rupee's pack with parameters of its own (PutRupee's, Rupee_Green), whose
+    Item.UseIconActorName is ICON: the icon its get window shows, the one AP logo of every
+    pack, by reference (as the Gerudo jewelry names Obj_Head_024...), not a copy a chest.
+    Seen in play: a rupee of its own, named otherwise, showed no icon."""
+    archive = oead.Sarc(unpack(pack))
+    writer = oead.SarcWriter.from_sarc(archive)
+    link_name = f"Actor/ActorLink/{actor}.bxml"
+    link = oead.aamp.ParameterIO.from_binary(bytes(archive.get_file(link_name).data))
+    target = link.objects["LinkTarget"].params
+    if str(target["GParamUser"].v) != PARAMS:
+        raise ValueError(f"{actor}: unexpected parameters {target['GParamUser'].v}")
+    target["GParamUser"] = oead.aamp.Parameter(actor)
+    old = f"Actor/GeneralParamList/{PARAMS}.bgparamlist"
+    params = oead.aamp.ParameterIO.from_binary(bytes(archive.get_file(old).data))
+    params.objects["Item"].params["UseIconActorName"] = oead.aamp.Parameter(oead.FixedSafeString64(ICON))
+    del writer.files[old]
+    writer.files[f"Actor/GeneralParamList/{actor}.bgparamlist"] = bytes(params.to_binary())
+    writer.files[link_name] = bytes(link.to_binary())
+    return bytes(oead.yaz0.compress(bytes(writer.write()[1])))
+
+
 def add_rupees(files: dict[str, bytes], game, status: dict) -> tuple[dict[str, bytes], list[dict]]:
     """The rupees' ActorInfo entries and actor packs, with their size table entries
     (PutRupee's), into `files`, which holds the size table."""
@@ -194,9 +223,12 @@ def add_rupees(files: dict[str, bytes], game, status: dict) -> tuple[dict[str, b
     table = rstb.ResourceSizeTable(unpack(files[TABLE]), True)
     model = game.read(f"Actor/Pack/{MODEL}.sbactorpack")
     for rupee in rupees:
-        files[f"Actor/Pack/{rupee.actor}.sbactorpack"], _ = clone_actor_pack(model, MODEL, rupee.actor)
+        cloned, _ = clone_actor_pack(model, MODEL, rupee.actor)
+        files[f"Actor/Pack/{rupee.actor}.sbactorpack"] = with_icon(cloned, rupee.actor)
         for kind, ext in (("Actor/Pack", "bactorpack"), ("Actor/ActorLink", "bxml")):
             table.set_size(f"{kind}/{rupee.actor}.{ext}", table.get_size(f"{kind}/{MODEL}.{ext}"))
+        table.set_size(f"Actor/GeneralParamList/{rupee.actor}.bgparamlist",
+                       table.get_size(f"Actor/GeneralParamList/{PARAMS}.bgparamlist"))
     stream = io.BytesIO()
     table.write(stream, True)
     files[TABLE] = bytes(oead.yaz0.compress(stream.getvalue()))
