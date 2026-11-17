@@ -3,8 +3,10 @@ from BaseClasses import ItemClassification
 from . import BotwTestBase
 from ..catalog import FILLER, WEAPONS
 
-# The filler of the default options: 159 locations, 119 declared items, 14 maps.
-FILLER_SLOTS = 26
+# The filler of the default options: 159 locations, 122 declared items (the Progressive
+# Horse's 5 in place of Epona and the Master Cycle Zero), 14 maps; of the 23 places
+# left, the bonus items take half (11).
+FILLER_SLOTS = 12
 
 
 class TestWithoutShops(BotwTestBase):
@@ -73,11 +75,12 @@ class TestEveryFillerATrap(BotwTestBase):
         self.assertFalse(set(pool) & {name for _, items in FILLER.values() for name in items})
         traps = [item for item in self.multiworld.itempool if item.trap]
         self.assertEqual(len(traps), FILLER_SLOTS)
-        # Drawn at random, of equal weights: every kind may not come up in 26
+        # Drawn at random, of equal weights: every kind may not come up in 12
         # draws, but nearly always four of them.
         names = {item.name for item in traps}
         self.assertLessEqual(names, {"Weapon Shatter", "Blood Moon", "Rupoor", "Hearts Down", "Strip Down",
-                                     "Cucco Swarm", "Downpour", "Yiga Ambush", "Paranoia"})
+                                     "Cucco Swarm", "Downpour", "Yiga Ambush", "Paranoia", "Freeze",
+                                     "Lightning Strike", "Fire"})
         self.assertGreaterEqual(len(names), 4)
         self.assertEqual(len(pool), 159)
 

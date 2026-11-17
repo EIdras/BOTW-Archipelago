@@ -19,7 +19,7 @@ you install it in PopTracker yourself.
 
 ### Setting it up
 
-1. **Install PopTracker**, version 0.26.2 or later, from its
+1. **Install PopTracker**, version 0.32.0 or later, from its
    [releases page](https://github.com/black-sliver/PopTracker/releases) (on Windows, the `win64` zip: unzip it
    anywhere).
 2. **Start a session with `BOTW Archipelago.cmd`**, as the [setup guide](setup_en.md#your-first-session) says. Before Cemu

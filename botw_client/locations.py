@@ -20,10 +20,14 @@ MASTER_CSV = ROOT / "data" / "locations_master.csv"
 # Heart Container" (153 rows); 3: + 32 Beedle shop
 # items (185 rows, botw_client/shop_catalog.py); 4: + 28 3D stall items (213
 # rows, botw_client/stall_catalog.py); 5: + Purah's 3 rune upgrades and the
-# ends of the 4 Champions' Ballads (220 rows). botw_world declares its schema in
-# slot_data["world_schema"].
-SCHEMA_LOCATION_COUNTS = {1: 149, 2: 153, 3: 185, 4: 213, 5: 220}
-WORLD_SCHEMA = 5
+# ends of the 4 Champions' Ballads (220 rows); 6: + 174 shrine chests, 1312 field
+# chests and 86 bosses (1792 rows, tools/build_extra_locations.py). botw_world
+# declares its schema in slot_data["world_schema"].
+SCHEMA_LOCATION_COUNTS = {1: 149, 2: 153, 3: 185, 4: 213, 5: 220, 6: 1792}
+WORLD_SCHEMA = 6
+# The world schemas this version plays (tools/play_seed.py): its own, and 5, whose
+# pack nothing of schema 6 changes (the chests and bosses are only in seeds of 6).
+PLAYABLE_WORLD_SCHEMAS = (5, 6)
 # The Great Plateau's tower reveals its own map: its map is no item.
 PLATEAU_TOWER_FLAG = "MapTower_07"
 # Locations tracked by a saved s32 of their own (APShop_<id>), present only

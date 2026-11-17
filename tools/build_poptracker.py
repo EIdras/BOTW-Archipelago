@@ -95,7 +95,27 @@ ROWS = [
     [("Master Cycle Zero", "MCZ", GEAR), ("Travel Medallion", "TRV", GEAR), ("Epona", "EPO", GEAR),
      ("Weapon Pouch Upgrade", "WPN", LIFE), ("Bow Pouch Upgrade", "BOW", LIFE),
      ("Shield Pouch Upgrade", "SHLD", LIFE)],
+    # Epona and the Master Cycle Zero above: the seeds before the Progressive Horse.
+    [("Progressive Horse", "HRS", GEAR), ("Sand Boots", "SAND", ARMOR), ("Snow Boots", "SNWB", ARMOR),
+     ("Thunder Helm", "THDR", ARMOR), ("Hylian Set", "HYLS", ARMOR), ("Soldier's Set", "SOLD", ARMOR)],
+    # The bonus items (botw_world/data/items.json "bonus").
+    [("Ruby Circlet", "RUBY", ARMOR), ("Sapphire Circlet", "SAPH", ARMOR), ("Diamond Circlet", "DIAM", ARMOR),
+     ("Topaz Earrings", "TOPZ", ARMOR), ("Opal Earrings", "OPAL", ARMOR), ("Amber Earrings", "AMBR", ARMOR)],
+    [("Bokoblin Mask", "BOKO", ARMOR), ("Moblin Mask", "MOBL", ARMOR), ("Lizalfos Mask", "LIZA", ARMOR),
+     ("Lynel Mask", "LYNL", ARMOR), ("Majora's Mask", "MAJO", ARMOR), ("Midna's Helmet", "MIDN", ARMOR)],
+    [("Zant's Helmet", "ZANT", ARMOR), ("Ravio's Hood", "RAVI", ARMOR), ("Phantom Set", "PHAN", ARMOR),
+     ("Tingle's Set", "TING", ARMOR), ("Fierce Deity Set", "FDEI", ARMOR), ("Royal Guard Set", "RGRD", ARMOR)],
+    [("Hero of Time Set", "TIME", ARMOR), ("Hero of the Wild Set", "WILD", ARMOR),
+     ("Hero of the Sky Set", "SKY", ARMOR), ("Hero of Twilight Set", "TWIL", ARMOR),
+     ("Hero of the Wind Set", "WIND", ARMOR)],
+    [("Traveler's Saddle", "TSAD", GEAR), ("Traveler's Bridle", "TBRI", GEAR), ("Knight's Saddle", "KSAD", GEAR),
+     ("Knight's Bridle", "KBRI", GEAR), ("Royal Saddle", "RSAD", GEAR), ("Royal Bridle", "RBRI", GEAR)],
+    [("Monster Saddle", "MSAD", GEAR), ("Monster Bridle", "MBRI", GEAR), ("Extravagant Saddle", "XSAD", GEAR),
+     ("Extravagant Bridle", "XBRI", GEAR)],
 ]
+# A progressive item whose stages have names of their own.
+STAGE_TITLES = {"Progressive Horse": ("Giant Horse", "Royal White Stallion", "Lord of the Mountain", "Epona",
+                                      "Master Cycle Zero")}
 # The regions panel (tools/poptracker_regions.py): a tile a region of the tower
 # maps (the world's tower_maps option), laid out as Hyrule; the Great Plateau's,
 # where the game starts, always lit. Its label stands for its map when the pack
@@ -135,6 +155,7 @@ FONT = {
     "Y": "10001 10001 01010 00100 00100 00100 00100", "Z": "11111 00001 00010 00100 01000 10000 11111",
     "0": "01110 10001 10011 10101 11001 10001 01110", "1": "00100 01100 00100 00100 00100 00100 01110",
     "2": "01110 10001 00001 00010 00100 01000 11111", "3": "11110 00001 00001 01110 00001 00001 11110",
+    "4": "00010 00110 01010 10010 11111 00010 00010", "5": "11111 10000 11110 00001 00001 10001 01110",
 }
 
 
@@ -229,6 +250,26 @@ ICON_NAMES = {
     "ancient_saddle": ["Ancient Saddle"], "korok_mask": ["Korok Mask"],
     "master_cycle_zero": ["Master Cycle Zero", "Master Cycle Rune", "Master Cycle"],
     "travel_medallion": ["Travel Medallion"], "epona": ["Epona"],
+    "progressive_horse_1": ["Giant Horse"], "progressive_horse_2": ["Royal White Stallion", "White Horse"],
+    "progressive_horse_3": ["Lord of the Mountain"], "progressive_horse_4": ["Epona"],
+    "progressive_horse_5": ["Master Cycle Zero", "Master Cycle Rune", "Master Cycle"],
+    "sand_boots": ["Sand Boots"], "snow_boots": ["Snow Boots"], "thunder_helm": ["Thunder Helm"],
+    "hylian_set": ["Hylian Tunic"], "soldiers_set": ["Soldier's Armor"],
+    "ruby_circlet": ["Ruby Circlet"], "sapphire_circlet": ["Sapphire Circlet"],
+    "diamond_circlet": ["Diamond Circlet"], "topaz_earrings": ["Topaz Earrings"],
+    "opal_earrings": ["Opal Earrings"], "amber_earrings": ["Amber Earrings"],
+    "bokoblin_mask": ["Bokoblin Mask"], "moblin_mask": ["Moblin Mask"], "lizalfos_mask": ["Lizalfos Mask"],
+    "lynel_mask": ["Lynel Mask"], "majoras_mask": ["Majora's Mask"], "midnas_helmet": ["Midna's Helmet"],
+    "zants_helmet": ["Zant's Helmet"], "ravios_hood": ["Ravio's Hood"], "phantom_set": ["Phantom Armor"],
+    "tingles_set": ["Tingle's Shirt"], "fierce_deity_set": ["Fierce Deity Armor"],
+    "royal_guard_set": ["Royal Guard Uniform"], "hero_of_time_set": ["Tunic of Time"],
+    "hero_of_the_wild_set": ["Tunic of the Wild"], "hero_of_the_sky_set": ["Tunic of the Sky"],
+    "hero_of_twilight_set": ["Tunic of Twilight"], "hero_of_the_wind_set": ["Tunic of the Wind"],
+    "travelers_saddle": ["Traveler's Saddle"], "travelers_bridle": ["Traveler's Bridle"],
+    "knights_saddle": ["Knight's Saddle"], "knights_bridle": ["Knight's Bridle"],
+    "royal_saddle": ["Royal Saddle"], "royal_bridle": ["Royal Bridle"],
+    "monster_saddle": ["Monster Saddle"], "monster_bridle": ["Monster Bridle"],
+    "extravagant_saddle": ["Extravagant Saddle"], "extravagant_bridle": ["Extravagant Bridle"],
     "weapon_pouch_upgrade": ["Weapon Pouch Upgrade", "Weapon Pouch"],
     "bow_pouch_upgrade": ["Bow Pouch Upgrade", "Bow Pouch"],
     "shield_pouch_upgrade": ["Shield Pouch Upgrade", "Shield Pouch"],
@@ -262,6 +303,8 @@ UI_ICONS = {
     "champions_tunic": "Nt_PauseIcon_03^s",
     "weapon_pouch_upgrade": "Nt_PauseIcon_00^s", "bow_pouch_upgrade": "Nt_PauseIcon_01^s",
     "shield_pouch_upgrade": "Nt_PauseIcon_02^s", "epona": "Nt_MapHorseIconL_00^t",
+    # The Progressive Horse's horses: the map's horse, numbered by ui_icons.
+    **{f"progressive_horse_{n}": "Nt_MapHorseIconL_00^t" for n in (1, 2, 3, 4)},
     **{f"progressive_climbing_gear_{n}": "Nt_PauseIconMountain_00^t" for n in (1, 2, 3)},
     **{f"progressive_stealth_set_{n}": "Nt_PauseIconNoise_00^t" for n in (1, 2, 3)},
     "freed_divine_beast_vah_rudania": "Nt_IconSinJuNew_00^d",
@@ -274,6 +317,9 @@ UI_ICONS = {
     "dot_rune_terminal": "Nt_PauseIconKodai_00^t", "dot_divine_beast": "Nt_IconSinJuNew_01^d",
     "dot_rune_upgrade": "Nt_PauseIconKodai_00^t", "dot_champions_ballad": "Nt_IconSinJuNew_03^d",
     "dot_master_sword": "Nt_PauseIcon_00^s",
+    # The map's own stamps (the player's pins): a treasure chest, a skull for the bosses.
+    "dot_chest": "Nt_StampIconTBoxL_00^s", "dot_shrine_chest": "Nt_StampIconTBoxL_00^s",
+    "dot_boss": "Nt_StampIconDokuroL_00^s",
 }
 # White masks the game colours itself: the Sensor in the Slate's blue, its "+" in green.
 UI_TINTS = {"progressive_sheikah_sensor_1": (70, 190, 255),
@@ -283,7 +329,28 @@ UI_TINTS = {"progressive_sheikah_sensor_1": (70, 190, 255),
 # is not square (PopTracker stretches it). Under the player's icons, over the interface's.
 STOCK_ICONS = {"magnesis": "Obj_Magnetglove", "cryonis": "Obj_IceMaker",
                "progressive_remote_bomb_1": "Obj_RemoteBombBall", "progressive_remote_bomb_2": "Obj_RemoteBombBall2",
-               "progressive_stasis_1": "Obj_StopTimer", "progressive_stasis_2": "Obj_StopTimerLv2"}
+               "progressive_stasis_1": "Obj_StopTimer", "progressive_stasis_2": "Obj_StopTimerLv2",
+               # The items of client schema 13: a set by its chest piece; the jewelry by the
+               # icon its parameters name (Item.UseIconActorName: Obj_Head_024...).
+               "sand_boots": "Armor_049_Lower", "snow_boots": "Armor_141_Lower", "thunder_helm": "Armor_115_Head",
+               "diamond_circlet": "Obj_Head_024", "ruby_circlet": "Obj_Head_025",
+               "sapphire_circlet": "Obj_Head_026", "topaz_earrings": "Obj_Head_027",
+               "opal_earrings": "Obj_Head_028", "amber_earrings": "Obj_Head_029",
+               "hylian_set": "Armor_001_Upper", "soldiers_set": "Armor_020_Upper",
+               "bokoblin_mask": "Armor_022_Head", "moblin_mask": "Armor_045_Head",
+               "lizalfos_mask": "Armor_055_Head", "lynel_mask": "Armor_056_Head",
+               "majoras_mask": "Armor_172_Head", "midnas_helmet": "Armor_173_Head",
+               "zants_helmet": "Armor_178_Head", "ravios_hood": "Armor_177_Head",
+               "phantom_set": "Armor_171_Upper", "tingles_set": "Armor_174_Upper",
+               "fierce_deity_set": "Armor_225_Upper", "royal_guard_set": "Armor_179_Upper",
+               "hero_of_time_set": "Armor_200_Upper", "hero_of_the_wild_set": "Armor_005_Upper",
+               "hero_of_the_sky_set": "Armor_215_Upper", "hero_of_twilight_set": "Armor_210_Upper",
+               "hero_of_the_wind_set": "Armor_205_Upper",
+               **{f"{code(gear)}_{kind.lower()}": f"GameRomHorse{'Reins' if kind == 'Bridle' else kind}_{n}"
+                  for gear, n in (("Traveler's", "01"), ("Knight's", "03"), ("Royal", "02"),
+                                  ("Monster", "04"), ("Extravagant", "05")) for kind in ("Saddle", "Bridle")},
+               # The Progressive Horse's last stage, the Master Cycle Zero (its horses: UI_ICONS).
+               "progressive_horse_5": "Obj_Motorcycle", "master_cycle_zero": "Obj_Motorcycle"}
 
 
 # The icons of every item of the grid, published apart from the code: the
@@ -479,6 +546,8 @@ def items(cat, icons: dict[str, bytes] | None = None) -> tuple[list, dict, dict]
                     # The item, then its "+".
                     plain = name.removeprefix("Progressive ")
                     badge, title = (label, plain) if stage == 1 else (label[:3] + "+", plain + "+")
+                elif name in STAGE_TITLES:
+                    badge, title = label[:3] + str(stage), STAGE_TITLES[name][stage - 1]
                 else:
                     badge, title = label[:3] + str(stage), f"{name} ({stage}/{count})"
                 image(stage_path, f"{item_code}_{stage}", badge, colour)
@@ -555,14 +624,57 @@ def region_items(cat, drawn: poptracker_regions.Drawn | None) -> tuple[list, dic
 DOT = {"Shrine": "#3a8fd6", "Tower": "#e08a2c", "Divine Beast": "#c94a4a", "Shop": "#2fa36b",
        "Stall": "#2fa36b", "Great Fairy": "#d65fb5", "Master Sword": "#e6d23a",
        "Rune Terminal": "#3ac0c9", "Rune Upgrade": "#3ac0c9", "Champions' Ballad": "#c94a4a",
-       "Goal": "#ffffff"}
+       "Goal": "#ffffff", "Shrine Chest": "#3a8fd6", "Chest": "#a0703a", "Boss": "#8a3ac9"}
+# The locations a seed may leave out (its options draw them): shown once connected,
+# when the seed has them.
+OPTIONAL = {"Shop", "Stall", "Shrine Chest", "Chest", "Boss"}
+# The field chests and the bosses: smaller than a check's square, a trapezoid for the
+# chests (PopTracker 0.32.0), a diamond for the bosses. Each at its own place on its region's map; on the
+# overview, the bosses at theirs too, the chests stacked by landmark
+# (data/chest_landmarks.json, tools/build_extra_locations.py): one square a landmark,
+# whose sections refer to the chests' own.
+GROUP_MARKERS = {"Chest": {"size": 20, "shape": "trapezoid"}, "Boss": {"size": 22, "shape": "diamond"}}
+LANDMARKS = ROOT / "data/chest_landmarks.json"
+# A map a region (botw_world regions; Hyrule Castle's locations on Central's), the
+# region's locations cut out of the whole map, REGION_MARGIN pixels around them,
+# enlarged so that its longer side is about REGION_SIDE pixels (REGION_ZOOM at most).
+REGION_MARGIN = 30
+REGION_SIDE = 1400
+REGION_ZOOM = (2, 6)
+
+
+def map_region(row: dict) -> str:
+    """The region map a location is shown on."""
+    return "Central" if row["region"] == "Hyrule Castle" else row["region"]
+
+
+def region_map_image(region: str) -> str:
+    return f"images/maps/{code(region)}.png"
+
+
+def region_frames(cat, positions: dict) -> dict[str, tuple[int, int, int, int, int]]:
+    """{region: (left, top, right, bottom, zoom)} of each region's map, in pixels of the whole map."""
+    points: dict[str, list[tuple[int, int]]] = {}
+    for row in cat.LOCATIONS:
+        points.setdefault(map_region(row), []).append(maptex.pixel(*positions[row["name"]], SCALE))
+    width, height = int(12000 * SCALE), int(10000 * SCALE)
+    frames = {}
+    for region, spots in sorted(points.items()):
+        xs, ys = zip(*spots)
+        left, top = max(0, min(xs) - REGION_MARGIN), max(0, min(ys) - REGION_MARGIN)
+        right, bottom = min(width, max(xs) + REGION_MARGIN), min(height, max(ys) + REGION_MARGIN)
+        zoom = max(REGION_ZOOM[0], min(REGION_ZOOM[1], REGION_SIDE // max(right - left, bottom - top)))
+        frames[region] = (left, top, right, bottom, zoom)
+    return frames
 
 
 def place_of(row: dict) -> str:
     """The map square a location belongs to: a stable's two Beedle items, a
     stall's, a Divine Beast and its heart, a plateau shrine and its terminal,
-    Purah's three upgrades."""
+    Purah's three upgrades, a shrine and its chests."""
     name, kinds = row["name"], set(row["category"].split("|"))
+    if "Shrine Chest" in kinds:
+        return re.sub(r" Chest( \d+)?$", "", name)
     if kinds & {"Shop", "Stall"}:
         return re.sub(r" Item \d+$", "", name)
     if "Rune Upgrade" in kinds:
@@ -586,6 +698,9 @@ def world_requirements(cat, row: dict) -> tuple:
             out.extend(world_requirements(cat, rows[names[0][len("Freed - "):]]))
         else:
             out.append((names, count))
+    if cat.needs_all_shrines(row):
+        # Every shrine cleared: the tracker's count of them.
+        out.append((("Shrines cleared",), 120))
     return tuple(dict.fromkeys(out))
 
 
@@ -610,35 +725,64 @@ def world_regions(cat, row: dict) -> tuple[str, ...]:
     return tuple(name for name in dict.fromkeys(names) if name != "Great Plateau")
 
 
-def crop_box(positions: dict) -> tuple[int, int, int, int]:
-    """(left, top, right, bottom) of the map shown, in pixels of the whole map."""
-    xs, ys = zip(*(maptex.pixel(x, z, SCALE) for x, z in positions.values()))
+def crop_box(places: list) -> tuple[int, int, int, int]:
+    """(left, top, right, bottom) of the overview map, in pixels of the whole map:
+    MARGIN around the squares of `places` on it (locations() at the origin)."""
+    xs, ys = zip(*((spot["x"], spot["y"]) for place in places for spot in place["map_locations"]
+                   if spot["map"] == MAP))
     width, height = int(12000 * SCALE), int(10000 * SCALE)
     return (max(0, min(xs) - MARGIN), max(0, min(ys) - MARGIN),
             min(width, max(xs) + MARGIN), min(height, max(ys) + MARGIN))
 
 
-def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[list, dict, dict, dict, dict]:
+def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0),
+              frames: dict | None = None, landmarks: dict | None = None) -> tuple[list, dict, dict, dict, dict]:
     """locations.json, the AP id -> section path map, the Lua requirement table,
     the maps each location asks for when the maps are region keys, and the
-    regions it asks to reach with region_lock."""
+    regions it asks to reach with region_lock. origin: the overview's corner;
+    frames (region_frames): each location on its region's map too; landmarks
+    (data/chest_landmarks.json): the field chests stacked by landmark on the
+    overview, else left off it."""
     places: dict[str, dict] = {}
+    stacks: dict[str, dict] = {}
     sections, requirements, maps, regions = {}, {}, {}, {}
+
+    def overview(x, z):
+        px, py = maptex.pixel(x, z, SCALE)
+        return px - origin[0], py - origin[1]
+
     for row in cat.LOCATIONS:
         name = row["name"]
         kinds = set(row["category"].split("|"))
         key = place_of(row)
         if "Rune Terminal" in kinds:
             # Before its plateau shrine: one square for both.
-            key = next(r["name"] for r in cat.LOCATIONS if "Shrine" in r["category"]
+            key = next(r["name"] for r in cat.LOCATIONS if "Shrine" in r["category"].split("|")
                        and positions[r["name"]] == positions[name])
         kind = next(k for k in DOT if k in kinds) if kinds & set(DOT) else "Shrine"
-        x, y = maptex.pixel(*positions[name], SCALE)
-        x, y = x - origin[0], y - origin[1]
-        place = places.setdefault(key, {
-            "name": key, "chest_unopened_img": f"images/dots/{code(kind)}.png",
-            "chest_opened_img": "images/dots/opened.png",
-            "map_locations": [{"map": MAP, "x": x, "y": y}], "sections": []})
+        x, y = overview(*positions[name])
+        group = next(iter(kinds & set(GROUP_MARKERS)), None)
+        marker = GROUP_MARKERS.get(group, {})
+        if key not in places:
+            spots = [] if group == "Chest" else [{"map": MAP, "x": x, "y": y, **marker}]
+            if frames is not None:
+                region = map_region(row)
+                left, top, _right, _bottom, zoom = frames[region]
+                px, py = maptex.pixel(*positions[name], SCALE)
+                spots.append({"map": region, "x": (px - left) * zoom, "y": (py - top) * zoom, **marker})
+            places[key] = {"name": key, "chest_unopened_img": f"images/dots/{code(kind)}.png",
+                           "chest_opened_img": "images/dots/opened.png", "map_locations": spots, "sections": []}
+        place = places[key]
+        if group == "Chest" and landmarks is not None:
+            landmark = landmarks["chests"][name]
+            stack = stacks.setdefault(landmark, {
+                "name": f"Chests: {landmark}", "chest_unopened_img": "images/dots/chest.png",
+                "chest_opened_img": "images/dots/opened.png",
+                "map_locations": [{"map": MAP, **dict(zip("xy", overview(*landmarks["places"][landmark]))),
+                                   **marker}],
+                "visibility_rules": [], "sections": []})
+            stack["sections"].append({"ref": f"{key}/{name}"})
+            stack["visibility_rules"].append([f"$botw_drawn|{row['id']}"])
         section = {"name": name, "item_count": 1}
         if name == cat.GOAL_LOCATION:
             section["access_rules"] = [["$botw_ganon"]]
@@ -656,12 +800,14 @@ def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[l
             # sequence break (yellow, botw_maps). Ganon and the towers ask for no map.
             section["access_rules"][0] += [f"$botw_regions|{row['id']}", f"[$botw_maps|{row['id']}]"]
             regions[row["id"]] = reach
-        if kinds & {"Shop", "Stall"}:
-            # Shown when the seed has it (one of a place's items is enough).
-            section["visibility_rules"] = [[f"$botw_in_seed|{row['id']}"]]
-            place.setdefault("visibility_rules", []).append([f"$botw_in_seed|{row['id']}"])
+        if kinds & OPTIONAL:
+            # Shown once connected, when the seed has it (one of a place's items is
+            # enough); a shrine's square, always shown, holds its chests too.
+            section["visibility_rules"] = [[f"$botw_drawn|{row['id']}"]]
+            if "Shrine Chest" not in kinds:
+                place.setdefault("visibility_rules", []).append([f"$botw_drawn|{row['id']}"])
         place["sections"].append(section)
-    return list(places.values()), sections, requirements, maps, regions
+    return [*places.values(), *stacks.values()], sections, requirements, maps, regions
 
 
 def lua_value(value) -> str:
@@ -685,7 +831,7 @@ def data_lua(cat, item_ids: dict, sections: dict, requirements: dict, maps: dict
     goal_section = f"@{place_of(goal)}/{goal['name']}"
     by_name = {row["name"]: row["id"] for row in cat.LOCATIONS}
     beasts = {by_name[name[len("Freed - "):]]: code(name) for name, _ in BEAST_ROW}
-    shrines = [row["id"] for row in cat.LOCATIONS if "Shrine" in row["category"]]
+    shrines = [row["id"] for row in cat.LOCATIONS if "Shrine" in row["category"].split("|")]
     lines = ["-- Generated by tools/build_poptracker.py from the world (botw_world): do not edit.",
              f"ITEM_CODES = {lua_value(item_ids)}",
              f"LOCATION_SECTIONS = {lua_value(sections)}",
@@ -712,7 +858,10 @@ def data_lua(cat, item_ids: dict, sections: dict, requirements: dict, maps: dict
     return "\n".join(lines)
 
 
-def layouts(cat, drawn: poptracker_regions.Drawn | None = None) -> dict:
+def layouts(cat, drawn: poptracker_regions.Drawn | None = None, region_maps: list[str] = ()) -> dict:
+    """The layouts: the items, the regions panel, and the maps, a tab each: the
+    overview (MAP), then a region's (titled with its name: the autotracker activates
+    the tab of the region Link enters, scripts/autotracking/archipelago.lua)."""
     grid = [[code(name) for name, _label, _colour in row] for row in ROWS]
     grid.append([code(name) for name, _ in BEAST_ROW] + ["shrines_cleared"])
     tiles = [[f"{code(region)}_tile" if region == START_REGION else f"{code(cat.MAPS[region])}_tile"
@@ -744,7 +893,8 @@ def layouts(cat, drawn: poptracker_regions.Drawn | None = None) -> dict:
                     {"type": "group", "header": "Pinned locations", "content": {
                         "type": "recentpins", "style": "wrapped", "h_alignment": "stretch",
                         "v_alignment": "stretch", "compact": True}}]},
-                {"type": "map", "maps": [MAP]}]}},
+                {"type": "tabbed", "tabs": [{"title": name, "content": {"type": "map", "maps": [name]}}
+                                            for name in (MAP, *region_maps)]}]}},
         "tracker_broadcast": {"type": "array", "orientation": "vertical", "content": [
             {"type": "layout", "key": "item_grid"}, {"type": "layout", "key": "region_tiles"}]},
     }
@@ -816,7 +966,7 @@ def regions_on_map(cat, crop: np.ndarray, box: tuple[int, int, int, int], places
         where = lookup(np.arange(left, right), np.arange(top, bottom))
     except (OSError, ValueError, KeyError):
         return []
-    checks = [(spot["x"], spot["y"]) for place in places for spot in place["map_locations"]]
+    checks = [(spot["x"], spot["y"]) for place in places for spot in place["map_locations"] if spot["map"] == MAP]
     regions = [START_REGION, *sorted(cat.MAPS)]
     drawn = poptracker_regions.on_map(crop, where, regions, checks, lambda text: glyphs(text, 3, 2))
     markers = []
@@ -842,8 +992,10 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
     update = update_content()
     found = {**ui_icons(update), **stock_icons(update), **game_icons(icons)}
     item_entries, images, item_ids = items(cat, found)
-    left, top, right, bottom = crop_box(positions)
-    place_entries, sections, requirements, maps, regions = locations(cat, positions, (left, top))
+    left, top, right, bottom = crop_box(locations(cat, positions)[0])
+    frames = region_frames(cat, positions)
+    landmarks = json.loads(LANDMARKS.read_text(encoding="utf-8"))
+    place_entries, sections, requirements, maps, regions = locations(cat, positions, (left, top), frames, landmarks)
     files["scripts/data.lua"] = data_lua(cat, item_ids, sections, requirements, maps, regions).encode()
     for kind, colour in DOT.items():
         images[f"images/dots/{code(kind)}.png"] = found.get(f"dot_{code(kind)}", dot(colour, True))
@@ -862,6 +1014,11 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
     markers = regions_on_map(cat, crop, (left, top, right, bottom), place_entries, lookup)
     alpha = np.full(crop.shape[:2] + (1,), 255, dtype=np.uint8)
     images["images/map.png"] = np.concatenate([crop, alpha], 2)
+    for region, (r_left, r_top, r_right, r_bottom, zoom) in frames.items():
+        # The region's piece of the whole map, enlarged (each pixel zoom x zoom).
+        piece = np.repeat(np.repeat(image[r_top:r_bottom, r_left:r_right], zoom, 0), zoom, 1)
+        images[region_map_image(region)] = np.concatenate(
+            [piece, np.full(piece.shape[:2] + (1,), 255, dtype=np.uint8)], 2)
     drawn = regions_panel(cat, image, (left, top, right, bottom), lookup) if game_map else None
     region_entries, region_images = region_items(cat, drawn)
     item_entries += region_entries
@@ -873,12 +1030,14 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
     files["locations/regions.json"] = json.dumps(markers, indent=1).encode()
     files["maps/maps.json"] = json.dumps([{
         "name": MAP, "location_size": 30, "location_border_thickness": 3,
-        "img": "images/map.png"}], indent=1).encode()
-    files["layouts/tracker.json"] = json.dumps(layouts(cat, drawn), indent=1).encode()
+        "img": "images/map.png"}, *({"name": region, "location_size": 30, "location_border_thickness": 3,
+                                     "img": region_map_image(region)} for region in frames)],
+        indent=1).encode()
+    files["layouts/tracker.json"] = json.dumps(layouts(cat, drawn, sorted(frames)), indent=1).encode()
     files["manifest.json"] = json.dumps({
         "name": "Breath of the Wild Archipelago", "game_name": cat.GAME,
         "package_uid": PACK_NAME, "package_version": cat.WORLD_VERSION,
-        "platform": "wiiu", "author": "EIdras", "min_poptracker_version": "0.26.2",
+        "platform": "wiiu", "author": "EIdras", "min_poptracker_version": "0.32.0",
         "variants": {"map": {"display_name": "Map tracker", "flags": ["ap"]}}}, indent=1).encode()
     output.mkdir(parents=True, exist_ok=True)
     target = output / f"{PACK_NAME}.zip"

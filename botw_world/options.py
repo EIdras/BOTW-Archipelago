@@ -81,6 +81,52 @@ class StallItems(Range):
     default = 0
 
 
+class ShrineChests(Range):
+    """Treasure chests inside the shrines that become Archipelago locations, drawn
+    at random among the 174 of the 120 shrines (the chests holding a shrine's small
+    key are left out). A drawn chest no longer holds its own treasure: opening it
+    gives a green rupee and sends its Archipelago item. Its logic is its shrine's.
+    0: none."""
+    display_name = "Shrine Chests"
+    range_start = 0
+    range_end = 174
+    default = 0
+
+
+class FieldChests(Range):
+    """Treasure chests of the Great Plateau and Hyrule's field that become
+    Archipelago locations, drawn at random among 1312. Opening one sends its
+    Archipelago item; the chest keeps its own treasure. A buried chest asks for
+    Magnesis, one on Death Mountain's burning slopes the Flamebreaker Set. 118 of them
+    exist only in Master Mode: drawn only with Master Mode on. 36 are never drawn: the
+    DLC's EX Treasure chests (shown only once their EX quest is started), those a side
+    quest the logic does not follow brings, and the Xenoblade Chronicles 2 collaboration's
+    (never on Wii U). 0: none."""
+    display_name = "Field Chests"
+    range_start = 0
+    range_end = 1312
+    default = 0
+
+
+class MasterMode(Toggle):
+    """You play this seed in MASTER MODE (The Master Trials DLC), in a Master Mode save.
+    118 chests of the field exist only there, on Master Mode's floating platforms among
+    others: with this option they may be drawn by Field Chests; without it (Normal mode)
+    they never are. The client refuses to play a save of the other mode."""
+    display_name = "Master Mode"
+
+
+class BossKills(Range):
+    """Hinoxes (Stalnoxes too), Stone Taluses (Igneo and Frost too) and Moldugas of
+    the field whose first defeat becomes an Archipelago location, drawn at random
+    among 86. The defeat is saved: a Blood Moon brings the monster back, but its
+    location stays sent. 0: none."""
+    display_name = "Boss Kills"
+    range_start = 0
+    range_end = 86
+    default = 0
+
+
 class WeaponOrder(Choice):
     """How the weapons of the filler are spread over the game, wherever they land
     in the multiworld (the jokes, a Soup Ladle or a Pot Lid, always come anywhere).
@@ -172,8 +218,10 @@ class TrapPercentage(Range):
     to two hearts (never the last quarter), Strip Down puts Link's weapon, shield,
     bow and armor back in the pouch, Cucco Swarm sends the angry cuccos' swarm, Yiga
     Ambush two Yiga Footsoldiers and a Yiga archer, Paranoia a Guardian that takes
-    aim at Link and vanishes before it fires, and Downpour rain for 2 minutes or a
-    thunderstorm for 90 s. The cuccos, the Yiga and the lightning can kill."""
+    aim at Link and vanishes before it fires, Downpour rain for 2 minutes or a
+    thunderstorm for 90 s, Freeze freezes Link, Lightning Strike shocks him (he drops
+    his weapon and shield) and Fire sets him on fire. The cuccos, the Yiga and the
+    lightning can kill."""
     display_name = "Trap Percentage"
     range_start = 0
     range_end = 100
@@ -201,6 +249,10 @@ class BotwOptions(PerGameCommonOptions):
     sanctum_runes: SanctumRunes
     beedle_shop_items: BeedleShopItems
     stall_items: StallItems
+    shrine_chests: ShrineChests
+    field_chests: FieldChests
+    boss_kills: BossKills
+    master_mode: MasterMode
     death_link: DeathLink
     weapon_order: WeaponOrder
     tower_maps: TowerMaps
@@ -217,6 +269,7 @@ OPTION_GROUPS = [
     OptionGroup("Hyrule Castle's Sanctum",
                 [SanctumDivineBeasts, SanctumShrines, SanctumMasterSword, SanctumRunes]),
     OptionGroup("Shops", [BeedleShopItems, StallItems]),
+    OptionGroup("Chests and Bosses", [ShrineChests, FieldChests, BossKills, MasterMode]),
     OptionGroup("Weapons", [WeaponOrder]),
     OptionGroup("Maps", [TowerMaps, EarlyMap, RegionLock, MapTravelPoints]),
     OptionGroup("Master Cycle Zero", [BikeAnywhere]),

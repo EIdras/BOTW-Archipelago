@@ -64,7 +64,8 @@ class DataTests(unittest.TestCase):
         flagged = {row["name"] for row in items if row.get("trap")}
         native = {name for name, entry in mapping.items()
                   if entry["delivery"]["kind"] == "native_trap"}
-        self.assertEqual(native, {"Cucco Swarm", "Downpour", "Yiga Ambush", "Paranoia"})
+        self.assertEqual(native, {"Cucco Swarm", "Downpour", "Yiga Ambush", "Paranoia", "Freeze",
+                                  "Lightning Strike", "Fire"})
         self.assertEqual(flagged, {trap.item for trap in traps.TRAPS} | native)
         for trap in traps.TRAPS:
             delivery = mapping[trap.item]["delivery"]
@@ -299,7 +300,7 @@ class JournalTests(unittest.TestCase):
             note = trap_note(sender, row["name"], delivery["text"])
             self.assertEqual(note, sender + ". " + delivery["text"])
             self.assertEqual(len(pages(note)), 1, note)
-        self.assertEqual(traps_seen, 9)
+        self.assertEqual(traps_seen, 12)
         self.assertEqual(trap_note(None, "Rupoor", "Rupees slip through your fingers."),
                          "{0}Rupoor{/}: Rupees slip through your fingers.")
 

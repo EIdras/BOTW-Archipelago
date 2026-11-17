@@ -122,9 +122,11 @@ class SeedTests(Folder):
             self.assertIn("Building the game pack of seed 111 again", ui.text())
 
     def test_the_list_names_each_seeds_version_and_those_not_playable(self):
-        from botw_client.locations import WORLD_SCHEMA
-        for name, schema, version in (("111", WORLD_SCHEMA, "0.3.1"), ("222", WORLD_SCHEMA - 1, "0.2.5"),
-                                      ("333", WORLD_SCHEMA - 1, None)):
+        from botw_client.locations import PLAYABLE_WORLD_SCHEMAS, WORLD_SCHEMA
+        # The oldest schema played (5) and the one before it, not played.
+        before = min(PLAYABLE_WORLD_SCHEMAS) - 1
+        for name, schema, version in (("111", WORLD_SCHEMA, "0.3.1"), ("222", before, "0.2.5"),
+                                      ("333", before, None)):
             folder = self.seed(name)
             report = json.loads((folder / "analysis.json").read_text())
             report["audit"].update(world_schema=schema, world_version=version)

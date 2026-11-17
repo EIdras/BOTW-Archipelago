@@ -123,7 +123,7 @@ class Prepared:
 
 def prepared_seeds() -> list[Prepared]:
     """The prepared seeds, the last played first."""
-    from botw_client.locations import WORLD_SCHEMA
+    from botw_client.locations import PLAYABLE_WORLD_SCHEMAS
     seeds = []
     folders = sorted(play_seed.PLAY_SEEDS.iterdir()) if play_seed.PLAY_SEEDS.is_dir() else []
     for folder in folders:
@@ -137,7 +137,7 @@ def prepared_seeds() -> list[Prepared]:
         audit = report["audit"]
         schema = audit.get("world_schema")
         seeds.append(Prepared(folder.name, slot, sessions[-1] if sessions else "",
-                              audit.get("world_version") or "", schema is None or schema == WORLD_SCHEMA))
+                              audit.get("world_version") or "", schema is None or schema in PLAYABLE_WORLD_SCHEMAS))
     return sorted(seeds, key=lambda seed: seed.last_played, reverse=True)
 
 
@@ -163,6 +163,20 @@ def warn_newer(ui, seed: str) -> None:
                f"({VERSION}): if something is missing, update BOTW Archipelago.")
 
 
+def say_mode(ui, slot_data: dict) -> None:
+    """The game mode the seed is played in, hard to miss: a Master Mode seed in a
+    Normal mode save, or the other way round, stops the client (botw_client/runtime.py)."""
+    if "master_mode" not in slot_data:
+        return
+    if slot_data["master_mode"]:
+        ui.say("*" * 72)
+        ui.say("*  THIS SEED IS SET FOR MASTER MODE (The Master Trials DLC).")
+        ui.say("*  Load a MASTER MODE save: the client stops on a Normal mode save.")
+        ui.say("*" * 72)
+    else:
+        ui.say("This seed is set for Normal mode: load a Normal mode save, not Master Mode.")
+
+
 def prepare_file(ui, path: Path) -> str:
     """Prepare the seed of a slot file or zip, unless it already is; its name."""
     from tools.build_pack_from_source import slot_manifests
@@ -180,6 +194,8 @@ def prepare_file(ui, path: Path) -> str:
         for number, name in enumerate(names, 1):
             ui.say(f"  {number}. {name}")
         slot = names[pick(ui, "Which player are you?", len(names)) - 1]
+    say_mode(ui, next(manifest for manifest in slot_manifests(path)
+                      if manifest.get("slot_name") == slot).get("slot_data", {}))
     folder = play_seed.PLAY_SEEDS / seed
     if (folder / "analysis.json").is_file() and (folder / path.name).is_file()             and play_seed.sha(folder / path.name) == play_seed.sha(path):
         return fresh(ui, seed)

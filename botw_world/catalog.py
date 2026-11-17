@@ -23,6 +23,16 @@ CLIMATES = {
     "heat": (("Flamebreaker Set",),),                   # Death Mountain's burning zone
 }
 GOAL_LOCATION = "Defeat Calamity Ganon"
+# The locations that exist only in Master Mode (the chests of IsHardModeActor,
+# tools/build_extra_locations.py): drawn only with the master_mode option.
+MASTER_MODE_ONLY = frozenset(row["id"] for row in LOCATIONS if "master mode only" in row["notes"])
+# The locations never drawn: chests the Wii U game cannot show (the Xenoblade
+# Chronicles 2 collaboration's, tools/chest_logic.py).
+NEVER_DRAWN = frozenset(row["id"] for row in LOCATIONS if "never drawn" in row["notes"])
+# In logic.csv's extra: every shrine cleared (the chests the game creates once all 120
+# are, CompleteDungeon_Activated). The world asks for its shrine events
+# (location_rule), the tracker for its shrine count.
+ALL_SHRINES = "All Shrines"
 # The weapons of the filler: a group by its weight, then one of its weapons.
 # Its level orders the weapons through the game (the weapon_order option):
 # 1 first, 5 last; 0, the jokes, stay wherever the fill put them.
@@ -60,17 +70,29 @@ WEAPON_LEVELS = {name: level for _weight, level, names in WEAPONS.values() for n
 # its weight, then one of its items by theirs (smaller sums of rupees more often,
 # a weapon by its group's weight).
 FILLER = {
-    "arrows": (30, {"10 Arrows": 1, "10 Fire Arrows": 1, "10 Ice Arrows": 1, "10 Shock Arrows": 1,
-                    "10 Bomb Arrows": 1, "5 Ancient Arrows": 1}),
-    "elixirs": (25, {name: 1 for name in (
+    "arrows": (25, {"10 Arrows": 1, "10 Fire Arrows": 1, "10 Ice Arrows": 1, "10 Shock Arrows": 1,
+                    "10 Bomb Arrows": 1, "5 Ancient Arrows": 1, "20 Bomb Arrows": 0.5}),
+    "elixirs": (20, {name: 1 for name in (
         "Hasty Elixir", "Electro Elixir", "Tough Elixir", "Hearty Elixir", "Fireproof Elixir",
         "Chilly Elixir", "Spicy Elixir", "Mighty Elixir", "Sneaky Elixir", "Energizing Elixir",
         "Enduring Elixir", "Fairy Tonic")}),
-    "weapons": (25, {name: weight / len(names) for weight, _level, names in WEAPONS.values()
+    "weapons": (22, {name: weight / len(names) for weight, _level, names in WEAPONS.values()
                      for name in names}),
-    "gems": (10, {name: 1 for name in ("Diamond", "Ruby", "Sapphire", "Topaz", "Opal", "Amber")}),
-    "rupees": (10, {"Blue Rupee": 30, "Red Rupee": 35, "Purple Rupee": 20, "Silver Rupee": 10,
+    "gems": (8, {name: 1 for name in ("Diamond", "Ruby", "Sapphire", "Topaz", "Opal", "Amber")}),
+    "rupees": (9, {"Blue Rupee": 30, "Red Rupee": 35, "Purple Rupee": 20, "Silver Rupee": 10,
                     "Gold Rupee": 5}),
+    # What upgrades armor at the Great Fairies: the dragons' parts, the Lynels', the
+    # Guardians' and the Luminous Stone.
+    "materials": (9, {name: 1 for name in (
+        "Farosh's Scale", "Farosh's Claw", "Shard of Farosh's Fang", "Shard of Farosh's Horn",
+        "Dinraal's Scale", "Dinraal's Claw", "Shard of Dinraal's Fang", "Shard of Dinraal's Horn",
+        "Naydra's Scale", "Naydra's Claw", "Shard of Naydra's Fang", "Shard of Naydra's Horn",
+        "Lynel Horn", "Lynel Hoof", "Lynel Guts", "Ancient Screw", "Ancient Spring", "Ancient Gear",
+        "Ancient Shaft", "Luminous Stone")}),
+    # Hearty and mighty food, raw or cooked.
+    "food": (7, {name: 1 for name in (
+        "Hearty Durian", "Big Hearty Truffle", "Mighty Bananas", "Silent Princess",
+        "Hearty Simmered Fruit", "Hearty Mushroom Skewer", "Mighty Simmered Fruit")}),
 }
 PLATEAU_RUNES = {name: row["runes"] for name, row in LOGIC.items()
                  if name in ("Oman Au Shrine", "Ja Baij Shrine", "Owa Daim Shrine", "Keh Namut Shrine")}
@@ -147,9 +169,16 @@ def requirements(row: dict) -> tuple[tuple[tuple[str, ...], int], ...]:
                (RUNES if runes == "all" else () if runes in ("", "none") else runes.split("|"))]
     for item in filter(None, logic["extra"].split("|")):
         names, _, count = item.partition(":")
+        if names == ALL_SHRINES:                # every shrine's event: needs_all_shrines()
+            continue
         if names not in MAPS.values():          # maps: map_keys()
             groups.append((tuple(names.split("/")), int(count or 1)))
     return tuple(groups)
+
+
+def needs_all_shrines(row: dict) -> bool:
+    """The location is reached once every shrine is cleared (ALL_SHRINES)."""
+    return ALL_SHRINES in LOGIC[row["name"]]["extra"].split("|")
 
 
 def map_keys(row: dict) -> tuple[str, ...]:

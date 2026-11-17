@@ -34,18 +34,70 @@ class PackTests(unittest.TestCase):
     def json(self, name):
         return json.loads(self.pack.read(name))
 
+    def own_sections(self):
+        """The sections of the pack but those referring to another (the overview's chests)."""
+        return [section for place in self.json("locations/locations.json")
+                for section in place["sections"] if "ref" not in section]
+
     def test_every_location_has_one_section_on_the_map(self):
         places = self.json("locations/locations.json")
-        names = [section["name"] for place in places for section in place["sections"]]
+        names = [section["name"] for section in self.own_sections()]
         self.assertEqual(sorted(names), sorted(row["name"] for row in self.cat.LOCATIONS))
-        # The map is cut to the squares, MARGIN pixels around them.
+        # The overview is cut to its squares, MARGIN pixels around them.
         header = self.pack.read("images/map.png")[16:24]
         width, height = int.from_bytes(header[:4], "big"), int.from_bytes(header[4:], "big")
         self.assertLess((width, height), (2400, 2000))
-        xs = [place["map_locations"][0]["x"] for place in places]
-        ys = [place["map_locations"][0]["y"] for place in places]
+        spots = [spot for place in places for spot in place["map_locations"] if spot["map"] == poptracker.MAP]
+        xs = [spot["x"] for spot in spots]
+        ys = [spot["y"] for spot in spots]
         self.assertEqual((min(xs), min(ys)), (poptracker.MARGIN, poptracker.MARGIN))
         self.assertEqual((width - max(xs), height - max(ys)), (poptracker.MARGIN, poptracker.MARGIN))
+
+    def test_chests_and_bosses_on_their_maps_shown_once_drawn(self):
+        places = {place["name"]: place for place in self.json("locations/locations.json")}
+        rows = {row["name"]: row for row in self.cat.LOCATIONS}
+        # A shrine's chests are sections of the shrine's square, which stays shown.
+        shrine = places["Oman Au Shrine"]
+        self.assertNotIn("visibility_rules", shrine)
+        chests = [s for s in shrine["sections"] if rows[s["name"]]["category"] == "Shrine Chest"]
+        self.assertTrue(chests)
+        self.assertTrue(all(s["visibility_rules"][0][0].startswith("$botw_drawn|") for s in chests))
+        # A field chest: its own square on its region's map only; a boss on the overview too.
+        field = next(name for name, row in rows.items() if row["category"] == "Chest")
+        chest, boss = places[field], next(p for name, p in places.items()
+                                                    if name in rows and rows[name]["category"] == "Boss")
+        self.assertEqual([spot["map"] for spot in chest["map_locations"]], [rows[field]["region"]])
+        self.assertEqual((chest["map_locations"][0]["shape"], chest["map_locations"][0]["size"]), ("trapezoid", 20))
+        self.assertEqual(self.json("manifest.json")["min_poptracker_version"], "0.32.0")
+        self.assertEqual([spot["map"] for spot in boss["map_locations"]],
+                         [poptracker.MAP, poptracker.map_region(rows[boss["name"]])])
+        self.assertTrue(all((spot["shape"], spot["size"]) == ("diamond", 22) for spot in boss["map_locations"]))
+        self.assertEqual(chest["visibility_rules"], [[f"$botw_drawn|{rows[field]['id']}"]])
+        # On the overview, the chests stacked by landmark, sections referring to theirs.
+        stacks = [p for name, p in places.items() if name.startswith("Chests: ")]
+        refs = [s["ref"] for p in stacks for s in p["sections"]]
+        self.assertEqual(sorted(refs), sorted(f"{n}/{n}" for n, r in rows.items() if r["category"] == "Chest"))
+        self.assertTrue(all([spot["map"] for spot in p["map_locations"]] == [poptracker.MAP] for p in stacks))
+        self.assertTrue(all(len(p["visibility_rules"]) == len(p["sections"]) for p in stacks))
+        self.assertIn("function botw_drawn(id)", self.pack.read("scripts/logic.lua").decode())
+
+    def test_a_map_a_region_and_the_tracker_follows_link(self):
+        maps = [entry["name"] for entry in self.json("maps/maps.json")]
+        regions = sorted({poptracker.map_region(row) for row in self.cat.LOCATIONS})
+        self.assertEqual(maps, [poptracker.MAP, *regions])
+        self.assertEqual(len(regions), 15)
+        for region in regions:
+            self.assertIn(poptracker.region_map_image(region), self.pack.namelist())
+        tabs = json.dumps(self.json("layouts/tracker.json")["tracker_default"])
+        self.assertIn('"type": "tabbed"', tabs)
+        for name in maps:
+            self.assertIn(f'"title": "{name}"', tabs)
+        tracking = self.pack.read("scripts/autotracking/archipelago.lua").decode()
+        self.assertIn('REGION_KEY = "botw_region_" .. (Archipelago.TeamNumber or 0) .. "_" .. '
+                      'Archipelago.PlayerNumber', tracking)
+        self.assertIn('Tracker:UiHint("ActivateTab", value)', tracking)
+        from botw_client.region_report import key
+        self.assertEqual(key(0, 3), "botw_region_0_3")
 
     def test_each_region_has_its_marker_on_the_map_checked_once_open(self):
         markers = {place["name"].removesuffix(" Region"): place for place in self.json("locations/regions.json")}
@@ -66,7 +118,7 @@ class PackTests(unittest.TestCase):
         sections = dict(re.findall(r'\[(\d+)\] = "(@[^"]+)"', data.split("REQUIREMENTS")[0]))
         expected = {row["id"] for row in self.cat.LOCATIONS if row["name"] != self.cat.GOAL_LOCATION}
         self.assertEqual({int(key) for key in sections}, expected)
-        places = {place["name"]: {s["name"] for s in place["sections"]}
+        places = {place["name"]: {s["name"] for s in place["sections"] if "ref" not in s}
                   for place in self.json("locations/locations.json")}
         for path in sections.values():
             place, section = path[1:].split("/", 1)
@@ -88,8 +140,7 @@ class PackTests(unittest.TestCase):
                 self.assertIn(item, codes)
 
     def test_a_region_without_its_map_is_a_sequence_break(self):
-        sections = {section["name"]: section for place in self.json("locations/locations.json")
-                    for section in place["sections"]}
+        sections = {section["name"]: section for section in self.own_sections()}
         rows = {row["name"]: row for row in self.cat.LOCATIONS}
         self.assertEqual(sections["Rin Oyaa Shrine"]["access_rules"],
                          [[f"$botw_access|{rows['Rin Oyaa Shrine']['id']}",
@@ -109,8 +160,7 @@ class PackTests(unittest.TestCase):
         self.assertIn("SLOT_DATA.tower_maps", logic)
 
     def test_with_region_lock_a_region_out_of_reach_is_out_of_reach(self):
-        sections = {section["name"]: section for place in self.json("locations/locations.json")
-                    for section in place["sections"]}
+        sections = {section["name"]: section for section in self.own_sections()}
         ids = {row["name"]: row["id"] for row in self.cat.LOCATIONS}
         hebra, goal = ids["Hebra Tower"], ids[self.cat.GOAL_LOCATION]
         self.assertEqual(sections["Hebra Tower"]["access_rules"], [[f"$botw_access|{hebra}", f"$botw_regions|{hebra}",

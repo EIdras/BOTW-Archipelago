@@ -70,8 +70,10 @@ CLIENT_SCHEMA = 2
 # The client schemas of BOTW seeds this client plays: 4 added the Gerudo Set, 5 the
 # goal and the sanctum's requirements, 6 the new filler, 7 the weapons, 8 the travel items,
 # 9 Epona and the Master Cycle Zero selected only when no rune is, 10 the tower maps,
-# 11 the Downpour, Yiga Ambush and Paranoia traps, 12 the travel points a map opens.
-BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
+# 11 the Downpour, Yiga Ambush and Paranoia traps, 12 the travel points a map opens,
+# 13 the chests and bosses, the Progressive Horse, the new armor and filler, and the
+# Freeze, Lightning Strike and Fire traps.
+BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)
 # The mutations that present the item themselves: no AP window before them.
 VANILLA_WINDOWS = ("get_demo_actor", "champion_actor", "rune_download", "rune_power_up", "trap",
                    "native_trap",
@@ -308,6 +310,11 @@ class BotwClientRuntime:
         # last zone logged, why it cannot run (logged once).
         self._border = None
         self._border_areas = None
+        # Link's region for the trackers (botw_client/region_report.py): the last one
+        # written to the server, when it was looked at, why it cannot be (logged once).
+        self._region_reported = None
+        self._region_report_at = 0.0
+        self._region_report_failure = None
         self._border_zone = None
         self._border_return = None
         self._border_missed = self._border_closures = 0
@@ -644,6 +651,54 @@ class BotwClientRuntime:
                 except Exception:  # noqa: BLE001 - Cemu may be gone: the timers lapse alone
                     pass
                 self._border = None
+
+    def _check_save_mode(self):
+        """A seed of master_mode is played in a Master Mode save, any other in a Normal
+        mode one: the save's mode is AoC_HardMode_Enabled, a bool kept in each save's
+        caption.sav (IsLastPlayHardMode, in option.sav, is the last mode played, not
+        the save's). Read once the session is bound to a loaded save; the other mode
+        stops the client (the user's choice: block, not warn)."""
+        slot = getattr(self.ap, "slot_data", None)
+        live = getattr(self.game, "live", None)
+        if not isinstance(slot, dict) or "master_mode" not in slot or not live:
+            return
+        import zlib
+        value = live.get(zlib.crc32(b"AoC_HardMode_Enabled") & 0xFFFFFFFF, "bool")
+        if value is None or bool(value) == bool(slot["master_mode"]):
+            return
+        wanted, loaded = ("MASTER MODE", "Normal mode") if slot["master_mode"] else ("NORMAL MODE", "Master Mode")
+        raise FatalClientError(
+            f"WRONG GAME MODE: this seed is set for {wanted}, but the save you loaded is a {loaded} save. "
+            f"Its locations differ (118 chests exist only in Master Mode): load a {wanted.title()} save, "
+            "then start the client again.")
+
+    async def _region_report_tick(self):
+        """Link's region, written to the server's data storage when it changes, for the
+        trackers' maps (botw_client/region_report.py): looked at once a second."""
+        from .region_report import SECONDS, link_region, set_command
+        now = time.monotonic()
+        if (now < self._region_report_at or not getattr(self.ap, "connected", False)
+                or getattr(self.ap, "team", None) is None or getattr(self.ap, "game", None) != "Breath of the Wild"
+                or not getattr(self.game, "cave", None) or not hasattr(self.game, "process")):
+            return
+        self._region_report_at = now + SECONDS
+        try:
+            if self._border_areas is None:
+                from .region_border import load_areas
+                self._border_areas = await asyncio.to_thread(load_areas)
+            process, cave = self.game.process, self.game.cave
+            region = await asyncio.to_thread(
+                link_region, lambda guest, size: process.read(cave.base + guest, size), self._border_areas)
+            if region is None or region == self._region_reported:
+                return
+            await self.ap.send(set_command(self.ap.team, self.ap.slot, region))
+            self._region_reported = region
+        except Exception as exc:  # noqa: BLE001 - the trackers' map must not stop the session
+            failure = f"{type(exc).__name__}: {exc}"
+            if failure != self._region_report_failure:
+                self.log(f"region for the trackers unavailable: {failure}")
+                self._region_report_failure = failure
+            self._region_report_at = now + 30.0
 
     def _make_border(self, slot):
         import zlib
@@ -1790,8 +1845,16 @@ class BotwClientRuntime:
             self._native_trap_task = asyncio.create_task(
                 asyncio.to_thread(play, self._swarm_should_stop, self._native_trap_strike.set),
                 name="Paranoia")
-        elif effect == "yiga_ambush":
-            play = getattr(backend, "yiga_ambush", None)
+        elif effect in ("yiga_ambush", "freeze", "lightning", "fire"):
+            # Played at once, as soon as Link is free (botw_client/yiga_ambush.py,
+            # elemental_strike.py).
+            from .elemental_strike import NAMES
+            label = NAMES.get(effect, "Yiga Ambush")
+            if effect == "yiga_ambush":
+                play = getattr(backend, "yiga_ambush", None)
+            else:
+                strike = getattr(backend, "elemental_strike", None)
+                play = (lambda: strike(effect)) if strike is not None else None
             result = await asyncio.to_thread(play) if play is not None else None
             if isinstance(result, str):
                 # Link out of the world, an entry running, the invoker busy:
@@ -1800,9 +1863,9 @@ class BotwClientRuntime:
                     self._native_trap_since = time.monotonic()
                 if time.monotonic() - self._native_trap_since < NATIVE_TRAP_PATIENCE_SECONDS:
                     return
-                self.log(f"Yiga Ambush given up: {result}")
+                self.log(f"{label} given up: {result}")
             elif result is not None:
-                self.log(f"Yiga Ambush played: {result}")
+                self.log(f"{label} played: {result}")
             self._native_traps.pop(0)
             self._native_trap_since = None
             self._native_trap_struck(self._native_trap_notes.pop(0) if self._native_trap_notes else [])
@@ -2523,6 +2586,8 @@ class BotwClientRuntime:
                     self._discover_received()
                     self._collect_messages()
                     self._mark_bulk()
+                    await self._region_report_tick()
+                    self._check_save_mode()
                     # A reload back to an unbound save unbinds the session.
                     session_bound = not self.native_delivery or self._native_session_bound
                 # A swarm playing has the invoker for its 10 s: the events

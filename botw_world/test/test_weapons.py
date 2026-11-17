@@ -9,8 +9,9 @@ from . import BotwTestBase
 from .. import BotwWorld
 from ..catalog import WEAPON_LEVELS
 
-# Every shop and stall location: about 26 weapons drawn.
-SHOPS = {"beedle_shop_items": 2, "stall_items": 28}
+# Every shop and stall location, and field chests: room for the bonus items and
+# enough weapons drawn among the filler, whatever the seed.
+SHOPS = {"beedle_shop_items": 2, "stall_items": 28, "field_chests": 60}
 
 
 def fill(multiworld) -> None:

@@ -11,9 +11,16 @@ local function set_goal(reached)
     end
 end
 
+-- The region Link is in, which the client writes when he enters another
+-- (botw_client/region_report.py): its map's tab is activated, once a region.
+local shown_region = nil
+
 local function on_status(key, value)
     if key == STATUS_KEY then
         set_goal(value == GOAL_STATUS)
+    elseif key == REGION_KEY and type(value) == "string" and value ~= "" and value ~= shown_region then
+        shown_region = value
+        Tracker:UiHint("ActivateTab", value)
     end
 end
 
@@ -47,8 +54,10 @@ local function on_clear(slot_data)
     -- The goal is no AP location: the server keeps the slot's status, 30 once
     -- the goal is reached.
     STATUS_KEY = "_read_client_status_" .. (Archipelago.TeamNumber or 0) .. "_" .. Archipelago.PlayerNumber
-    Archipelago:SetNotify({STATUS_KEY})
-    Archipelago:Get({STATUS_KEY})
+    REGION_KEY = "botw_region_" .. (Archipelago.TeamNumber or 0) .. "_" .. Archipelago.PlayerNumber
+    shown_region = nil
+    Archipelago:SetNotify({STATUS_KEY, REGION_KEY})
+    Archipelago:Get({STATUS_KEY, REGION_KEY})
     -- The seed's own locations: shops and stalls exist only by its options.
     local seed = {}
     local any = false

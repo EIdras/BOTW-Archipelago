@@ -20,7 +20,9 @@ SOURCE = ROOT / ".build/ledger-validation/4e60affc56def09f/content"
 class NativeDeliveryCompilationTests(unittest.TestCase):
     def test_catalog_covers_verified_action_families_only(self):
         entries, unsupported = compile_native_entries()
-        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 206)
+        # 206 before client schema 13, which adds the Progressive Horse (5 stages), the new armor
+        # (a set is 3 entries), the horse gear, the new filler and the three elemental traps.
+        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 302)
         self.assertEqual(set(unsupported), set())
         self.assertEqual(len({entry.entry_name for entry in entries}), len(entries))
         self.assertTrue(all(entry.plan.mutations for entry in entries))

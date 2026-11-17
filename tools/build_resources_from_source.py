@@ -32,7 +32,8 @@ from tools import build_plateau_sensor_candidate as sensor
 from tools import build_master_sword_candidate as sword
 from botw_patch import (ballad_ends, beast_heart, bike_anywhere, camera_sensor, death_link, downpour,
                         ganon_gate, gerudo_outfit, goron_armor, horses, hud_layout, loading_icon,
-                        pedestal, purah_upgrades, traps)
+                        pedestal, purah_upgrades, shrine_chests, traps)
+from botw_patch import ap_bolt
 from botw_patch.ap_quest import INPUT_HASHES as STATUS_INPUTS
 
 TITLE = "Pack/TitleBG.pack"
@@ -86,7 +87,7 @@ SOURCE_FILES = (
     "botw_patch/horses.py", "botw_patch/downpour.py", "botw_patch/game_files.py",
     *gerudo_outfit.SOURCE_FILES, *ganon_gate.SOURCE_FILES, *beast_heart.SOURCE_FILES,
     *goron_armor.SOURCE_FILES, *pedestal.SOURCE_FILES, *camera_sensor.SOURCE_FILES,
-    *purah_upgrades.SOURCE_FILES, *ballad_ends.SOURCE_FILES,
+    *purah_upgrades.SOURCE_FILES, *ballad_ends.SOURCE_FILES, *ap_bolt.SOURCE_FILES,
 )
 
 
@@ -125,7 +126,30 @@ def stage_names(shops: list | None = None, status: dict | None = None) -> list[s
     return ["checking the game's files", "the item deliveries", "the rewards and gifts",
             "DeathLink, traps and the HUD", *(["the shops"] if shops else []),
             *(["the Archipelago quest"] if status else []), *(["the region maps"] if tower_maps(status) else []),
-            *(["the Master Cycle Zero"] if bike_anywhere.enabled(status) else []), "the texts"]
+            *(["the Master Cycle Zero"] if bike_anywhere.enabled(status) else []),
+            *(["the shrine chests"] if shrine_chests.enabled(status) else []), "the texts"]
+
+
+def patch_archives(files: dict[str, bytes], archives: list) -> tuple[dict[str, bytes], list[dict]]:
+    """Several archives patched at once, as patch_stage patches one, with the size
+    table's accounting: only they and the size table are staged on disk (patch_stage
+    stages every file of the pack so far, seconds each time: the shrine chests patch
+    up to a hundred archives). archives: (name, {member: transform}, read(name) for
+    an archive not in `files` yet)."""
+    import tempfile
+    from botw_patch.resources import ResourceBuilder
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp:
+        stage_content = Path(temp)
+        staged = {TABLE: files[TABLE], **{name: files[name] if name in files else read(name)
+                                          for name, _transforms, read in archives}}
+        for name, raw in staged.items():
+            path = stage_content / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(raw)
+        builder = ResourceBuilder(stage_content)
+        for name, transforms, _read in archives:
+            builder.patch_archive(name, transforms)
+        return {**files, **builder.finish()}, builder.changes
 
 
 def generate(content, binding_token: int, shops: list | None = None,
@@ -335,6 +359,22 @@ def _generate(game: GameFiles, binding_token: int, shops: list | None, status: d
         # The cycle through the horse-only walls (botw_patch/bike_anywhere.py).
         files, edits = bike_anywhere.generate(files, game)
         changes.extend(edits)
+    # The Lightning Strike trap's quicker bolt (botw_patch/ap_bolt.py), after the
+    # stages that build ActorInfo from the game's own.
+    files, edits = ap_bolt.generate(files, game)
+    changes.extend(edits)
+    if shrine_chests.enabled(status):
+        stage()
+        # The drawn shrine chests give a green rupee of their own, named after their
+        # item (botw_patch/shrine_chests.py).
+        files, edits = shrine_chests.add_rupees(files, game, status)
+        changes.extend(edits)
+        archives = [(f"Pack/Bootup_{language}.pack", shrine_chests.messages(status, language), game.read)
+                    for language in regions.of_content(game.content).languages]
+        archives += [(name, transforms, lambda name: shrine_chests.read_pack(game, name))
+                     for name, transforms in shrine_chests.stages(status)]
+        files, edits = patch_archives(files, archives)
+        changes.extend(edits)
     stage()
     # Vilia's lines at the price she now asks (botw_patch/gerudo_outfit.py).
     files, edits = gerudo_outfit.generate_texts(files, game)
@@ -406,6 +446,11 @@ def build(content, output: Path, *, binding_token: int, shops: list | None = Non
         manifest["bike_anywhere"] = list(bike_anywhere.WALLS)
         manifest["source_hashes"].update({name: digest((ROOT / name).read_bytes())
                                           for name in bike_anywhere.SOURCE_FILES})
+    if shrine_chests.enabled(status):
+        # Only for seeds that draw shrine chests, so that the others keep their identity.
+        manifest["shrine_chests"] = [row["id"] for row in shrine_chests.drawn(status)]
+        manifest["source_hashes"].update({name: digest((ROOT / name).read_bytes())
+                                          for name in shrine_chests.SOURCE_FILES})
     if region is not regions.EUR:
         # Only for the other versions, so that the European packs keep their identity.
         manifest["input_hashes"] = regions.inputs(manifest["input_hashes"], game.content)
