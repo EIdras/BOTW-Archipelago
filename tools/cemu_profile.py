@@ -81,6 +81,13 @@ def create(executable: Path, install: CemuInstall | None = None, target: Path = 
     for name in ("controllerProfiles",):
         if (user_data / name).exists():
             shutil.copytree(user_data / name, portable / name)
+    # The player's compiled shader/pipeline cache: copy it so Cemu does not
+    # recompile shaders on first load. The player may have none, then skip.
+    shader_src = Path(os.environ.get("XDG_CACHE_HOME") or (Path.home() / ".cache")) / "Cemu" / "shaderCache"
+    if shader_src.is_dir():
+        name = "shaderCache"
+        print(f"Copying {name}...", flush=True)
+        shutil.copytree(shader_src, portable / "shaderCache")
     # Keep graphics and input preferences, but never let this configuration
     # point back to the installation's saves, nor load its graphic packs.
     settings = ET.parse(user_data / "settings.xml")

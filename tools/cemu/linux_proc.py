@@ -22,17 +22,18 @@ def find_cemu_pid(environ=os.environ, proc_dir="/proc"):
             raise ValueError("BOTW_CEMU_PID must be a positive process ID")
         return int(explicit)
     emulator = None
-    for entry in os.scandir(proc_dir):
-        if not entry.name.isdigit():
-            continue
-        try:
-            with open(entry.path + "/cmdline", "rb") as stream:
-                cmdline = stream.read().replace(b"\x00", b" ").strip().decode("utf-8", "replace")
-        except OSError:
-            continue
-        if MOUNT_SHIM in cmdline or CEMU not in cmdline:
-            continue
-        if ".AppImage" in cmdline:
-            return int(entry.name)
-        emulator = int(entry.name)
+    with os.scandir(proc_dir) as entries:
+        for entry in entries:
+            if not entry.name.isdigit():
+                continue
+            try:
+                with open(entry.path + "/cmdline", "rb") as stream:
+                    cmdline = stream.read().replace(b"\x00", b" ").strip().decode("utf-8", "replace")
+            except OSError:
+                continue
+            if MOUNT_SHIM in cmdline or CEMU not in cmdline:
+                continue
+            if ".AppImage" in cmdline:
+                return int(entry.name)
+            emulator = int(entry.name)
     return emulator

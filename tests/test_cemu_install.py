@@ -347,6 +347,81 @@ class ProfileTests(unittest.TestCase):
                 (profile / "isolation.json").write_text(json.dumps(manifest))
                 self.assertEqual(cemu_profile.game(), install.base / "code/U-King.rpx")
 
+    def test_the_play_account_is_pre_created_in_the_profile(self):
+        # A play session plays on its own account (PLAY = 0x80000003), derived
+        # from the copied SOURCE account (0x80000001); ensure_play_account makes it.
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            install = Install(root)
+            exe = root / "Cemu.exe"
+            exe.write_bytes(b"cemu")
+            # The helper writes a bare account.dat; derive the play account from
+            # a realistic one (header + the identifiers play_account_dat rewrites).
+            (install.mlc / "usr/save/system/act/80000001/account.dat").write_text(
+                "AccountInstance_20120705\nPersistentId=80000001\n"
+                "TransferableIdBase=200000402a7c36e\n"
+                "Uuid=223026b4f405dcfd54d32a0702a7c36e\nMiiName=0064\n")
+            data = root / "data"
+            profile = data / "profile"
+            portable = profile / "portable"
+            accounts = portable / "mlc01/usr/save/system/act"
+            with mock.patch.object(cemu_profile, "DATA", data), \
+                    mock.patch.object(cemu_profile, "PROFILE", profile), \
+                    mock.patch.object(cemu_profile, "PORTABLE", portable), \
+                    mock.patch.object(cemu_profile, "ACCOUNTS", accounts):
+                cemu_profile.create(exe, detect(install), profile)
+                cemu_profile.ensure_play_account()
+            account = accounts / "80000003" / "account.dat"
+            self.assertTrue(account.is_file(), "the PLAY account is pre-created")
+            self.assertIn("PersistentId=80000003", account.read_text())
+
+    def test_no_profile_path_points_back_into_the_installation(self):
+        # The profile must be self-contained: check_isolated() passes and the
+        # installation's mlc01 is never referenced from inside the profile.
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            install = Install(root, mlc=root / "elsewhere" / "mlc01")
+            exe = root / "Cemu.exe"
+            exe.write_bytes(b"cemu")
+            data = root / "data"
+            profile = data / "profile"
+            portable = profile / "portable"
+            with mock.patch.object(cemu_profile, "DATA", data), \
+                    mock.patch.object(cemu_profile, "PROFILE", profile), \
+                    mock.patch.object(cemu_profile, "PORTABLE", portable), \
+                    mock.patch.object(cemu_profile, "cemu_running", return_value=False):
+                cemu_profile.create(exe, detect(install), profile)
+                cemu_profile.check_isolated()      # must not raise
+            settings = (portable / "settings.xml").read_text()
+            self.assertNotIn(str(install.mlc), settings)
+            self.assertNotIn(str(install.user), settings)
+
+    def test_the_shader_cache_is_mirrored_into_the_profile(self):
+        # The player's compiled shader/pipeline cache is copied into the profile
+        # so Cemu does not recompile shaders on first load (area 2).
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            cache = root / ".cache"
+            shader_src = cache / "Cemu" / "shaderCache"
+            for rel in ("driver/vk/00050000101c9400/a.bin",
+                        "precompiled/b.toc", "transferable/c.bin"):
+                (shader_src / rel).parent.mkdir(parents=True)
+                (shader_src / rel).write_bytes(rel.encode())
+            install = Install(root)
+            exe = root / "Cemu.exe"
+            exe.write_bytes(b"cemu")
+            data = root / "data"
+            with mock.patch.object(cemu_profile, "DATA", data), \
+                    mock.patch("tools.cemu_profile.Path.home", return_value=root):
+                target = cemu_profile.create(exe, detect(install), data / "profile")
+            dest = target / "portable/shaderCache"
+            self.assertEqual(
+                sorted(p.relative_to(shader_src).as_posix()
+                       for p in shader_src.rglob("*") if p.is_file()),
+                sorted(p.relative_to(dest).as_posix()
+                       for p in dest.rglob("*") if p.is_file()),
+                "the profile's shaderCache mirrors the source file set")
+
 
 if __name__ == "__main__":
     unittest.main()
