@@ -13,7 +13,11 @@
     when the wall or rocks break (a Create link through tags from WallCrack,
     Obj_RockBroken_*), or one of those within NEAR, or the cover stacked on it:
     Remote Bombs (the user's choice: a hammer is a sequence break).
-  * Under an iron boulder (StackLink to FldObj_PushRockIron_*): Magnesis.
+  * Under an iron boulder (StackLink to FldObj_PushRockIron_*): Magnesis; under a stone
+    one (FldObj_PushRock_*): Stasis or Remote Bombs. Also when the boulder is the actor an
+    ActorObserverTag watches, whose tags release the chest or an invisible wall around it
+    (AirWall within WALL): the Great Plateau's chest under a boulder, sealed by an
+    AirWallForE3 until the boulder moves. Another observed actor: on the list to check.
   * In ice (an IceWall referring to it): nothing, fire is found everywhere (the user's choice).
   * Created by a saved flag (FLAGS): its requirement, or never drawn (NEVER), or on the
     list to check.
@@ -37,6 +41,11 @@ import oead
 from botw_patch.resources import unpack
 
 BOMB = "Progressive Remote Bomb"
+# A stone boulder (FldObj_PushRock_*) over a chest: Stasis launches it, a bomb blows it off.
+BOULDER = "Progressive Stasis/Progressive Remote Bomb"
+WALL = 6.0                  # metres from the chest an invisible wall sealing it stands within
+# The objects observed before a chest or its wall is released, other than boulders: for the report.
+OBSERVED: list[tuple[str, object]] = []
 NEAR = 2.5                  # metres, on the ground's plane; 3 m up or down
 SHALLOW = (0.3, 20.0)       # metres below the surface a metal chest is fished out from
 TAGS = ("LinkTag", "SwitchTimeLag", "EventTag", "AreaCulling")
@@ -163,18 +172,66 @@ def classify(chest, objects: list, into: dict, water: Water) -> Reach:
             elif name.startswith("FldObj_PushRockIron"):
                 reach.runes.add("Magnesis")
                 reach.notes.append("under an iron boulder")
+            elif name.startswith("FldObj_PushRock"):
+                reach.runes.add(BOULDER)
+                reach.notes.append("under a boulder")
+    # Released when an observed object moves: an ActorObserverTag feeding the tags that
+    # let the chest (or an invisible wall around it) be (AirWall, ForbidAttention...).
+    walls = [o for o in objects if str(o["UnitConfigName"]).startswith("AirWall")
+             and abs(float(o["Translate"][0]) - x) < WALL and abs(float(o["Translate"][2]) - z) < WALL]
+    for target in [chest, *walls]:
+        for _definition, source in into.get(int(target["HashId"]), ()):
+            for observed in observers(source, into):
+                if observed.startswith("FldObj_PushRockIron"):
+                    reach.runes.add("Magnesis")
+                    reach.notes.append("under an iron boulder")
+                elif observed.startswith("FldObj_PushRock"):
+                    reach.runes.add(BOULDER)
+                    reach.notes.append("under a boulder")
+                else:
+                    OBSERVED.append((observed, reach))
+                    reach.uncertain = f"released once {observed} moves: by what?"
     for other in objects:
         name = str(other["UnitConfigName"])
-        if other is chest or not name.startswith(("WallCrack", "Obj_RockBroken_")):
+        if other is chest or not name.startswith(("WallCrack", "Obj_RockBroken_", "FldObj_PushRock")):
             continue
         ox, oy, oz = (float(v) for v in other["Translate"])
-        if abs(ox - x) < NEAR and abs(oz - z) < NEAR and abs(oy - y) < 3:
+        if not (abs(ox - x) < NEAR and abs(oz - z) < NEAR and abs(oy - y) < 3):
+            continue
+        if name.startswith("FldObj_PushRockIron"):
+            if oy >= y - 0.5:                       # on it, not beside it below
+                reach.runes.add("Magnesis")
+                reach.notes.append("under an iron boulder")
+        elif name.startswith("FldObj_PushRock"):
+            if oy >= y - 0.5:
+                reach.runes.add(BOULDER)
+                reach.notes.append("under a boulder")
+        else:
             reach.runes.add(BOMB)
             reach.notes.append("behind a cracked wall" if name == "WallCrack" else "under rocks")
     if any(str(source["UnitConfigName"]).startswith("IceWall") for _d, source in into.get(int(chest["HashId"]), ())):
         reach.notes.append("in ice")
     reach.notes = list(dict.fromkeys(reach.notes))
     return reach
+
+
+def observers(tag, into: dict, depth: int = 0, seen: set | None = None) -> set[str]:
+    """The actors an ActorObserverTag feeding `tag` (through other tags) watches (its ActorName)."""
+    seen = seen if seen is not None else set()
+    found = set()
+    if int(tag["HashId"]) in seen or not str(tag["UnitConfigName"]).startswith(TAGS + ("ActorObserverTag",)):
+        return found
+    seen.add(int(tag["HashId"]))
+    name = str(tag["UnitConfigName"])
+    if name == "ActorObserverTag":
+        params = tag["!Parameters"] if "!Parameters" in tag else {}
+        if "ActorName" in params:
+            found.add(str(params["ActorName"]))
+        return found
+    if depth < 4:
+        for _definition, source in into.get(int(tag["HashId"]), ()):
+            found |= observers(source, into, depth + 1, seen)
+    return found
 
 
 def feeders(tag, into: dict, depth: int = 0, seen: set | None = None) -> set[str]:

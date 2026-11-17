@@ -327,6 +327,10 @@ class MasterModeTests(unittest.TestCase):
             marked = [row for row in chests if note in row["notes"]]
             self.assertTrue(marked, note)
             self.assertTrue(all(rune in logic[row["name"]]["runes"].split("|") for row in marked), note)
+        # The Plateau's chest under a boulder, sealed by an invisible wall until the boulder
+        # moves (an ActorObserverTag watching it): Stasis or Remote Bombs.
+        boulder = next(row for row in chests if row["gamedata_flag"] == "MainField_TBox_Field_Stone_3817004620")
+        self.assertEqual(logic[boulder["name"]]["runes"], "Progressive Stasis/Progressive Remote Bomb")
         never = [row for row in chests if "never drawn" in row["notes"]]
         self.assertEqual(len(never), 36)
         # The DLC's EX Treasure chests among them, e.g. the Phantom Armor's.
