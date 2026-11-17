@@ -40,6 +40,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import time
 import threading
 import traceback
 
@@ -57,6 +58,9 @@ from tools import cemu_profile as profile  # noqa: E402
 
 PLAY_SEEDS = DATA / "play-seeds"
 PORT = 38281
+# Grace period the cemu-exit thread waits before os._exit, so a normal
+# shutdown (runtime.stop() + run()'s finally, incl. ap.close) can finish first.
+FORCE_EXIT_SECONDS = 15
 GAME = "Breath of the Wild"
 
 
@@ -238,20 +242,30 @@ async def play(folder: Path, report: dict, pack: Path, session: Path,
             delivery_catalog_path=pack / "delivery_catalog.json",
             game_language=profile.console_language())
 
-        async def watch_cemu():
-            while process.poll() is None:
-                await asyncio.sleep(1.0)
+        def watch_cemu_exit():
+            # Blocks in a syscall on the Cemu child's exit, independent of the
+            # event loop, so Cemu's close is detected even if the main thread
+            # is spinning in a C call and starving that loop.
+            try:
+                process.wait()
+            except Exception:
+                pass
             log("Cemu closed: client stopping.")
-            runtime.stop()
+            runtime.stop()                 # graceful: sets runtime.stop_event
+            # If the main thread is stuck spinning (never checks stop_event),
+            # force the process out after a grace period. os._exit bypasses
+            # run()'s finally, so the wait lets a normal shutdown finish first.
+            time.sleep(FORCE_EXIT_SECONDS)
+            if threading.main_thread().is_alive():
+                os._exit(0)
 
-        watcher = asyncio.create_task(watch_cemu())
+        threading.Thread(target=watch_cemu_exit, name="cemu-exit", daemon=True).start()
         chat = asyncio.create_task(console(runtime, context, log, name))
         try:
             await runtime.run()
         finally:
-            for task in (watcher, chat):
-                task.cancel()
-            await asyncio.gather(watcher, chat, return_exceptions=True)
+            chat.cancel()
+            await asyncio.gather(chat, return_exceptions=True)
         return {
             "checked_locations": sorted(runtime.ap.checked_locations),
             "checked_names": sorted(runtime.ap.location_name(i) or str(i)
