@@ -336,3 +336,29 @@ class EventFlowLedgerTests(unittest.TestCase):
         self.assertEqual(vanilla["params"], {"IsWaitFinish": True})
         with self.assertRaisesRegex(ValueError, "unexpected close-message"):
             wait_for_message_close(result)
+
+    def test_campfire_cancel_keeps_its_vanilla_continuation(self):
+        # The presentation stages hung their window on the cancel of the rest's
+        # choice; the product gives the cancel back to the game.
+        from tools.build_autonomous_eventflow import ENTRY, add_entry, restore_campfire_cancel
+        from tools.build_delivery_control import presentation_call
+        from tools.build_eventflow_alias import use_alias
+        from tools.build_owned_presentation import mark_action
+        from tools.build_ui_close_trace import wait_for_message_close
+        from tools.build_ui_lifecycle import porch_guards
+        archive = oead.Sarc((CONTENT / "Pack/TitleBG.pack").read_bytes())
+        donor = bytes(archive.get_file("EventFlow/GetDemo.bfevfl").data)
+        raw = presentation_call(patch_campfire_delivery(self.raw)[0], donor)[0]
+        for stage in (wait_for_message_close, lambda r: porch_guards(r, donor),
+                      use_alias, add_entry, mark_action):
+            raw = stage(raw)[0]
+        self.assertEqual(graph_snapshot(read_flow(raw))["events"]["Event3"]["cases"][3],
+                         "APDisplay_Sound")
+        restored = graph_snapshot(read_flow(restore_campfire_cancel(raw)[0]))
+        vanilla = graph_snapshot(read_flow(self.raw))
+        for name, event in vanilla["events"].items():
+            self.assertEqual(event, restored["events"][name], name)
+        self.assertFalse([n for n in restored["events"] if n.startswith("APDisplay_")])
+        self.assertIn(ENTRY, [name for name, _ in restored["entry_points"]])
+        with self.assertRaisesRegex(ValueError, "unexpected campfire cancel"):
+            restore_campfire_cancel(self.raw)
