@@ -54,6 +54,15 @@ class GameDataFlagTests(unittest.TestCase):
         self.assertTrue(entries[1]["IsSave"])
         self.assertFalse(entries[0]["IsSave"])
 
+    def test_a_one_trigger_flag_is_declared_so_and_the_others_are_not(self):
+        out = modify_gamedata_flags(self.raw, ("Kept",), is_save=True, kind="bool", one_trigger=True)
+        out = modify_gamedata_flags(out, ("Free",), is_save=True, kind="bool")
+        entries = {str(e["DataName"]): e for e in oead.byml.from_binary(member(out, "/bool_data_1.bgdata"))["bool_data"]}
+        self.assertTrue(entries["Kept"]["IsOneTrigger"])
+        self.assertFalse(entries["Free"]["IsOneTrigger"])
+        with self.assertRaisesRegex(ValueError, "bool only"):
+            modify_gamedata_flags(self.raw, ("Count",), is_save=True, one_trigger=True)
+
     def test_known_flags_leave_the_table_as_it_is(self):
         out = modify_gamedata_flags(self.raw, ("First", "Third"), is_save=True, kind="bool")
         self.assertEqual(member(out, "/bool_data_1.bgdata"), member(self.raw, "/bool_data_1.bgdata"))
