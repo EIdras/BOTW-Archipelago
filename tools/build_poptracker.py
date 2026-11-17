@@ -317,6 +317,9 @@ UI_ICONS = {
     "dot_rune_terminal": "Nt_PauseIconKodai_00^t", "dot_divine_beast": "Nt_IconSinJuNew_01^d",
     "dot_rune_upgrade": "Nt_PauseIconKodai_00^t", "dot_champions_ballad": "Nt_IconSinJuNew_03^d",
     "dot_master_sword": "Nt_PauseIcon_00^s",
+    # The map's own stamps (the player's pins): a treasure chest, a skull for the bosses.
+    "dot_chest": "Nt_StampIconTBoxL_00^s", "dot_shrine_chest": "Nt_StampIconTBoxL_00^s",
+    "dot_boss": "Nt_StampIconDokuroL_00^s",
 }
 # White masks the game colours itself: the Sensor in the Slate's blue, its "+" in green.
 UI_TINTS = {"progressive_sheikah_sensor_1": (70, 190, 255),
