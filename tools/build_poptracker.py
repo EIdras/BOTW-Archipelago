@@ -698,6 +698,9 @@ def world_requirements(cat, row: dict) -> tuple:
             out.extend(world_requirements(cat, rows[names[0][len("Freed - "):]]))
         else:
             out.append((names, count))
+    if cat.needs_all_shrines(row):
+        # Every shrine cleared: the tracker's count of them.
+        out.append((("Shrines cleared",), 120))
     return tuple(dict.fromkeys(out))
 
 

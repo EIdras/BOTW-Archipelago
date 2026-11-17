@@ -13,8 +13,8 @@ from Options import OptionError
 from rule_builder.rules import And, CanReachRegion, Has, HasAll, HasAny, HasFromList, Or, Rule, True_
 
 from .catalog import (FILLER, GAME, GENTLE_REGIONS, GOAL_LOCATION, INNER_REGIONS, ITEMS, LOCATIONS, MAPS, NEIGHBOURS,
-                      MASTER_MODE_ONLY, OPEN_BORDERS, TRAPS, TRAVEL_SHRINES, TRAVEL_TERMINALS, WEAPON_LEVELS, WORLD_VERSION, categories,
-                      map_keys, requirements)
+                      MASTER_MODE_ONLY, NEVER_DRAWN, OPEN_BORDERS, TRAPS, TRAVEL_SHRINES, TRAVEL_TERMINALS, WEAPON_LEVELS, WORLD_VERSION, categories,
+                      map_keys, needs_all_shrines, requirements)
 from .options import OPTION_GROUPS, PRESETS, BotwOptions, EarlyMap, TowerMaps, WeaponOrder
 from .slot_file import BotwSlotFile
 
@@ -172,7 +172,7 @@ class BotwWorld(World):
         chests of Master Mode only too); at most all of them."""
         drawn: set[int] = set()
         for category, option in self.EXTRA_CATEGORIES.items():
-            ids = sorted(r["id"] for r in LOCATIONS if category in categories(r)
+            ids = sorted(r["id"] for r in LOCATIONS if category in categories(r) and r["id"] not in NEVER_DRAWN
                          and (self.options.master_mode or r["id"] not in MASTER_MODE_ONLY))
             drawn.update(self.random.sample(ids, min(getattr(self.options, option).value, len(ids))))
         return drawn
@@ -201,6 +201,9 @@ class BotwWorld(World):
         rule = self.rule(requirements(row))
         maps = map_keys(row) if self.options.tower_maps == TowerMaps.option_region_keys else ()
         parts = [] if isinstance(rule, True_) else [rule]
+        if needs_all_shrines(row):
+            shrines = sorted(f"Cleared - {r['name']}" for r in LOCATIONS if "Shrine" in categories(r))
+            parts.append(HasFromList(*shrines, count=len(shrines)))
         if self.options.region_lock:
             parts += [CanReachRegion(self.MAP_REGIONS[name]) for name in maps if name != MAPS.get(row["region"])]
         elif maps:

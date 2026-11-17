@@ -312,6 +312,23 @@ class MasterModeTests(unittest.TestCase):
         self.assertTrue(all(row["category"] == "Chest" for row in marked))
         self.assertIn("MainField_TBox_Field_Iron_3090346856", {row["gamedata_flag"] for row in marked})
 
+    def test_the_chests_need_what_the_game_asks(self):
+        logic = {row["location"]: row for row in csv.DictReader(
+            (ROOT / "botw_world/data/logic.csv").read_text(encoding="utf-8").splitlines())}
+        chests = [row for row in NEW if row["category"] == "Chest"]
+        # The Great Plateau's pond: two metal chests 3 m under water, Magnesis.
+        pond = [row for row in chests if row["region"] == "Great Plateau" and "under water" in row["notes"]]
+        self.assertGreaterEqual(len(pond), 2)
+        self.assertTrue(all("Magnesis" in logic[row["name"]]["runes"] for row in pond))
+        for note, rune in (("buried", "Magnesis"), ("under water", "Magnesis"),
+                           ("behind a cracked wall", "Progressive Remote Bomb"),
+                           ("under rocks", "Progressive Remote Bomb")):
+            marked = [row for row in chests if note in row["notes"]]
+            self.assertTrue(marked, note)
+            self.assertTrue(all(rune in logic[row["name"]]["runes"].split("|") for row in marked), note)
+        self.assertEqual(len([row for row in chests if "never drawn" in row["notes"]]), 3)
+        self.assertEqual(len([row for row in chests if logic[row["name"]]["extra"] == "All Shrines"]), 3)
+
     def test_the_new_locations_are_named_after_places(self):
         names = [row["name"] for row in NEW]
         self.assertEqual(len(set(names)), len(names))

@@ -26,6 +26,13 @@ GOAL_LOCATION = "Defeat Calamity Ganon"
 # The locations that exist only in Master Mode (the chests of IsHardModeActor,
 # tools/build_extra_locations.py): drawn only with the master_mode option.
 MASTER_MODE_ONLY = frozenset(row["id"] for row in LOCATIONS if "master mode only" in row["notes"])
+# The locations never drawn: chests the Wii U game cannot show (the Xenoblade
+# Chronicles 2 collaboration's, tools/chest_logic.py).
+NEVER_DRAWN = frozenset(row["id"] for row in LOCATIONS if "never drawn" in row["notes"])
+# In logic.csv's extra: every shrine cleared (the chests the game creates once all 120
+# are, CompleteDungeon_Activated). The world asks for its shrine events
+# (location_rule), the tracker for its shrine count.
+ALL_SHRINES = "All Shrines"
 # The weapons of the filler: a group by its weight, then one of its weapons.
 # Its level orders the weapons through the game (the weapon_order option):
 # 1 first, 5 last; 0, the jokes, stay wherever the fill put them.
@@ -162,9 +169,16 @@ def requirements(row: dict) -> tuple[tuple[tuple[str, ...], int], ...]:
                (RUNES if runes == "all" else () if runes in ("", "none") else runes.split("|"))]
     for item in filter(None, logic["extra"].split("|")):
         names, _, count = item.partition(":")
+        if names == ALL_SHRINES:                # every shrine's event: needs_all_shrines()
+            continue
         if names not in MAPS.values():          # maps: map_keys()
             groups.append((tuple(names.split("/")), int(count or 1)))
     return tuple(groups)
+
+
+def needs_all_shrines(row: dict) -> bool:
+    """The location is reached once every shrine is cleared (ALL_SHRINES)."""
+    return ALL_SHRINES in LOGIC[row["name"]]["extra"].split("|")
 
 
 def map_keys(row: dict) -> tuple[str, ...]:

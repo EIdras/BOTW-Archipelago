@@ -4076,7 +4076,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_934506065",
     "flag_hash": "-648358989",
-    "notes": "A-1, TBox_Field_Iron",
+    "notes": "A-1, TBox_Field_Iron, behind a cracked wall",
     "id": 396
   },
   {
@@ -4096,7 +4096,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_2504145081",
     "flag_hash": "425096536",
-    "notes": "A-1, TBox_Field_Stone",
+    "notes": "A-1, TBox_Field_Stone, in ice",
     "id": 398
   },
   {
@@ -4106,7 +4106,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_3034556572",
     "flag_hash": "-1634592996",
-    "notes": "A-1, TBox_Field_Stone",
+    "notes": "A-1, TBox_Field_Stone, in ice",
     "id": 399
   },
   {
@@ -4116,7 +4116,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_3152531233",
     "flag_hash": "686100972",
-    "notes": "A-1, TBox_Field_Stone",
+    "notes": "A-1, TBox_Field_Stone, in ice",
     "id": 400
   },
   {
@@ -4126,7 +4126,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_3247604319",
     "flag_hash": "-1439622153",
-    "notes": "A-1, TBox_Field_Stone",
+    "notes": "A-1, TBox_Field_Stone, behind a cracked wall",
     "id": 401
   },
   {
@@ -4146,7 +4146,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3982980334",
     "flag_hash": "2041387151",
-    "notes": "A-1, TBox_Field_Iron",
+    "notes": "A-1, TBox_Field_Iron, behind a cracked wall",
     "id": 403
   },
   {
@@ -4156,7 +4156,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_191517764",
     "flag_hash": "1458448898",
-    "notes": "A-2, TBox_Field_Iron",
+    "notes": "A-2, TBox_Field_Iron, under rocks",
     "id": 404
   },
   {
@@ -4226,7 +4226,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1062031406",
     "flag_hash": "-327266547",
-    "notes": "A-3, TBox_Field_Iron",
+    "notes": "A-3, TBox_Field_Iron, under water",
     "id": 411
   },
   {
@@ -4796,7 +4796,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_4199442744",
     "flag_hash": "1965817285",
-    "notes": "A-6, TBox_Field_Iron",
+    "notes": "A-6, TBox_Field_Iron, in ice",
     "id": 468
   },
   {
@@ -5086,7 +5086,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_1857299176",
     "flag_hash": "1456133897",
-    "notes": "B-1, TBox_Field_Stone",
+    "notes": "B-1, TBox_Field_Stone, behind a cracked wall",
     "id": 497
   },
   {
@@ -5146,7 +5146,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2818249630",
     "flag_hash": "-374180051",
-    "notes": "B-1, TBox_Field_Iron",
+    "notes": "B-1, TBox_Field_Iron, behind a cracked wall",
     "id": 503
   },
   {
@@ -5166,7 +5166,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_3488762707",
     "flag_hash": "-535704936",
-    "notes": "B-1, TBox_Field_Stone",
+    "notes": "B-1, TBox_Field_Stone, behind a cracked wall",
     "id": 505
   },
   {
@@ -5226,7 +5226,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1506497297",
     "flag_hash": "-1026828848",
-    "notes": "B-2, TBox_Field_Iron",
+    "notes": "B-2, TBox_Field_Iron, in ice",
     "id": 511
   },
   {
@@ -5316,7 +5316,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_2722149659",
     "flag_hash": "-478455060",
-    "notes": "B-2, TBox_Field_Stone",
+    "notes": "B-2, TBox_Field_Stone, in ice",
     "id": 520
   },
   {
@@ -5336,7 +5336,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_3164657485",
     "flag_hash": "-417334357",
-    "notes": "B-2, TBox_Field_Stone",
+    "notes": "B-2, TBox_Field_Stone, in ice",
     "id": 522
   },
   {
@@ -5346,7 +5346,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3846967635",
     "flag_hash": "-1642247883",
-    "notes": "B-2, TBox_Field_Iron",
+    "notes": "B-2, TBox_Field_Iron, in ice",
     "id": 523
   },
   {
@@ -5356,7 +5356,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3921219436",
     "flag_hash": "672904267",
-    "notes": "B-2, TBox_Field_Iron",
+    "notes": "B-2, TBox_Field_Iron, behind a cracked wall",
     "id": 524
   },
   {
@@ -5366,7 +5366,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_4036738292",
     "flag_hash": "1380582879",
-    "notes": "B-2, TBox_Field_Stone",
+    "notes": "B-2, TBox_Field_Stone, once Vah Medoh is freed",
     "id": 525
   },
   {
@@ -5396,7 +5396,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_NoReaction_1994756610",
     "flag_hash": "-794504800",
-    "notes": "B-3, TBox_Field_Stone_NoReaction",
+    "notes": "B-3, TBox_Field_Stone_NoReaction, once Vah Medoh is freed",
     "id": 528
   },
   {
@@ -5416,7 +5416,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_2384741472",
     "flag_hash": "-116750716",
-    "notes": "B-3, TBox_Field_Stone",
+    "notes": "B-3, TBox_Field_Stone, behind a cracked wall",
     "id": 530
   },
   {
@@ -5786,7 +5786,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_30547543",
     "flag_hash": "1583371473",
-    "notes": "B-6, TBox_Field_Iron",
+    "notes": "B-6, TBox_Field_Iron, under rocks",
     "id": 567
   },
   {
@@ -5876,7 +5876,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_NoReaction_854114284",
     "flag_hash": "-542664820",
-    "notes": "B-6, TBox_Field_Stone_NoReaction",
+    "notes": "B-6, TBox_Field_Stone_NoReaction, once Master Kohga is defeated (Magnesis)",
     "id": 576
   },
   {
@@ -6106,7 +6106,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2382090190",
     "flag_hash": "-416777814",
-    "notes": "B-6, TBox_Field_Iron",
+    "notes": "B-6, TBox_Field_Iron, in ice",
     "id": 599
   },
   {
@@ -6626,7 +6626,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_1407137022",
     "flag_hash": "-1354928850",
-    "notes": "C-1, TBox_Field_Stone",
+    "notes": "C-1, TBox_Field_Stone, in ice",
     "id": 651
   },
   {
@@ -6646,7 +6646,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1498077515",
     "flag_hash": "-1644584909",
-    "notes": "C-1, TBox_Field_Iron",
+    "notes": "C-1, TBox_Field_Iron, in ice",
     "id": 653
   },
   {
@@ -6656,7 +6656,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_1790025404",
     "flag_hash": "-869193285",
-    "notes": "C-1, TBox_Field_Stone",
+    "notes": "C-1, TBox_Field_Stone, behind a cracked wall",
     "id": 654
   },
   {
@@ -6736,7 +6736,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_1094385771",
     "flag_hash": "-1386817921",
-    "notes": "C-2, TBox_Field_Stone",
+    "notes": "C-2, TBox_Field_Stone, behind a cracked wall",
     "id": 662
   },
   {
@@ -6756,7 +6756,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Collabo_1367988891",
     "flag_hash": "-1027538719",
-    "notes": "C-2, TBox_Field_Iron_NoReaction_Collabo",
+    "notes": "C-2, TBox_Field_Iron_NoReaction_Collabo, never drawn: the Xenoblade Chronicles 2 collaboration (Switch only)",
     "id": 664
   },
   {
@@ -6786,7 +6786,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2095607697",
     "flag_hash": "169689484",
-    "notes": "C-2, TBox_Field_Iron",
+    "notes": "C-2, TBox_Field_Iron, in ice",
     "id": 667
   },
   {
@@ -6816,7 +6816,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_3004097437",
     "flag_hash": "676876436",
-    "notes": "C-2, TBox_Field_Stone",
+    "notes": "C-2, TBox_Field_Stone, in ice",
     "id": 670
   },
   {
@@ -6836,7 +6836,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3399665325",
     "flag_hash": "898251556",
-    "notes": "C-2, TBox_Field_Iron",
+    "notes": "C-2, TBox_Field_Iron, in ice",
     "id": 672
   },
   {
@@ -6866,7 +6866,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3763867057",
     "flag_hash": "641517443",
-    "notes": "C-2, TBox_Field_Iron",
+    "notes": "C-2, TBox_Field_Iron, behind a cracked wall",
     "id": 675
   },
   {
@@ -6876,7 +6876,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_3779189787",
     "flag_hash": "-797262032",
-    "notes": "C-2, TBox_Field_Stone",
+    "notes": "C-2, TBox_Field_Stone, behind a cracked wall",
     "id": 676
   },
   {
@@ -6886,7 +6886,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_4011611883",
     "flag_hash": "2060941154",
-    "notes": "C-2, TBox_Field_Stone",
+    "notes": "C-2, TBox_Field_Stone, behind a cracked wall",
     "id": 677
   },
   {
@@ -6906,7 +6906,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_2646712090",
     "flag_hash": "-562298035",
-    "notes": "C-3, TBox_Field_Stone",
+    "notes": "C-3, TBox_Field_Stone, behind a cracked wall",
     "id": 679
   },
   {
@@ -6916,7 +6916,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_3034784848",
     "flag_hash": "1122210723",
-    "notes": "C-3, TBox_Field_Stone",
+    "notes": "C-3, TBox_Field_Stone, behind a cracked wall",
     "id": 680
   },
   {
@@ -6956,7 +6956,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_3520607590",
     "flag_hash": "1789239495",
-    "notes": "C-3, TBox_Field_Stone",
+    "notes": "C-3, TBox_Field_Stone, behind a cracked wall",
     "id": 684
   },
   {
@@ -7006,7 +7006,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_2055474776",
     "flag_hash": "238298664",
-    "notes": "C-4, TBox_Field_Stone",
+    "notes": "C-4, TBox_Field_Stone, under rocks",
     "id": 689
   },
   {
@@ -7046,7 +7046,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_195085511",
     "flag_hash": "1204392267",
-    "notes": "C-5, TBox_Field_Stone",
+    "notes": "C-5, TBox_Field_Stone, behind a cracked wall",
     "id": 693
   },
   {
@@ -7076,7 +7076,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_743549766",
     "flag_hash": "-278933985",
-    "notes": "C-5, TBox_Field_Iron",
+    "notes": "C-5, TBox_Field_Iron, under rocks",
     "id": 696
   },
   {
@@ -7086,7 +7086,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_1099237980",
     "flag_hash": "537238739",
-    "notes": "C-5, TBox_Field_Stone",
+    "notes": "C-5, TBox_Field_Stone, behind a cracked wall",
     "id": 697
   },
   {
@@ -7146,7 +7146,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_3815956590",
     "flag_hash": "-967363308",
-    "notes": "C-5, TBox_Field_Stone",
+    "notes": "C-5, TBox_Field_Stone, behind a cracked wall",
     "id": 703
   },
   {
@@ -7386,7 +7386,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3090211221",
     "flag_hash": "971236685",
-    "notes": "C-7, TBox_Field_Iron",
+    "notes": "C-7, TBox_Field_Iron, under rocks",
     "id": 727
   },
   {
@@ -7456,7 +7456,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_504874141",
     "flag_hash": "266141336",
-    "notes": "D-1, TBox_Field_Stone",
+    "notes": "D-1, TBox_Field_Stone, behind a cracked wall",
     "id": 734
   },
   {
@@ -7466,7 +7466,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_2695063175",
     "flag_hash": "-1943849734",
-    "notes": "D-1, TBox_Field_Stone",
+    "notes": "D-1, TBox_Field_Stone, behind a cracked wall",
     "id": 735
   },
   {
@@ -7506,7 +7506,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_3651590101",
     "flag_hash": "1208325578",
-    "notes": "D-1, TBox_Field_Stone",
+    "notes": "D-1, TBox_Field_Stone, behind a cracked wall",
     "id": 739
   },
   {
@@ -7536,7 +7536,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_NoReaction_993561984",
     "flag_hash": "1223567835",
-    "notes": "D-2, TBox_Field_Stone_NoReaction",
+    "notes": "D-2, TBox_Field_Stone_NoReaction, once all 120 shrines are cleared",
     "id": 742
   },
   {
@@ -7556,7 +7556,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_NoReaction_1761649191",
     "flag_hash": "-2018479775",
-    "notes": "D-2, TBox_Field_Stone_NoReaction",
+    "notes": "D-2, TBox_Field_Stone_NoReaction, once all 120 shrines are cleared",
     "id": 744
   },
   {
@@ -7596,7 +7596,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_NoReaction_2896665769",
     "flag_hash": "308358406",
-    "notes": "D-2, TBox_Field_Stone_NoReaction",
+    "notes": "D-2, TBox_Field_Stone_NoReaction, once all 120 shrines are cleared",
     "id": 748
   },
   {
@@ -8056,7 +8056,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_2627457469",
     "flag_hash": "65218965",
-    "notes": "D-6, TBox_Field_Stone",
+    "notes": "D-6, TBox_Field_Stone, behind a cracked wall",
     "id": 794
   },
   {
@@ -8176,7 +8176,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_4125758579",
     "flag_hash": "992812220",
-    "notes": "D-6, TBox_Field_Stone",
+    "notes": "D-6, TBox_Field_Stone, under rocks",
     "id": 806
   },
   {
@@ -8276,7 +8276,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_759164510",
     "flag_hash": "555733080",
-    "notes": "D-7, TBox_Field_Iron_NoReaction_Aoc",
+    "notes": "D-7, TBox_Field_Iron_NoReaction_Aoc, the DLC's",
     "id": 816
   },
   {
@@ -8536,7 +8536,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_2951121444",
     "flag_hash": "1045354023",
-    "notes": "E-1, TBox_Field_Stone",
+    "notes": "E-1, TBox_Field_Stone, behind a cracked wall",
     "id": 842
   },
   {
@@ -8606,7 +8606,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3350546334",
     "flag_hash": "2000741455",
-    "notes": "E-3, TBox_Field_Iron",
+    "notes": "E-3, TBox_Field_Iron, under water",
     "id": 849
   },
   {
@@ -8626,7 +8626,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_139851715",
     "flag_hash": "-1897847285",
-    "notes": "E-4, TBox_Field_Stone",
+    "notes": "E-4, TBox_Field_Stone, under rocks",
     "id": 851
   },
   {
@@ -8666,7 +8666,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_231106372",
     "flag_hash": "965486673",
-    "notes": "E-4, TBox_Field_Stone",
+    "notes": "E-4, TBox_Field_Stone, under a rock cover",
     "id": 855
   },
   {
@@ -8686,7 +8686,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_473877286",
     "flag_hash": "-169404844",
-    "notes": "E-4, TBox_Field_Stone",
+    "notes": "E-4, TBox_Field_Stone, under a rock cover",
     "id": 857
   },
   {
@@ -8816,7 +8816,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1007253771",
     "flag_hash": "-1010087888",
-    "notes": "E-4, TBox_Field_Iron",
+    "notes": "E-4, TBox_Field_Iron, under water",
     "id": 870
   },
   {
@@ -8976,7 +8976,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_1610277516",
     "flag_hash": "-782632217",
-    "notes": "E-4, TBox_Field_Stone",
+    "notes": "E-4, TBox_Field_Stone, under rocks",
     "id": 886
   },
   {
@@ -9006,7 +9006,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_1775504681",
     "flag_hash": "-1576723599",
-    "notes": "E-4, TBox_Field_Stone",
+    "notes": "E-4, TBox_Field_Stone, under a rock cover",
     "id": 889
   },
   {
@@ -9066,7 +9066,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_2217473617",
     "flag_hash": "-1906322205",
-    "notes": "E-4, TBox_Field_Stone",
+    "notes": "E-4, TBox_Field_Stone, under rocks",
     "id": 895
   },
   {
@@ -9096,7 +9096,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_2350905657",
     "flag_hash": "-1754225214",
-    "notes": "E-4, TBox_Field_Stone",
+    "notes": "E-4, TBox_Field_Stone, under rocks",
     "id": 898
   },
   {
@@ -9156,7 +9156,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_2443306083",
     "flag_hash": "187930726",
-    "notes": "E-4, TBox_Field_Stone",
+    "notes": "E-4, TBox_Field_Stone, under rocks",
     "id": 904
   },
   {
@@ -9186,7 +9186,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_2607082874",
     "flag_hash": "2074733797",
-    "notes": "E-4, TBox_Field_Stone",
+    "notes": "E-4, TBox_Field_Stone, under rocks",
     "id": 907
   },
   {
@@ -9216,7 +9216,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2882463730",
     "flag_hash": "-1872033434",
-    "notes": "E-4, TBox_Field_Iron",
+    "notes": "E-4, TBox_Field_Iron, under water",
     "id": 910
   },
   {
@@ -9246,7 +9246,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2999223003",
     "flag_hash": "-586213280",
-    "notes": "E-4, TBox_Field_Iron",
+    "notes": "E-4, TBox_Field_Iron, under water",
     "id": 913
   },
   {
@@ -9276,7 +9276,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_3092787610",
     "flag_hash": "-613137214",
-    "notes": "E-4, TBox_Field_Stone",
+    "notes": "E-4, TBox_Field_Stone, under rocks",
     "id": 916
   },
   {
@@ -9316,7 +9316,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3375186484",
     "flag_hash": "-544756532",
-    "notes": "E-4, TBox_Field_Iron",
+    "notes": "E-4, TBox_Field_Iron, under a rock cover",
     "id": 920
   },
   {
@@ -9326,7 +9326,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_3459972676",
     "flag_hash": "-477278117",
-    "notes": "E-4, TBox_Field_Stone",
+    "notes": "E-4, TBox_Field_Stone, under rocks",
     "id": 921
   },
   {
@@ -9366,7 +9366,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_3644975623",
     "flag_hash": "-255057424",
-    "notes": "E-4, TBox_Field_Stone",
+    "notes": "E-4, TBox_Field_Stone, under rocks",
     "id": 925
   },
   {
@@ -9666,7 +9666,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_206270111",
     "flag_hash": "-1347632628",
-    "notes": "E-6, TBox_Field_Stone",
+    "notes": "E-6, TBox_Field_Stone, behind a cracked wall",
     "id": 955
   },
   {
@@ -9716,7 +9716,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_473644037",
     "flag_hash": "865854140",
-    "notes": "E-6, TBox_Field_Iron_NoReaction_Aoc",
+    "notes": "E-6, TBox_Field_Iron_NoReaction_Aoc, the DLC's",
     "id": 960
   },
   {
@@ -9796,7 +9796,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1650509316",
     "flag_hash": "1224328197",
-    "notes": "E-6, TBox_Field_Iron",
+    "notes": "E-6, TBox_Field_Iron, under water",
     "id": 968
   },
   {
@@ -9936,7 +9936,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3746546895",
     "flag_hash": "74168090",
-    "notes": "E-6, TBox_Field_Iron",
+    "notes": "E-6, TBox_Field_Iron, under water",
     "id": 982
   },
   {
@@ -9976,7 +9976,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_4093217196",
     "flag_hash": "1722609091",
-    "notes": "E-6, TBox_Field_Iron_NoReaction_Aoc",
+    "notes": "E-6, TBox_Field_Iron_NoReaction_Aoc, the DLC's",
     "id": 986
   },
   {
@@ -10026,7 +10026,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_1057130287",
     "flag_hash": "-1360543084",
-    "notes": "E-7, TBox_Field_Stone",
+    "notes": "E-7, TBox_Field_Stone, under rocks",
     "id": 991
   },
   {
@@ -10246,7 +10246,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Collabo_3715709569",
     "flag_hash": "903861146",
-    "notes": "E-7, TBox_Field_Iron_NoReaction_Collabo",
+    "notes": "E-7, TBox_Field_Iron_NoReaction_Collabo, never drawn: the Xenoblade Chronicles 2 collaboration (Switch only)",
     "id": 1013
   },
   {
@@ -10376,7 +10376,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_441938591",
     "flag_hash": "644597247",
-    "notes": "E-8, TBox_Field_Iron",
+    "notes": "E-8, TBox_Field_Iron, under water",
     "id": 1026
   },
   {
@@ -10396,7 +10396,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_789522239",
     "flag_hash": "-1346183808",
-    "notes": "E-8, TBox_Field_Iron",
+    "notes": "E-8, TBox_Field_Iron, under water",
     "id": 1028
   },
   {
@@ -10416,7 +10416,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1833976329",
     "flag_hash": "1370443490",
-    "notes": "E-8, TBox_Field_Iron",
+    "notes": "E-8, TBox_Field_Iron, under water",
     "id": 1030
   },
   {
@@ -10446,7 +10446,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_2748645519",
     "flag_hash": "-1331824520",
-    "notes": "E-8, TBox_Field_Stone",
+    "notes": "E-8, TBox_Field_Stone, behind a cracked wall",
     "id": 1033
   },
   {
@@ -10456,7 +10456,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_2842888344",
     "flag_hash": "1104460727",
-    "notes": "E-8, TBox_Field_Iron_NoReaction_Aoc",
+    "notes": "E-8, TBox_Field_Iron_NoReaction_Aoc, under water",
     "id": 1034
   },
   {
@@ -10476,7 +10476,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_3222588741",
     "flag_hash": "-1225691221",
-    "notes": "E-8, TBox_Field_Stone",
+    "notes": "E-8, TBox_Field_Stone, behind a cracked wall",
     "id": 1036
   },
   {
@@ -10616,7 +10616,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_64882599",
     "flag_hash": "-117119208",
-    "notes": "F-3, TBox_Field_Iron",
+    "notes": "F-3, TBox_Field_Iron, under water",
     "id": 1050
   },
   {
@@ -10756,7 +10756,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2137637124",
     "flag_hash": "590068746",
-    "notes": "F-3, TBox_Field_Iron",
+    "notes": "F-3, TBox_Field_Iron, under water",
     "id": 1064
   },
   {
@@ -11066,7 +11066,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_485240907",
     "flag_hash": "-1453123705",
-    "notes": "F-5, TBox_Field_Iron",
+    "notes": "F-5, TBox_Field_Iron, under water",
     "id": 1095
   },
   {
@@ -11166,7 +11166,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_181265501",
     "flag_hash": "-1798333459",
-    "notes": "F-6, TBox_Field_Stone",
+    "notes": "F-6, TBox_Field_Stone, under a rock cover",
     "id": 1105
   },
   {
@@ -11246,7 +11246,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_634727440",
     "flag_hash": "-502159992",
-    "notes": "F-6, TBox_Field_Stone",
+    "notes": "F-6, TBox_Field_Stone, under a rock cover",
     "id": 1113
   },
   {
@@ -11296,7 +11296,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_1254156027",
     "flag_hash": "-491166185",
-    "notes": "F-6, TBox_Field_Stone",
+    "notes": "F-6, TBox_Field_Stone, under a rock cover",
     "id": 1118
   },
   {
@@ -11556,7 +11556,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_4169515330",
     "flag_hash": "735618614",
-    "notes": "F-6, TBox_Field_Stone",
+    "notes": "F-6, TBox_Field_Stone, behind a cracked wall",
     "id": 1144
   },
   {
@@ -11936,7 +11936,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_953870732",
     "flag_hash": "956830206",
-    "notes": "F-8, TBox_Field_Stone",
+    "notes": "F-8, TBox_Field_Stone, under a rock cover",
     "id": 1182
   },
   {
@@ -11946,7 +11946,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_1044386518",
     "flag_hash": "149202700",
-    "notes": "F-8, TBox_Field_Stone",
+    "notes": "F-8, TBox_Field_Stone, under a rock cover",
     "id": 1183
   },
   {
@@ -12026,7 +12026,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2055514071",
     "flag_hash": "-2019666886",
-    "notes": "F-8, TBox_Field_Iron",
+    "notes": "F-8, TBox_Field_Iron, under water",
     "id": 1191
   },
   {
@@ -12036,7 +12036,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_2178228879",
     "flag_hash": "-181281361",
-    "notes": "F-8, TBox_Field_Stone",
+    "notes": "F-8, TBox_Field_Stone, under a rock cover",
     "id": 1192
   },
   {
@@ -12096,7 +12096,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3226883364",
     "flag_hash": "988362375",
-    "notes": "F-8, TBox_Field_Iron",
+    "notes": "F-8, TBox_Field_Iron, under water",
     "id": 1198
   },
   {
@@ -12106,7 +12106,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_3276934066",
     "flag_hash": "-376968534",
-    "notes": "F-8, TBox_Field_Stone",
+    "notes": "F-8, TBox_Field_Stone, under a rock cover",
     "id": 1199
   },
   {
@@ -12166,7 +12166,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_NoReaction_516117098",
     "flag_hash": "1017211362",
-    "notes": "G-2, TBox_Field_Stone_NoReaction",
+    "notes": "G-2, TBox_Field_Stone_NoReaction, once Vah Rudania is freed",
     "id": 1205
   },
   {
@@ -12186,7 +12186,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_607911630",
     "flag_hash": "1232256547",
-    "notes": "G-2, TBox_Field_Stone",
+    "notes": "G-2, TBox_Field_Stone, behind a cracked wall",
     "id": 1207
   },
   {
@@ -12216,7 +12216,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_2009900434",
     "flag_hash": "-2004090672",
-    "notes": "G-2, TBox_Field_Stone",
+    "notes": "G-2, TBox_Field_Stone, behind a cracked wall",
     "id": 1210
   },
   {
@@ -12356,7 +12356,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_4287160948",
     "flag_hash": "92407435",
-    "notes": "G-3, TBox_Field_Stone",
+    "notes": "G-3, TBox_Field_Stone, behind a cracked wall",
     "id": 1224
   },
   {
@@ -12516,7 +12516,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2415874070",
     "flag_hash": "451009828",
-    "notes": "G-5, TBox_Field_Iron",
+    "notes": "G-5, TBox_Field_Iron, under water",
     "id": 1240
   },
   {
@@ -12586,7 +12586,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_4012685036",
     "flag_hash": "39662356",
-    "notes": "G-5, TBox_Field_Iron",
+    "notes": "G-5, TBox_Field_Iron, under water",
     "id": 1247
   },
   {
@@ -12636,7 +12636,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_949903176",
     "flag_hash": "1570214874",
-    "notes": "G-6, TBox_Field_Stone",
+    "notes": "G-6, TBox_Field_Stone, under rocks",
     "id": 1252
   },
   {
@@ -12656,7 +12656,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_1234325019",
     "flag_hash": "85902241",
-    "notes": "G-6, TBox_Field_Stone",
+    "notes": "G-6, TBox_Field_Stone, behind a cracked wall",
     "id": 1254
   },
   {
@@ -12686,7 +12686,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1675229188",
     "flag_hash": "182439207",
-    "notes": "G-6, TBox_Field_Iron",
+    "notes": "G-6, TBox_Field_Iron, under rocks",
     "id": 1257
   },
   {
@@ -12766,7 +12766,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_3911656389",
     "flag_hash": "-1333837114",
-    "notes": "G-6, TBox_Field_Stone",
+    "notes": "G-6, TBox_Field_Stone, behind a cracked wall",
     "id": 1265
   },
   {
@@ -12846,7 +12846,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_710063442",
     "flag_hash": "1482102623",
-    "notes": "G-7, TBox_Field_Wood",
+    "notes": "G-7, TBox_Field_Wood, under an iron boulder",
     "id": 1273
   },
   {
@@ -13016,7 +13016,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_3150707937",
     "flag_hash": "-1690194118",
-    "notes": "G-7, TBox_Field_Stone",
+    "notes": "G-7, TBox_Field_Stone, behind a cracked wall",
     "id": 1290
   },
   {
@@ -13066,7 +13066,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_3875059148",
     "flag_hash": "131848179",
-    "notes": "G-7, TBox_Field_Wood",
+    "notes": "G-7, TBox_Field_Wood, under an iron boulder",
     "id": 1295
   },
   {
@@ -13636,7 +13636,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2291744218",
     "flag_hash": "-1549621033",
-    "notes": "G-8, TBox_Field_Iron",
+    "notes": "G-8, TBox_Field_Iron, under water",
     "id": 1352
   },
   {
@@ -13806,7 +13806,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2865478414",
     "flag_hash": "-1657105495",
-    "notes": "G-8, TBox_Field_Iron",
+    "notes": "G-8, TBox_Field_Iron, under water",
     "id": 1369
   },
   {
@@ -13816,7 +13816,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2985599044",
     "flag_hash": "694535136",
-    "notes": "G-8, TBox_Field_Iron",
+    "notes": "G-8, TBox_Field_Iron, under water",
     "id": 1370
   },
   {
@@ -13956,7 +13956,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3857618283",
     "flag_hash": "-498341714",
-    "notes": "G-8, TBox_Field_Iron",
+    "notes": "G-8, TBox_Field_Iron, under water",
     "id": 1384
   },
   {
@@ -13966,7 +13966,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3906843155",
     "flag_hash": "1623717149",
-    "notes": "G-8, TBox_Field_Iron",
+    "notes": "G-8, TBox_Field_Iron, under water",
     "id": 1385
   },
   {
@@ -14246,7 +14246,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_1509788199",
     "flag_hash": "1685563934",
-    "notes": "H-4, TBox_Field_Stone",
+    "notes": "H-4, TBox_Field_Stone, behind a cracked wall",
     "id": 1413
   },
   {
@@ -14556,7 +14556,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_1037519518",
     "flag_hash": "-1327290958",
-    "notes": "H-6, TBox_Field_Stone",
+    "notes": "H-6, TBox_Field_Stone, under rocks",
     "id": 1444
   },
   {
@@ -14596,7 +14596,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_1216984011",
     "flag_hash": "-1914175131",
-    "notes": "H-6, TBox_Field_Stone",
+    "notes": "H-6, TBox_Field_Stone, under rocks",
     "id": 1448
   },
   {
@@ -14626,7 +14626,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_2110462589",
     "flag_hash": "-1013600150",
-    "notes": "H-6, TBox_Field_Stone",
+    "notes": "H-6, TBox_Field_Stone, under rocks",
     "id": 1451
   },
   {
@@ -14676,7 +14676,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_2611526643",
     "flag_hash": "-31773586",
-    "notes": "H-6, TBox_Field_Stone",
+    "notes": "H-6, TBox_Field_Stone, behind a cracked wall",
     "id": 1456
   },
   {
@@ -14726,7 +14726,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_3552474534",
     "flag_hash": "-417315183",
-    "notes": "H-6, TBox_Field_Stone",
+    "notes": "H-6, TBox_Field_Stone, under rocks",
     "id": 1461
   },
   {
@@ -14876,7 +14876,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_286295037",
     "flag_hash": "2304095",
-    "notes": "H-8, TBox_Field_Iron",
+    "notes": "H-8, TBox_Field_Iron, under water",
     "id": 1476
   },
   {
@@ -14886,7 +14886,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_464024192",
     "flag_hash": "-120597629",
-    "notes": "H-8, TBox_Field_Iron",
+    "notes": "H-8, TBox_Field_Iron, under water",
     "id": 1477
   },
   {
@@ -14906,7 +14906,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_500137107",
     "flag_hash": "-1732906903",
-    "notes": "H-8, TBox_Field_Iron",
+    "notes": "H-8, TBox_Field_Iron, under water",
     "id": 1479
   },
   {
@@ -14926,7 +14926,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_910468887",
     "flag_hash": "-1251099407",
-    "notes": "H-8, TBox_Field_Iron",
+    "notes": "H-8, TBox_Field_Iron, under water",
     "id": 1481
   },
   {
@@ -14936,7 +14936,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_996157908",
     "flag_hash": "334664933",
-    "notes": "H-8, TBox_Field_Iron",
+    "notes": "H-8, TBox_Field_Iron, under water",
     "id": 1482
   },
   {
@@ -14956,7 +14956,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1225528380",
     "flag_hash": "-1221223986",
-    "notes": "H-8, TBox_Field_Iron",
+    "notes": "H-8, TBox_Field_Iron, under water",
     "id": 1484
   },
   {
@@ -14966,7 +14966,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1454666335",
     "flag_hash": "1757965552",
-    "notes": "H-8, TBox_Field_Iron, buried",
+    "notes": "H-8, TBox_Field_Iron, buried, under water",
     "id": 1485
   },
   {
@@ -14986,7 +14986,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1982372038",
     "flag_hash": "-9812228",
-    "notes": "H-8, TBox_Field_Iron",
+    "notes": "H-8, TBox_Field_Iron, under water",
     "id": 1487
   },
   {
@@ -14996,7 +14996,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2199424046",
     "flag_hash": "962547799",
-    "notes": "H-8, TBox_Field_Iron",
+    "notes": "H-8, TBox_Field_Iron, under water",
     "id": 1488
   },
   {
@@ -15006,7 +15006,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2283393607",
     "flag_hash": "-1997765774",
-    "notes": "H-8, TBox_Field_Iron",
+    "notes": "H-8, TBox_Field_Iron, under water",
     "id": 1489
   },
   {
@@ -15026,7 +15026,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2476528241",
     "flag_hash": "-1939842541",
-    "notes": "H-8, TBox_Field_Iron",
+    "notes": "H-8, TBox_Field_Iron, under water",
     "id": 1491
   },
   {
@@ -15046,7 +15046,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2675135236",
     "flag_hash": "381736983",
-    "notes": "H-8, TBox_Field_Iron",
+    "notes": "H-8, TBox_Field_Iron, under water",
     "id": 1493
   },
   {
@@ -15056,7 +15056,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2712908755",
     "flag_hash": "-1837961238",
-    "notes": "H-8, TBox_Field_Iron",
+    "notes": "H-8, TBox_Field_Iron, under water",
     "id": 1494
   },
   {
@@ -15066,7 +15066,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2761495313",
     "flag_hash": "1623039473",
-    "notes": "H-8, TBox_Field_Iron",
+    "notes": "H-8, TBox_Field_Iron, under water",
     "id": 1495
   },
   {
@@ -15106,7 +15106,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3857385741",
     "flag_hash": "160182138",
-    "notes": "H-8, TBox_Field_Iron, buried",
+    "notes": "H-8, TBox_Field_Iron, buried, under water",
     "id": 1499
   },
   {
@@ -15116,7 +15116,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_4280214225",
     "flag_hash": "164684295",
-    "notes": "H-8, TBox_Field_Iron",
+    "notes": "H-8, TBox_Field_Iron, under water",
     "id": 1500
   },
   {
@@ -15126,7 +15126,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Collabo_696414052",
     "flag_hash": "1013528320",
-    "notes": "I-1, TBox_Field_Iron_NoReaction_Collabo",
+    "notes": "I-1, TBox_Field_Iron_NoReaction_Collabo, never drawn: the Xenoblade Chronicles 2 collaboration (Switch only)",
     "id": 1501
   },
   {
@@ -15176,7 +15176,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_44135018",
     "flag_hash": "-818102160",
-    "notes": "I-3, TBox_Field_Iron",
+    "notes": "I-3, TBox_Field_Iron, under water",
     "id": 1506
   },
   {
@@ -15196,7 +15196,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_388443518",
     "flag_hash": "-393772343",
-    "notes": "I-3, TBox_Field_Iron",
+    "notes": "I-3, TBox_Field_Iron, under water",
     "id": 1508
   },
   {
@@ -15296,7 +15296,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2238363106",
     "flag_hash": "664369692",
-    "notes": "I-3, TBox_Field_Iron",
+    "notes": "I-3, TBox_Field_Iron, under water",
     "id": 1518
   },
   {
@@ -15306,7 +15306,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2371181995",
     "flag_hash": "1058621916",
-    "notes": "I-3, TBox_Field_Iron",
+    "notes": "I-3, TBox_Field_Iron, under water",
     "id": 1519
   },
   {
@@ -15476,7 +15476,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_600253898",
     "flag_hash": "1194414999",
-    "notes": "I-4, TBox_Field_Stone",
+    "notes": "I-4, TBox_Field_Stone, under rocks",
     "id": 1536
   },
   {
@@ -15656,7 +15656,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_2664586440",
     "flag_hash": "1994102693",
-    "notes": "I-4, TBox_Field_Stone",
+    "notes": "I-4, TBox_Field_Stone, under rocks",
     "id": 1554
   },
   {
@@ -15826,7 +15826,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_511163824",
     "flag_hash": "285535187",
-    "notes": "I-5, TBox_Field_Iron",
+    "notes": "I-5, TBox_Field_Iron, under water",
     "id": 1571
   },
   {
@@ -15836,7 +15836,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_767501701",
     "flag_hash": "-1589685893",
-    "notes": "I-5, TBox_Field_Iron",
+    "notes": "I-5, TBox_Field_Iron, under water",
     "id": 1572
   },
   {
@@ -15886,7 +15886,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_3167487135",
     "flag_hash": "-2037342292",
-    "notes": "I-5, TBox_Field_Stone",
+    "notes": "I-5, TBox_Field_Stone, under rocks",
     "id": 1577
   },
   {
@@ -15896,7 +15896,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3329533659",
     "flag_hash": "1136893303",
-    "notes": "I-5, TBox_Field_Iron",
+    "notes": "I-5, TBox_Field_Iron, under water",
     "id": 1578
   },
   {
@@ -15926,7 +15926,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3897779397",
     "flag_hash": "1458578414",
-    "notes": "I-5, TBox_Field_Iron",
+    "notes": "I-5, TBox_Field_Iron, under water",
     "id": 1581
   },
   {
@@ -15946,7 +15946,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3931060219",
     "flag_hash": "-1068136987",
-    "notes": "I-5, TBox_Field_Iron",
+    "notes": "I-5, TBox_Field_Iron, behind a cracked wall",
     "id": 1583
   },
   {
@@ -15956,7 +15956,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3995793230",
     "flag_hash": "1674604447",
-    "notes": "I-5, TBox_Field_Iron",
+    "notes": "I-5, TBox_Field_Iron, behind a cracked wall",
     "id": 1584
   },
   {
@@ -15986,7 +15986,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_753815850",
     "flag_hash": "-94613911",
-    "notes": "I-6, TBox_Field_Stone",
+    "notes": "I-6, TBox_Field_Stone, behind a cracked wall",
     "id": 1587
   },
   {
@@ -16056,7 +16056,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1737237722",
     "flag_hash": "-847649518",
-    "notes": "I-7, TBox_Field_Iron",
+    "notes": "I-7, TBox_Field_Iron, under water",
     "id": 1594
   },
   {
@@ -16066,7 +16066,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1756624524",
     "flag_hash": "-205368782",
-    "notes": "I-7, TBox_Field_Iron",
+    "notes": "I-7, TBox_Field_Iron, under water",
     "id": 1595
   },
   {
@@ -16086,7 +16086,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3557695569",
     "flag_hash": "-1442361616",
-    "notes": "I-7, TBox_Field_Iron",
+    "notes": "I-7, TBox_Field_Iron, under water",
     "id": 1597
   },
   {
@@ -16126,7 +16126,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_137887917",
     "flag_hash": "-911828952",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1601
   },
   {
@@ -16136,7 +16136,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_169212219",
     "flag_hash": "-1581146414",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1602
   },
   {
@@ -16156,7 +16156,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_461693195",
     "flag_hash": "147686194",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1604
   },
   {
@@ -16166,7 +16166,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_546454289",
     "flag_hash": "-1624237822",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1605
   },
   {
@@ -16176,7 +16176,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_890467781",
     "flag_hash": "-877706919",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1606
   },
   {
@@ -16186,7 +16186,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_893358713",
     "flag_hash": "-951198817",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1607
   },
   {
@@ -16206,7 +16206,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1068442606",
     "flag_hash": "1888417221",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1609
   },
   {
@@ -16226,7 +16226,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1453896671",
     "flag_hash": "1895786281",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1611
   },
   {
@@ -16246,7 +16246,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1767830151",
     "flag_hash": "1796229990",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1613
   },
   {
@@ -16256,7 +16256,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1882321148",
     "flag_hash": "2093453009",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1614
   },
   {
@@ -16266,7 +16266,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1933608495",
     "flag_hash": "175161394",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1615
   },
   {
@@ -16276,7 +16276,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2270204843",
     "flag_hash": "1377840697",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1616
   },
   {
@@ -16296,7 +16296,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2338066423",
     "flag_hash": "-985679835",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1618
   },
   {
@@ -16306,7 +16306,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2927919877",
     "flag_hash": "-725674374",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1619
   },
   {
@@ -16316,7 +16316,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3007573547",
     "flag_hash": "1630656845",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1620
   },
   {
@@ -16326,7 +16326,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3095777895",
     "flag_hash": "2016635169",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1621
   },
   {
@@ -16336,7 +16336,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3233823356",
     "flag_hash": "736637936",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1622
   },
   {
@@ -16376,7 +16376,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3350036882",
     "flag_hash": "-1821426957",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1626
   },
   {
@@ -16386,7 +16386,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3497628028",
     "flag_hash": "2060030281",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1627
   },
   {
@@ -16396,7 +16396,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3653212286",
     "flag_hash": "1518354898",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1628
   },
   {
@@ -16406,7 +16406,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3907501147",
     "flag_hash": "-760032431",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1629
   },
   {
@@ -16426,7 +16426,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_4234551321",
     "flag_hash": "2030113318",
-    "notes": "I-8, TBox_Field_Iron",
+    "notes": "I-8, TBox_Field_Iron, under water",
     "id": 1631
   },
   {
@@ -16696,7 +16696,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_2920699957",
     "flag_hash": "-1252585884",
-    "notes": "J-4, TBox_Field_Stone",
+    "notes": "J-4, TBox_Field_Stone, behind a cracked wall",
     "id": 1658
   },
   {
@@ -16806,7 +16806,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2959340874",
     "flag_hash": "54515224",
-    "notes": "J-5, TBox_Field_Iron",
+    "notes": "J-5, TBox_Field_Iron, under water",
     "id": 1669
   },
   {
@@ -16826,7 +16826,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3759584426",
     "flag_hash": "580359154",
-    "notes": "J-5, TBox_Field_Iron",
+    "notes": "J-5, TBox_Field_Iron, under water",
     "id": 1671
   },
   {
@@ -16856,7 +16856,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_550777769",
     "flag_hash": "1189301731",
-    "notes": "J-7, TBox_Field_Iron",
+    "notes": "J-7, TBox_Field_Iron, under water",
     "id": 1674
   },
   {
@@ -16866,7 +16866,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_797448374",
     "flag_hash": "65647532",
-    "notes": "J-7, TBox_Field_Iron",
+    "notes": "J-7, TBox_Field_Iron, under water",
     "id": 1675
   },
   {
@@ -16876,7 +16876,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1756408700",
     "flag_hash": "-1195152108",
-    "notes": "J-7, TBox_Field_Iron",
+    "notes": "J-7, TBox_Field_Iron, under water",
     "id": 1676
   },
   {
@@ -16886,7 +16886,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1784715464",
     "flag_hash": "-1363789847",
-    "notes": "J-7, TBox_Field_Iron",
+    "notes": "J-7, TBox_Field_Iron, under water",
     "id": 1677
   },
   {
@@ -16896,7 +16896,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2325715544",
     "flag_hash": "472826415",
-    "notes": "J-7, TBox_Field_Iron",
+    "notes": "J-7, TBox_Field_Iron, under water",
     "id": 1678
   },
   {
@@ -16906,7 +16906,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2961580850",
     "flag_hash": "-1733478629",
-    "notes": "J-7, TBox_Field_Iron",
+    "notes": "J-7, TBox_Field_Iron, under water",
     "id": 1679
   },
   {
@@ -16916,7 +16916,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_3246083737",
     "flag_hash": "1426834548",
-    "notes": "J-7, TBox_Field_Enemy",
+    "notes": "J-7, TBox_Field_Enemy, a side quest's reward",
     "id": 1680
   },
   {
@@ -16926,7 +16926,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3246815642",
     "flag_hash": "157485041",
-    "notes": "J-7, TBox_Field_Iron",
+    "notes": "J-7, TBox_Field_Iron, under water",
     "id": 1681
   },
   {
@@ -16946,7 +16946,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_8312663",
     "flag_hash": "1362418802",
-    "notes": "J-8, TBox_Field_Iron",
+    "notes": "J-8, TBox_Field_Iron, under water",
     "id": 1683
   },
   {
@@ -16966,7 +16966,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_320668688",
     "flag_hash": "2032508956",
-    "notes": "J-8, TBox_Field_Iron",
+    "notes": "J-8, TBox_Field_Iron, under water",
     "id": 1685
   },
   {
@@ -16976,7 +16976,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_383258217",
     "flag_hash": "1128829067",
-    "notes": "J-8, TBox_Field_Iron, buried",
+    "notes": "J-8, TBox_Field_Iron, buried, under water",
     "id": 1686
   },
   {
@@ -16996,7 +16996,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_521265924",
     "flag_hash": "1035381621",
-    "notes": "J-8, TBox_Field_Iron",
+    "notes": "J-8, TBox_Field_Iron, under water",
     "id": 1688
   },
   {
@@ -17026,7 +17026,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2145001544",
     "flag_hash": "1538289009",
-    "notes": "J-8, TBox_Field_Iron",
+    "notes": "J-8, TBox_Field_Iron, under water",
     "id": 1691
   },
   {
@@ -17066,7 +17066,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2597637829",
     "flag_hash": "-1637370116",
-    "notes": "J-8, TBox_Field_Iron",
+    "notes": "J-8, TBox_Field_Iron, under water",
     "id": 1695
   },
   {
@@ -17076,7 +17076,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2702126533",
     "flag_hash": "-1809211497",
-    "notes": "J-8, TBox_Field_Iron",
+    "notes": "J-8, TBox_Field_Iron, under water",
     "id": 1696
   },
   {
@@ -17106,7 +17106,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_2928804409",
     "flag_hash": "-2025715969",
-    "notes": "J-8, TBox_Field_Iron",
+    "notes": "J-8, TBox_Field_Iron, under water",
     "id": 1699
   },
   {
@@ -17126,7 +17126,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3092990080",
     "flag_hash": "-1038408591",
-    "notes": "J-8, TBox_Field_Iron",
+    "notes": "J-8, TBox_Field_Iron, under water",
     "id": 1701
   },
   {
@@ -17136,7 +17136,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_3146080169",
     "flag_hash": "272978340",
-    "notes": "J-8, TBox_Field_Stone",
+    "notes": "J-8, TBox_Field_Stone, under rocks",
     "id": 1702
   },
   {
@@ -17146,7 +17146,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_3396852514",
     "flag_hash": "2065200947",
-    "notes": "J-8, TBox_Field_Iron",
+    "notes": "J-8, TBox_Field_Iron, under water",
     "id": 1703
   },
   {

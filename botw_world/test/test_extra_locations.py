@@ -52,7 +52,7 @@ class TestNormalModeChests(BotwTestBase):
         from ..catalog import MASTER_MODE_ONLY
         self.assertEqual(len(MASTER_MODE_ONLY), 118)
         self.assertFalse(self.world.extra_locations & MASTER_MODE_ONLY)
-        self.assertEqual(len(self.world.extra_locations), 1312 - 118)
+        self.assertEqual(len(self.world.extra_locations), 1312 - 118 - 3)     # the Xenoblade 2 chests: never
         self.assertFalse(self.world.fill_slot_data()["master_mode"])
 
 
@@ -62,8 +62,32 @@ class TestMasterModeChests(BotwTestBase):
     def test_every_chest_in_master_mode(self) -> None:
         from ..catalog import MASTER_MODE_ONLY
         self.assertLessEqual(MASTER_MODE_ONLY, self.world.extra_locations)
-        self.assertEqual(len(self.world.extra_locations), 1312)
+        self.assertEqual(len(self.world.extra_locations), 1312 - 3)
         self.assertTrue(self.world.fill_slot_data()["master_mode"])
+
+
+class TestChestLogic(BotwTestBase):
+    options = {"field_chests": 1312, "master_mode": True}
+
+    def test_never_drawn_and_all_shrines(self) -> None:
+        from BaseClasses import CollectionState
+        from ..catalog import NEVER_DRAWN
+        self.assertEqual(len(NEVER_DRAWN), 3)
+        self.assertFalse(self.world.extra_locations & NEVER_DRAWN)
+        self.assertEqual(len(self.world.extra_locations), 1312 - 3)
+        temple = next(r for r in LOCATIONS if "once all 120 shrines" in r["notes"])
+        location = self.multiworld.get_location(temple["name"], self.player)
+        state = CollectionState(self.multiworld)
+        for item in self.multiworld.itempool:
+            if item.advancement:
+                state.collect(item, True)
+        shrines = [loc for loc in self.multiworld.get_locations(self.player) if loc.name.startswith("Cleared - ")]
+        self.assertEqual(len(shrines), 120)
+        for shrine in shrines[:-1]:
+            state.collect(shrine.item, True)
+        self.assertFalse(location.can_reach(state))
+        state.collect(shrines[-1].item, True)
+        self.assertTrue(location.can_reach(state))
 
 
 class TestTrackerRegenerates(BotwTestBase):

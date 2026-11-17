@@ -47,6 +47,7 @@ import oead  # noqa: E402
 
 from botw_patch.resources import unpack  # noqa: E402
 from tools.map_regions import Beco, area_regions  # noqa: E402
+from tools.chest_logic import Water, classify, links_into  # noqa: E402
 
 MASTER = ROOT / "data/locations_master.csv"
 LOCATIONS = ROOT / "botw_world/data/locations.json"
@@ -66,6 +67,11 @@ BOSSES = {
 CATEGORY_ORDER = ("Shrine Chest", "Chest", "Boss")
 # In a location's notes: it exists only in Master Mode (botw_world/catalog.py MASTER_MODE_ONLY).
 MASTER_MODE_NOTE = "master mode only"
+# In a location's notes: the world never draws it (botw_world/catalog.py NEVER_DRAWN).
+NEVER_NOTE = "never drawn"
+# The chests whose reach the game's data does not settle (tools/chest_logic.py), for the
+# audit report: [(name, position, why)].
+UNCERTAIN: list[tuple[str, list[float], str]] = []
 
 
 def signed(value: int) -> int:
@@ -134,7 +140,7 @@ def shrine_chests(content: Path, base: Path, shrines: dict[str, dict]) -> list[d
 
 
 def field_locations(aoc: Path, towers: Beco, areas: Beco, climates: dict[int, str],
-                    named: dict[int, str]) -> list[dict]:
+                    named: dict[int, str], water: Water) -> list[dict]:
     """The chests, then the bosses, of every map cell, in cell then HashId order."""
     chests, bosses = [], []
     cells = sorted(p.name for p in (aoc / "Map/MainField").iterdir() if p.is_dir() and "-" in p.name)
@@ -144,6 +150,7 @@ def field_locations(aoc: Path, towers: Beco, areas: Beco, climates: dict[int, st
             path = aoc / f"Map/MainField/{cell}/{cell}_{kind}.smubin"
             objects += list(oead.byml.from_binary(unpack(path.read_bytes()))["Objs"])
         objects.sort(key=lambda o: int(o["HashId"]))
+        into = links_into(objects)
         counts: dict[str, int] = {}
         for obj in objects:
             actor = str(obj["UnitConfigName"])
@@ -161,12 +168,17 @@ def field_locations(aoc: Path, towers: Beco, areas: Beco, climates: dict[int, st
             buried = label == "Chest" and "IsInGround" in params and bool(params["IsInGround"])
             # Only in Master Mode (IsHardModeActor): the world's master_mode option.
             master = "IsHardModeActor" in params and bool(params["IsHardModeActor"])
-            out.append({"name": f"{label} {cell} #{counts[label]}", "label": label, "region": region,
-                        "category": "Chest" if label == "Chest" else "Boss", "gamedata_flag": flag,
-                        "position": [x, z], "climate": "heat" if climates.get(areas.at(x, z)) in HOT else "none",
-                        "runes": "Magnesis" if buried else "none",
-                        "notes": f"{cell}, {actor}" + (", buried" if buried else "")
-                        + (f", {MASTER_MODE_NOTE}" if master else "")})
+            reach = classify(obj, objects, into, water) if label == "Chest" else None
+            notes = [cell, actor] + (["buried"] if buried else []) + ([MASTER_MODE_NOTE] if master else [])
+            if reach is not None:
+                notes += reach.notes + ([f"{NEVER_NOTE}: {reach.never}"] if reach.never else [])
+            row = {"name": f"{label} {cell} #{counts[label]}", "label": label, "region": region,
+                   "category": "Chest" if label == "Chest" else "Boss", "gamedata_flag": flag,
+                   "position": [x, z], "climate": "heat" if climates.get(areas.at(x, z)) in HOT else "none",
+                   "runes": "|".join(sorted(reach.runes)) if reach and reach.runes else "none",
+                   "extra": "|".join(reach.extra) if reach else "",
+                   "notes": ", ".join(notes), "uncertain": reach.uncertain if reach else ""}
+            out.append(row)
     return chests + bosses
 
 
@@ -183,8 +195,9 @@ def build(content: Path, base: Path, aoc: Path) -> list[dict]:
         shrine = logic[row["shrine"]]
         rows.append({**row, "position": positions[row["shrine"]], "climate": shrine["climate"],
                      "runes": shrine["runes"], "extra": shrine["extra"]})
-    rows += field_locations(aoc, towers, areas, climates, named)
+    rows += field_locations(aoc, towers, areas, climates, named, Water(base, content))
     name_rows(rows, named_places(content, aoc))
+    UNCERTAIN[:] = [(row["name"], row["position"], row["uncertain"]) for row in rows if row.get("uncertain")]
     hashes = {flag_hash(row["gamedata_flag"]) for row in rows}
     if len(hashes) != len(rows) or len({row["name"] for row in rows}) != len(rows):
         raise ValueError("duplicate flags or names")

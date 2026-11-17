@@ -99,7 +99,8 @@ class FieldChests(Range):
     Archipelago item; the chest keeps its own treasure. A buried chest asks for
     Magnesis, one on Death Mountain's burning slopes the Flamebreaker Set. 118 of them
     exist only in Master Mode: drawn only with Master Mode on; in Normal mode at most
-    1194 are drawn. 0: none."""
+    1191 are drawn (3 chests of the Xenoblade Chronicles 2 collaboration, which the Wii U
+    never shows, never are). 0: none."""
     display_name = "Field Chests"
     range_start = 0
     range_end = 1312
