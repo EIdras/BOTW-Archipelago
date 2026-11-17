@@ -1,6 +1,6 @@
 """The isolated Cemu profile that play sessions run in.
 
-    python tools/cemu_profile.py --cemu <Cemu.exe> [--user-data <Cemu user folder>]
+    python tools/cemu_profile.py --cemu <the Cemu executable> [--user-data <Cemu user folder>]
 
 Creating it copies, once, the Cemu executable, the BOTW update and DLC, the
 BOTW saves and the accounts of an existing Cemu installation, found and checked
@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -44,6 +45,12 @@ PLAY_ACCOUNT = 0x80000003       # the account of play sessions
 ACCOUNTS = PORTABLE / "mlc01/usr/save/system/act"
 PACK_PREFIX = "AP_Ledger_"
 CONTROLLER = "controllerProfiles/controller0.xml"     # player 1's controller, set in Cemu's input settings
+EMU_NAME = "Cemu.exe" if os.name == "nt" else "Cemu.AppImage"  # the copied executable, native-named per OS
+
+
+def cemu(target: Path = PROFILE) -> Path:
+    """The Cemu the profile runs: the copied executable, named for its OS."""
+    return target / EMU_NAME
 
 
 def create(executable: Path, install: CemuInstall | None = None, target: Path = PROFILE) -> Path:
@@ -54,7 +61,7 @@ def create(executable: Path, install: CemuInstall | None = None, target: Path = 
     if target.exists():
         raise FileExistsError(f"the profile already exists; refusing to reset it: {target}")
     if not executable.is_file():
-        raise FileNotFoundError(f"Cemu.exe not found: {executable}")
+        raise FileNotFoundError(f"the Cemu executable not found: {executable}")
     install = install or cemu_install.detect(executable)
     mlc, user_data = install.mlc, install.user_data
     # The update and DLC wherever Cemu has them, the game's saves and the
@@ -63,7 +70,7 @@ def create(executable: Path, install: CemuInstall | None = None, target: Path = 
               mlc / "sys": "sys"}
     portable = target / "portable"
     portable.mkdir(parents=True)
-    shutil.copy2(executable, target / "Cemu.exe")
+    shutil.copy2(executable, cemu(target))
     for name in ("resources", "gameProfiles"):
         if (executable.parent / name).is_dir():
             shutil.copytree(executable.parent / name, target / name)
@@ -74,6 +81,13 @@ def create(executable: Path, install: CemuInstall | None = None, target: Path = 
     for name in ("controllerProfiles",):
         if (user_data / name).exists():
             shutil.copytree(user_data / name, portable / name)
+    # The player's compiled shader/pipeline cache: copy it so Cemu does not
+    # recompile shaders on first load. The player may have none, then skip.
+    shader_src = Path(os.environ.get("XDG_CACHE_HOME") or (Path.home() / ".cache")) / "Cemu" / "shaderCache"
+    if shader_src.is_dir():
+        name = "shaderCache"
+        print(f"Copying {name}...", flush=True)
+        shutil.copytree(shader_src, portable / "shaderCache")
     # Keep graphics and input preferences, but never let this configuration
     # point back to the installation's saves, nor load its graphic packs.
     settings = ET.parse(user_data / "settings.xml")
@@ -193,6 +207,9 @@ def check_isolated() -> None:
 
 def cemu_running() -> bool:
     """A Cemu runs, whichever installation it comes from."""
+    if os.name != "nt":
+        from tools.cemu import linux_proc
+        return linux_proc.find_cemu_pid() is not None
     running = subprocess.run(["powershell", "-NoProfile", "-Command",
                               "Get-Process Cemu -ErrorAction SilentlyContinue "
                               "| Select-Object -ExpandProperty Id"],
@@ -293,7 +310,7 @@ def prepare_play(pack: Path) -> Path:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--cemu", type=Path, required=True, help="Cemu.exe of the installation")
+    parser.add_argument("--cemu", type=Path, required=True, help="the Cemu executable of the installation")
     parser.add_argument("--user-data", type=Path,
                         help="Cemu's user folder (the one holding settings.xml), when it is not found")
     parser.add_argument("--output", type=Path, default=PROFILE)

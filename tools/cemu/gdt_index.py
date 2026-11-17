@@ -11,7 +11,9 @@ import pathlib, sys
 import numpy as np
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from winmem import Process
+if str(pathlib.Path(__file__).resolve().parent.parent.parent) not in sys.path:
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent.parent))
+from tools.cemu import Process
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 MIN_RUN = 24

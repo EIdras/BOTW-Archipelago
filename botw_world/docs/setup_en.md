@@ -3,7 +3,7 @@
 **Setup** · [In the game](ingame_en.md) · [Options](en_Breath%20of%20the%20Wild.md) · [Hosting](hosting_en.md) ·
 [Trackers](poptracker_en.md) · [Mods](mods_en.md) · [Troubleshooting](troubleshooting_en.md)
 
-This guide gets you from nothing to playing Breath of the Wild in an Archipelago room, on Windows, in Cemu. Hosting
+This guide gets you from nothing to playing Breath of the Wild in an Archipelago room, on Windows or Linux, in Cemu. Hosting
 the room is on [its own page](hosting_en.md).
 
 ## What you need
@@ -47,6 +47,27 @@ Start `BOTW Archipelago.cmd`, or drop your slot file on it. If Windows says it p
    [Trackers](poptracker_en.md).
 
 Cemu then starts with the seed's game pack, and the Archipelago client runs in the launcher's window.
+
+## On Linux
+
+The same game, played with the [Cemu AppImage](https://cemu.info/) on Linux.
+
+- **Install Cemu.** Download the Cemu **AppImage**, make it runnable (`chmod +x Cemu-x86_64.AppImage`), and run it
+  once to set your controller.
+- **Get the release.** Download `BOTW-Archipelago-<version>-Linux.zip` from
+  [the releases](https://github.com/EIdras/BOTW-Archipelago/releases), and unzip it.
+- **On the first launch**, run `bootstrap.sh` from the release's folder: it builds a virtual environment from
+  `requirements-player.txt`. Then run `BOTW Archipelago.sh`, or drop your slot file on it.
+
+1. **Cemu.** The first time, a window asks where `Cemu.exe` is. Point it at the Cemu AppImage. The launcher checks
+   the game, its update and the DLC, then copies Cemu and your saves into a profile of its own (about 5 GB). Your
+   Cemu installation is never modified.
+2. **The seed.** Choose your slot file. The launcher builds the seed's game pack, in about a minute.
+3. **The room.** Its address (`archipelago.gg:38281`) is already filled in when your slot file comes from the room's
+   page: press Enter. Then type the room's password, or Enter if it has none.
+
+On Linux, the profile, your seeds and their saves are kept in `$XDG_DATA_HOME/Cemu` (or `~/.local/share/Cemu`), and
+the launcher's log is at `~/.local/share/Cemu/log.txt`.
 
 > [!IMPORTANT]
 > **Start a new game** for a new seed: a save is bound to the seed it was started with.

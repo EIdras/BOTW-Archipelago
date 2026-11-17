@@ -192,7 +192,7 @@ def pack_folders(root: Path) -> list[Path]:
 
     def walk(folder: Path):
         try:
-            children = list(os.scandir(folder))
+            children = sorted(os.scandir(folder), key=lambda entry: entry.name)
         except OSError:
             return
         for child in children:
@@ -251,6 +251,18 @@ def our_addresses() -> frozenset[int]:
     return frozenset(found)
 
 
+def packs_root(user_data: Path) -> Path:
+    """The player's Cemu graphic packs. On Windows they sit under user_data;
+    on Linux the XDG split keeps them in the data dir, so fall back to
+    $XDG_DATA_HOME/Cemu/graphicPacks else ~/.local/share/Cemu/graphicPacks."""
+    direct = user_data / FOLDER
+    if direct.is_dir():
+        return direct
+    data_home = Path(os.environ.get("XDG_DATA_HOME") or (Path.home() / ".local" / "share"))
+    fallback = data_home / "Cemu" / FOLDER
+    return fallback if fallback.is_dir() else direct
+
+
 def enabled(user_data: Path, title: str) -> list[PlayerPack]:
     """The graphic packs Cemu runs for `title` (the game's eight-digit low title
     id, 101c9400), in the order it activates them."""
@@ -260,7 +272,7 @@ def enabled(user_data: Path, title: str) -> list[PlayerPack]:
 def installed(user_data: Path, title: str) -> list[PlayerPack]:
     """Every graphic pack Cemu loads for `title`, enabled or not, in the order
     it walks them."""
-    root = user_data / FOLDER
+    root = packs_root(user_data)
     title_id = int("00050000" + title, 16)
     entries = settings_entries(user_data / "settings.xml")
     packs = []

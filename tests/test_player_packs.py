@@ -1,7 +1,9 @@
 """The graphic packs of the player's own Cemu (tools/player_packs.py)."""
 from pathlib import Path
+import os
 import tempfile
 import unittest
+import unittest.mock
 import xml.etree.ElementTree as ET
 
 from tools import player_packs as pp
@@ -108,6 +110,19 @@ class PlayerPacksTest(unittest.TestCase):
         self.assertIn("the Archipelago pack is built on its version of 1 file(s): content/Pack/Bootup.pack", text)
         self.assertIn("patches the same code as the Archipelago pack: 0x031FA97C", text)
         self.assertEqual(pp.report([]), ["Your Cemu runs no graphic pack for Breath of the Wild."])
+
+    def test_installed_falls_back_to_xdg_data_on_linux(self):
+        # Linux keeps the packs in the data dir, not the config dir: with no
+        # user_data/graphicPacks, installed() finds them under $XDG_DATA_HOME.
+        user_data = Path(self.temp.name) / "config-Cemu"          # no graphicPacks/ here
+        xdg = Path(self.temp.name) / "xdg"
+        pack = xdg / "Cemu" / pp.FOLDER / "from_xdg"
+        pack.mkdir(parents=True)
+        (pack / "rules.txt").write_text(
+            f'[Definition]\ntitleIds = {TITLES}\nname = from_xdg\nversion = 7\n', encoding="utf-8")
+        with unittest.mock.patch.dict(os.environ, {"XDG_DATA_HOME": str(xdg)}, clear=False):
+            names = [pack.folder.name for pack in pp.installed(user_data, TITLE)]
+        self.assertEqual(names, ["from_xdg"])
 
     def test_missing_settings(self):
         self.cemu.pack("by_default", extra="default = true")
