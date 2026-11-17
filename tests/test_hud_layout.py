@@ -55,8 +55,16 @@ class HudLayoutTests(unittest.TestCase):
     def test_part_layout_has_two_logos_offline_shown(self):
         _header, sections = hud.read_layout(hud.part_layout(self.file(hud.TEMPLATE)))
         kinds = [m for m, _ in sections]
-        self.assertEqual(kinds, [b"lyt1", b"txl1", b"mat1", b"pan1", b"pas1", b"pic1",
-                                 b"pic1", b"pae1", b"grp1"])
+        self.assertEqual(kinds, [b"lyt1", b"txl1", b"mat1", b"pan1", b"pas1",
+                                 b"pan1", b"pas1", b"pan1", b"pas1", b"pic1", b"pic1",
+                                 b"pae1", b"pae1", b"pae1", b"grp1"])
+        # Built as the minimap is: RootPane > Pa_Weather_00 > N_InOut_00 > logos,
+        # beside it (what the Graphics pack's Ultrawide HUD Mode scales by name).
+        nulls = [d for m, d in sections if m == b"pan1"]
+        self.assertEqual([hud.pane_name(d) for d in nulls],
+                         ["RootPane", hud.MINIMAP_PART, hud.MINIMAP_PANE])
+        self.assertEqual(struct.unpack_from(">ff", nulls[1], 0x24), (0.0, 0.0))
+        self.assertEqual(struct.unpack_from(">ff", nulls[2], 0x24), (hud.POSITION[0], 0.0))
         body = dict(sections)
         self.assertIn(hud.PART_LAYOUT.encode() + b"\0", body[b"lyt1"])
         txl = body[b"txl1"]
@@ -88,7 +96,9 @@ class HudLayoutTests(unittest.TestCase):
         self.assertEqual(hud.pane_name(after[index - 1][1]), hud.PARENT_LAST)
         self.assertEqual(after[index + 1][0], b"pae1")
         part = after[index][1]
-        self.assertEqual(struct.unpack_from(">ff", part, 0x24), hud.POSITION)
+        # Where Pa_Weather_00 is (x 0); the part layout puts the logos at POSITION.
+        self.assertEqual(struct.unpack_from(">ff", part, 0x24), (0.0, hud.POSITION[1]))
+        self.assertEqual(struct.unpack_from(">ff", part, 0x3c), (1.0, 1.0))
         size = struct.unpack(">f", struct.pack(">f", hud.SIZE))[0]      # as a float32
         self.assertEqual(struct.unpack_from(">ff", part, 0x44), (size, size))
         self.assertEqual(part[0x58:].split(b"\0")[0].decode(), hud.PART_LAYOUT)
