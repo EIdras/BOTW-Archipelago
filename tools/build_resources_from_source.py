@@ -27,6 +27,7 @@ from botw_client import regions
 from botw_patch.game_files import GameFiles
 from botw_patch.resources import digest, unpack, vanilla_digest
 from tools.build_resource_base_from_source import INPUT_HASHES, generate_presentation, patch_stage
+from tools.build_autonomous_eventflow import restore_campfire_cancel
 from tools.build_game_data_mod import modify_gamedata_flags
 from tools import build_plateau_sensor_candidate as sensor
 from tools import build_master_sword_candidate as sword
@@ -188,10 +189,11 @@ def _generate(game: GameFiles, binding_token: int, shops: list | None, status: d
               donor("GetDemo"), donor("Demo017_0"))
 
     def delivery(raw):
+        raw, cancel_edits = restore_campfire_cancel(raw)
         raw, trap_edits = traps.add_entries(raw, MEMBER_FLOW)
         result, edits = patch_delivery_flow(raw, *donors)
         result, binding_edits = patch_session_binding(result, binding_token)
-        return result, trap_edits + edits + binding_edits
+        return result, cancel_edits + trap_edits + edits + binding_edits
 
     def quiet_delivery(raw):
         # The silent twins, in their own flowchart (see QUIET_FLOW), and the

@@ -217,7 +217,9 @@ HUD alone. The quiet twins are registered like them, with `delivery_flow.QUIET_E
 `{disable_event_start_interval, is_pause_non_demo_member: False, is_timeline: False, mode: Seamless}`, and hosted in
 the resident flowchart `OperationGuide` (`delivery_flow.QUIET_FLOW`), whose own entries stay untouched; the catalog
 gives the request its `quiet_flow`. Deliveries with a game window stay in `Demo007_1`, as cutscenes, like the game's
-own gifts.
+own gifts. The rest's own events stay vanilla: the Archipelago window was first built on the cancel of its choice
+(`Event3`, case 3), and that leftover chain showed an empty window when a rest was cancelled; the product gives the
+cancel back its continuation (`build_autonomous_eventflow.restore_campfire_cancel`).
 
 - The request flags are not the cause. They come from the flowchart's name (prefix `Demo` = `0xf`) and from the type
   (zeldaret/botw, `evtMetadata.cpp`, `initFlags_`). Without the key, the HUD blinks with `0x64` (default), `0x19a`
