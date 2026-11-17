@@ -38,13 +38,15 @@ def write_sarc(sarc: oead.Sarc, replacements: dict[str, bytes]) -> bytes:
 
 
 def definition(name: str, is_save: bool, kind: str = "s32",
-               init: int = 0) -> oead.byml.Hash:
+               init: int = 0, one_trigger: bool = False) -> oead.byml.Hash:
     if kind == "bool":
-        # As vanilla IsGet_ flags, but not one-trigger: ours are set back to false.
+        # As vanilla IsGet_ flags, but not one-trigger by default: ours are set back
+        # to false. A one-trigger flag keeps its first change: the game refuses any
+        # write once it has left its initial value (TriggerParam's doSetFlagValue).
         return oead.byml.Hash({
             "DataName": name, "DeleteRev": oead.S32(-1),
             "HashValue": oead.S32(signed_crc(name)), "InitValue": oead.S32(int(bool(init))),
-            "IsEventAssociated": False, "IsOneTrigger": False,
+            "IsEventAssociated": False, "IsOneTrigger": one_trigger,
             "IsProgramReadable": True, "IsProgramWritable": True, "IsSave": is_save,
             "MaxValue": True, "MinValue": False, "ResetType": oead.S32(0),
         })
@@ -65,10 +67,12 @@ def definition(name: str, is_save: bool, kind: str = "s32",
 
 
 def modify_gamedata_flags(raw: bytes, flags, is_save: bool, kind: str = "s32",
-                          init: int = 0) -> bytes:
+                          init: int = 0, one_trigger: bool = False) -> bytes:
     """Append flag definitions of `kind` (s32 or bool) to its last page."""
     if kind not in ("s32", "bool"):
         raise ValueError(f"flag type not supported: {kind}")
+    if one_trigger and kind != "bool":
+        raise ValueError("one-trigger flags: bool only")
     sarc = open_yaz_sarc(raw)
     names = sorted(
         (file.name for file in sarc.get_files()
@@ -89,7 +93,7 @@ def modify_gamedata_flags(raw: bytes, flags, is_save: bool, kind: str = "s32",
             if collision:
                 raise RuntimeError(
                     f"collision CRC32: {flag} and {collision} ({signed_crc(flag)})")
-            objects[-1][f"{kind}_data"].append(definition(flag, is_save, kind, init))
+            objects[-1][f"{kind}_data"].append(definition(flag, is_save, kind, init, one_trigger))
     # In-game isolation proved that round-tripping the stock
     # table works and appending one definition works, while globally sorting
     # the same definitions crashes TriggerParam construction. Preserve every

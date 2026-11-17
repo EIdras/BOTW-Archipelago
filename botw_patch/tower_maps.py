@@ -14,7 +14,9 @@ When the maps are items, a tower's tags save its own flag instead, APTower_NN
 (botw_client/locations.tower_activation_flag), declared in GameData and in the
 save format: activating the tower sets it, the client counts it as the tower's
 location, and MapTower_NN is left to the map item, which sets it. The Great
-Plateau's tower is unchanged: its map is no item.
+Plateau's tower is unchanged: its map is no item. APTower_NN is one-trigger, as
+MapTower_NN: once set, the game refuses to put it back to false (players saw a
+tower activated, its check sent, and its flag at 0 again).
 """
 from __future__ import annotations
 
@@ -127,7 +129,7 @@ def generate(files: dict[str, bytes], aoc) -> tuple[dict[str, bytes], list[dict]
             changes.append({"resource": AOC_PREFIX + unit(cell), "towers": detail})
         builder.patch_archive(BOOTUP, {
             "GameData/gamedata.ssarc": lambda raw: (
-                modify_gamedata_flags(raw, FLAGS, is_save=True, kind="bool"), list(FLAGS)),
+                modify_gamedata_flags(raw, FLAGS, is_save=True, kind="bool", one_trigger=True), list(FLAGS)),
             "GameData/savedataformat.ssarc": lambda raw: (
                 modify_saveformat(raw, FLAGS), ["register the towers' own flags"]),
         })
