@@ -58,11 +58,11 @@ class HudLayoutTests(unittest.TestCase):
         self.assertEqual(kinds, [b"lyt1", b"txl1", b"mat1", b"pan1", b"pas1",
                                  b"pan1", b"pas1", b"pan1", b"pas1", b"pic1", b"pic1",
                                  b"pae1", b"pae1", b"pae1", b"grp1"])
-        # Built as the minimap is: RootPane > Pa_Weather_00 > N_InOut_00 > logos,
+        # Built as the weather box is: RootPane > Pa_Weather_00 > N_InOut_00 > logos,
         # beside it (what the Graphics pack's Ultrawide HUD Mode scales by name).
         nulls = [d for m, d in sections if m == b"pan1"]
         self.assertEqual([hud.pane_name(d) for d in nulls],
-                         ["RootPane", hud.MINIMAP_PART, hud.MINIMAP_PANE])
+                         ["RootPane", hud.WEATHER_PART, hud.WEATHER_PANE])
         self.assertEqual(struct.unpack_from(">ff", nulls[1], 0x24), (0.0, 0.0))
         self.assertEqual(struct.unpack_from(">ff", nulls[2], 0x24), (hud.POSITION[0], 0.0))
         body = dict(sections)
@@ -105,6 +105,30 @@ class HudLayoutTests(unittest.TestCase):
         self.assertEqual(after[:index] + after[index + 1:], before)
         with self.assertRaises(ValueError):
             hud.add_part(new)
+
+    def test_a_layout_mod_that_moves_the_weather_box_carries_the_logos(self):
+        # As the UltraWide 21:9 UI Fix does: the screen's Pa_Weather_00 squeezed
+        # in x, the weather box moved right inside it.
+        def edited(name, magic, pane, **fields):
+            header, sections = hud.read_layout(self.file(name))
+            return hud.write_layout(header, [
+                (m, hud._pane(d, **fields) if m == magic and hud.pane_name(d) == pane else d)
+                for m, d in sections])
+        writer = oead.SarcWriter.from_sarc(self.archive)
+        writer.files[hud.WEATHER_LAYOUT] = edited(hud.WEATHER_LAYOUT, b"pan1", hud.WEATHER_PANE,
+                                                  position=(487.0, 0.0))
+        writer.files[hud.SCREEN] = edited(hud.SCREEN, b"prt1", hud.WEATHER_PART,
+                                          scale=(0.75, 1.0))
+        out, detail = hud.patch_archive(bytes(writer.write()[1]), ICON.read_bytes())
+        self.assertEqual(detail["scale"], (0.75, 1.0))
+        patched = oead.Sarc(out)
+        _h, screen = hud.read_layout(bytes(patched.get_file(hud.SCREEN).data))
+        part = next(d for m, d in screen if m == b"prt1" and hud.pane_name(d) == hud.PART_PANE)
+        self.assertEqual(struct.unpack_from(">ff", part, 0x3c), (0.75, 1.0))
+        _h, layout = hud.read_layout(bytes(patched.get_file(f"blyt/{hud.PART_LAYOUT}.bflyt").data))
+        inner = next(d for m, d in layout if m == b"pan1" and hud.pane_name(d) == hud.WEATHER_PANE)
+        # The logos keep their offset from the weather box, squeezed with it.
+        self.assertEqual(struct.unpack_from(">f", inner, 0x24)[0], 487.0 + hud.WEATHER_OFFSET)
 
     def test_textures_are_the_logo_in_colour_and_in_grey(self):
         made = hud.textures(ICON.read_bytes())
