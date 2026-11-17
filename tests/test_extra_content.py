@@ -85,8 +85,9 @@ class LocationTests(unittest.TestCase):
                 continue
             shrine = logic[shrines[shrine_chests.dungeon(row)]]
             self.assertEqual(row["region"], shrine["region"])
+            # The shrine's climate and quest, and every rune (a side chest's needs are the layout's).
             self.assertEqual((logic[row["name"]]["climate"], logic[row["name"]]["runes"],
-                              logic[row["name"]]["extra"]), (shrine["climate"], shrine["runes"], shrine["extra"]))
+                              logic[row["name"]]["extra"]), (shrine["climate"], "all", shrine["extra"]))
 
     def test_every_new_location_has_a_position(self):
         positions = json.loads((ROOT / "data/location_positions.json").read_text(encoding="utf-8"))

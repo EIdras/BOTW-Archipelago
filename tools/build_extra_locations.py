@@ -11,7 +11,9 @@ Three kinds of location, each tracked by the saved bool the game sets for it
     DungeonNNN_Static.smubin; flag CDungeon_<actor>_<HashId>). A chest holding
     its shrine's small key (KeySmall) is left out: its key opens the way. The
     contents of the chests a seed draws are replaced (botw_patch/shrine_chests.py).
-    Region, position and logic are the shrine's: what clears it reaches its chests.
+    Region, position, climate and quest are the shrine's; the runes are all four:
+    the chests link to no puzzle in the shrine's map unit, and what a side chest
+    needs is the shrine's layout.
   * Chest: the treasure chests of the Great Plateau and Hyrule (TBox_Field_*,
     flag MainField_<actor>_<HashId>), check-only: their contents stay. The
     gambling chests (TBox_Field_Gamble) keep no saved flag: left out.
@@ -193,8 +195,11 @@ def build(content: Path, base: Path, aoc: Path) -> list[dict]:
     rows = []
     for row in shrine_chests(content, base, shrines):
         shrine = logic[row["shrine"]]
+        # Every rune (the user's choice): which one a side chest needs is the shrine's
+        # layout (a ledge, a pillar), which no link or object of its map unit tells; the
+        # shrine's own climate and quest stay.
         rows.append({**row, "position": positions[row["shrine"]], "climate": shrine["climate"],
-                     "runes": shrine["runes"], "extra": shrine["extra"]})
+                     "runes": "all", "extra": shrine["extra"]})
     rows += field_locations(aoc, towers, areas, climates, named, Water(base, content))
     name_rows(rows, named_places(content, aoc))
     UNCERTAIN[:] = [(row["name"], row["position"], row["uncertain"]) for row in rows if row.get("uncertain")]
