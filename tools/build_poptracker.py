@@ -671,7 +671,7 @@ def place_of(row: dict) -> str:
     Purah's three upgrades, a shrine and its chests."""
     name, kinds = row["name"], set(row["category"].split("|"))
     if "Shrine Chest" in kinds:
-        return re.sub(r" Chest \d+$", "", name)
+        return re.sub(r" Chest( \d+)?$", "", name)
     if kinds & {"Shop", "Stall"}:
         return re.sub(r" Item \d+$", "", name)
     if "Rune Upgrade" in kinds:

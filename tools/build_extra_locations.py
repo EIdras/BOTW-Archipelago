@@ -35,6 +35,7 @@ import argparse
 import csv
 import io
 import json
+import math
 from pathlib import Path
 import sys
 import zlib
@@ -160,7 +161,7 @@ def field_locations(aoc: Path, towers: Beco, areas: Beco, climates: dict[int, st
             buried = label == "Chest" and "IsInGround" in params and bool(params["IsInGround"])
             # Only in Master Mode (IsHardModeActor): the world's master_mode option.
             master = "IsHardModeActor" in params and bool(params["IsHardModeActor"])
-            out.append({"name": f"{label} {cell} #{counts[label]}", "region": region,
+            out.append({"name": f"{label} {cell} #{counts[label]}", "label": label, "region": region,
                         "category": "Chest" if label == "Chest" else "Boss", "gamedata_flag": flag,
                         "position": [x, z], "climate": "heat" if climates.get(areas.at(x, z)) in HOT else "none",
                         "runes": "Magnesis" if buried else "none",
@@ -183,6 +184,7 @@ def build(content: Path, base: Path, aoc: Path) -> list[dict]:
         rows.append({**row, "position": positions[row["shrine"]], "climate": shrine["climate"],
                      "runes": shrine["runes"], "extra": shrine["extra"]})
     rows += field_locations(aoc, towers, areas, climates, named)
+    name_rows(rows, named_places(content, aoc))
     hashes = {flag_hash(row["gamedata_flag"]) for row in rows}
     if len(hashes) != len(rows) or len({row["name"] for row in rows}) != len(rows):
         raise ValueError("duplicate flags or names")
@@ -261,12 +263,56 @@ def main(argv=None) -> int:
     return 0
 
 
-def landmarks(content: Path, aoc: Path) -> dict:
-    """The tracker's landmarks (tools/build_poptracker.py, its overview map): the places the
-    game's map names, LocationPointer (Hebra Great Skeleton...) and the LocationMarker
-    of no shrine nor tower (villages, stables...), named in English
-    (StaticMsg/LocationMarker.msbt); and the landmark of each field chest, the nearest.
-    {"places": {name: [x, z]}, "chests": {chest: name}}."""
+COMPASS = ("East", "Southeast", "South", "Southwest", "West", "Northwest", "North", "Northeast")
+NEAR = 60.0                 # metres from its place within which a location has no direction
+
+
+def nearest(places: dict[str, list[float]], x: float, z: float) -> str:
+    return min(places, key=lambda name: (places[name][0] - x) ** 2 + (places[name][1] - z) ** 2)
+
+
+def name_rows(rows: list[dict], places: dict[str, list[float]]) -> None:
+    """The locations' names, from the game's data. A shrine chest: "<shrine> Chest",
+    numbered when its shrine has several. A field chest: "<place> Chest", its place the
+    nearest the game's map names (named_places); a boss: "<kind> - <place>". When several
+    share a name: "(qualifier)", Master Mode, Buried, and the compass direction from the
+    place (none within NEAR), then a number when still the same, by HashId order. The
+    rows keep their order: the ids do not change."""
+    shrines: dict[str, list[dict]] = {}
+    for row in rows:
+        if row["category"] == "Shrine Chest":
+            shrines.setdefault(row["shrine"], []).append(row)
+    for shrine, members in shrines.items():
+        for index, row in enumerate(members, 1):
+            row["name"] = f"{shrine} Chest" + (f" {index}" if len(members) > 1 else "")
+    groups: dict[str, list[tuple[dict, str]]] = {}
+    for row in rows:
+        if row["category"] not in ("Chest", "Boss"):
+            continue
+        x, z = row["position"]
+        place = nearest(places, x, z)
+        base = f"{place} Chest" if row["category"] == "Chest" else f"{row['label']} - {place}"
+        qualifier = [MASTER_MODE_NOTE.removesuffix(" only").title()] if MASTER_MODE_NOTE in row["notes"] else []
+        if "buried" in row["notes"]:
+            qualifier.append("Buried")
+        px, pz = places[place]
+        if math.hypot(x - px, z - pz) >= NEAR:
+            qualifier.append(COMPASS[round(math.degrees(math.atan2(z - pz, x - px)) / 45) % 8])
+        groups.setdefault(base, []).append((row, " ".join(qualifier)))
+    for base, members in groups.items():
+        labels = [base if len(members) == 1 else f"{base} ({extra})" if extra else base for _row, extra in members]
+        total, seen = {label: labels.count(label) for label in labels}, {}
+        for (row, _extra), label in zip(members, labels):
+            if total[label] > 1:
+                seen[label] = seen.get(label, 0) + 1
+                label = f"{label[:-1]} {seen[label]})" if label.endswith(")") else f"{label} {seen[label]}"
+            row["name"] = label
+
+
+def named_places(content: Path, aoc: Path) -> dict[str, list[float]]:
+    """{name: [x, z]}: the places the game's map names, LocationPointer (Hebra Great
+    Skeleton...) and the LocationMarker of no shrine nor tower (villages, stables...),
+    named in English (StaticMsg/LocationMarker.msbt); a name twice: its first place."""
     from botw_patch.shop_items import read_labels
     static = oead.byml.from_binary(unpack((aoc / "Map/MainField/Static.smubin").read_bytes()))
     boot = oead.Sarc((content / "Pack/Bootup_USen.pack").read_bytes())
@@ -282,13 +328,21 @@ def landmarks(content: Path, aoc: Path) -> dict:
             translate = marker["Translate"]
             where = [round(float(translate["X"]), 1), round(float(translate["Z"]), 1)]
             places.setdefault(name, where)      # a name twice: its first place
+    return places
+
+
+def landmarks(content: Path, aoc: Path) -> dict:
+    """The tracker's landmarks (tools/build_poptracker.py, its overview map): the
+    named_places, and the landmark of each field chest, the nearest.
+    {"places": {name: [x, z]}, "chests": {chest: name}}."""
+    places = named_places(content, aoc)
     positions = json.loads(POSITIONS.read_text(encoding="utf-8"))
     rows = json.loads(LOCATIONS.read_text(encoding="utf-8"))
     chests = {}
     for row in rows:
         if row["category"] == "Chest":
             x, z = positions[row["name"]]
-            chests[row["name"]] = min(places, key=lambda name: (places[name][0] - x) ** 2 + (places[name][1] - z) ** 2)
+            chests[row["name"]] = nearest(places, x, z)
     used = set(chests.values())
     return {"places": {name: where for name, where in sorted(places.items()) if name in used}, "chests": chests}
 

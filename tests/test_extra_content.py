@@ -310,7 +310,18 @@ class MasterModeTests(unittest.TestCase):
         marked = [row for row in NEW if "master mode only" in row["notes"]]
         self.assertEqual(len(marked), 118)
         self.assertTrue(all(row["category"] == "Chest" for row in marked))
-        self.assertIn("Chest B-3 #9", {row["name"] for row in marked})
+        self.assertIn("MainField_TBox_Field_Iron_3090346856", {row["gamedata_flag"] for row in marked})
+
+    def test_the_new_locations_are_named_after_places(self):
+        names = [row["name"] for row in NEW]
+        self.assertEqual(len(set(names)), len(names))
+        chest = next(row for row in NEW if row["gamedata_flag"] == "MainField_TBox_Field_Iron_3090346856")
+        self.assertIn("(Master Mode", chest["name"])
+        self.assertFalse([n for n in names if "#" in n])
+        shrine = [row["name"] for row in NEW if row["category"] == "Shrine Chest"]
+        self.assertTrue(all(" Shrine Chest" in n for n in shrine))
+        bosses = [row["name"] for row in NEW if row["category"] == "Boss"]
+        self.assertTrue(all(" - " in n for n in bosses))
 
     def test_the_quest_says_master_mode(self):
         from botw_patch.ap_quest import texts
