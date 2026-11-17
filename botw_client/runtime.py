@@ -41,16 +41,26 @@ BULK_WINDOW_SECONDS = 15.0
 # The game not there yet at launch is waited for quietly; after this long, the
 # player is told what to try.
 GAME_START_PATIENCE_SECONDS = 300.0
-# A received DeathLink: its journal line is read before Link dies. The entry
-# leaves its flag set on the death it causes (botw_patch/death_link.py): such a
-# death is never sent back. The flag counts for DEATHLINK_FLAG_SECONDS after
-# the request, in case it stayed set on a survival; a pack without the flag
-# falls back on the time alone (measured: Link dies in the frame the entry
-# runs). A death still waiting after DEATHLINK_EXPIRY_SECONDS (Link busy in an
-# event...) is dropped.
-DEATHLINK_LEAD_SECONDS = 3.0
+# A received DeathLink kills Link as soon as he is free, unannounced; its
+# journal line comes after (read once he is back, after the reload). The entry
+# sets its flag before the hit and leaves it set on the death it causes
+# (botw_patch/death_link.py): a death while the request is pending and the flag
+# set is never sent back, however late (the game may run a request it took only
+# once an event ends; measured, 17/11: the flag set at every such death). A
+# death with the flag off is Link's own and is sent, even right after the
+# request: the entry has not run yet. The flag seen set, then off with Link
+# alive: he survived it, the request is spent. A pack without the flag falls
+# back on DEATHLINK_ECHO_SECONDS. A death still waiting after
+# DEATHLINK_EXPIRY_SECONDS (Link busy in an event...) is dropped, and logged;
+# so is one still waiting when Link dies of his own.
+# The request arms the entry. Not started within DEATHLINK_HOLD_FRAMES (or
+# DEATHLINK_HOLD_SECONDS without the frame counter), the game holds it behind
+# another event (a cutscene, a shrine's terminal, a menu), where a strike as
+# that event ends would freeze Link: the client takes the arming back, the
+# entry then only marks its skip, and the death is asked again once Link is free.
+DEATHLINK_HOLD_FRAMES = 10
+DEATHLINK_HOLD_SECONDS = 0.5
 DEATHLINK_ECHO_SECONDS = 5.0
-DEATHLINK_FLAG_SECONDS = 60.0
 DEATHLINK_EXPIRY_SECONDS = 120.0
 # A Yiga Ambush committed while Link was leaving the world (a menu opened in
 # between) waits for him; after this long, it is given up.
@@ -322,8 +332,13 @@ class BotwClientRuntime:
         self._last_game_cursor = None
         self._session_token = None
         self._deathlink_retry_after = 0.0
-        self._deathlink_announced_at = None
+        self._deathlink_wait = None            # why the received death waits, as last logged
         self._death_requested_at = None
+        self._death_flag_seen = False
+        self._death_request = None            # the received death asked, till it strikes
+        self._death_struck = False
+        self._death_disarmed = False
+        self._death_request_tick = None
         # Native traps (botw_client/cucco_swarm.py, yiga_ambush.py, downpour.py):
         # the committed ones waiting to be played, since when the first one
         # waits for Link, and the swarm playing.
@@ -1645,7 +1660,6 @@ class BotwClientRuntime:
                 state["pending_deathlinks"] = [{
                     "time": event.timestamp, "source": event.source,
                     "cause": event.cause, "received_at": time.time()}]
-                self._deathlink_announced_at = None
             changed = True
         if changed:
             self.state_store.save()
@@ -1661,6 +1675,10 @@ class BotwClientRuntime:
             if await self._killed_by_death_link():
                 self.log("Link died of the received DeathLink: not sent back")
             else:
+                if state["pending_deathlinks"]:
+                    self.log("DeathLink waiting dropped: Link died of his own")
+                    state["pending_deathlinks"] = []
+                    self.state_store.save()
                 cause = await self._death_cause()
                 if self.ap.connected:
                     await self.ap.send_death(cause)
@@ -1668,6 +1686,7 @@ class BotwClientRuntime:
                     state["pending_outgoing_death"] = cause
                     self.state_store.save()
         self._last_dead = dead
+        await self._death_request_follow(dead)
 
         pending_out = state["pending_outgoing_death"]
         if self.ap.connected and self.ap.death_link_enabled and pending_out:
@@ -1678,39 +1697,133 @@ class BotwClientRuntime:
 
         pending = state["pending_deathlinks"]
         if (not pending or dead or self._swarming()
-                or time.monotonic() < self._deathlink_retry_after):
+                or time.monotonic() < self._deathlink_retry_after
+                or (self._death_requested_at is not None and not self._death_struck)):
             return
         event = pending[0]
         received = event.get("received_at")
         if (not self.ap.death_link_enabled or type(received) not in (int, float)
                 or time.time() - received > DEATHLINK_EXPIRY_SECONDS):
+            if self.ap.death_link_enabled:
+                self.log(f"DeathLink from {event.get('source')} dropped: Link was not free "
+                         f"within {DEATHLINK_EXPIRY_SECONDS:.0f} s")
             pending.clear()
-            self._deathlink_announced_at = None
             self.state_store.save()
             return
-        if self._deathlink_announced_at is None:
-            if not await asyncio.to_thread(self.game.safe_for_delivery):
-                return
-            from .ap_journal import death_link_line
-            self._journal_note(death_link_line(event["source"], event["cause"]))
-            self._deathlink_announced_at = time.monotonic()
+        if not await asyncio.to_thread(self.game.safe_for_delivery):
+            self._deathlink_waiting(f"game not ready ({getattr(self.game, 'delivery_block_reason', '?')})")
             return
-        if time.monotonic() - self._deathlink_announced_at < DEATHLINK_LEAD_SECONDS:
-            return
-        request = getattr(getattr(self.deliveries, "backend", None), "request_death", None)
+        backend = getattr(self.deliveries, "backend", None)
+        request = getattr(backend, "request_death", None)
         result = await asyncio.to_thread(request) if request is not None else None
         if result is False:
+            self._deathlink_waiting(getattr(backend, "death_wait_reason", None) or "not taken")
             self._deathlink_retry_after = time.monotonic() + 1.0
             return
-        pending.clear()
-        self._deathlink_announced_at = None
-        self.state_store.save()
+        self._deathlink_wait = None
         if result is None:
+            pending.clear()
+            self.state_store.save()
             self.log("DeathLink not applied: this pack has no DeathLink entry; "
                      "rebuild it with tools/play_seed.py")
             return
         self._death_requested_at = time.monotonic()
-        self.log(f"DeathLink applied: {event['source']}")
+        self._death_flag_seen = False
+        self._death_request = dict(event)
+        self._death_struck = self._death_disarmed = False
+        self._death_request_tick = await self._frame_tick()
+        if await self._death_link_state() is None:
+            await self._death_struck_now(None)    # a pack without the arming
+        else:
+            await self._death_request_follow(False)
+
+    def _deathlink_waiting(self, reason: str):
+        """Why the received death is not asked yet, logged when it changes."""
+        if reason != self._deathlink_wait:
+            self._deathlink_wait = reason
+            self.log(f"DeathLink waiting: {reason}")
+
+    async def _frame_tick(self) -> int | None:
+        """The cave's frame counter, or None."""
+        tick = getattr(self.game, "frame_tick", None)
+        try:
+            return await asyncio.to_thread(tick) if tick is not None else None
+        except Exception:  # noqa: BLE001 - unreadable: the time decides
+            return None
+
+    async def _death_link_state(self):
+        """(armed, flag, skipped) of the entry, or None: a pack without the
+        arming, or unreadable."""
+        ask = getattr(getattr(self.deliveries, "backend", None), "death_link_state", None)
+        try:
+            return await asyncio.to_thread(ask) if ask is not None else None
+        except Exception:  # noqa: BLE001 - unreadable: as a pack without it
+            return None
+
+    async def _death_struck_now(self, frames: int | None):
+        """The entry struck: the received death is spent, then told."""
+        event = self._death_request or {}
+        self._death_struck = True
+        self.state["pending_deathlinks"] = []
+        self.state_store.save()
+        self.log(f"DeathLink applied: {event.get('source')}"
+                 + (f" ({frames} frames after the request)" if frames is not None else ""))
+        from .ap_journal import death_link_line
+        self._journal_note(death_link_line(event.get("source", ""), event.get("cause", "")))
+
+    async def _death_request_follow(self, dead: bool):
+        """Follow the request: struck (the arming taken, or the flag set), held
+        by the game (disarmed, then asked again once its skip is marked), and,
+        struck, survived (the flag seen set, then off with Link alive: Mipha's
+        Grace, a fairy)."""
+        if self._death_requested_at is None:
+            return
+        if not self._death_struck:
+            state = await self._death_link_state()
+            if state is None:
+                return
+            armed, flag, skipped = state
+            tick = await self._frame_tick()
+            frames = (None if tick is None or self._death_request_tick is None
+                      else (tick - self._death_request_tick) & 0xFFFFFFFF)
+            if flag or (armed is False and not self._death_disarmed):
+                self._death_flag_seen = bool(flag)
+                await self._death_struck_now(frames)
+            elif self._death_disarmed:
+                if skipped:
+                    clear = getattr(self.deliveries.backend, "clear_death_skip", None)
+                    if clear is not None:
+                        await asyncio.to_thread(clear)
+                    self._death_requested_at = self._death_request = None
+                    self.log("DeathLink held by the game skipped its strike: asked again "
+                             "once Link is free")
+                return
+            elif (frames >= DEATHLINK_HOLD_FRAMES if frames is not None else
+                  time.monotonic() - self._death_requested_at >= DEATHLINK_HOLD_SECONDS):
+                await asyncio.to_thread(self.deliveries.backend.disarm_death)
+                self._death_disarmed = True
+                self.log(f"DeathLink held by the game ({frames} frames, an event running): "
+                         "disarmed")
+                return
+            else:
+                return
+        if dead:
+            return
+        flag = await self._death_link_flag()
+        if flag:
+            self._death_flag_seen = True
+        elif flag is False and self._death_flag_seen:
+            self._death_requested_at = None
+            self.log("Link survived the DeathLink: a later death is sent")
+
+    async def _death_link_flag(self) -> bool | None:
+        """The entry's flag (set from the request to a survival), or None: no
+        flag in this pack, or unreadable."""
+        ask = getattr(getattr(self.deliveries, "backend", None), "killed_by_death_link", None)
+        try:
+            return await asyncio.to_thread(ask) if ask is not None else None
+        except Exception:  # noqa: BLE001 - unreadable: the time decides
+            return None
 
     def _pickup_actor(self, name: str) -> str | None:
         """The actor of the game's pickup notification for this item, if the
@@ -1894,23 +2007,20 @@ class BotwClientRuntime:
         await self._native_trap_tick()
 
     async def _killed_by_death_link(self) -> bool:
-        """Did the DeathLink we requested cause this death? A death within
-        DEATHLINK_ECHO_SECONDS of the request is its; later, its flag says so.
-        A death so recognised uses the request up.
-
-        Seen in a room: a death in the second the DeathLink applied was sent
-        back, its flag read as not set; the time alone keeps it home."""
+        """Did the DeathLink we requested cause this death? Only while one is
+        pending, with its flag set (a pack without the flag: within
+        DEATHLINK_ECHO_SECONDS of it). A death without a pending request is
+        always sent, whatever the flag. Any death spends the request."""
         if self._death_requested_at is None:
             return False
         since = time.monotonic() - self._death_requested_at
-        ask = getattr(getattr(self.deliveries, "backend", None), "killed_by_death_link", None)
-        try:
-            flag = await asyncio.to_thread(ask) if ask is not None else None
-        except Exception:  # noqa: BLE001 - unreadable: the time decides
-            flag = None
-        ours = since < DEATHLINK_ECHO_SECONDS or bool(flag and since < DEATHLINK_FLAG_SECONDS)
-        if ours:
-            self._death_requested_at = None
+        flag = await self._death_link_flag()
+        ours = flag is True or (flag is None and since < DEATHLINK_ECHO_SECONDS)
+        if ours and not self._death_struck:
+            await self._death_struck_now(None)    # died before its strike was followed
+        self.log(f"death {since:.0f} s after the DeathLink applied, its flag {flag}: "
+                 f"{'its own' if ours else 'not its own'}")
+        self._death_requested_at = self._death_request = None
         return ours
 
     async def _death_cause(self) -> str:

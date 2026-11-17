@@ -10,14 +10,24 @@ applies a lethal value). With a lethal value, measured in game:
     received DeathLink is then spent); fairies are expected to as well.
 A lower value removes hearts with no animation and no sound.
 
+The entry strikes only when armed. The game may take it while another event
+runs (a cutscene, a shrine's terminal) and run it as that event ends, where a
+hit empties Link's hearts without starting his death: Link frozen (17/11). So
+the client arms the volatile flag APDeathLinkArmed before each request, and
+takes it back when the entry has not started soon after (held by the game).
+Armed, the entry takes the arming itself (one strike per arming) and strikes;
+disarmed, it only sets APDeathLinkSkipped, and the client asks again.
+
 The entry marks its own deaths: it sets the volatile flag APDeathLinkKill,
-applies the damage, then clears the flag only if Link is still alive
-(EventSystemActor.ComparePlayerHeart, as Demo331_0 uses it). A death that
+applies the damage, waits for the hit to land, then clears the flag only if
+Link is still alive (EventSystemActor.ComparePlayerHeart, as Demo331_0 uses
+it). A death that
 finds the flag set is the received DeathLink's, never sent back; the flag,
 not saved, is gone after the reload that follows the death.
 
 The entry is registered as the game's background events are
-(delivery_flow.QUIET_EVENT_INFO): it pauses nothing and leaves the HUD alone.
+(delivery_flow.QUIET_EVENT_INFO): it pauses nothing and leaves the HUD alone,
+and the game takes it whatever Link does (climbing, swimming, in the air).
 OperationGuide declares only EventSystemActor, so the player is declared as
 Demo007_1 declares it. Every pack has the entry; the client requests it only
 when the seed has DeathLink on.
@@ -47,9 +57,15 @@ ENTRY = "APDeathLink"
 FLOW_NAME = QUIET_FLOW
 # Quarter hearts: above any life (30 hearts and 10 extra hearts are 160).
 LETHAL_DAMAGE = 1000
+# Frames between the damage and the survival check: a hit lands a frame or more
+# after Demo_ApplyDamage finishes, so a check right after it found Link alive
+# and took the flag off before he died (17/11: the flag never read as set).
+SURVIVAL_WAIT_FRAMES = 30
 EVENT_INFO = "Event/EventInfo.product.sbyml"
 GAMEDATA = "GameData/gamedata.ssarc"
 FLAG = "APDeathLinkKill"
+ARMED = "APDeathLinkArmed"
+SKIPPED = "APDeathLinkSkipped"
 MESSAGES = "Pack/Bootup_EUen.pack"
 MESSAGE_ARCHIVE = "Message/Msg_EUen.product.ssarc"
 # The message files naming what can hurt Link (<actor>_Name labels).
@@ -58,8 +74,9 @@ NAME_FILES = ("Enemy", "GelEnemy", "GiantEnemy", "Guardian", "Sandworm", "Swarm"
 
 
 def add_entry(raw: bytes) -> tuple[bytes, list[str]]:
-    """OperationGuide<APDeathLink>: flag on, one lethal Demo_ApplyDamage on the
-    player, then the flag off if Link survived."""
+    """OperationGuide<APDeathLink>: armed, the arming taken, the flag on, one
+    lethal Demo_ApplyDamage on the player, a wait for the hit to land, then the
+    flag off if Link survived; disarmed, only the skip marked."""
     flow = read_flow(raw)
     before = graph_snapshot(flow)
     chart = flow.flowchart
@@ -110,13 +127,28 @@ def add_entry(raw: bytes) -> tuple[bytes, list[str]]:
     # 1: at least one quarter heart left. 0 (dead): the flag stays set.
     alive.data.cases = {1: make_rindex(clear)}
     chart.events.append(alive)
+    wait = action(f"{ENTRY}_Wait", system, "Demo_WaitFrame",
+                  {"IsWaitFinish": True, "Frame": SURVIVAL_WAIT_FRAMES}, alive)
     hit = action(f"{ENTRY}_Hit", player, "Demo_ApplyDamage",
-                 {"IsWaitFinish": True, "Value": LETHAL_DAMAGE}, alive)
-    mark = action(ENTRY, system, "Demo_FlagON", {"FlagName": FLAG, "IsWaitFinish": True}, hit)
-    if names & {e.name for e in (clear, alive, hit)}:
+                 {"IsWaitFinish": True, "Value": LETHAL_DAMAGE}, wait)
+    # The flag on before the arming is taken: the client, seeing the arming
+    # gone, finds the flag already set.
+    take = action(f"{ENTRY}_Take", system, "Demo_FlagOFF", {"FlagName": ARMED, "IsWaitFinish": True}, hit)
+    mark = action(f"{ENTRY}_Mark", system, "Demo_FlagON", {"FlagName": FLAG, "IsWaitFinish": True}, take)
+    skip = action(f"{ENTRY}_Skip", system, "Demo_FlagON", {"FlagName": SKIPPED, "IsWaitFinish": True})
+    armed = Event()
+    armed.name = ENTRY
+    armed.data = SwitchEvent()
+    armed.data.actor = make_rindex(system)
+    armed.data.actor_query = make_rindex(holder(system.queries, "CheckFlag"))
+    armed.data.params = Container()
+    armed.data.params.data = {"FlagName": ARMED}
+    armed.data.cases = {0: make_rindex(skip), 1: make_rindex(mark)}
+    chart.events.append(armed)
+    if names & {e.name for e in (clear, alive, wait, hit, take, mark, skip)}:
         raise ValueError("DeathLink event already present")
     entry = EntryPoint(ENTRY)
-    entry.main_event = make_rindex(mark)
+    entry.main_event = make_rindex(armed)
     chart.entry_points.append(entry)
     out = write_flow(flow)
     after = graph_snapshot(read_flow(out))
@@ -124,8 +156,9 @@ def add_entry(raw: bytes) -> tuple[bytes, list[str]]:
         raise ValueError("existing event changed")
     if after["entry_points"][:len(before["entry_points"])] != before["entry_points"]:
         raise ValueError("existing entry points changed")
-    return out, [f"{FLOW_NAME}<{ENTRY}>: {FLAG} on, GameROMPlayer.Demo_ApplyDamage "
-                 f"{LETHAL_DAMAGE}, {FLAG} off if Link survived"]
+    return out, [f"{FLOW_NAME}<{ENTRY}>: if {ARMED}: {FLAG} on, {ARMED} off, "
+                 f"GameROMPlayer.Demo_ApplyDamage {LETHAL_DAMAGE}, {SURVIVAL_WAIT_FRAMES} frames, "
+                 f"{FLAG} off if Link survived; else {SKIPPED} on"]
 
 
 def add_event_info(raw: bytes) -> tuple[bytes, list[str]]:
@@ -140,10 +173,11 @@ def add_event_info(raw: bytes) -> tuple[bytes, list[str]]:
 
 
 def add_flag(raw: bytes) -> tuple[bytes, list[str]]:
-    """The volatile bool APDeathLinkKill in the game's GameData definitions."""
+    """The entry's volatile bools in the game's GameData definitions."""
     from tools.build_game_data_mod import modify_gamedata_flags
-    return (modify_gamedata_flags(raw, (FLAG,), is_save=False, kind="bool"),
-            [f"register volatile bool {FLAG}"])
+    flags = (FLAG, ARMED, SKIPPED)
+    return (modify_gamedata_flags(raw, flags, is_save=False, kind="bool"),
+            [f"register volatile bools {', '.join(flags)}"])
 
 
 def plain(text: str) -> str:
