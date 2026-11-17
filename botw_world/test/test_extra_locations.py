@@ -52,7 +52,8 @@ class TestNormalModeChests(BotwTestBase):
         from ..catalog import MASTER_MODE_ONLY
         self.assertEqual(len(MASTER_MODE_ONLY), 118)
         self.assertFalse(self.world.extra_locations & MASTER_MODE_ONLY)
-        self.assertEqual(len(self.world.extra_locations), 1312 - 118 - 3)     # the Xenoblade 2 chests: never
+        from ..catalog import NEVER_DRAWN
+        self.assertEqual(len(self.world.extra_locations), 1312 - len(MASTER_MODE_ONLY | NEVER_DRAWN))
         self.assertFalse(self.world.fill_slot_data()["master_mode"])
 
 
@@ -61,8 +62,9 @@ class TestMasterModeChests(BotwTestBase):
 
     def test_every_chest_in_master_mode(self) -> None:
         from ..catalog import MASTER_MODE_ONLY
-        self.assertLessEqual(MASTER_MODE_ONLY, self.world.extra_locations)
-        self.assertEqual(len(self.world.extra_locations), 1312 - 3)
+        from ..catalog import NEVER_DRAWN
+        self.assertLessEqual(MASTER_MODE_ONLY - NEVER_DRAWN, self.world.extra_locations)
+        self.assertEqual(len(self.world.extra_locations), 1312 - len(NEVER_DRAWN))
         self.assertTrue(self.world.fill_slot_data()["master_mode"])
 
 
@@ -72,9 +74,9 @@ class TestChestLogic(BotwTestBase):
     def test_never_drawn_and_all_shrines(self) -> None:
         from BaseClasses import CollectionState
         from ..catalog import NEVER_DRAWN
-        self.assertEqual(len(NEVER_DRAWN), 3)
+        self.assertEqual(len(NEVER_DRAWN), 36)
         self.assertFalse(self.world.extra_locations & NEVER_DRAWN)
-        self.assertEqual(len(self.world.extra_locations), 1312 - 3)
+        self.assertEqual(len(self.world.extra_locations), 1312 - 36)
         temple = next(r for r in LOCATIONS if "once all 120 shrines" in r["notes"])
         location = self.multiworld.get_location(temple["name"], self.player)
         state = CollectionState(self.multiworld)

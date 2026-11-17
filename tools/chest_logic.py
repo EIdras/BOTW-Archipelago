@@ -17,7 +17,13 @@
   * In ice (an IceWall referring to it): nothing, fire is found everywhere (the user's choice).
   * Created by a saved flag (FLAGS): its requirement, or never drawn (NEVER), or on the
     list to check.
-  * Created when enemies or animals are defeated (camps, targets): nothing.
+  * Created when enemies are beaten (a camp's, a castle guard's) or a dog is fed:
+    nothing, noted. A camp's chest (TBox_Field_Enemy) stays shut until its camp is
+    cleared: nothing, noted.
+  * Never drawn (the user's choice): the DLC's EX Treasure chests
+    (TBox_Field_*_Aoc*: shown only once their EX quest is started, which the logic
+    cannot follow); a chest created by a quest flag the logic does not follow, or by
+    a condition the data does not name.
 """
 from __future__ import annotations
 
@@ -48,6 +54,8 @@ FLAGS = {
 }
 # Never drawn: a chest the Wii U game cannot show.
 NEVER = {"CollaborationShootingStar_Xenoblade2": "the Xenoblade Chronicles 2 collaboration (Switch only)"}
+# Never drawn: what makes a chest appear that the logic cannot follow.
+EX_TREASURE = "a DLC EX Treasure chest, shown only once its EX quest is started"
 
 
 class Water:
@@ -104,6 +112,10 @@ def classify(chest, objects: list, into: dict, water: Water) -> Reach:
     params = chest["!Parameters"] if "!Parameters" in chest else {}
     x, y, z = (float(v) for v in chest["Translate"])
     reach = Reach()
+    if "_Aoc" in actor:
+        reach.never = EX_TREASURE
+    if actor == "TBox_Field_Enemy":
+        reach.notes.append("shut until its camp is cleared")
     if "IsInGround" in params and bool(params["IsInGround"]):
         reach.runes.add("Magnesis")
     surface = water.surface(x, z)
@@ -117,10 +129,15 @@ def classify(chest, objects: list, into: dict, water: Water) -> Reach:
     # Created by something breaking, or by a saved flag.
     creators = [source for definition, source in into.get(int(chest["HashId"]), ()) if definition == "Create"]
     for tag in creators:
-        for name in feeders(tag, into):
+        fed = feeders(tag, into)
+        for name in fed:
             if name.startswith(BREAKABLE):
                 reach.runes.add(BOMB)
                 reach.notes.append("behind a cracked wall" if name == "WallCrack" else "under rocks")
+            elif name.startswith("Animal_Dog"):
+                reach.notes.append("once its dog is fed")
+            elif name.startswith("Enemy_"):
+                reach.notes.append("once its guards are beaten")
         saved = str(tag["!Parameters"]["SaveFlag"]) if "!Parameters" in tag and "SaveFlag" in tag["!Parameters"] else ""
         if saved:
             family = next((key for key in (*FLAGS, *NEVER) if saved.startswith(key)), None)
@@ -131,8 +148,10 @@ def classify(chest, objects: list, into: dict, water: Water) -> Reach:
                 reach.runes.update(filter(None, runes.split("|")))
                 reach.extra += [extra] if extra else []
                 reach.notes += [note] if note else []
-            elif not feeders(tag, into):
-                reach.uncertain = f"appears once the game's flag {saved} is set: by what?"
+            elif not fed:
+                reach.never = f"appears once the game's flag {saved} is set, by a side quest the logic does not follow"
+        elif not fed:
+            reach.never = "appears under a condition the game's data does not name"
     # On it or around it.
     for link in (chest["LinksToObj"] if "LinksToObj" in chest else []):
         target = next((o for o in objects if int(o["HashId"]) == int(link["DestUnitHashId"])), None)

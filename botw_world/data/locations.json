@@ -4066,7 +4066,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_562065515",
     "flag_hash": "-2049975923",
-    "notes": "A-1, TBox_Field_Enemy",
+    "notes": "A-1, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 395
   },
   {
@@ -4086,7 +4086,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_1451704573",
     "flag_hash": "-70335136",
-    "notes": "A-1, TBox_Field_Enemy",
+    "notes": "A-1, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 397
   },
   {
@@ -4176,7 +4176,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_1046310171",
     "flag_hash": "1874567037",
-    "notes": "A-2, TBox_Field_Enemy",
+    "notes": "A-2, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 406
   },
   {
@@ -4236,7 +4236,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_1149811241",
     "flag_hash": "1972929003",
-    "notes": "A-3, TBox_Field_Enemy",
+    "notes": "A-3, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 412
   },
   {
@@ -4256,7 +4256,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_1769347722",
     "flag_hash": "175369124",
-    "notes": "A-3, TBox_Field_Enemy",
+    "notes": "A-3, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 414
   },
   {
@@ -4296,7 +4296,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_1153264704",
     "flag_hash": "736764447",
-    "notes": "A-4, TBox_Field_Enemy",
+    "notes": "A-4, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 418
   },
   {
@@ -4626,7 +4626,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_432831078",
     "flag_hash": "1604665392",
-    "notes": "A-6, TBox_Field_Enemy",
+    "notes": "A-6, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 451
   },
   {
@@ -4666,7 +4666,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_1408506157",
     "flag_hash": "-215619312",
-    "notes": "A-6, TBox_Field_Enemy",
+    "notes": "A-6, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 455
   },
   {
@@ -4976,7 +4976,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_2358531767",
     "flag_hash": "-1052484442",
-    "notes": "A-8, TBox_Field_Enemy",
+    "notes": "A-8, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 486
   },
   {
@@ -5016,7 +5016,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_4220741153",
     "flag_hash": "892266927",
-    "notes": "A-8, TBox_Field_Enemy",
+    "notes": "A-8, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 490
   },
   {
@@ -5056,7 +5056,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_1166023328",
     "flag_hash": "-297028772",
-    "notes": "B-1, TBox_Field_Enemy",
+    "notes": "B-1, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 494
   },
   {
@@ -5246,7 +5246,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_1766782611",
     "flag_hash": "644000806",
-    "notes": "B-2, TBox_Field_Enemy",
+    "notes": "B-2, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 513
   },
   {
@@ -5496,7 +5496,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_418291669",
     "flag_hash": "944397985",
-    "notes": "B-4, TBox_Field_Enemy",
+    "notes": "B-4, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 538
   },
   {
@@ -5696,7 +5696,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_2800841551",
     "flag_hash": "-144019666",
-    "notes": "B-5, TBox_Field_Enemy",
+    "notes": "B-5, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 558
   },
   {
@@ -6396,7 +6396,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_NoReaction_1129053593",
     "flag_hash": "780970831",
-    "notes": "B-7, TBox_Field_Stone_NoReaction",
+    "notes": "B-7, TBox_Field_Stone_NoReaction, never drawn: appears once the game's flag TaiyoBox_Appear is set, by a side quest the logic does not follow",
     "id": 628
   },
   {
@@ -6416,7 +6416,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_1177129274",
     "flag_hash": "1433688558",
-    "notes": "B-7, TBox_Field_Enemy",
+    "notes": "B-7, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 630
   },
   {
@@ -6456,7 +6456,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_NoReaction_2304114477",
     "flag_hash": "-208105461",
-    "notes": "B-7, TBox_Field_Stone_NoReaction",
+    "notes": "B-7, TBox_Field_Stone_NoReaction, never drawn: appears once the game's flag TaiyoBox_Appear is set, by a side quest the logic does not follow",
     "id": 634
   },
   {
@@ -6536,7 +6536,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_3224206340",
     "flag_hash": "340128959",
-    "notes": "B-7, TBox_Field_Iron_NoReaction, buried",
+    "notes": "B-7, TBox_Field_Iron_NoReaction, buried, once its dog is fed",
     "id": 642
   },
   {
@@ -6776,7 +6776,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_1845994126",
     "flag_hash": "403814894",
-    "notes": "C-2, TBox_Field_Enemy",
+    "notes": "C-2, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 666
   },
   {
@@ -6926,7 +6926,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_3070830878",
     "flag_hash": "-535077615",
-    "notes": "C-3, TBox_Field_Enemy",
+    "notes": "C-3, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 681
   },
   {
@@ -6996,7 +6996,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_1610925690",
     "flag_hash": "180322224",
-    "notes": "C-4, TBox_Field_Enemy",
+    "notes": "C-4, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 688
   },
   {
@@ -7036,7 +7036,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_81579026",
     "flag_hash": "-1301080",
-    "notes": "C-5, TBox_Field_Iron_NoReaction_Aoc, buried",
+    "notes": "C-5, TBox_Field_Iron_NoReaction_Aoc, buried, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 692
   },
   {
@@ -7176,7 +7176,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_112042483",
     "flag_hash": "210935306",
-    "notes": "C-6, TBox_Field_Enemy",
+    "notes": "C-6, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 706
   },
   {
@@ -7246,7 +7246,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_1446344031",
     "flag_hash": "616312371",
-    "notes": "C-6, TBox_Field_Wood",
+    "notes": "C-6, TBox_Field_Wood, never drawn: appears once the game's flag OneHundred_Activated is set, by a side quest the logic does not follow",
     "id": 713
   },
   {
@@ -7266,7 +7266,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Wood_2516433116",
     "flag_hash": "259180048",
-    "notes": "C-6, TBox_Field_Wood",
+    "notes": "C-6, TBox_Field_Wood, never drawn: appears once the game's flag OneHundred_Activated is set, by a side quest the logic does not follow",
     "id": 715
   },
   {
@@ -7336,7 +7336,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_1081762818",
     "flag_hash": "1583138460",
-    "notes": "C-7, TBox_Field_Enemy",
+    "notes": "C-7, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 722
   },
   {
@@ -7396,7 +7396,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_3214244294",
     "flag_hash": "1984056692",
-    "notes": "C-7, TBox_Field_Iron_NoReaction, buried",
+    "notes": "C-7, TBox_Field_Iron_NoReaction, buried, once its dog is fed",
     "id": 728
   },
   {
@@ -7436,7 +7436,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_NoReaction_4283842150",
     "flag_hash": "-1616747110",
-    "notes": "C-7, TBox_Field_Stone_NoReaction",
+    "notes": "C-7, TBox_Field_Stone_NoReaction, never drawn: appears once the game's flag Gerudo_tsukamidake_Finish is set, by a side quest the logic does not follow",
     "id": 732
   },
   {
@@ -7576,7 +7576,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_2239849716",
     "flag_hash": "-912289149",
-    "notes": "D-2, TBox_Field_Iron_NoReaction, buried",
+    "notes": "D-2, TBox_Field_Iron_NoReaction, buried, once its dog is fed",
     "id": 746
   },
   {
@@ -7586,7 +7586,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_2625230511",
     "flag_hash": "1814714452",
-    "notes": "D-2, TBox_Field_Iron_NoReaction, buried",
+    "notes": "D-2, TBox_Field_Iron_NoReaction, buried, once its dog is fed",
     "id": 747
   },
   {
@@ -7656,7 +7656,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_1489808006",
     "flag_hash": "1571859005",
-    "notes": "D-3, TBox_Field_Iron_NoReaction, buried",
+    "notes": "D-3, TBox_Field_Iron_NoReaction, buried, once its dog is fed",
     "id": 754
   },
   {
@@ -7666,7 +7666,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_2690546993",
     "flag_hash": "1242518452",
-    "notes": "D-3, TBox_Field_Enemy",
+    "notes": "D-3, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 755
   },
   {
@@ -7696,7 +7696,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_1795066482",
     "flag_hash": "-1464696060",
-    "notes": "D-4, TBox_Field_Enemy",
+    "notes": "D-4, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 758
   },
   {
@@ -7806,7 +7806,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_408756811",
     "flag_hash": "-1305863218",
-    "notes": "D-5, TBox_Field_Iron_NoReaction_Aoc, buried",
+    "notes": "D-5, TBox_Field_Iron_NoReaction_Aoc, buried, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 769
   },
   {
@@ -7976,7 +7976,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_1140709720",
     "flag_hash": "1122024300",
-    "notes": "D-6, TBox_Field_Iron_NoReaction, buried",
+    "notes": "D-6, TBox_Field_Iron_NoReaction, buried, once its dog is fed",
     "id": 786
   },
   {
@@ -7986,7 +7986,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_1244520185",
     "flag_hash": "-1213122700",
-    "notes": "D-6, TBox_Field_Iron_NoReaction_Aoc, buried",
+    "notes": "D-6, TBox_Field_Iron_NoReaction_Aoc, buried, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 787
   },
   {
@@ -8126,7 +8126,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_3451085184",
     "flag_hash": "1946626289",
-    "notes": "D-6, TBox_Field_Enemy",
+    "notes": "D-6, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 801
   },
   {
@@ -8136,7 +8136,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_3587085179",
     "flag_hash": "1652587563",
-    "notes": "D-6, TBox_Field_Enemy",
+    "notes": "D-6, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 802
   },
   {
@@ -8276,7 +8276,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_759164510",
     "flag_hash": "555733080",
-    "notes": "D-7, TBox_Field_Iron_NoReaction_Aoc, the DLC's",
+    "notes": "D-7, TBox_Field_Iron_NoReaction_Aoc, the DLC's, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 816
   },
   {
@@ -8326,7 +8326,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_1449120336",
     "flag_hash": "939254154",
-    "notes": "D-7, TBox_Field_Enemy",
+    "notes": "D-7, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 821
   },
   {
@@ -8676,7 +8676,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_406427291",
     "flag_hash": "-1420581226",
-    "notes": "E-4, TBox_Field_Iron_NoReaction_Aoc, buried",
+    "notes": "E-4, TBox_Field_Iron_NoReaction_Aoc, buried, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 856
   },
   {
@@ -8746,7 +8746,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_628080506",
     "flag_hash": "-2119710735",
-    "notes": "E-4, TBox_Field_Iron",
+    "notes": "E-4, TBox_Field_Iron, once its guards are beaten",
     "id": 863
   },
   {
@@ -8956,7 +8956,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_1584160939",
     "flag_hash": "239038332",
-    "notes": "E-4, TBox_Field_Iron_NoReaction_Aoc",
+    "notes": "E-4, TBox_Field_Iron_NoReaction_Aoc, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 884
   },
   {
@@ -8966,7 +8966,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1594216329",
     "flag_hash": "285249168",
-    "notes": "E-4, TBox_Field_Iron",
+    "notes": "E-4, TBox_Field_Iron, once its guards are beaten",
     "id": 885
   },
   {
@@ -8996,7 +8996,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_1752241026",
     "flag_hash": "-867724702",
-    "notes": "E-4, TBox_Field_Iron",
+    "notes": "E-4, TBox_Field_Iron, once its guards are beaten",
     "id": 888
   },
   {
@@ -9126,7 +9126,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_2392017071",
     "flag_hash": "-1197090332",
-    "notes": "E-4, TBox_Field_Iron_NoReaction_Aoc",
+    "notes": "E-4, TBox_Field_Iron_NoReaction_Aoc, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 901
   },
   {
@@ -9256,7 +9256,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_3010491383",
     "flag_hash": "-808840910",
-    "notes": "E-4, TBox_Field_Iron_NoReaction_Aoc, buried",
+    "notes": "E-4, TBox_Field_Iron_NoReaction_Aoc, buried, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 914
   },
   {
@@ -9386,7 +9386,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_3754531071",
     "flag_hash": "831676076",
-    "notes": "E-4, TBox_Field_Iron_NoReaction_Aoc",
+    "notes": "E-4, TBox_Field_Iron_NoReaction_Aoc, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 927
   },
   {
@@ -9496,7 +9496,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_135294763",
     "flag_hash": "-2101199795",
-    "notes": "E-5, TBox_Field_Iron_NoReaction_Aoc, buried",
+    "notes": "E-5, TBox_Field_Iron_NoReaction_Aoc, buried, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 938
   },
   {
@@ -9546,7 +9546,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_1243080332",
     "flag_hash": "377428206",
-    "notes": "E-5, TBox_Field_Iron_NoReaction_Aoc, buried",
+    "notes": "E-5, TBox_Field_Iron_NoReaction_Aoc, buried, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 943
   },
   {
@@ -9626,7 +9626,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_2377598779",
     "flag_hash": "-866275102",
-    "notes": "E-5, TBox_Field_Iron_NoReaction_Aoc, buried",
+    "notes": "E-5, TBox_Field_Iron_NoReaction_Aoc, buried, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 951
   },
   {
@@ -9716,7 +9716,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_473644037",
     "flag_hash": "865854140",
-    "notes": "E-6, TBox_Field_Iron_NoReaction_Aoc, the DLC's",
+    "notes": "E-6, TBox_Field_Iron_NoReaction_Aoc, the DLC's, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 960
   },
   {
@@ -9756,7 +9756,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_1305595304",
     "flag_hash": "2124646826",
-    "notes": "E-6, TBox_Field_Iron_NoReaction_Aoc, buried",
+    "notes": "E-6, TBox_Field_Iron_NoReaction_Aoc, buried, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 964
   },
   {
@@ -9786,7 +9786,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_1649297148",
     "flag_hash": "-555491932",
-    "notes": "E-6, TBox_Field_Enemy",
+    "notes": "E-6, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 967
   },
   {
@@ -9856,7 +9856,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_2495402960",
     "flag_hash": "-1712391214",
-    "notes": "E-6, TBox_Field_Enemy",
+    "notes": "E-6, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 974
   },
   {
@@ -9876,7 +9876,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_2821016294",
     "flag_hash": "1942813509",
-    "notes": "E-6, TBox_Field_Enemy",
+    "notes": "E-6, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 976
   },
   {
@@ -9896,7 +9896,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_3467431944",
     "flag_hash": "1490936012",
-    "notes": "E-6, TBox_Field_Enemy",
+    "notes": "E-6, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 978
   },
   {
@@ -9976,7 +9976,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_4093217196",
     "flag_hash": "1722609091",
-    "notes": "E-6, TBox_Field_Iron_NoReaction_Aoc, the DLC's",
+    "notes": "E-6, TBox_Field_Iron_NoReaction_Aoc, the DLC's, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 986
   },
   {
@@ -10196,7 +10196,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_3101039837",
     "flag_hash": "1046109837",
-    "notes": "E-7, TBox_Field_Enemy",
+    "notes": "E-7, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1008
   },
   {
@@ -10336,7 +10336,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_4141537481",
     "flag_hash": "459770655",
-    "notes": "E-7, TBox_Field_Stone",
+    "notes": "E-7, TBox_Field_Stone, never drawn: appears under a condition the game's data does not name",
     "id": 1022
   },
   {
@@ -10456,7 +10456,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_2842888344",
     "flag_hash": "1104460727",
-    "notes": "E-8, TBox_Field_Iron_NoReaction_Aoc, under water",
+    "notes": "E-8, TBox_Field_Iron_NoReaction_Aoc, under water, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 1034
   },
   {
@@ -10626,7 +10626,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_GodTree_111780462",
     "flag_hash": "-381916693",
-    "notes": "F-3, TBox_Field_Iron_GodTree",
+    "notes": "F-3, TBox_Field_Iron_GodTree, never drawn: appears under a condition the game's data does not name",
     "id": 1051
   },
   {
@@ -10796,7 +10796,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_GodTree_2668399187",
     "flag_hash": "1145591361",
-    "notes": "F-3, TBox_Field_Iron_GodTree",
+    "notes": "F-3, TBox_Field_Iron_GodTree, never drawn: appears under a condition the game's data does not name",
     "id": 1068
   },
   {
@@ -10846,7 +10846,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_3509188362",
     "flag_hash": "1428237084",
-    "notes": "F-3, TBox_Field_Enemy",
+    "notes": "F-3, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1073
   },
   {
@@ -10886,7 +10886,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_4123439869",
     "flag_hash": "2014124105",
-    "notes": "F-3, TBox_Field_Iron_NoReaction_Aoc",
+    "notes": "F-3, TBox_Field_Iron_NoReaction_Aoc, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 1077
   },
   {
@@ -11106,7 +11106,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_2832405486",
     "flag_hash": "1168543988",
-    "notes": "F-5, TBox_Field_Iron_NoReaction, buried",
+    "notes": "F-5, TBox_Field_Iron_NoReaction, buried, once its dog is fed",
     "id": 1099
   },
   {
@@ -11176,7 +11176,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_290764376",
     "flag_hash": "-1049204078",
-    "notes": "F-6, TBox_Field_Enemy",
+    "notes": "F-6, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1106
   },
   {
@@ -11376,7 +11376,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_2287855586",
     "flag_hash": "-305228414",
-    "notes": "F-6, TBox_Field_Enemy",
+    "notes": "F-6, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1126
   },
   {
@@ -11466,7 +11466,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_3126264210",
     "flag_hash": "1868555055",
-    "notes": "F-6, TBox_Field_Enemy",
+    "notes": "F-6, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1135
   },
   {
@@ -11576,7 +11576,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_4284143476",
     "flag_hash": "1751559684",
-    "notes": "F-6, TBox_Field_Enemy",
+    "notes": "F-6, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1146
   },
   {
@@ -11756,7 +11756,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_1777801040",
     "flag_hash": "-507602646",
-    "notes": "F-7, TBox_Field_Iron_NoReaction_Aoc, buried",
+    "notes": "F-7, TBox_Field_Iron_NoReaction_Aoc, buried, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 1164
   },
   {
@@ -11916,7 +11916,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_849119559",
     "flag_hash": "1878419066",
-    "notes": "F-8, TBox_Field_Iron_NoReaction_Aoc, buried",
+    "notes": "F-8, TBox_Field_Iron_NoReaction_Aoc, buried, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 1180
   },
   {
@@ -12046,7 +12046,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_2463472452",
     "flag_hash": "-802080563",
-    "notes": "F-8, TBox_Field_Iron_NoReaction, buried",
+    "notes": "F-8, TBox_Field_Iron_NoReaction, buried, once its dog is fed",
     "id": 1193
   },
   {
@@ -12316,7 +12316,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_1101107709",
     "flag_hash": "498200618",
-    "notes": "G-3, TBox_Field_Iron_NoReaction, buried",
+    "notes": "G-3, TBox_Field_Iron_NoReaction, buried, once its dog is fed",
     "id": 1220
   },
   {
@@ -12556,7 +12556,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_3437107610",
     "flag_hash": "1400712566",
-    "notes": "G-5, TBox_Field_Enemy",
+    "notes": "G-5, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1244
   },
   {
@@ -12606,7 +12606,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_525020201",
     "flag_hash": "983599752",
-    "notes": "G-6, TBox_Field_Iron_NoReaction, buried",
+    "notes": "G-6, TBox_Field_Iron_NoReaction, buried, once its dog is fed",
     "id": 1249
   },
   {
@@ -12736,7 +12736,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_2746088988",
     "flag_hash": "1586136148",
-    "notes": "G-6, TBox_Field_Enemy",
+    "notes": "G-6, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1262
   },
   {
@@ -12746,7 +12746,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_3023897834",
     "flag_hash": "598663391",
-    "notes": "G-6, TBox_Field_Enemy",
+    "notes": "G-6, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1263
   },
   {
@@ -12816,7 +12816,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_449459230",
     "flag_hash": "105294778",
-    "notes": "G-7, TBox_Field_Iron_NoReaction_Aoc, buried",
+    "notes": "G-7, TBox_Field_Iron_NoReaction_Aoc, buried, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 1270
   },
   {
@@ -13116,7 +13116,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_142903821",
     "flag_hash": "916341444",
-    "notes": "G-8, TBox_Field_Iron_NoReaction_Aoc",
+    "notes": "G-8, TBox_Field_Iron_NoReaction_Aoc, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 1300
   },
   {
@@ -13326,7 +13326,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_1174572224",
     "flag_hash": "-302764564",
-    "notes": "G-8, TBox_Field_Iron_NoReaction_Aoc",
+    "notes": "G-8, TBox_Field_Iron_NoReaction_Aoc, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 1321
   },
   {
@@ -13606,7 +13606,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_2234779324",
     "flag_hash": "537913581",
-    "notes": "G-8, TBox_Field_Iron_NoReaction_Aoc, buried",
+    "notes": "G-8, TBox_Field_Iron_NoReaction_Aoc, buried, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 1349
   },
   {
@@ -13926,7 +13926,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_3669008966",
     "flag_hash": "-673095984",
-    "notes": "G-8, TBox_Field_Iron_NoReaction, buried",
+    "notes": "G-8, TBox_Field_Iron_NoReaction, buried, once its dog is fed",
     "id": 1381
   },
   {
@@ -14346,7 +14346,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_3122256932",
     "flag_hash": "-1496016600",
-    "notes": "H-4, TBox_Field_Enemy",
+    "notes": "H-4, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1423
   },
   {
@@ -14386,7 +14386,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_3606380063",
     "flag_hash": "1742299163",
-    "notes": "H-4, TBox_Field_Enemy",
+    "notes": "H-4, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1427
   },
   {
@@ -14426,7 +14426,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_3851766039",
     "flag_hash": "-1103874669",
-    "notes": "H-4, TBox_Field_Enemy",
+    "notes": "H-4, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1431
   },
   {
@@ -14546,7 +14546,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_999953490",
     "flag_hash": "1147735227",
-    "notes": "H-6, TBox_Field_Enemy",
+    "notes": "H-6, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1443
   },
   {
@@ -14566,7 +14566,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_1039277961",
     "flag_hash": "1576376520",
-    "notes": "H-6, TBox_Field_Enemy",
+    "notes": "H-6, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1445
   },
   {
@@ -14686,7 +14686,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_2747618053",
     "flag_hash": "236556998",
-    "notes": "H-6, TBox_Field_Enemy",
+    "notes": "H-6, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1457
   },
   {
@@ -14786,7 +14786,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_2142154964",
     "flag_hash": "938479812",
-    "notes": "H-7, TBox_Field_Enemy",
+    "notes": "H-7, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1467
   },
   {
@@ -15036,7 +15036,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_2585267194",
     "flag_hash": "787093963",
-    "notes": "H-8, TBox_Field_Iron_NoReaction, buried",
+    "notes": "H-8, TBox_Field_Iron_NoReaction, buried, once its dog is fed",
     "id": 1492
   },
   {
@@ -15096,7 +15096,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_3746623201",
     "flag_hash": "1206931098",
-    "notes": "H-8, TBox_Field_Enemy",
+    "notes": "H-8, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1498
   },
   {
@@ -15206,7 +15206,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_455907821",
     "flag_hash": "-660125033",
-    "notes": "I-3, TBox_Field_Iron_NoReaction, buried",
+    "notes": "I-3, TBox_Field_Iron_NoReaction, buried, once its dog is fed",
     "id": 1509
   },
   {
@@ -15326,7 +15326,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_2586310741",
     "flag_hash": "-1240179953",
-    "notes": "I-3, TBox_Field_Enemy",
+    "notes": "I-3, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1521
   },
   {
@@ -15366,7 +15366,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_3014554655",
     "flag_hash": "-1536513092",
-    "notes": "I-3, TBox_Field_Iron_NoReaction, buried",
+    "notes": "I-3, TBox_Field_Iron_NoReaction, buried, once its dog is fed",
     "id": 1525
   },
   {
@@ -15706,7 +15706,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Stone_NoReaction_3105094027",
     "flag_hash": "361307386",
-    "notes": "I-4, TBox_Field_Stone_NoReaction",
+    "notes": "I-4, TBox_Field_Stone_NoReaction, never drawn: appears once the game's flag KorinBox_Appear is set, by a side quest the logic does not follow",
     "id": 1559
   },
   {
@@ -15866,7 +15866,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_2786225120",
     "flag_hash": "101761388",
-    "notes": "I-5, TBox_Field_Enemy",
+    "notes": "I-5, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1575
   },
   {
@@ -15906,7 +15906,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_3605229816",
     "flag_hash": "-1678914056",
-    "notes": "I-5, TBox_Field_Enemy",
+    "notes": "I-5, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1579
   },
   {
@@ -16106,7 +16106,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_3910200627",
     "flag_hash": "122611328",
-    "notes": "I-7, TBox_Field_Iron_NoReaction, buried",
+    "notes": "I-7, TBox_Field_Iron_NoReaction, buried, once its dog is fed",
     "id": 1599
   },
   {
@@ -16286,7 +16286,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_2335430415",
     "flag_hash": "-1240086125",
-    "notes": "I-8, TBox_Field_Enemy",
+    "notes": "I-8, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1617
   },
   {
@@ -16516,7 +16516,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_Aoc_long_3048637654",
     "flag_hash": "-384738010",
-    "notes": "J-1, TBox_Field_Iron_NoReaction_Aoc_long",
+    "notes": "J-1, TBox_Field_Iron_NoReaction_Aoc_long, never drawn: a DLC EX Treasure chest, shown only once its EX quest is started",
     "id": 1640
   },
   {
@@ -16546,7 +16546,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Iron_NoReaction_2782068585",
     "flag_hash": "-1190848619",
-    "notes": "J-2, TBox_Field_Iron_NoReaction, buried",
+    "notes": "J-2, TBox_Field_Iron_NoReaction, buried, once its dog is fed",
     "id": 1643
   },
   {
@@ -16576,7 +16576,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_184482119",
     "flag_hash": "431001520",
-    "notes": "J-4, TBox_Field_Enemy",
+    "notes": "J-4, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1646
   },
   {
@@ -16606,7 +16606,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_464533090",
     "flag_hash": "-228981369",
-    "notes": "J-4, TBox_Field_Enemy",
+    "notes": "J-4, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1649
   },
   {
@@ -16796,7 +16796,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_2563698991",
     "flag_hash": "-341850304",
-    "notes": "J-5, TBox_Field_Enemy",
+    "notes": "J-5, TBox_Field_Enemy, shut until its camp is cleared",
     "id": 1668
   },
   {
@@ -16916,7 +16916,7 @@
     "requires": "",
     "gamedata_flag": "MainField_TBox_Field_Enemy_3246083737",
     "flag_hash": "1426834548",
-    "notes": "J-7, TBox_Field_Enemy, a side quest's reward",
+    "notes": "J-7, TBox_Field_Enemy, shut until its camp is cleared, a side quest's reward",
     "id": 1680
   },
   {

@@ -326,7 +326,11 @@ class MasterModeTests(unittest.TestCase):
             marked = [row for row in chests if note in row["notes"]]
             self.assertTrue(marked, note)
             self.assertTrue(all(rune in logic[row["name"]]["runes"].split("|") for row in marked), note)
-        self.assertEqual(len([row for row in chests if "never drawn" in row["notes"]]), 3)
+        never = [row for row in chests if "never drawn" in row["notes"]]
+        self.assertEqual(len(never), 36)
+        # The DLC's EX Treasure chests among them, e.g. the Phantom Armor's.
+        self.assertEqual(len([row for row in never if "EX Treasure" in row["notes"]]), 24)
+        self.assertIn("TBox_Field_Iron_NoReaction_Aoc", {row["notes"].split(", ")[1] for row in never})
         self.assertEqual(len([row for row in chests if logic[row["name"]]["extra"] == "All Shrines"]), 3)
 
     def test_the_new_locations_are_named_after_places(self):
