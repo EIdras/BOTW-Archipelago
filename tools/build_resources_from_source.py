@@ -293,7 +293,8 @@ def _generate(game: GameFiles, binding_token: int, shops: list | None, status: d
     # The killers' names go into English sentences (botw_client/death_cause.py):
     # a version without English texts (the Japanese one) names none.
     catalog["death_link"] = {"entry": death_link.ENTRY, "flow": death_link.FLOW_NAME,
-                             "flag": death_link.FLAG,
+                             "flag": death_link.FLAG, "armed": death_link.ARMED,
+                             "skipped": death_link.SKIPPED,
                              "attackers": death_link.attacker_names(
                                  inputs[f"Pack/Bootup_{region.main}.pack"], region.main)
                              if region.main.endswith("en") else {}}
