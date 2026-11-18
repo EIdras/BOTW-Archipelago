@@ -1,6 +1,7 @@
 """The tower maps: items of the pool (tower_maps), region keys of the logic, the
 map placed early (early_map), and Universal Tracker's out-of-logic view."""
 from BaseClasses import CollectionState, ItemClassification
+from Options import OptionError
 
 from . import BotwTestBase
 from .test_tracker import generate
@@ -178,6 +179,42 @@ class TestVanillaMaps(BotwTestBase):
         self.collect_by_name(["Paraglider", *RUNES])
         self.assertTrue(self.can_reach_location("Rin Oyaa Shrine"))
         self.assertEqual(self.world.fill_slot_data()["tower_maps"], 0)
+
+
+class TestTowersNeedMaps(BotwTestBase):
+    options = {"towers_need_maps": True}
+
+    def test_a_tower_needs_its_map(self) -> None:
+        self.collect_by_name(["Paraglider", *RUNES])
+        self.assertFalse(self.can_reach_location("Hebra Tower"))
+        self.collect_by_name("Hebra Map")
+        self.assertTrue(self.can_reach_location("Hebra Tower"))
+
+    def test_the_plateaus_tower_needs_none(self) -> None:
+        self.assertTrue(self.can_reach_location("Great Plateau Tower"))
+
+    def test_regions_open_in_any_order(self) -> None:
+        # No border to cross, unlike region_lock: Hebra borders no region yet in the logic.
+        self.collect_by_name(["Paraglider", *RUNES, "Hebra Map"])
+        self.assertTrue(self.can_reach_location("Rin Oyaa Shrine"))
+
+    def test_the_option_needs_the_maps_as_region_keys(self) -> None:
+        for maps in ("vanilla", "items"):
+            with self.subTest(tower_maps=maps), self.assertRaises(OptionError):
+                generate({"towers_need_maps": True, "tower_maps": maps})
+
+    def test_the_slot_data_carries_it_to_universal_tracker(self) -> None:
+        slot_data = self.world.fill_slot_data()
+        self.assertEqual(slot_data["towers_need_maps"], 1)
+        again = generate(passthrough=slot_data, seed=5)
+        self.assertEqual(again.worlds[1].options.towers_need_maps.value, 1)
+
+    def test_the_fill_completes_the_game_with_each_early_map(self) -> None:
+        for seed in range(5):
+            for choice in ("none", "gentle", "any"):
+                with self.subTest(early_map=choice, seed=seed):
+                    multiworld = filled({"towers_need_maps": True, "early_map": choice}, seed)
+                    self.assertTrue(multiworld.can_beat_game(CollectionState(multiworld)))
 
 
 class TestManySeeds(BotwTestBase):

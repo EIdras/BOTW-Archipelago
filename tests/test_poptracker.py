@@ -107,6 +107,11 @@ class PackTests(unittest.TestCase):
         logic = self.pack.read("scripts/logic.lua").decode()
         self.assertIn("function botw_maps(id)", logic)
         self.assertIn("SLOT_DATA.tower_maps", logic)
+        # With towers_need_maps, its region's map.
+        towers = data.split("TOWER_MAPS = ")[1].split("\n")[0]
+        self.assertIn(f'[{rows["Hebra Tower"]["id"]}] = "hebra_map"', towers)
+        self.assertNotIn(f'[{rows["Great Plateau Tower"]["id"]}]', towers)
+        self.assertIn("SLOT_DATA.towers_need_maps", logic)
 
     def test_with_region_lock_a_region_out_of_reach_is_out_of_reach(self):
         sections = {section["name"]: section for place in self.json("locations/locations.json")

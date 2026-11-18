@@ -153,11 +153,12 @@ def requirements(row: dict) -> tuple[tuple[tuple[str, ...], int], ...]:
     return tuple(groups)
 
 
-def map_keys(row: dict) -> tuple[str, ...]:
+def map_keys(row: dict, towers: bool = False) -> tuple[str, ...]:
     """The maps a location asks for when the maps are region keys: its region's,
-    but for a tower and the mapless regions, then any its logic.csv extra names
-    (a quest that goes through another region)."""
-    own = () if row["region"] in MAPLESS_REGIONS or "Tower" in categories(row) else (MAPS[row["region"]],)
+    but for the mapless regions and, unless `towers` (towers_need_maps), a tower,
+    then any its logic.csv extra names (a quest that goes through another region)."""
+    own = () if row["region"] in MAPLESS_REGIONS or "Tower" in categories(row) and not towers \
+        else (MAPS[row["region"]],)
     extra = tuple(name for name in LOGIC[row["name"]]["extra"].split("|") if name in MAPS.values())
     return own + tuple(name for name in extra if name not in own)
 

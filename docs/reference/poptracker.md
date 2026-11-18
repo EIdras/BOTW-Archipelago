@@ -59,7 +59,8 @@ game, so that no file of the game is in the repository.
   counts it, the beast reachable (its own groups), not checked: a heart container is picked up before the beast's
   control unit. The region maps (`catalog.map_keys`, `MAP_KEYS` in `data.lua`) are an optional rule in brackets,
   `[$botw_maps|<id>]`: when the slot data's `tower_maps` is `region_keys` (2) and a map is missing, the location is a
-  sequence break (yellow), possible but out of logic. With the slot data's `region_lock`, a rule out of brackets,
+  sequence break (yellow), possible but out of logic; a tower asks for its region's map (`TOWER_MAPS`) only with the
+  slot data's `towers_need_maps`. With the slot data's `region_lock`, a rule out of brackets,
   `$botw_regions|<id>`, asks too for the regions a location needs to reach: out of them, it is out of reach (red),
   since the client sends Link back from a closed region. The regions (`REGION_KEYS`: its own, a tower's and Ganon's
   too, and those of its maps) are reached as the world's region graph does: from the Great Plateau with the Paraglider, a region is reached once its

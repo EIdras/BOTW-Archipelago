@@ -81,7 +81,7 @@ class BotwWorld(World):
     # The options that shape the world, given back by the slot data.
     SLOT_OPTIONS = ("goal", "goal_shrines", "sanctum_divine_beasts", "sanctum_shrines",
                     "sanctum_master_sword", "sanctum_runes", "beedle_shop_items", "stall_items", "tower_maps",
-                    "region_lock", "map_travel_points", "bike_anywhere",
+                    "towers_need_maps", "region_lock", "map_travel_points", "bike_anywhere",
                     "cutscene_skip")
     # The region each map opens: {item: region}.
     MAP_REGIONS = {item: region for region, item in MAPS.items()}
@@ -96,6 +96,8 @@ class BotwWorld(World):
     def generate_early(self) -> None:
         if self.options.region_lock and self.options.tower_maps != TowerMaps.option_region_keys:
             raise OptionError(f"{self.player_name}: region_lock needs tower_maps on region_keys")
+        if self.options.towers_need_maps and self.options.tower_maps != TowerMaps.option_region_keys:
+            raise OptionError(f"{self.player_name}: towers_need_maps needs tower_maps on region_keys")
         if self.options.map_travel_points and self.options.tower_maps == TowerMaps.option_vanilla:
             raise OptionError(f"{self.player_name}: map_travel_points needs the maps as items (tower_maps)")
         passed = getattr(self.multiworld, "re_gen_passthrough", {}).get(self.game)
@@ -170,11 +172,12 @@ class BotwWorld(World):
 
     def location_rule(self, row) -> Rule:
         """A location's rule: its requirements, and with tower_maps on region_keys,
-        its maps (map_keys), or Universal Tracker's stand-in for a missing map. With
-        region_lock, its region's entrances hold its map, and a quest through another
-        region needs to reach that region."""
+        its maps (map_keys; a tower's with towers_need_maps), or Universal Tracker's
+        stand-in for a missing map. With region_lock, its region's entrances hold its
+        map, and a quest through another region needs to reach that region."""
         rule = self.rule(requirements(row))
-        maps = map_keys(row) if self.options.tower_maps == TowerMaps.option_region_keys else ()
+        maps = map_keys(row, bool(self.options.towers_need_maps)) \
+            if self.options.tower_maps == TowerMaps.option_region_keys else ()
         parts = [] if isinstance(rule, True_) else [rule]
         if self.options.region_lock:
             parts += [CanReachRegion(self.MAP_REGIONS[name]) for name in maps if name != MAPS.get(row["region"])]

@@ -97,16 +97,18 @@ end
 
 -- The maps as region keys (slot data tower_maps 2, region_keys): a location
 -- is in logic once its maps are received; without them, its rule's bracket
--- makes it a sequence break, possible but out of logic.
+-- makes it a sequence break, possible but out of logic. A tower asks for its
+-- region's map with towers_need_maps (slot data).
 function botw_maps(id)
     if tonumber(SLOT_DATA.tower_maps) ~= 2 then
         return true
     end
-    local maps = MAP_KEYS[tonumber(id)]
-    if maps == nil then
-        return true
+    local tower = TOWER_MAPS[tonumber(id)]
+    if tower ~= nil and enabled(SLOT_DATA.towers_need_maps)
+            and Tracker:ProviderCountForCode(tower) < 1 then
+        return false
     end
-    for _, code in ipairs(maps) do
+    for _, code in ipairs(MAP_KEYS[tonumber(id)] or {}) do
         if Tracker:ProviderCountForCode(code) < 1 then
             return false
         end

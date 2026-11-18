@@ -116,6 +116,7 @@ stamina vessels help without being required.
 | Weapons | [`weapon_order`](#weapon-order) | `smoothed` | Weaker weapons first, stronger later |
 | Maps | [`tower_maps`](#region-maps) | `region_keys` | Region maps are items, and keys of the logic |
 | | [`early_map`](#region-maps) | `gentle` | One map among the Great Plateau's first checks |
+| | [`towers_need_maps`](#towers-need-maps) | false | A tower needs its region's map too |
 | | [`region_lock`](#region-lock) | false | Regions open from the Great Plateau outward |
 | | [`map_travel_points`](#map-travel-points) | false | A map received opens a travel point |
 | Master Cycle Zero | [`bike_anywhere`](#master-cycle-zero-anywhere) | false | The bike in the desert and on Death Mountain |
@@ -174,7 +175,8 @@ reveals the map: a map received does, with the game's own animation.
 > Nothing is locked in the game: a location done without its map counts all the same, it was just out of logic.
 > The trackers show it as possible but out of logic.
 
-With `region_keys`, the towers, the Great Plateau and Calamity Ganon need no map. A location whose quest goes through
+With `region_keys`, the Great Plateau and Calamity Ganon need no map, nor do the towers unless `towers_need_maps` or
+`region_lock` is on. A location whose quest goes through
 another region needs that region's map too: Tarrey Town's arrow stall (its quest starts in Hateno once Link owns the
 house there, then recruits in Eldin, the Wasteland and Tabantha), Purah's upgrades (Impa, in Kakariko, sends Link to
 her), Shoqa Tatone (its quest wants pictures of Central Hyrule's Guardians, taken with Purah's camera), Kah Yah (its
@@ -183,11 +185,27 @@ once Link has met Impa), Kah Mael (reached from Akkala's cliffs) and Revali's So
 Ridgeland).
 
 `early_map` places one map among the Great Plateau's first checks (its rune terminals and its tower), so that a region
-opens besides the towers once Link leaves the Plateau:
+opens besides the towers (or at all, with `towers_need_maps`) once Link leaves the Plateau:
 
 - `gentle` (default): one of the regions the game leads to first (Dueling Peaks, Hateno, Lake or Faron);
 - `any`: one of the 14;
 - `none`: none early.
+
+What each combination asks for, with `tower_maps: region_keys`:
+
+| Options | A region's locations need its map | A tower needs its map | A region must border one in the logic | The game keeps Link out |
+|---|---|---|---|---|
+| none of these | yes | no | no | no |
+| `towers_need_maps` | yes | yes | no | no |
+| `region_lock` | yes | yes | yes | yes |
+| `region_lock` and `map_travel_points` | yes | yes | no: its travel point is warped to | yes |
+
+### Towers need maps
+
+`towers_need_maps` (with `tower_maps: region_keys` only) puts each tower behind its region's map, like the rest of its
+region, in any order. Off, the towers need no map, so that the early game has room before the maps come in: with
+`early_map: none`, only the Great Plateau is in the logic until a map comes. `region_lock` always has the towers need
+their map.
 
 ### Region lock
 

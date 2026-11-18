@@ -106,8 +106,8 @@ class TowerMaps(Choice):
     region_keys: the maps are items, and a region's locations are in the logic once
     its map is received, as are the locations whose quest goes through another
     region with that region's map too. Nothing is locked in the game: a location
-    done without its map counts all the same. The towers, the Great Plateau and
-    Calamity Ganon need no map."""
+    done without its map counts all the same. The Great Plateau and Calamity Ganon
+    need no map, nor do the towers unless Towers Need Maps or Region Lock is on."""
     display_name = "Tower Maps"
     option_vanilla = 0
     option_items = 1
@@ -121,7 +121,7 @@ class EarlyMap(Choice):
     terminals and its tower), so that a region opens besides the towers once Link
     leaves the Plateau.
     none: no map placed early; until one comes, the towers are all the logic
-    outside the Great Plateau.
+    outside the Great Plateau (none of it with Towers Need Maps).
     gentle: one of the regions the game leads to first: Dueling Peaks, Hateno,
     Lake or Faron.
     any: any of the 14 maps.
@@ -134,13 +134,23 @@ class EarlyMap(Choice):
     default = 1
 
 
+class TowersNeedMaps(Toggle):
+    """With Tower Maps on region_keys, a tower is in the logic once its region's map
+    is received, like the rest of its region. Off, the towers need no map, so that
+    the early game has room before the maps come in; with Early Map on none, only
+    the Great Plateau is then in the logic until a map comes. Region Lock always
+    has the towers need their map."""
+    display_name = "Towers Need Maps"
+
+
 class RegionLock(Toggle):
-    """With Tower Maps on region_keys, the regions open in the logic from the Great
-    Plateau outward, as the game's map cuts them: a region is in the logic once its
-    map is received and it borders a region already in the logic. Its tower then
-    needs its map too, Hyrule Castle needs Central, and a quest that goes through
-    another region needs that region in the logic. Nothing is locked in the game: a
-    location done out of logic counts all the same."""
+    """With Tower Maps on region_keys, the regions open from the Great Plateau
+    outward, as the game's map cuts them: a region is in the logic once its map is
+    received and it borders a region already in the logic (with Map Travel Points,
+    bordering one or not). Its tower then needs its map too, Hyrule Castle needs
+    Central, and a quest that goes through another region needs that region in the
+    logic. The game holds Link to it: he cannot enter a region not yet in the logic,
+    and is sent back out of it."""
     display_name = "Region Lock"
 
 
@@ -148,9 +158,9 @@ class MapTravelPoints(Toggle):
     """With Tower Maps on items or region_keys, a map received also opens the travel
     point of a shrine near where its region begins, once Link has the Paraglider:
     he can warp there at once, and the game shows the shrine's name as it opens.
-    The shrine stays a location, cleared as ever. With Region Lock, a region is then
-    in the logic once its map and the Paraglider are received, bordering a region in
-    the logic or not, and the Early Map is drawn as without Region Lock."""
+    The shrine stays a location, cleared as ever. With Region Lock, a region no
+    longer needs to border one in the logic: its map and the Paraglider are enough,
+    and the Early Map is drawn as without Region Lock."""
     display_name = "Map Travel Points"
 
 
@@ -230,6 +240,7 @@ class BotwOptions(PerGameCommonOptions):
     weapon_order: WeaponOrder
     tower_maps: TowerMaps
     early_map: EarlyMap
+    towers_need_maps: TowersNeedMaps
     region_lock: RegionLock
     map_travel_points: MapTravelPoints
     bike_anywhere: BikeAnywhere
@@ -244,7 +255,7 @@ OPTION_GROUPS = [
                 [SanctumDivineBeasts, SanctumShrines, SanctumMasterSword, SanctumRunes]),
     OptionGroup("Shops", [BeedleShopItems, StallItems]),
     OptionGroup("Weapons", [WeaponOrder]),
-    OptionGroup("Maps", [TowerMaps, EarlyMap, RegionLock, MapTravelPoints]),
+    OptionGroup("Maps", [TowerMaps, EarlyMap, TowersNeedMaps, RegionLock, MapTravelPoints]),
     OptionGroup("Master Cycle Zero", [BikeAnywhere]),
     OptionGroup("Cutscenes", [CutsceneSkip]),
     OptionGroup("Traps", [TrapPercentage, TrapWeights]),

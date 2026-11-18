@@ -34,8 +34,11 @@ Breath of the Wild:
   # A map placed at one of the Great Plateau's first locations (its terminals or its tower):
   # gentle (Dueling Peaks, Hateno, Lake or Faron), any, or none
   early_map: gentle
+  # With tower_maps on region_keys: a tower is in the logic once its region's map is received, like the rest of
+  # its region (region_lock always asks for it)
+  towers_need_maps: false
   # With tower_maps on region_keys: a region enters the logic once its map is received and it borders a region
-  # already in the logic, as the game's map cuts them
+  # already in the logic (with map_travel_points, bordering one or not); the game keeps Link out of the others
   region_lock: false
   # With the maps as items: a map received also opens the travel point of a shrine near where its region begins,
   # once Link has the Paraglider

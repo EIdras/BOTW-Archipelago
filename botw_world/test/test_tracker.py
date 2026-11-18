@@ -45,20 +45,21 @@ def states(multiworld, count, seed=0):
         yield state
 
 
-def plain(row, state, player, keys=True):
+def plain(row, state, player, keys=True, towers=False):
     """The rule as requirements() says it: every group met by one of its names;
-    with the maps as region keys (keys), every map of map_keys(), or the stand-in
-    Universal Tracker gives itself."""
-    maps = map_keys(row) if keys else ()
+    with the maps as region keys (keys), every map of map_keys() (a tower's with
+    towers), or the stand-in Universal Tracker gives itself."""
+    maps = map_keys(row, towers) if keys else ()
     return (all(any(state.has(name, player, count) for name in names) for names, count in requirements(row))
             and (all(state.has(name, player) for name in maps) or state.has("Region Without Its Map", player)))
 
 
 class TestRulesAreTheLogic(unittest.TestCase):
     def test_every_location_and_event_asks_what_its_requirements_say(self):
-        for options in ({}, OPTIONS, {**OPTIONS, "tower_maps": "items"}):
+        for options in ({}, OPTIONS, {**OPTIONS, "tower_maps": "items"}, {"towers_need_maps": True}):
             multiworld = generate(options)
             keys = options.get("tower_maps", "region_keys") == "region_keys"
+            towers = options.get("towers_need_maps", False)
             rows = {row["name"]: row for row in LOCATIONS}
             spots = []
             for loc in multiworld.get_locations():
@@ -67,7 +68,7 @@ class TestRulesAreTheLogic(unittest.TestCase):
                     spots.append((loc, rows[name]))
             for state in states(multiworld, 150):
                 for loc, row in spots:
-                    self.assertEqual(loc.access_rule(state), plain(row, state, 1, keys), loc.name)
+                    self.assertEqual(loc.access_rule(state), plain(row, state, 1, keys, towers), loc.name)
 
     def test_the_sanctum_and_the_goal_ask_what_the_options_say(self):
         multiworld = generate(OPTIONS)
