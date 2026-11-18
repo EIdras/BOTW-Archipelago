@@ -84,8 +84,8 @@ The Great Plateau is the only region reachable at first: its terminals need noth
 its rune, and leaving it needs the Paraglider. Beyond, the logic asks only for what the game itself blocks:
 
 - **Runes on the way to a shrine's monk** (its chests left out). Where the game offers two ways, either rune is
-  enough (Maka Rah: Magnesis or Stasis), unless one way is clearly the game's own. An entrance blocked by cracked rocks
-  asks for Remote Bomb. The Divine Beasts ask for all four runes.
+  enough (Maka Rah's spiked balls: Magnesis or Stasis), unless one way is clearly the game's own. An entrance
+  blocked by cracked rocks asks for Remote Bomb. The Divine Beasts ask for all four runes.
 - **The Flamebreaker Set** where Link catches fire: Death Mountain, Goron City and the canyon around it, and Tarrey
   Town's arrow stall, whose merchant comes through the Southern Mine. Cold and desert heat are crossed with food and
   elixirs, as in the game: no armor is required for them.
