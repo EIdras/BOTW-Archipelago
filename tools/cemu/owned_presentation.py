@@ -1,8 +1,10 @@
 """Experimental owner protocol; no grant, ledger, queue replay or forced UI close."""
 import struct
 import time
+import os
 import ctypes
 from ctypes import wintypes
+from pathlib import Path
 from contextlib import contextmanager
 from tools.build_owned_presentation import SITES, owner_source
 
@@ -19,27 +21,47 @@ def publisher_lock(pid):
     """
     if type(pid) is not int or pid <= 0:
         raise ValueError("publisher requires an explicit emulator PID")
-    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
-    kernel.CreateMutexW.argtypes = (ctypes.c_void_p, wintypes.BOOL, wintypes.LPCWSTR)
-    kernel.CreateMutexW.restype = wintypes.HANDLE
-    kernel.WaitForSingleObject.argtypes = (wintypes.HANDLE, wintypes.DWORD)
-    kernel.WaitForSingleObject.restype = wintypes.DWORD
-    kernel.ReleaseMutex.argtypes = (wintypes.HANDLE,)
-    kernel.CloseHandle.argtypes = (wintypes.HANDLE,)
-    handle = kernel.CreateMutexW(None, False, f"Local\\BOTW_AP_Owner_{pid}")
-    if not handle:
-        raise ctypes.WinError(ctypes.get_last_error())
-    acquired = False
-    try:
-        status = kernel.WaitForSingleObject(handle, 0)
-        if status not in (0, 0x80):
-            raise RuntimeError("Another presentation publisher is active or the mutex is unavailable")
-        acquired = True
-        yield
-    finally:
-        if acquired:
-            kernel.ReleaseMutex(handle)
-        kernel.CloseHandle(handle)
+    if os.name == "nt":
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.CreateMutexW.argtypes = (ctypes.c_void_p, wintypes.BOOL, wintypes.LPCWSTR)
+        kernel.CreateMutexW.restype = wintypes.HANDLE
+        kernel.WaitForSingleObject.argtypes = (wintypes.HANDLE, wintypes.DWORD)
+        kernel.WaitForSingleObject.restype = wintypes.DWORD
+        kernel.ReleaseMutex.argtypes = (wintypes.HANDLE,)
+        kernel.CloseHandle.argtypes = (wintypes.HANDLE,)
+        handle = kernel.CreateMutexW(None, False, f"Local\\BOTW_AP_Owner_{pid}")
+        if not handle:
+            raise ctypes.WinError(ctypes.get_last_error())
+        acquired = False
+        try:
+            status = kernel.WaitForSingleObject(handle, 0)
+            if status not in (0, 0x80):
+                raise RuntimeError("Another presentation publisher is active or the mutex is unavailable")
+            acquired = True
+            yield
+        finally:
+            if acquired:
+                kernel.ReleaseMutex(handle)
+            kernel.CloseHandle(handle)
+    else:
+        # One publisher per emulator across Python processes: a file lock in the
+        # client's data folder. An abandoned lock grants no permission to replay,
+        # exactly like the abandoned OS mutex above. The sidecar file is kept,
+        # never unlinked, so two locks cannot race in between.
+        import fcntl
+        from botw_client.paths import DATA
+        lock_path = Path(DATA) / f"owner_{pid}.lock"
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        handle = open(str(lock_path), "a+b")
+        try:
+            try:
+                fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError:
+                handle.close()
+                raise RuntimeError("Another presentation publisher is active")
+            yield
+        finally:
+            handle.close()
 
 
 def layout(version=1, *, retired_guard=False, resource_gate=True, event_gate=False, messages=False):

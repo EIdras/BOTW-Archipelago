@@ -61,17 +61,24 @@ class ContentTests(unittest.TestCase):
 
 
 class VersionTests(unittest.TestCase):
-    def test_this_environment_ships_exactly_the_pinned_versions(self):
+    def test_this_environment_satisfies_the_pinned_lower_bounds(self):
         build_release.check_pins(build_release.distributions(), build_release.pins())
         self.assertIn("-r requirements-player.txt",
                       (ROOT / "requirements.txt").read_text(encoding="utf-8").splitlines())
 
-    def test_another_version_or_an_unpinned_package_is_refused(self):
+    def test_a_post_release_ranks_above_its_base(self):
+        # A >= check must treat 1.2.9.post4 as newer than 1.2.9, and order posts.
+        key = build_release._version_key
+        self.assertGreater(key("1.2.9.post4"), key("1.2.9"))
+        self.assertLess(key("1.2.9.post3"), key("1.2.9.post4"))
+        self.assertGreater(key("2.5.2"), key("2.5.1"))
+
+    def test_an_older_version_or_an_unpinned_package_is_refused(self):
         found = build_release.distributions()
         pinned = build_release.pins()
-        for altered, message in (({**pinned, "numpy": "0.0.1"}, "numpy .* installed, 0.0.1 pinned"),
+        for altered, message in (({**pinned, "numpy": "99.0"}, "numpy .* installed, >= 99.0 pinned"),
                                  ({k: v for k, v in pinned.items() if k != "yarl"}, "yarl .* not pinned"),
-                                 ({**pinned, "left-pad": "1.0"}, "left-pad==1.0 is pinned but not needed")):
+                                 ({**pinned, "left-pad": "1.0"}, "left-pad>=1.0 is pinned but not needed")):
             with self.subTest(message), self.assertRaisesRegex(RuntimeError, message):
                 build_release.check_pins(found, altered)
 

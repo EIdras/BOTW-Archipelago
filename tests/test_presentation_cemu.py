@@ -254,10 +254,21 @@ class AdapterTests(unittest.TestCase):
         self.assertTrue(self.backend.stopped)
 
     def test_windows_creation_time_and_closed_handle(self):
-        from tools.cemu.winmem import Process
-        process = Process(os.getpid())
-        with process:
-            first = process_incarnation(process)
-            self.assertEqual(first, process_incarnation(process))
-            self.assertTrue(first.startswith(str(os.getpid()) + ':'))
-        with self.assertRaises(RuntimeError): process_incarnation(process)
+        if os.name == 'nt':
+            from tools.cemu.winmem import Process
+            process = Process(os.getpid())
+            with process:
+                first = process_incarnation(process)
+                self.assertEqual(first, process_incarnation(process))
+                self.assertTrue(first.startswith(str(os.getpid()) + ':'))
+            with self.assertRaises(RuntimeError): process_incarnation(process)
+        else:
+            from types import SimpleNamespace
+            from tools.cemu.linuxmem import Process
+            process = Process(os.getpid())
+            with process:
+                first = process_incarnation(process)
+                self.assertEqual(first, process_incarnation(process))
+                self.assertTrue(first.startswith(str(os.getpid()) + ':'))
+            # A pid with no /proc entry means Cemu exited.
+            self.assertRaises(RuntimeError, process_incarnation, SimpleNamespace(pid=2 ** 22))

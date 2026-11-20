@@ -179,6 +179,15 @@ class MapUnitTests(unittest.TestCase):
         for number, (_region, cell, tags) in tower_maps.TOWERS.items():
             flags = save_flags(files["aoc/0010/" + tower_maps.unit(cell)])
             self.assertEqual({flags[h] for h in tags}, {f"APTower_{number}"})
+        # The towers' flags are one-trigger, as MapTower_NN: set, the game keeps them.
+        bootup = oead.Sarc(files["Pack/Bootup.pack"])
+        gamedata = oead.Sarc(oead.yaz0.decompress(bytes(bootup.get_file("GameData/gamedata.ssarc").data)))
+        declared = {str(e["DataName"]): e for f in gamedata.get_files() if f.name.startswith("/bool_data_")
+                    for e in oead.byml.from_binary(bytes(f.data))["bool_data"]}
+        for flag in tower_maps.FLAGS:
+            self.assertTrue(declared[flag]["IsOneTrigger"], flag)
+            self.assertTrue(declared[flag]["IsSave"], flag)
+        self.assertTrue(declared["MapTower_01"]["IsOneTrigger"])
         kakariko = save_flags(files["aoc/0010/" + tower_maps.unit("G-6")])
         self.assertIn("IsGet_AP_Shop_202", kakariko.values())
         self.assertEqual(files["aoc/0010/Pack/AocMainField.pack"], b"")

@@ -5,7 +5,7 @@
 dist/BOTW-Archipelago-<version>/ holds:
   * python/: the Python this checkout runs on (3.12, Windows, from its base
     installation), with only the packages the player's tools import, copied
-    from this environment with their dependencies, at the versions of
+    from this environment with their dependencies, at or above the versions of
     requirements-player.txt (checked);
   * the project's tracked files the player's tools read: botw_client/,
     botw_patch/, tools/, native/, data/, the world's data, the Archipelago
@@ -43,12 +43,15 @@ PINS = ROOT / "requirements-player.txt"
 PROJECT = ("botw_client", "botw_patch", "tools", "native", "data", "botw_world/data", "botw_world/docs",
            "botw_world/catalog.py",
            "botw_world/archipelago.json", "assets/wiiu",
-           "assets/models/ap_item/wiiu", "players/BOTW.yaml", "BOTW Archipelago.cmd", "README.md", "LICENSE")
+           "assets/models/ap_item/wiiu", "players/BOTW.yaml", "BOTW Archipelago.cmd",
+           "bootstrap.sh", "BOTW Archipelago.sh", "Play.sh", "run-tests.sh", "README.md", "LICENSE")
 # Test aids of source checkouts, never in a release: the speed multiplier, the play aids.
 DEVELOPMENT_ONLY = ("tools/play_speed.py", "tools/build_plateau_speed.py", "tools/play_aids.py")
 PYTHON_FILES = ("python.exe", "pythonw.exe", "python3.dll", f"python3{sys.version_info.minor}.dll",
                 "vcruntime140.dll", "vcruntime140_1.dll", "LICENSE.txt")
 PYTHON_FOLDERS = ("DLLs", "Lib", "tcl")
+# A PEP 440 release with an optional single suffix (.postN, .aN, .devN, ...), used by _version_key.
+_VERSION_RE = re.compile(r"^(\d+(?:\.\d+)*)(?:[.\-]((?:a|b|rc|dev|post))(\d+))?$")
 # The standard library minus what no player tool uses.
 LIB_LEFT_OUT = {"site-packages", "test", "idlelib", "ensurepip", "lib2to3", "turtledemo", "__pycache__"}
 
@@ -95,23 +98,51 @@ def distributions(names=PACKAGES) -> dict:
 
 
 def pins(path: Path = PINS) -> dict[str, str]:
-    """{name: version} of the pinned requirements."""
+    """{name: lower-bound version} of the pinned requirements (>=)."""
     found = {}
     for line in path.read_text(encoding="utf-8").splitlines():
         line = line.split("#", 1)[0].strip()
         if line:
-            name, _, pinned = line.partition("==")
-            found[name.strip().lower().replace("_", "-")] = pinned.strip()
+            name, _, bound = line.partition(">=")
+            if not bound:                # an exact == pin is its own lower bound
+                name, _, bound = line.partition("==")
+            found[name.strip().lower().replace("_", "-")] = bound.strip()
     return found
 
 
+def _version_key(text: str) -> tuple:
+    """A sortable key for a PEP 440 release with an optional single suffix,
+    so a >= check needs no third-party version library.
+    Ordering: dev < alpha < beta < rc < release < post (1.2.9.post4 > 1.2.9)."""
+    match = _VERSION_RE.match(text.strip())
+    if not match:
+        raise ValueError(f"cannot parse version {text!r}")
+    release = tuple(int(part) for part in match.group(1).split("."))
+    suffix, number = match.group(2), match.group(3)
+    order = {"dev": -4, "a": -3, "b": -2, "rc": -1}
+    if suffix in order:
+        return (release, order[suffix], 0)
+    if suffix == "post":
+        return (release, 1, int(number))
+    return (release, 0, 0)
+
+
 def check_pins(found: dict, pinned: dict[str, str]) -> None:
-    """The release ships exactly the pinned versions, and nothing unpinned."""
-    problems = [f"{name} {distribution.version} installed, {pinned[name]} pinned"
-                for name, distribution in found.items() if name in pinned and distribution.version != pinned[name]]
+    """The release ships each pinned package at or above its lower bound, and
+    nothing unpinned."""
+    problems = []
+    for name, distribution in found.items():
+        if name not in pinned:
+            continue
+        try:
+            satisfied = _version_key(distribution.version) >= _version_key(pinned[name])
+        except ValueError as error:
+            raise RuntimeError(str(error))
+        if not satisfied:
+            problems.append(f"{name} {distribution.version} installed, >= {pinned[name]} pinned")
     problems += [f"{name} {distribution.version} is shipped but not pinned"
                  for name, distribution in found.items() if name not in pinned]
-    problems += [f"{name}=={pinned[name]} is pinned but not needed" for name in pinned if name not in found]
+    problems += [f"{name}>={pinned[name]} is pinned but not needed" for name in pinned if name not in found]
     if problems:
         raise RuntimeError(f"this environment does not match {PINS.name} "
                            f"(pip install -r {PINS.name}): " + "; ".join(problems))
@@ -164,8 +195,15 @@ def check_tag(tag: str) -> None:
 
 
 def build(output: Path = ROOT / "dist", *, allow_dirty: bool = False) -> Path:
-    if sys.platform != "win32" or sys.version_info[:2] != (3, 12):
-        raise RuntimeError("a release is built on Windows with Python 3.12, the one it ships")
+    # The Windows release bundles the pinned Python; the Linux release ships a venv bootstrap instead.
+    if sys.platform == "win32":
+        if sys.version_info[:2] != (3, 12):
+            raise RuntimeError("a release is built on Windows with Python 3.12, the one it ships")
+        return _build_windows(output, allow_dirty)
+    return _build_linux(output, allow_dirty)
+
+
+def _build_windows(output: Path, allow_dirty: bool) -> Path:
     dirty = bool(git("status", "--porcelain", "--", *PROJECT).strip())
     if dirty and not allow_dirty:
         raise RuntimeError("the release's files have uncommitted changes: commit them, or --allow-dirty")
@@ -183,6 +221,29 @@ def build(output: Path = ROOT / "dist", *, allow_dirty: bool = False) -> Path:
         "version": version(), "commit": commit + ("-dirty" if dirty else ""),
         "python": sys.version.split()[0], "packages": packages}, indent=2) + "\n", encoding="utf-8")
     archive = zip_folder(release, output / f"{release.name}-Windows.zip")
+    from tools.package_native import package
+    package(output / "botw.apworld")
+    return archive
+
+
+def _build_linux(output: Path, allow_dirty: bool) -> Path:
+    dirty = bool(git("status", "--porcelain", "--", *PROJECT).strip())
+    if dirty and not allow_dirty:
+        raise RuntimeError("the release's files have uncommitted changes: commit them, or --allow-dirty")
+    release = output / f"{NAME}-{version()}"
+    if release.exists():
+        shutil.rmtree(release)
+    for name in project_files():
+        if name.endswith(".cmd"):
+            continue  # the launcher is a shell script on Linux
+        destination = release / name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / name, destination)
+    commit = git("rev-parse", "HEAD").strip()
+    (release / RELEASE_MARKER).write_text(json.dumps({
+        "version": version(), "commit": commit + ("-dirty" if dirty else ""),
+        "platform": "linux", "bootstrap": "bootstrap.sh"}, indent=2) + "\n", encoding="utf-8")
+    archive = zip_folder(release, output / f"{release.name}-Linux.zip")
     from tools.package_native import package
     package(output / "botw.apworld")
     return archive

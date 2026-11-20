@@ -26,7 +26,7 @@ presented by the game itself.
 
 ## What you need
 
-- Windows and [Cemu](https://cemu.info/) 2.x.
+- Windows or Linux and [Cemu](https://cemu.info/) 2.x (the Cemu AppImage on Linux).
 - Breath of the Wild for **Wii U** (European, American or Japanese), with **update v208 and the DLC**, from your own
   console. The Switch version is not supported.
 - To generate a seed: [Archipelago 0.6.7](https://github.com/ArchipelagoMW/Archipelago/releases).
@@ -56,7 +56,7 @@ No game file is part of this project: the game pack of a seed is built from your
 
 ## Limitations
 
-- Wii U version only, update v208, in Cemu on Windows.
+- Wii U version only, update v208, in Cemu on Windows or Linux.
 - The texts the integration adds to the game are in English.
 - A seed is generated with Archipelago on a computer (archipelago.gg's website cannot generate it), then hosted
   anywhere, archipelago.gg included.

@@ -10,8 +10,8 @@ cutscenes).
 Bootup.pack > Layout/Common.sblarc
   blyt/MainScreen_00.bflyt     the HUD: RootPane > N_All_00 > ... > Pa_Time_00
                                                             > Pa_APStatus_00  (added)
-  blyt/PaAPStatus_00.bflyt     our layout: RootPane > P_APOffline_00 (grey, visible)
-                                                    > P_APOnline_00  (color, hidden)
+  blyt/PaAPStatus_00.bflyt     our layout: RootPane > Pa_Weather_00 > N_InOut_00 > P_APOffline_00 (grey, visible)
+                                                                                > P_APOnline_00  (color, hidden)
   timg/Nt_APOffline_00^l.bflim / Nt_APOnline_00^l.bflim   the two logos, 64x64
 ```
 
@@ -19,7 +19,8 @@ Bootup.pack > Layout/Common.sblarc
    - a part `Pa_APStatus_00` is added as the last child of `N_All_00`, the node that holds the whole HUD, so it
      inherits its visibility;
    - it points to the layout `PaAPStatus_00`, built from the vanilla layout `PaIconChallenge_00` (one picture, one
-     material, one texture), with two pictures and two textures;
+     material, one texture), with two pictures and two textures, nested in two null panes named as the weather box's
+     (see [Ultrawide screens](#ultrawide-screens));
    - the grey logo is visible by default: without a client, nothing is connected.
 2. **Client** (`botw_client/hud_indicator.py`, called by the runtime at most twice a second):
    - it finds our two pictures in memory: UI manager at `0x1047E650`, its screen table, each screen's layout, the
@@ -39,7 +40,7 @@ Everything is at the top of `botw_patch/hud_layout.py`:
 
 | Setting | Constant | Current value |
 |---|---|---|
-| Position (center of the logo, 1280×720 frame, origin at the center of the screen, y up) | `POSITION` | `(609.0, -302.0)`: bottom right, beside the minimap |
+| Position (center of the logo, 1280×720 frame, origin at the center of the screen, y up) | `POSITION` | `(609.0, -302.0)`: bottom right, beside the minimap. The part takes y and `Pa_Weather_00`'s x (0); x is carried by the inner `N_InOut_00`, as `WEATHER_X + WEATHER_OFFSET` |
 | Displayed size (pixels of the 1280×720 frame) | `SIZE` | `26.4` |
 | Texture resolution (an integer divisor of 512) | `TEXTURE_SIZE` | `64` |
 | Grey of the offline logo (0 = black, 1 = light grey) | `dim` parameter of `grey()` | `0.55` |
@@ -67,6 +68,23 @@ venv\Scripts\python tools\play_seed.py <seed.zip>
 
 The reference digests of `tests/test_resources_from_source.py` and `tests/test_pack_from_source.py` change with the
 resources: update them (see [development](../development.md#reproducible-builds)).
+
+## Ultrawide screens
+
+On a screen wider than 16:9 the game stretches the whole HUD sideways. The mods that keep it in shape fix the HUD's
+panes one by one, by name, so the indicator is built as the weather box above the minimap is (`N_InOut_00` of
+`PaWeather_00`, inside the screen's part `Pa_Weather_00`; the minimap itself, `AppMap_00`, is placed by code):
+
+- **The community Graphics pack, Ultrawide HUD Mode** (`patch_GUIAspectRatio.asm`, a code patch). As each pane is
+  built, a name starting with `Pa` becomes the current sub-panel; on `MainScreen_00`, an `N_InOut_00` under the
+  sub-panel `Pa_Weather_00` is scaled by the aspect ratio and moved. Our null panes `Pa_Weather_00 > N_InOut_00` get
+  the same treatment: in Edge mode the logo keeps its distance to the right edge, in Centered mode its place, and in
+  both its shape. At 16:9, and with no HUD mode, nothing changes.
+- **Layout mods** (the UltraWide 21:9 UI Fix): they squeeze the screen's `Pa_Weather_00` and move the weather box in
+  `PaWeather_00`. The seed's pack is built over the player's mods, so `add_part` gives our part `Pa_Weather_00`'s x
+  and x scale, and `part_layout` puts the logos at the weather box's x (`weather_x`) plus `WEATHER_OFFSET`.
+
+The real `Pa_Weather_00` comes first under `N_All_00`: a lookup by name finds it before the one inside our part.
 
 ## The loading screen icon
 

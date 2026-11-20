@@ -2,6 +2,7 @@ import json
 import asyncio
 import tempfile
 import threading
+import time
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -100,6 +101,63 @@ class CrashReportTests(unittest.TestCase):
         self.assertIn("faulthandler.enable(sys.stderr)", source)
         self.assertIn("threading.excepthook", source)
         self.assertIn('Stream(sys.stderr, session / "stderr.log")', source)
+
+def _watch_cemu_exit(process, runtime):
+    """Mirror of play_session.client's watch_cemu_exit: block on the Cemu child
+    outside the event loop, then stop the runtime. Only the stop() call is
+    exercised here; the real function also os._exit()s after a grace period."""
+    try:
+        process.wait()
+    except Exception:
+        pass
+    runtime.log("Cemu closed: client stopping.")
+    runtime.stop()
+
+
+class CemuExitThreadTests(unittest.TestCase):
+    """Closing Cemu must stop the client even while the event loop is starved:
+    the cemu-exit thread owns process.wait() outside the loop, so the close is
+    detected whether or not the main thread is spinning. The body above mirrors
+    play_session.client's watch_cemu_exit, so the test stays tiny, starts no
+    Cemu/server/AP-save thread, and cannot hang: wait() blocks until released."""
+
+    def test_runtime_stops_after_the_blocked_child_exit_is_released(self):
+        started, released = threading.Event(), threading.Event()
+        runtime = SimpleNamespace(log=Mock(), stop=Mock())
+
+        def wait():
+            started.set()
+            released.wait(3)
+            return 0
+
+        thread = threading.Thread(
+            target=lambda: _watch_cemu_exit(SimpleNamespace(wait=wait), runtime))
+        thread.start()
+        try:
+            self.assertTrue(started.wait(3), "thread never reached process.wait()")
+            self.assertFalse(runtime.stop.called, "stop() fired before the child exited")
+            released.set()
+            for _ in range(300):
+                if runtime.stop.called:
+                    break
+                time.sleep(0.01)
+            self.assertTrue(runtime.stop.called, "stop() not called after the child exited")
+        finally:
+            thread.join(1)
+            self.assertFalse(thread.is_alive())
+
+    def test_watch_cemu_exit_is_started_outside_the_event_loop(self):
+        import inspect
+        from tools import play_session
+        # client() is nested in play(), so read play()'s source to reach it.
+        source = inspect.getsource(play_session.play)
+        self.assertIn("def watch_cemu_exit():", source)
+        self.assertIn("process.wait()", source)
+        self.assertIn("runtime.stop()", source)
+        self.assertIn("os._exit(0)", source)
+        self.assertIn("daemon=True", source)
+        self.assertNotIn("asyncio.create_task(watch_cemu())", source)
+
 
 class HashTests(unittest.TestCase):
     def test_missing_folder_has_no_hashes(self):
