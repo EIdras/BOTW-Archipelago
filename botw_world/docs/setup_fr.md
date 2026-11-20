@@ -9,7 +9,8 @@ Le reste de la documentation est en anglais : chaque section renvoie à sa page.
 - Breath of the Wild **Wii U**, version européenne, américaine ou japonaise, depuis votre propre console, avec sa
   **mise à jour v208** et le **DLC** installés dans Cemu (Fichier > Installer un titre, une mise à jour ou un DLC).
   Lancez le jeu une fois dans Cemu. La version Switch n'est pas prise en charge.
-- Environ 5 Go d'espace disque libre, et 140 Mo de plus par seed.
+- Environ 5 Go d'espace disque libre, et 140 Mo de plus par seed. Avec `shrine_chest_items`, environ 1 Go de plus,
+  une seule fois pour toutes les seeds, et le jeu de base installé en dossier (pas en fichier `.wua` ou `.wud`).
 - Votre **fichier de slot** (`.apbotw`) : sur la page de la salle, « Download Patch File... » à côté de votre nom.
 
 ## Installer

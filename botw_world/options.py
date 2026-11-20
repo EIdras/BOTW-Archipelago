@@ -225,6 +225,49 @@ class TrapWeights(OptionCounter):
     default = {name: 1 for name in TRAPS}
 
 
+class ChestSanity(Choice):
+    """Whether the chests of Hyrule's surface (1,180), of its shrines (174) and of
+    the Divine Beasts (35) are locations.
+    off: they are not.
+    check_only: opening a chest sends its location's item; the chest keeps its own
+    contents, and a window says what was found and for whom.
+    ap_items: each chest of the surface and of the Divine Beasts holds the item it
+    sends, under its name, in place of its contents; a shrine's chest keeps its
+    own, as with check_only, unless shrine_chest_items says otherwise.
+    A Divine Beast cannot be entered again once freed: the chests left inside are
+    sent then.
+    Either way, the chests hold nothing needed to finish a game, unless
+    chest_progression says otherwise."""
+    display_name = "Chest Sanity"
+    option_off = 0
+    option_check_only = 1
+    option_ap_items = 2
+    alias_false = 0
+    default = 0
+
+
+class ChestProgression(Toggle):
+    """With chest_sanity, whether chests may hold items needed to finish a game.
+    The logic asks what the map says opening each one takes: runes, bombs, Death
+    Mountain's heat, a Divine Beast freed, the Gerudo Set in Gerudo Town, and for
+    a chest inside a shrine or a Divine Beast, every rune. A chest frozen in ice,
+    under a boulder, after a Lynel's fight or created by a side quest still holds
+    nothing needed. A buried chest holds nothing needed in the first half of the
+    game: what it holds comes later."""
+    display_name = "Chest Progression"
+
+
+class ShrineChestItems(Toggle):
+    """With chest_sanity on ap_items, whether a shrine's chest holds the item it
+    sends too, in place of its contents.
+    Warning: a shrine's chest only changes with its whole shrine, so this takes
+    about 1 GB more disk space. These shrines are built once from your own copy of
+    the game (its base game must be installed as a folder, not as a .wua or .wud
+    file), then shared by every seed. Without such a folder, the shrines' chests
+    keep their contents."""
+    display_name = "Shrine Chest Items"
+
+
 @dataclass
 class BotwOptions(PerGameCommonOptions):
     start_inventory_from_pool: StartInventoryPool
@@ -245,6 +288,9 @@ class BotwOptions(PerGameCommonOptions):
     map_travel_points: MapTravelPoints
     bike_anywhere: BikeAnywhere
     cutscene_skip: CutsceneSkip
+    chest_sanity: ChestSanity
+    chest_progression: ChestProgression
+    shrine_chest_items: ShrineChestItems
     trap_percentage: TrapPercentage
     trap_weights: TrapWeights
 
@@ -258,6 +304,7 @@ OPTION_GROUPS = [
     OptionGroup("Maps", [TowerMaps, EarlyMap, TowersNeedMaps, RegionLock, MapTravelPoints]),
     OptionGroup("Master Cycle Zero", [BikeAnywhere]),
     OptionGroup("Cutscenes", [CutsceneSkip]),
+    OptionGroup("Chests", [ChestSanity, ChestProgression, ShrineChestItems]),
     OptionGroup("Traps", [TrapPercentage, TrapWeights]),
 ]
 

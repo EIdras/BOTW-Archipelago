@@ -145,6 +145,15 @@ def generate(content, binding_token: int, shops: list | None = None,
         return _generate(game, binding_token, shops, status, progress)
 
 
+def shrine_chests_built(status: dict | None) -> bool:
+    """The slot asks for shrine_chest_items and the base game is a folder the shared
+    shrines can be built from (a .wua or .wud is not read)."""
+    if not chests.shrines_asked(status):
+        return False
+    from tools import cemu_profile
+    return cemu_profile.base_content() is not None
+
+
 def _generate(game: GameFiles, binding_token: int, shops: list | None, status: dict | None, progress
               ) -> tuple[dict[str, bytes], dict, list[dict]]:
     if type(binding_token) is not int or not 0 < binding_token <= 0x7FFFFFFF:
@@ -347,10 +356,22 @@ def _generate(game: GameFiles, binding_token: int, shops: list | None, status: d
         changes.extend(edits)
     if chests.enabled(status):
         stage()
-        # Every chest holds the Archipelago item (botw_patch/chests.py), on the
+        # Every chest of the field and of the Divine Beasts holds the Archipelago
+        # item its location sends, under its name (botw_patch/chests.py), on the
         # map units the towers and stalls already changed.
-        files, edits = chests.generate(files, game)
+        # With shrine_chest_items, the shrines' chests too, once the shared shrines can be
+        # built from the base game (botw_patch/shrine_chests.py); else they keep their treasure.
+        shrines = shrine_chests_built(status)
+        files, edits = chests.generate(files, game, names=chests.placed_names(status, shrines),
+                                       shrines=shrines)
         changes.extend(edits)
+        # The chests numbered within `held` hold their item: the shrines' keep their treasure,
+        # but with `shrines`, which the session then loads (tools/play_session.py).
+        catalog["chests"] = {"flow": chests.QUIET_FLOW, "entry_prefix": chests.ENTRY + "_",
+                             "id_base": chests.CHEST_ID_BASE,
+                             "held": [list(held) for held in chests.held(shrines)]}
+        if shrines:
+            catalog["chests"]["shrines"] = True
     stage()
     # Vilia's lines at the price she now asks (botw_patch/gerudo_outfit.py).
     files, edits = gerudo_outfit.generate_texts(files, game)
@@ -430,8 +451,11 @@ def build(content, output: Path, *, binding_token: int, shops: list | None = Non
     if chests.enabled(status):
         # Only for seeds that ask for it, so that the others keep their identity.
         manifest["chests"] = chests.CHEST_COUNT
+        if shrine_chests_built(status):
+            manifest["shrine_chests"] = True
         manifest["input_hashes"] = {**manifest["input_hashes"], **chests.INPUT_HASHES, **{
-            chests.AOC_PREFIX + chests.unit(name): sha for name, sha in chests.MAP_HASHES.items()}}
+            chests.AOC_PREFIX + chests.unit(name): sha for name, sha in chests.MAP_HASHES.items()}, **{
+            chests.AOC_PREFIX + chests.beast_pack(beast): sha for beast, sha in chests.BEAST_PACK_HASHES.items()}}
         manifest["source_hashes"].update({name: digest((ROOT / name).read_bytes())
                                           for name in chests.SOURCE_FILES})
     if region is not regions.EUR:

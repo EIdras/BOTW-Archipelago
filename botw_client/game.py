@@ -263,8 +263,28 @@ class BotwGame:
         """The AP shop items in the pouch: {location ID: {"flag": APShop_<id>,
         "shown": IsGet_AP_Shop_<id>}} (None for a value unread), or None when
         the pouch cannot be read now (botw_client/pouch_watch.py)."""
-        from .pouch_watch import SHOP_ITEMS, PouchMoved, PouchWatch
+        from .pouch_watch import SHOP_ITEMS
         from .shop_state import crc
+        names = self._pouch_names()
+        if names is None:
+            return None
+        live = self.live
+        return {SHOP_ITEMS[name].id: {"flag": live.get(crc(SHOP_ITEMS[name].flag), "s32"),
+                                      "shown": live.get(crc(SHOP_ITEMS[name].shown_flag), "bool")}
+                for name in names if name in SHOP_ITEMS}
+
+    def pouch_chest_items(self) -> list[int] | None:
+        """The numbers of the chests' AP items in the pouch (AP_Chest_0007: 7,
+        botw_patch/chests.py), or None when the pouch cannot be read now."""
+        from .locations import chest_number
+        names = self._pouch_names()
+        if names is None:
+            return None
+        return sorted({number for number in map(chest_number, names) if number is not None})
+
+    def _pouch_names(self) -> list[str] | None:
+        """The names of the pouch's items (botw_client/pouch_watch.py), or None."""
+        from .pouch_watch import PouchMoved, PouchWatch
         if self.live is None:
             return None
         live = self.live
@@ -279,15 +299,10 @@ class BotwGame:
                 self.pouch_watch = time.monotonic() + 60.0
                 return None
         try:
-            names = self.pouch_watch.names()
+            return self.pouch_watch.names()
         except PouchMoved:
             self.pouch_watch = None         # found again at the next poll
             return None
-        if names is None:
-            return None
-        return {SHOP_ITEMS[name].id: {"flag": live.get(crc(SHOP_ITEMS[name].flag), "s32"),
-                                      "shown": live.get(crc(SHOP_ITEMS[name].shown_flag), "bool")}
-                for name in names if name in SHOP_ITEMS}
 
     def suppress_terminal_rune(self, location_name: str):
         """Undo only the vanilla rune associated with one AP terminal."""

@@ -20,7 +20,7 @@ REPORT = ROOT / ".build/play-seeds/08278964164390492688/analysis.json"
 
 def write_seed(folder, *, corrupt_manifest=False, duplicate=False):
     slot = {"schema": 1, "game": "Breath of the Wild", "seed": "test-seed", "slot": 1,
-            "slot_name": "Player", "slot_data": {"world_schema": 5, "client_schema": 3}}
+            "slot_name": "Player", "slot_data": {"world_schema": 6, "client_schema": 3}}
     slot["content_sha256"] = digest(json.dumps(slot, ensure_ascii=False, sort_keys=True,
                                               separators=(",", ":")).encode())
     if corrupt_manifest:

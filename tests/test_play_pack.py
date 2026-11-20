@@ -16,7 +16,7 @@ def slot_file(folder, *, name="Player", slot=1, checksum="checksum", container=F
     """A BOTW slot file, as the world writes it (placements left empty): the
     container of botw_world/slot_file.py, or the plain manifest of earlier seeds."""
     manifest = {"schema": 1, "game": "Breath of the Wild", "seed": "test-seed", "slot": slot,
-                "slot_name": name, "slot_data": {"world_schema": 5, "client_schema": 3},
+                "slot_name": name, "slot_data": {"world_schema": 6, "client_schema": 3},
                 "placements": [], "shops": [], **extra}
     if checksum is not None:
         manifest["data_package_checksum"] = checksum

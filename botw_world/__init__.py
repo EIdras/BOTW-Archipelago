@@ -7,15 +7,15 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from BaseClasses import Item, ItemClassification, Location, MultiWorld, Region, Tutorial
+from BaseClasses import Item, ItemClassification, Location, LocationProgressType, MultiWorld, Region, Tutorial
 from worlds.AutoWorld import WebWorld, World
 from Options import OptionError
 from rule_builder.rules import And, CanReachRegion, Has, HasAll, HasAny, HasFromList, Or, Rule, True_
 
-from .catalog import (FILLER, GAME, GENTLE_REGIONS, GOAL_LOCATION, INNER_REGIONS, ITEMS, LOCATIONS, MAPS, NEIGHBOURS,
+from .catalog import (CHESTS, FILLER, GAME, GENTLE_REGIONS, GOAL_LOCATION, INNER_REGIONS, ITEMS, LOCATIONS, MAPS, NEIGHBOURS,
                       OPEN_BORDERS, TRAPS, TRAVEL_SHRINES, TRAVEL_TERMINALS, WEAPON_LEVELS, WORLD_VERSION, categories,
                       map_keys, requirements)
-from .options import OPTION_GROUPS, PRESETS, BotwOptions, EarlyMap, TowerMaps, WeaponOrder
+from .options import OPTION_GROUPS, PRESETS, BotwOptions, ChestSanity, EarlyMap, TowerMaps, WeaponOrder
 from .slot_file import BotwSlotFile
 
 
@@ -53,7 +53,8 @@ class BotwWorld(World):
     topology_present = True
     required_client_version = (0, 6, 7)
     item_name_to_id = {row["name"]: row["id"] for row in ITEMS}
-    location_name_to_id = {row["name"]: row["id"] for row in LOCATIONS if row["name"] != GOAL_LOCATION}
+    location_name_to_id = {**{row["name"]: row["id"] for row in LOCATIONS if row["name"] != GOAL_LOCATION},
+                           **{row["name"]: row["id"] for row in CHESTS}}
     item_name_groups = {"Runes": {"Magnesis", "Progressive Remote Bomb", "Progressive Stasis", "Cryonis"},
                         "Weapons": set(WEAPON_LEVELS), "Maps": set(MAPS.values())}
     # Universal Tracker shows as "glitched" (out of logic, but possible) what this
@@ -71,6 +72,14 @@ class BotwWorld(World):
         "Stalls": {r["name"] for r in LOCATIONS if "Stall" in categories(r)},
         "Rune Upgrades": {r["name"] for r in LOCATIONS if "Rune Upgrade" in categories(r)},
         "Champions' Ballad": {r["name"] for r in LOCATIONS if "Champions' Ballad" in categories(r)},
+        "Chests": {r["name"] for r in CHESTS},
+        **{f"{kind} Chests": {r["name"] for r in CHESTS if r.get("dungeon") in
+                              {loc["name"] for loc in LOCATIONS if kind in categories(loc)}}
+           for kind in ("Shrine", "Divine Beast")},
+        **{f"Chests: {region}": {r["name"] for r in CHESTS if r["region"] == region}
+           for region in sorted({r["region"] for r in CHESTS})},
+        **{f"{kind} Chests": {r["name"] for r in CHESTS if r["kind"] == kind}
+           for kind in sorted({r["kind"] for r in CHESTS})},
     }
     # Shop prices drawn by the seed, in rupees: SHOP_PRICE_STEPS * 5.
     SHOP_PRICE_STEPS = (4, 40)
@@ -82,7 +91,7 @@ class BotwWorld(World):
     SLOT_OPTIONS = ("goal", "goal_shrines", "sanctum_divine_beasts", "sanctum_shrines",
                     "sanctum_master_sword", "sanctum_runes", "beedle_shop_items", "stall_items", "tower_maps",
                     "towers_need_maps", "region_lock", "map_travel_points", "bike_anywhere",
-                    "cutscene_skip")
+                    "cutscene_skip", "chest_sanity", "shrine_chest_items")
     # The region each map opens: {item: region}.
     MAP_REGIONS = {item: region for region, item in MAPS.items()}
     # The stall locations of the slot data, when Universal Tracker regenerates.
@@ -98,6 +107,10 @@ class BotwWorld(World):
             raise OptionError(f"{self.player_name}: region_lock needs tower_maps on region_keys")
         if self.options.towers_need_maps and self.options.tower_maps != TowerMaps.option_region_keys:
             raise OptionError(f"{self.player_name}: towers_need_maps needs tower_maps on region_keys")
+        if self.options.chest_progression and not self.options.chest_sanity:
+            raise OptionError(f"{self.player_name}: chest_progression needs chest_sanity")
+        if self.options.shrine_chest_items and self.options.chest_sanity != ChestSanity.option_ap_items:
+            raise OptionError(f"{self.player_name}: shrine_chest_items needs chest_sanity on ap_items")
         if self.options.map_travel_points and self.options.tower_maps == TowerMaps.option_vanilla:
             raise OptionError(f"{self.player_name}: map_travel_points needs the maps as items (tower_maps)")
         passed = getattr(self.multiworld, "re_gen_passthrough", {}).get(self.game)
@@ -151,6 +164,14 @@ class BotwWorld(World):
                 event.place_locked_item(BotwItem(event.name, ItemClassification.progression, None, self.player))
                 self.set_rule(event, self.location_rule(row))
                 region.locations.append(event)
+        if self.options.chest_sanity:
+            # Excluded, but with chest_progression those whose opening the map says.
+            for row in CHESTS:
+                loc = BotwLocation(self.player, row["name"], row["id"], regions[row["region"]])
+                if not self.options.chest_progression or row["no_progression"]:
+                    loc.progress_type = LocationProgressType.EXCLUDED
+                regions[row["region"]].locations.append(loc)
+                self.set_rule(loc, self.location_rule(row))
         goal = self.multiworld.get_location(GOAL_LOCATION, self.player)
         goal.place_locked_item(BotwItem("Victory", ItemClassification.progression, None, self.player))
 
@@ -276,27 +297,74 @@ class BotwWorld(World):
         capacity = len(self.multiworld.get_unfilled_locations(self.player))
         if len(pool) > capacity:
             raise ValueError("BOTW item pool exceeds available locations")
-        pool.extend(self.create_item(name) for name in self.trap_names(capacity - len(pool)))
+        # Traps as many as without the chests, which would bring hundreds more.
+        chests = len(CHESTS) if self.options.chest_sanity else 0
+        pool.extend(self.create_item(name) for name in self.trap_names(max(0, capacity - len(pool) - chests)))
         pool.extend(self.create_item(self.get_filler_item_name()) for _ in range(capacity - len(pool)))
         self.multiworld.itempool.extend(pool)
 
     @classmethod
     def stage_finalize_multiworld(cls, multiworld: MultiWorld) -> None:
-        """weapon_order, once the fill and the progression balancing are done, as
-        Dark Souls III smooths its weapons: the spheres of the whole multiworld,
-        computed once, then each world's weapons dealt again over their own
-        locations. No rule names a weapon, so the spheres do not change."""
+        """Once the fill and the progression balancing are done: chest_progression's
+        buried chests (bury_late), then weapon_order, as Dark Souls III smooths its
+        weapons: the spheres of the whole multiworld, then each world's weapons
+        dealt again over their own locations. No rule names a weapon, so the
+        spheres do not change."""
+        burying = [world for world in multiworld.get_game_worlds(cls.game) if world.options.chest_progression]
+        if burying:
+            spheres = cls.spheres(multiworld)
+            for world in burying:
+                world.bury_late(spheres)
         worlds = [world for world in multiworld.get_game_worlds(cls.game)
                   if world.options.weapon_order != WeaponOrder.option_anywhere]
         if not worlds:
             return
-        spheres = []
+        spheres = cls.spheres(multiworld)       # again: bury_late brings items earlier
+        for world in worlds:
+            world.order_weapons(spheres)
+
+    @staticmethod
+    def spheres(multiworld: MultiWorld) -> list[list[Location]]:
+        """The multiworld's spheres, each sorted."""
+        out = []
         for sphere in multiworld.get_spheres():
             if not sphere:
                 break           # what follows is unreachable: left as the fill put it
-            spheres.append(sorted(sphere))
-        for world in worlds:
-            world.order_weapons(spheres)
+            out.append(sorted(sphere))
+        return out
+
+    def bury_late(self, spheres: list[list[Location]]) -> None:
+        """chest_progression: a buried chest is found by chance, so nothing the
+        first half of this world's game asks for is in one: the first half of the
+        spheres up to the last that holds one of its locations (in a multiworld,
+        another game may go on longer). Such a chest of this world
+        trades its progression item for the item of one of this world's locations
+        reached in its sphere or before and holding no progression: the item is
+        found no later, and an item that is not progression opens nothing, so
+        every location stays reachable. A chest with no such partner, or that the
+        player made a priority location, keeps its item."""
+        buried = {row["name"] for row in CHESTS if row["kind"] == "Buried"}
+        state = self.multiworld.state
+        partners: list[Location] = []
+        last = max(index for index, sphere in enumerate(spheres)
+                   if any(location.player == self.player for location in sphere))
+        for sphere in spheres[:(last + 1) // 2]:
+            mine = [location for location in sphere if location.player == self.player
+                    and not location.locked and location.address is not None]
+            partners += [location for location in mine
+                         if location.name not in buried and not location.item.advancement]
+            for chest in mine:
+                if chest.name not in buried or not chest.item.advancement                         or chest.progress_type == LocationProgressType.PRIORITY:
+                    continue
+                fits = [location for location in partners
+                        if location.can_fill(state, chest.item, check_access=False)
+                        and chest.can_fill(state, location.item, check_access=False)]
+                if fits:
+                    partner = self.random.choice(fits)
+                    partners.remove(partner)
+                    item = chest.item
+                    self.multiworld.push_item(chest, partner.item, collect=False)
+                    self.multiworld.push_item(partner, item, collect=False)
 
     def order_weapons(self, spheres: list[list[Location]]) -> None:
         """The locations holding this world's weapons, in any world, by sphere (at
@@ -311,6 +379,14 @@ class BotwWorld(World):
                     and location.item.player == self.player and WEAPON_LEVELS.get(location.item.name)]
             self.random.shuffle(mine)
             locations += mine
+        # The excluded locations (chest_sanity's chests, but those chest_progression
+        # opens) take no useful weapon:
+        # their weapons are ordered among them, the others' among the others.
+        for excluded in (False, True):
+            self._order_weapons_in([location for location in locations
+                                    if (location.progress_type == LocationProgressType.EXCLUDED) == excluded])
+
+    def _order_weapons_in(self, locations: list[Location]) -> None:
         weapons = [location.item for location in locations]
         self.random.shuffle(weapons)
         spread = (self.WEAPON_LEVEL_SPREAD
@@ -342,10 +418,13 @@ class BotwWorld(World):
         # 10: the tower maps, as items, which one of 9 cannot deliver nor tell from the towers.
         # 11: the Downpour, Yiga Ambush and Paranoia traps, which one of 10 cannot play.
         # 12: map_travel_points, the travel points a map opens, which one of 11 cannot open.
+        # 13: chest_sanity, the chests as locations, which one of 12 neither sees opened nor, with
+        #     ap_items, empties: only the seeds with chest_sanity ask for it.
         # stall_locations: the stalls drawn by the seed, for Universal Tracker.
         # region_borders: with region_lock, the borders the seed's logic crosses.
         # travel_shrines: with map_travel_points, the shrine each map opens and its terminal's flag.
-        return {"client_schema": 12, "world_schema": 5, "world_version": WORLD_VERSION,
+        return {"client_schema": 13 if self.options.chest_sanity else 12, "world_schema": 6,
+                "world_version": WORLD_VERSION,
                 "death_link": bool(self.options.death_link.value),
                 **self.options.as_dict(*self.SLOT_OPTIONS),
                 "stall_locations": sorted(location_id for location_id in self.shop_prices
@@ -373,7 +452,7 @@ class BotwWorld(World):
     def generate_output(self, output_directory: str) -> None:
         """The slot file the game pack is built from (slot_file.py): placements and shop prices."""
         placements = []
-        for row in LOCATIONS:
+        for row in [*LOCATIONS, *(CHESTS if self.options.chest_sanity else ())]:
             if categories(row) & {"Shop", "Stall"} and row["id"] not in self.shop_prices:
                 continue
             loc = self.multiworld.get_location(row["name"], self.player)

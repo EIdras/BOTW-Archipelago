@@ -154,6 +154,20 @@ def update() -> Path:
     return PORTABLE / "mlc01/usr/title/0005000e" / region().title
 
 
+def base_content() -> Path | None:
+    """The base game's content/ (the shrines' packs are the base game's, not the
+    update's), when Cemu launches it as a folder (code/U-King.rpx); None for a
+    .wua or .wud file, or without a profile."""
+    try:
+        launched = game()
+    except (OSError, KeyError, ValueError, RuntimeError):
+        return None
+    content = launched.parent.parent / "content"
+    if launched.name.lower() != "u-king.rpx" or not (content / "Pack").is_dir():
+        return None
+    return content
+
+
 def saves() -> Path:
     """The game's saves in the profile, one folder per account."""
     return PORTABLE / "mlc01/usr/save/00050000" / region().title / "user"

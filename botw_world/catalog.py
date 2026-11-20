@@ -8,6 +8,16 @@ GAME = "Breath of the Wild"
 WORLD_VERSION = json.loads(files(__package__).joinpath("archipelago.json").read_text(encoding="utf-8"))["world_version"]
 LOCATIONS = json.loads(files(__package__).joinpath("data/locations.json").read_text(encoding="utf-8"))
 ITEMS = json.loads(files(__package__).joinpath("data/items.json").read_text(encoding="utf-8"))
+# The chests of Hyrule's surface, of the base game's shrines and of the Divine
+# Beasts, with chest_sanity (data/chests.json, from tools/chest_locations.py): a
+# location's id is CHEST_ID_BASE plus the chest's number, the one
+# botw_patch/chests.py gives the item inside it. A chest inside a shrine or a
+# Divine Beast names that location (its "dungeon").
+CHEST_ID_BASE = 10000
+# A chest's requirement that stands for every shrine cleared (tools/chest_locations.py).
+ALL_SHRINES = "All Shrines"
+CHESTS = [{**row, "id": CHEST_ID_BASE + row["number"], "category": "Chest"} for row in json.loads(
+    files(__package__).joinpath("data/chests.json").read_text(encoding="utf-8"))]
 RUNES = ("Magnesis", "Progressive Remote Bomb", "Progressive Stasis", "Cryonis")
 TRAPS = tuple(row["name"] for row in ITEMS if row.get("trap"))
 # What reaching each location takes in the game (data/logic.csv, one row each):
@@ -139,9 +149,18 @@ def requirements(row: dict) -> tuple[tuple[tuple[str, ...], int], ...]:
     its row of data/logic.csv. In its runes and extra, "|" separates what is all
     needed and "/" the ways of which one is enough ("Magnesis/Stasis"). A player
     may always do more than the logic asks (elixirs instead of armour): the logic
-    only promises what it can rely on."""
-    logic = LOGIC[row["name"]]
+    only promises what it can rely on. A chest's are in its row of data/chests.json:
+    the heat of its place and the runes the map says it takes; a chest inside a
+    shrine or a Divine Beast has that location's row, with every rune (which one a
+    side chest takes, no data tells)."""
     groups = [] if row["region"] == "Great Plateau" else [(("Paraglider",), 1)]
+    if row["category"] == "Chest" and not row.get("dungeon"):
+        groups += [(names, 1) for names in CLIMATES["heat" if row["heat"] else "none"]]
+        shrines = [loc["name"] for loc in LOCATIONS if "Shrine" in categories(loc)]
+        return tuple(groups + [((f"Cleared - {shrine}",), 1) for name in row["requires"] if name == ALL_SHRINES
+                               for shrine in shrines]
+                     + [((name,), 1) for name in row["requires"] if name != ALL_SHRINES])
+    logic = {**LOGIC[row["dungeon"]], "runes": "all"} if row["category"] == "Chest" else LOGIC[row["name"]]
     groups += [(names, 1) for names in CLIMATES[logic["climate"]]]
     runes = logic["runes"]
     groups += [(tuple(group.split("/")), 1) for group in
@@ -159,7 +178,10 @@ def map_keys(row: dict, towers: bool = False) -> tuple[str, ...]:
     then any its logic.csv extra names (a quest that goes through another region)."""
     own = () if row["region"] in MAPLESS_REGIONS or "Tower" in categories(row) and not towers \
         else (MAPS[row["region"]],)
-    extra = tuple(name for name in LOGIC[row["name"]]["extra"].split("|") if name in MAPS.values())
+    if row["category"] == "Chest" and not row.get("dungeon"):
+        return own
+    extra = tuple(name for name in LOGIC[row.get("dungeon") or row["name"]]["extra"].split("|")
+                  if name in MAPS.values())
     return own + tuple(name for name in extra if name not in own)
 
 
@@ -209,5 +231,24 @@ def _check_weapons() -> None:
         raise ValueError(f"WEAPONS differs from the Weapon items: {sorted(set(WEAPON_LEVELS) ^ weapons)[:5]}")
 
 
+def _check_chests() -> None:
+    """Chest rows: unique names and ids above the other locations', known regions,
+    shrines and Divine Beasts, and requirements among the items, the Divine Beasts
+    freed and every shrine cleared."""
+    names, ids = {row["name"] for row in CHESTS}, {row["id"] for row in CHESTS}
+    if len(names) != len(CHESTS) or len(ids) != len(CHESTS) or names & {row["name"] for row in LOCATIONS}:
+        raise ValueError("chest names or ids are not unique")
+    if min(ids) <= max(row["id"] for row in LOCATIONS):
+        raise ValueError("chest ids overlap the other locations'")
+    regions = {row["region"] for row in LOCATIONS}
+    known = {*(row["name"] for row in ITEMS), ALL_SHRINES,
+             *(f"Freed - {row['name']}" for row in LOCATIONS if "Divine Beast" in categories(row))}
+    for row in CHESTS:
+        inside = [row[key] for key in ("dungeon", "sent_with") if row.get(key) is not None]
+        if row["region"] not in regions or not set(row["requires"]) <= known or not set(inside) <= set(LOGIC):
+            raise ValueError(f"{row['name']}: unknown region, shrine, Divine Beast or requirement")
+
+
 _check_logic()
 _check_weapons()
+_check_chests()

@@ -118,6 +118,34 @@ def enabled_packs(portable: Path) -> list[str]:
     return [] if packs is None else [entry.get("filename") for entry in packs]
 
 
+def enable_shrines(portable: Path, pack: Path) -> list[str]:
+    """The shared shrines (botw_patch/shrine_chests.py), enabled when the seed pack
+    gives their chests their items (shrine_chest_items): built from the base game
+    the first time, then reused by every seed. Returns the entries added."""
+    catalog = json.loads((pack / "delivery_catalog.json").read_text(encoding="utf-8"))
+    if not (catalog.get("chests") or {}).get("shrines"):
+        return []
+    import time
+    import xml.etree.ElementTree as ET
+    import rstb
+    from botw_patch import shrine_chests
+    from botw_patch.resources import unpack
+    base = profile.base_content()
+    if base is None:
+        raise SystemExit("This seed's shrine chests hold their items (shrine_chest_items), which are "
+                         "built from the base game installed as a folder: Cemu no longer launches one.")
+    table = rstb.ResourceSizeTable(unpack(
+        (pack / "content/System/Resource/ResourceSizeTable.product.srsizetable").read_bytes()), True)
+    start = time.monotonic()
+    folder = shrine_chests.install(base, table, portable / "graphicPacks")
+    print(f"Shrine chests: {folder.name} ready in {time.monotonic() - start:.0f} s.", flush=True)
+    entry = f"graphicPacks/{folder.name}/rules.txt"
+    settings = ET.parse(portable / "settings.xml")
+    ET.SubElement(settings.getroot().find("GraphicPack"), "Entry", filename=entry)
+    settings.write(portable / "settings.xml", encoding="utf-8", xml_declaration=True)
+    return [entry]
+
+
 class Stream:
     """Console output, copied into the session folder (tracebacks included)."""
 
@@ -365,6 +393,7 @@ def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = Fals
     account = profile.ensure_play_account()
     portable = profile.prepare_play(pack)
     player_packs.enable(portable, mods.entries)
+    shrines = enable_shrines(portable, pack)
     aid_packs = []
     if aids or damage > 1:
         from tools import play_aids
@@ -374,7 +403,8 @@ def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = Fals
         play_aids.enable(portable, aid_packs)
     packs = enabled_packs(portable)
     if packs != [f"graphicPacks/{profile.PACK_PREFIX}{pack.name}/rules.txt",
-                 *(entry["entry"] for entry in mods.entries), *(entry["entry"] for entry in aid_packs)]:
+                 *(entry["entry"] for entry in mods.entries), *shrines,
+                 *(entry["entry"] for entry in aid_packs)]:
         raise RuntimeError(f"the play profile loads something else: {packs}")
     game = profile.game()
     print(f"Play profile ready: seed {folder.name}, pack {pack.name}, account "

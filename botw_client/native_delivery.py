@@ -114,6 +114,23 @@ class NativeDeliveryCatalog:
             return None
         return str(value["flow"]), str(value["entry"]), tuple(str(f) for f in value.get("flags", ()))
 
+    def chest_removal(self) -> tuple[str, str] | None:
+        """(flow, entry prefix) of the quiet entries that take a chest's AP item
+        out of the pouch (botw_patch/chests.py: prefix + its number on 4 digits);
+        None for a pack without chests."""
+        value = self.data.get("chests")
+        if not isinstance(value, dict) or not value.get("entry_prefix") or not value.get("flow"):
+            return None
+        return str(value["flow"]), str(value["entry_prefix"])
+
+    def chest_holds_item(self, number: int) -> bool:
+        """Whether the pack put the chest numbered `number` its AP item (its
+        catalog's held ranges, botw_patch/chests.py): a shrine's keeps its treasure."""
+        if self.chest_removal() is None:
+            return False
+        held = self.data["chests"].get("held", ())
+        return any(int(first) <= number <= int(last) for first, last in held)
+
     def death_link_flag(self) -> str | None:
         """The volatile flag the DeathLink entry leaves set on the deaths it causes."""
         value = self.data.get("death_link")
@@ -543,6 +560,17 @@ class CemuNativeDeliveryBackend:
 
     def clear_death_skip(self) -> None:
         self._set_death_flag("skipped", False)
+
+    def request_chest_removal(self, number: int) -> bool | None:
+        """Take chest `number`'s AP item out of the pouch by its quiet entry:
+        True once the game took the request, False when it is to be asked again
+        later, None when the pack has no chests or the outcome is unknown. The
+        entry removes the item only when the pouch holds it: harmless twice."""
+        found = self.catalog.chest_removal()
+        if found is None:
+            return None
+        result = self._request_once(found[0], f"{found[1]}{number:04d}")
+        return None if result is None else result
 
     def killed_by_death_link(self) -> bool | None:
         """Is the DeathLink entry's flag set (a death it caused)? None when the

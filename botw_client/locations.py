@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import time
 import zlib
 from dataclasses import dataclass, replace
@@ -20,10 +21,16 @@ MASTER_CSV = ROOT / "data" / "locations_master.csv"
 # Heart Container" (153 rows); 3: + 32 Beedle shop
 # items (185 rows, botw_client/shop_catalog.py); 4: + 28 3D stall items (213
 # rows, botw_client/stall_catalog.py); 5: + Purah's 3 rune upgrades and the
-# ends of the 4 Champions' Ballads (220 rows). botw_world declares its schema in
-# slot_data["world_schema"].
-SCHEMA_LOCATION_COUNTS = {1: 149, 2: 153, 3: 185, 4: 213, 5: 220}
-WORLD_SCHEMA = 5
+# ends of the 4 Champions' Ballads (220 rows); 6: the same rows, then the
+# chests of chest_sanity (botw_world/data/chests.json, CHEST_SCHEMA). botw_world
+# declares its schema in slot_data["world_schema"].
+SCHEMA_LOCATION_COUNTS = {1: 149, 2: 153, 3: 185, 4: 213, 5: 220, 6: 220}
+WORLD_SCHEMA = 6
+# The first schema whose locations include the chests, by the vanilla flag each
+# keeps once its contents are taken (tools/chest_locations.py).
+CHEST_SCHEMA = 6
+CHESTS_JSON = ROOT / "botw_world" / "data" / "chests.json"
+CHEST_ITEM_PREFIX = "AP_Chest_"
 # The Great Plateau's tower reveals its own map: its map is no item.
 PLATEAU_TOWER_FLAG = "MapTower_07"
 # Locations tracked by a saved s32 of their own (APShop_<id>), present only
@@ -34,6 +41,21 @@ CUSTOM_CATEGORIES = (SHOP_CATEGORY, STALL_CATEGORY)
 # pack, the location is not tracked.
 CUSTOM_BOOL_PREFIXES = ("APPurahUp_",)
 EXPECTED_LOCATION_COUNT = SCHEMA_LOCATION_COUNTS[WORLD_SCHEMA]
+# {location name: chest number} (botw_patch/chests.py numbers the AP item inside).
+_CHEST_ROWS = json.loads(CHESTS_JSON.read_text(encoding="utf-8"))
+CHEST_NUMBERS = {row["name"]: row["number"] for row in _CHEST_ROWS}
+# {location: the chests its check also sends}: a Divine Beast's, which cannot be
+# opened once the beast is freed (tools/chest_locations.py, sent_with).
+CHESTS_SENT_WITH: dict[str, list[str]] = {}
+for _row in _CHEST_ROWS:
+    if _row.get("sent_with"):
+        CHESTS_SENT_WITH.setdefault(_row["sent_with"], []).append(_row["name"])
+
+
+def chest_number(item_name: str) -> int | None:
+    """The chest number of an AP chest item of the pouch (AP_Chest_0007: 7), else None."""
+    digits = item_name[len(CHEST_ITEM_PREFIX):]
+    return int(digits) if item_name.startswith(CHEST_ITEM_PREFIX) and len(digits) == 4         and digits.isdigit() else None
 
 
 def tower_activation_flag(map_flag: str) -> str:
@@ -88,6 +110,9 @@ def load_targets(path: Path = MASTER_CSV,
             row["name"], row["gamedata_flag"], int(row["flag_hash"]) & 0xFFFFFFFF,
             SHOP_FLAG_KIND if shop else "bool", optional=custom,
             pack_flag=tower_activation_flag(row["gamedata_flag"]) if tower else None))
+    if world_schema >= CHEST_SCHEMA:
+        targets += [LocationTarget(row["name"], row["flag"], zlib.crc32(row["flag"].encode()))
+                    for row in json.loads(CHESTS_JSON.read_text(encoding="utf-8"))]
     if len({target.name for target in targets}) != len(targets):
         raise ValueError("duplicate location names")
     if len({target.hash_u32 for target in targets}) != len(targets):

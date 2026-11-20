@@ -10,7 +10,7 @@ from pathlib import Path
 
 from .backend import DeliveryCommand, DeliveryCoordinator, DeliveryStatus
 from .game import BotwGame, GameNotReady, game_starting
-from .locations import SCHEMA_LOCATION_COUNTS, load_targets, tower_activation_flag
+from .locations import CHEST_NUMBERS, CHESTS_SENT_WITH, SCHEMA_LOCATION_COUNTS, load_targets, tower_activation_flag
 from .paths import DATA
 from .pouch_watch import StrayShopItems
 from .protocol import ArchipelagoClient, DeathLinkEvent, LocationInfo
@@ -21,6 +21,9 @@ POLL_SECONDS = 0.2
 CHECK_RESEND_SECONDS = 2.0
 # The pouch's safety net (botw_client/pouch_watch.py) reads the pouch this often.
 POUCH_POLL_SECONDS = 2.0
+# A chest's AP item still in the pouch this long, Link in the world, is taken
+# out by its entry: one its flag's request missed, or the client was away.
+CHEST_HOLD_SECONDS = 5.0
 BLOCK_REFRESH_SECONDS = 0.5
 MESSAGE_MAX_CHARS = 39
 MESSAGE_SETTLE_SECONDS = 4.0
@@ -80,8 +83,9 @@ CLIENT_SCHEMA = 2
 # The client schemas of BOTW seeds this client plays: 4 added the Gerudo Set, 5 the
 # goal and the sanctum's requirements, 6 the new filler, 7 the weapons, 8 the travel items,
 # 9 Epona and the Master Cycle Zero selected only when no rune is, 10 the tower maps,
-# 11 the Downpour, Yiga Ambush and Paranoia traps, 12 the travel points a map opens.
-BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
+# 11 the Downpour, Yiga Ambush and Paranoia traps, 12 the travel points a map opens,
+# 13 the chests as locations, their AP items taken out of the pouch.
+BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)
 # The mutations that present the item themselves: no AP window before them.
 VANILLA_WINDOWS = ("get_demo_actor", "champion_actor", "rune_download", "rune_power_up", "trap",
                    "native_trap",
@@ -274,6 +278,11 @@ class BotwClientRuntime:
         self.deliveries = None
         self._stray_shop_items = StrayShopItems()
         self._pouch_poll_after = 0.0
+        # Chests' AP items to take out of the pouch (_chest_tick): their numbers,
+        # and those seen in the pouch with when they were first.
+        self._chest_removals: list[int] = []
+        self._chest_pouch: dict[int, float] = {}
+        self._chest_poll_after = 0.0
         self._presentation_status = None
         self._presentation_recovery_request = None
         self._ap_session_ready = False
@@ -1352,12 +1361,22 @@ class BotwClientRuntime:
 
     async def _poll_locations(self):
         names = await asyncio.to_thread(self.game.poll_locations)
+        # A freed Divine Beast's chests left inside, which no one can open now: sent
+        # with it, without a window (they were not opened) nor a removal.
+        left = self._chests_left_with(names) if names else []
+        names = list(names) + left if names else names
         if names and self._session_locations is not None:
             # A check absent from this seed (older world schema) is not sent.
             ignored = [name for name in names if name not in self._session_locations]
+            # A save's open chests in a seed without them: tracked by every client, said by none.
+            said = [name for name in ignored if name not in CHEST_NUMBERS]
+            if said:
+                self.log("not in this seed, ignored: " + ", ".join(said))
             if ignored:
-                self.log("not in this seed, ignored: " + ", ".join(ignored))
                 names = [name for name in names if name in self._session_locations]
+        left = [name for name in left if name in (names or ())]
+        if left:
+            self.log("sent with a freed Divine Beast, left inside: " + ", ".join(left))
         if names:
             for name in names:
                 if name not in self.state["observed_checks"]:
@@ -1379,9 +1398,15 @@ class BotwClientRuntime:
                     if not owns_sensor:
                         await asyncio.to_thread(self.game.suppress_tower_sensor)
                         self.log("vanilla shrine sensor suppressed")
+                chest_item = (name in CHEST_NUMBERS and name not in left
+                              and self._chest_holds_ap_item(CHEST_NUMBERS[name]))
+                if chest_item and CHEST_NUMBERS[name] not in self._chest_removals:
+                    # Its AP item, shown by the chest's own window, out of the pouch.
+                    self._chest_removals.append(CHEST_NUMBERS[name])
                 if name not in self.state["pending_checks"]:
                     self.state["pending_checks"].append(name)
-                    self._queue_location_display(name)
+                    if not chest_item and name not in left:
+                        self._queue_location_display(name)
                     self.log(f"check detected: {name}")
                 if name == "Master Sword Pedestal":
                     await self._close_pedestal()
@@ -1495,6 +1520,60 @@ class BotwClientRuntime:
         self._pedestal_requested = True
         # Read again once the entry has run; asked again if it did not.
         self._pedestal_retry_after = time.monotonic() + 10.0
+
+    def _chests_hold_ap_items(self) -> bool:
+        """chest_sanity's ap_items: the pack put each chest's AP item in it (its
+        catalog has the entries that take them out of the pouch), which the
+        chest's own window shows. With check_only, a chest keeps its contents
+        and the client's window says what it sent."""
+        backend = getattr(self.deliveries, "backend", None) if self.deliveries else None
+        catalog = getattr(backend, "catalog", None)
+        return (catalog is not None and hasattr(catalog, "chest_removal")
+                and catalog.chest_removal() is not None)
+
+    def _chests_left_with(self, names: list[str]) -> list[str]:
+        """The chests sent with locations among `names` (a Divine Beast freed) that
+        were never seen open: neither among `names` nor checked before."""
+        seen = set(names) | set(self.state["observed_checks"]) | set(self.state["pending_checks"])
+        return [chest for name in names for chest in CHESTS_SENT_WITH.get(name, ()) if chest not in seen]
+
+    def _chest_holds_ap_item(self, number: int) -> bool:
+        """Whether the chest numbered `number` holds its AP item: with ap_items, the
+        surface's do and a shrine's keeps its treasure (the pack's catalog says)."""
+        catalog = getattr(getattr(self.deliveries, "backend", None), "catalog", None) if self.deliveries else None
+        return self._chests_hold_ap_items() and catalog.chest_holds_item(number)
+
+    async def _chest_tick(self):
+        """chest_sanity's ap_items (botw_patch/chests.py): a chest's AP item out
+        of the pouch by its quiet entry, once its flag is seen; and, as a safety
+        net, any one the pouch still holds after CHEST_HOLD_SECONDS with Link in
+        the world (at connection, a request the game missed, a chest that is no
+        location). One request a tick."""
+        if not self._chests_hold_ap_items():
+            return
+        backend = self.deliveries.backend
+        now = time.monotonic()
+        read = getattr(self.game, "pouch_chest_items", None)
+        playing = getattr(backend, "playing", None)
+        if read is not None and playing is not None and now >= self._chest_poll_after:
+            self._chest_poll_after = now + POUCH_POLL_SECONDS
+            held = await asyncio.to_thread(read) if await asyncio.to_thread(playing) else None
+            if held is not None:
+                self._chest_pouch = {number: self._chest_pouch.get(number, now) for number in held}
+                for number, since in self._chest_pouch.items():
+                    if now - since >= CHEST_HOLD_SECONDS and number not in self._chest_removals:
+                        self._chest_removals.append(number)
+        if not self._chest_removals:
+            return
+        number = self._chest_removals[0]
+        result = await asyncio.to_thread(backend.request_chest_removal, number)
+        if result is False:
+            return                          # asked again at the next tick
+        self._chest_removals.pop(0)
+        if number in self._chest_pouch:
+            self._chest_pouch[number] = now     # held again only if this request did nothing
+        self.log(f"chest item {number:04d} taken out of the pouch"
+                 + ("" if result else " (request outcome unknown)"))
 
     async def _travel_tick(self):
         """map_travel_points: the travel point of the shrine each map held
@@ -2655,6 +2734,7 @@ class BotwClientRuntime:
                             self._log_delivery_wait()
                             await self._quest_tick()
                             await self._pedestal_tick()
+                            await self._chest_tick()
                         await self._ganon_gate_tick()
                         await self._tower_repair_tick()
                         await self._native_trap_tick()

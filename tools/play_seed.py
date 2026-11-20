@@ -59,15 +59,18 @@ PLAY_SEEDS = DATA / "play-seeds"
 PACKS = DATA / "packs-from-source"
 ORPHAN_AGE = 600        # seconds: see orphan_packs
 SCOPE = "generated_ap_seed"
-CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12)    # 4: the Gerudo Set; 5: the goal and the sanctum; 6: the
+CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)    # 4: the Gerudo Set; 5: the goal and the sanctum; 6: the
 #                                                      new filler; 7: the weapons; 8: the travel items; 9: Epona;
 #                                                      10: maps; 11: the Downpour, Yiga Ambush and
-#                                                      Paranoia traps; 12: the travel points
+#                                                      Paranoia traps; 12: the travel points;
+#                                                      13: the chests
 GAME = "Breath of the Wild"
 _ROWS = json.loads((ROOT / "botw_world/data/locations.json").read_text(encoding="utf-8"))
 # Every location but the goal, shops apart: they depend on beedle_shop_items
 # and stall_items.
 PLACEMENTS = sum(1 for row in _ROWS if row["category"] not in ("Goal", "Shop", "Stall"))
+# chest_sanity's chests (botw_world/data/chests.json), one placement each.
+_CHESTS = json.loads((ROOT / "botw_world/data/chests.json").read_text(encoding="utf-8"))
 
 
 def expected_placements(slot_data: dict) -> int:
@@ -76,7 +79,9 @@ def expected_placements(slot_data: dict) -> int:
     # had stall_shop_items on each stall.
     stalls = (int(slot_data["stall_items"]) if "stall_items" in slot_data
               else len(stall_catalog.MERCHANTS) * int(slot_data.get("stall_shop_items", 0)))
-    return (PLACEMENTS + len(shop_catalog.MERCHANTS) * int(slot_data.get("beedle_shop_items", 0)) + stalls)
+    chests = len(_CHESTS) if slot_data.get("chest_sanity") else 0
+    return (PLACEMENTS + len(shop_catalog.MERCHANTS) * int(slot_data.get("beedle_shop_items", 0)) + stalls
+            + chests)
 
 
 def sha(path: Path) -> str:

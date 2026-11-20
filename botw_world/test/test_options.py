@@ -1,7 +1,12 @@
-from BaseClasses import ItemClassification
+from BaseClasses import ItemClassification, LocationProgressType
+from Fill import distribute_items_restrictive
+from Options import OptionError
+from worlds.AutoWorld import call_all
 
 from . import BotwTestBase
-from ..catalog import FILLER, WEAPONS
+from .. import BotwWorld
+from .test_tracker import generate
+from ..catalog import ALL_SHRINES, CHEST_ID_BASE, CHESTS, FILLER, LOCATIONS, MAPS, RUNES, WEAPONS, requirements
 
 # The filler of the default options: 159 locations, 119 declared items, 14 maps.
 FILLER_SLOTS = 26
@@ -144,6 +149,134 @@ class TestCutsceneSkip(BotwTestBase):
 
     def test_the_slot_data_tells_the_pack_builder(self) -> None:
         self.assertEqual(self.world.fill_slot_data()["cutscene_skip"], 1)
+
+
+class TestChestSanityOffByDefault(BotwTestBase):
+    def test_no_chest_location(self) -> None:
+        locations = {loc.name for loc in self.multiworld.get_locations(self.player)}
+        self.assertFalse(locations & {row["name"] for row in CHESTS})
+        self.assertEqual(self.world.fill_slot_data()["chest_sanity"], 0)
+        self.assertEqual(self.world.fill_slot_data()["client_schema"], 12)
+
+
+class TestChestSanityCheckOnly(BotwTestBase):
+    options = {"chest_sanity": "check_only"}
+
+    def test_the_chests_are_locations_the_pack_leaves_alone(self) -> None:
+        locations = {loc.name for loc in self.multiworld.get_locations(self.player)}
+        self.assertLessEqual({row["name"] for row in CHESTS}, locations)
+        slot_data = self.world.fill_slot_data()
+        self.assertEqual((slot_data["chest_sanity"], slot_data["client_schema"]), (1, 13))
+
+
+class TestChestSanity(BotwTestBase):
+    options = {"chest_sanity": "ap_items", "trap_percentage": 100}
+
+    def test_every_chest_is_an_excluded_location(self) -> None:
+        chests = [loc for loc in self.multiworld.get_locations(self.player) if loc.name in self.world.
+                  location_name_groups["Chests"]]
+        self.assertEqual(len(chests), len(CHESTS))
+        self.assertEqual({loc.progress_type for loc in chests}, {LocationProgressType.EXCLUDED})
+        self.assertEqual({loc.address - CHEST_ID_BASE for loc in chests}, {row["number"] for row in CHESTS})
+        self.assertEqual(self.world.fill_slot_data()["chest_sanity"], 2)
+
+    def test_a_chest_after_every_shrine_waits_for_them(self) -> None:
+        row = next(r for r in CHESTS if ALL_SHRINES in r["requires"])
+        names = {name for names, _count in requirements(row) for name in names}
+        self.assertLessEqual({f"Cleared - {name}" for name in self.world.location_name_groups["Shrines"]}, names)
+        self.assertNotIn(ALL_SHRINES, names)
+
+    def test_a_shrine_chest_asks_its_shrine_and_every_rune(self) -> None:
+        row = next(r for r in CHESTS if r.get("dungeon") == "Jee Noh Shrine")
+        shrine = next(r for r in LOCATIONS if r["name"] == row["dungeon"])
+        self.assertLessEqual(set(requirements(shrine)), set(requirements(row)))
+        self.assertLessEqual({((rune,), 1) for rune in RUNES}, set(requirements(row)))
+        self.assertIn(row["name"], self.world.location_name_groups["Shrine Chests"])
+
+    def test_a_divine_beast_chest_asks_its_beast(self) -> None:
+        row = next(r for r in CHESTS if r.get("dungeon") == "Divine Beast Vah Ruta")
+        self.assertIn((("Zora Set",), 1), requirements(row))
+        self.assertIn(row["name"], self.world.location_name_groups["Divine Beast Chests"])
+        self.assertNotIn(row["name"], self.world.location_name_groups["Shrine Chests"])
+
+    def test_the_chests_bring_filler_not_traps(self) -> None:
+        traps = [item for item in self.multiworld.itempool if item.trap]
+        self.assertEqual(len(traps), FILLER_SLOTS)
+        self.assertEqual(len(self.multiworld.itempool), 159 + len(CHESTS))
+
+    def test_a_chest_asks_what_its_place_does(self) -> None:
+        state = self.multiworld.state
+        buried = next(row for row in CHESTS if row["kind"] == "Buried" and not row["heat"]
+                      and row["region"] != "Great Plateau")
+        location = self.multiworld.get_location(buried["name"], self.player)
+        self.collect_by_name(["Paraglider", MAPS[buried["region"]]])
+        self.assertFalse(location.can_reach(state))
+        self.collect_by_name(["Magnesis"])
+        self.assertTrue(location.can_reach(state))
+
+
+class TestChestProgression(BotwTestBase):
+    options = {"chest_sanity": "ap_items", "chest_progression": True}
+
+    def test_the_chests_the_map_describes_may_hold_progression(self) -> None:
+        excluded = {loc.name for loc in self.multiworld.get_locations(self.player)
+                    if loc.progress_type == LocationProgressType.EXCLUDED}
+        self.assertEqual(excluded & self.world.location_name_groups["Chests"],
+                         {row["name"] for row in CHESTS if row["no_progression"]})
+        self.assertEqual(len(CHESTS) - len(excluded), 1339)
+
+    def test_a_gerudo_town_chest_asks_for_the_gerudo_set(self) -> None:
+        town = [row for row in CHESTS if "Gerudo Set" in row["requires"]]
+        self.assertEqual(len(town), 4)
+        self.assertTrue(all(row["name"].startswith("Gerudo Town - ") for row in town))
+        self.assertIn((("Gerudo Set",), 1), requirements(town[0]))
+
+    def test_no_buried_chest_holds_progression_in_the_first_half(self) -> None:
+        moved = 0
+        for seed in range(1, 6):        # a seed may have no buried chest in the first half
+            self.world_setup(seed)
+            distribute_items_restrictive(self.multiworld)
+            call_all(self.multiworld, "post_fill")
+            spheres = BotwWorld.spheres(self.multiworld)
+            buried = [location for sphere in spheres[:len(spheres) // 2] for location in sphere
+                      if location.player == self.player and location.name in self.world.location_name_groups
+                      ["Buried Chests"]]
+            moved += sum(location.item.advancement for location in buried)
+            call_all(self.multiworld, "finalize_multiworld")
+            with self.subTest(seed=seed):
+                self.assertEqual([location.name for location in buried if location.item.advancement], [])
+                self.assertTrue(self.multiworld.can_beat_game())
+                self.assertTrue(all(location.item.location is location
+                                    for location in self.multiworld.get_filled_locations()))
+        self.assertGreater(moved, 0)
+
+
+class TestChestProgressionRegionLock(BotwTestBase):
+    options = {"chest_sanity": "check_only", "chest_progression": True, "region_lock": True}
+
+    def test_a_chest_waits_for_its_regions_map(self) -> None:
+        row = next(r for r in CHESTS if r["region"] == "Hateno" and not r["requires"] and not r.get("dungeon"))
+        location = self.multiworld.get_location(row["name"], self.player)
+        self.collect_by_name(["Paraglider", *(name for name in MAPS.values() if name != MAPS["Hateno"])])
+        self.assertFalse(location.can_reach(self.multiworld.state))
+        self.collect_by_name([MAPS["Hateno"]])
+        self.assertTrue(location.can_reach(self.multiworld.state))
+
+    def test_chest_progression_needs_chest_sanity(self) -> None:
+        with self.assertRaises(OptionError):
+            generate({"chest_progression": True})
+
+
+class TestShrineChestItems(BotwTestBase):
+    options = {"chest_sanity": "ap_items", "shrine_chest_items": True}
+
+    def test_the_slot_data_tells_the_pack_builder(self) -> None:
+        self.assertEqual(self.world.fill_slot_data()["shrine_chest_items"], 1)
+
+    def test_shrine_chest_items_needs_ap_items(self) -> None:
+        for options in ({"shrine_chest_items": True}, {"chest_sanity": "check_only", "shrine_chest_items": True}):
+            with self.subTest(options=options), self.assertRaises(OptionError):
+                generate(options)
 
 
 class TestCutsceneRemoved(BotwTestBase):

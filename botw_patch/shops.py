@@ -169,25 +169,32 @@ def _short(text: str, limit: int) -> str:
 
 
 def texts(placement: ShopPlacement) -> tuple[str, str]:
-    """(name, description) shown by the shop, in English in every language.
+    """(name, description) shown by the shop, in English in every language."""
+    return item_texts(placement.item, placement.player, placement.game, placement.flags, placement.own,
+                      placement.location.name)
+
+
+def item_texts(item_name: str, player: str, game: str, flags: int, own: bool,
+               where: str) -> tuple[str, str]:
+    """(name, description) of an Archipelago item the game shows (a shop's, a
+    chest's), in English in every language. `where` names it in an error.
 
     Traps are described as ordinary items, as AP shops usually do.
     """
-    name = _short(placement.item, NAME_LIMIT)
-    importance = ("" if placement.flags & TRAP else
-                  " Needed to progress." if placement.flags & PROGRESSION else
-                  " Useful." if placement.flags & USEFUL else "")
+    name = _short(item_name, NAME_LIMIT)
+    importance = ("" if flags & TRAP else
+                  " Needed to progress." if flags & PROGRESSION else
+                  " Useful." if flags & USEFUL else "")
     for item_limit, game_limit in ((80, 60), (40, 30), (24, 18)):
-        item, game = _short(placement.item, item_limit), _short(placement.game, game_limit)
-        if placement.own:
+        item, short_game = _short(item_name, item_limit), _short(game, game_limit)
+        if own:
             body = f"Archipelago item for you: {item}."
         else:
-            player = _short(placement.player, 16)
-            body = f"Archipelago item for {player} ({game}): {item}."
+            body = f"Archipelago item for {_short(player, 16)} ({short_game}): {item}."
         lines = textwrap.wrap(body + importance, DESCRIPTION_WIDTH)
         if len(lines) <= DESCRIPTION_LINES:
             return name, "\n".join(lines)
-    raise ValueError(f"description does not fit: {placement.location.name}")
+    raise ValueError(f"description does not fit: {where}")
 
 
 def items(placements: list[ShopPlacement]) -> list[ApShopItem]:

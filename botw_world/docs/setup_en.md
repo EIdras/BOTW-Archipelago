@@ -14,7 +14,8 @@ the room is on [its own page](hosting_en.md).
       Cemu's game list.
 - [ ] Its **update v208** (1.5.0) and its **DLC**, installed in Cemu (File > Install game title, update or DLC).
 - [ ] The game started once in Cemu.
-- [ ] About 5 GB of free disk space, and 140 MB more for each seed.
+- [ ] About 5 GB of free disk space, and 140 MB more for each seed. With `shrine_chest_items`, about 1 GB more,
+      once for every seed, and the base game installed as a folder (not a `.wua` or `.wud` file).
 - [ ] Your **slot file** (`.apbotw`): on the room's page, "Download Patch File..." next to your name.
 
 > [!NOTE]
