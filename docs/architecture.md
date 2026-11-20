@@ -96,6 +96,9 @@ slot file alone, without reaching any server.
   (`botw_world/data/chests.json`, made from the game's maps by `tools/chest_locations.py`). With `ap_items`, the
   client requests the item's removal entry once the flag rises, and for any chest item still in the pouch. The
   chests left inside a Divine Beast are sent once it is freed, as it cannot be entered again.
+- **Koroks**: with `korok_sanity`, a Korok's location is the flag the game raises once it is found
+  (`botw_world/data/koroks.json`, made from the game's maps by `tools/korok_locations.py`). The Korok still
+  gives its seed: nothing in the pack changes.
 - **DeathLink**: Link's death (`CurrentHart` at 0) is sent to the room; a received death is announced in the journal,
   then requests the pack's entry `OperationGuide<APDeathLink>`, the game's own damage action with a lethal value
   ([death_link.md](reference/death_link.md)).

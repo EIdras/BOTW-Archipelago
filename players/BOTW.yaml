@@ -68,6 +68,12 @@ Breath of the Wild:
   # from your own base game, which must be installed as a folder (not a .wua or .wud file), then shared by every
   # seed. Without such a folder, the shrines' chests keep their contents
   shrine_chest_items: false
+  # Whether the Koroks are locations: finding one sends its item, and the Korok still gives its seed (Hestu is
+  # unchanged). The Koroks hold nothing needed to finish a game. Traps stay as many as without them
+  korok_sanity: false
+  # With korok_sanity, how many of the 900 Koroks are locations, drawn by the seed (900: every one). Each adds an
+  # item to the multiworld, mostly filler
+  korok_count: 100
   # Share of the filler (arrows, elixirs, weapons, gems, rupees) that becomes traps, 0 to 100, and how likely each is
   # compared with the others (a trap left out never comes up): Weapon Shatter, Blood Moon,
   # Rupoor, Hearts Down, Strip Down, Cucco Swarm, Yiga Ambush, Paranoia, Downpour. The cuccos, the Yiga

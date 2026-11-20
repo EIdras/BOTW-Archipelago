@@ -268,6 +268,22 @@ class ShrineChestItems(Toggle):
     display_name = "Shrine Chest Items"
 
 
+class KorokSanity(Toggle):
+    """Whether Koroks are locations: finding one sends its location's item, and a
+    window says what was found and for whom. The Korok still gives its seed, so
+    Hestu is unchanged. The Koroks hold nothing needed to finish a game."""
+    display_name = "Korok Sanity"
+
+
+class KorokCount(Range):
+    """With korok_sanity, how many of the 900 Koroks are locations, drawn by the
+    seed (900: every one). Each adds an item to the multiworld, mostly filler."""
+    display_name = "Korok Count"
+    range_start = 1
+    range_end = 900
+    default = 100
+
+
 @dataclass
 class BotwOptions(PerGameCommonOptions):
     start_inventory_from_pool: StartInventoryPool
@@ -291,6 +307,8 @@ class BotwOptions(PerGameCommonOptions):
     chest_sanity: ChestSanity
     chest_progression: ChestProgression
     shrine_chest_items: ShrineChestItems
+    korok_sanity: KorokSanity
+    korok_count: KorokCount
     trap_percentage: TrapPercentage
     trap_weights: TrapWeights
 
@@ -305,6 +323,7 @@ OPTION_GROUPS = [
     OptionGroup("Master Cycle Zero", [BikeAnywhere]),
     OptionGroup("Cutscenes", [CutsceneSkip]),
     OptionGroup("Chests", [ChestSanity, ChestProgression, ShrineChestItems]),
+    OptionGroup("Koroks", [KorokSanity, KorokCount]),
     OptionGroup("Traps", [TrapPercentage, TrapWeights]),
 ]
 

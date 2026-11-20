@@ -110,7 +110,7 @@ class NativeWorldTests(unittest.TestCase):
                 manifest = slot_manifests(next(Path(temp).glob("*.apbotw")))[0]
             self.assertEqual(len(manifest["placements"]), expected)
             self.assertEqual(len(manifest["shops"]), 16 * beedle + stall)
-            self.assertEqual(manifest["slot_data"]["world_schema"], 6)
+            self.assertEqual(manifest["slot_data"]["world_schema"], 7)
             self.assertEqual(manifest["slot_data"]["stall_items"], stall)
             stalls = [row for row in manifest["shops"] if 186 <= row["location_id"] <= 213]
             self.assertEqual(len(stalls), stall)

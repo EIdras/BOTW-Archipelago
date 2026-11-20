@@ -22,14 +22,19 @@ MASTER_CSV = ROOT / "data" / "locations_master.csv"
 # items (185 rows, botw_client/shop_catalog.py); 4: + 28 3D stall items (213
 # rows, botw_client/stall_catalog.py); 5: + Purah's 3 rune upgrades and the
 # ends of the 4 Champions' Ballads (220 rows); 6: the same rows, then the
-# chests of chest_sanity (botw_world/data/chests.json, CHEST_SCHEMA). botw_world
-# declares its schema in slot_data["world_schema"].
-SCHEMA_LOCATION_COUNTS = {1: 149, 2: 153, 3: 185, 4: 213, 5: 220, 6: 220}
-WORLD_SCHEMA = 6
+# chests of chest_sanity (botw_world/data/chests.json, CHEST_SCHEMA); 7: then
+# the Koroks of korok_sanity (botw_world/data/koroks.json, KOROK_SCHEMA).
+# botw_world declares its schema in slot_data["world_schema"].
+SCHEMA_LOCATION_COUNTS = {1: 149, 2: 153, 3: 185, 4: 213, 5: 220, 6: 220, 7: 220}
+WORLD_SCHEMA = 7
 # The first schema whose locations include the chests, by the vanilla flag each
 # keeps once its contents are taken (tools/chest_locations.py).
 CHEST_SCHEMA = 6
 CHESTS_JSON = ROOT / "botw_world" / "data" / "chests.json"
+# The first schema whose locations include the Koroks, by the vanilla flag each
+# sets once found (tools/korok_locations.py).
+KOROK_SCHEMA = 7
+KOROKS_JSON = ROOT / "botw_world" / "data" / "koroks.json"
 CHEST_ITEM_PREFIX = "AP_Chest_"
 # The Great Plateau's tower reveals its own map: its map is no item.
 PLATEAU_TOWER_FLAG = "MapTower_07"
@@ -50,6 +55,8 @@ CHESTS_SENT_WITH: dict[str, list[str]] = {}
 for _row in _CHEST_ROWS:
     if _row.get("sent_with"):
         CHESTS_SENT_WITH.setdefault(_row["sent_with"], []).append(_row["name"])
+_KOROK_ROWS = json.loads(KOROKS_JSON.read_text(encoding="utf-8"))
+KOROK_NAMES = frozenset(row["name"] for row in _KOROK_ROWS)
 
 
 def chest_number(item_name: str) -> int | None:
@@ -113,6 +120,9 @@ def load_targets(path: Path = MASTER_CSV,
     if world_schema >= CHEST_SCHEMA:
         targets += [LocationTarget(row["name"], row["flag"], zlib.crc32(row["flag"].encode()))
                     for row in json.loads(CHESTS_JSON.read_text(encoding="utf-8"))]
+    if world_schema >= KOROK_SCHEMA:
+        targets += [LocationTarget(row["name"], row["flag"], zlib.crc32(row["flag"].encode()))
+                    for row in _KOROK_ROWS]
     if len({target.name for target in targets}) != len(targets):
         raise ValueError("duplicate location names")
     if len({target.hash_u32 for target in targets}) != len(targets):

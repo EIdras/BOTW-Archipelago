@@ -59,11 +59,11 @@ PLAY_SEEDS = DATA / "play-seeds"
 PACKS = DATA / "packs-from-source"
 ORPHAN_AGE = 600        # seconds: see orphan_packs
 SCOPE = "generated_ap_seed"
-CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)    # 4: the Gerudo Set; 5: the goal and the sanctum; 6: the
+CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)    # 4: the Gerudo Set; 5: the goal and the sanctum; 6: the
 #                                                      new filler; 7: the weapons; 8: the travel items; 9: Epona;
 #                                                      10: maps; 11: the Downpour, Yiga Ambush and
 #                                                      Paranoia traps; 12: the travel points;
-#                                                      13: the chests
+#                                                      13: the chests; 14: the Koroks
 GAME = "Breath of the Wild"
 _ROWS = json.loads((ROOT / "botw_world/data/locations.json").read_text(encoding="utf-8"))
 # Every location but the goal, shops apart: they depend on beedle_shop_items
@@ -80,8 +80,9 @@ def expected_placements(slot_data: dict) -> int:
     stalls = (int(slot_data["stall_items"]) if "stall_items" in slot_data
               else len(stall_catalog.MERCHANTS) * int(slot_data.get("stall_shop_items", 0)))
     chests = len(_CHESTS) if slot_data.get("chest_sanity") else 0
+    koroks = len(slot_data.get("korok_locations", ())) if slot_data.get("korok_sanity") else 0
     return (PLACEMENTS + len(shop_catalog.MERCHANTS) * int(slot_data.get("beedle_shop_items", 0)) + stalls
-            + chests)
+            + chests + koroks)
 
 
 def sha(path: Path) -> str:

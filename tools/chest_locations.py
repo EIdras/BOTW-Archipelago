@@ -177,8 +177,13 @@ def places(game, bootup: oead.Sarc) -> list[tuple[str, float, float]]:
 
 
 def name_chests(out: list[dict], marks: list[tuple[str, float, float]], region_of) -> None:
-    """Each row's name: its place, the nearest of the region's marks, and its kind,
-    numbered from the place's nearest mark outwards when they are several."""
+    """Each row's name: its place and its kind (name_rows)."""
+    name_rows(out, marks, region_of, lambda row: f"{row['kind']} Chest")
+
+
+def name_rows(out: list[dict], marks: list[tuple[str, float, float]], region_of, noun) -> None:
+    """Each row's name: its place, the nearest of the region's marks, and noun(row),
+    numbered from the place's nearest mark outwards when several share both."""
     by_region: dict[str, list[tuple[str, float, float]]] = {}
     for mark in marks:
         by_region.setdefault(region_of(mark[1], mark[2]), []).append(mark)
@@ -187,11 +192,19 @@ def name_chests(out: list[dict], marks: list[tuple[str, float, float]], region_o
         x, _y, z = row["position"]
         place, px, pz = min(by_region.get(row["region"]) or marks,
                             key=lambda mark: (mark[1] - x) ** 2 + (mark[2] - z) ** 2)
-        groups.setdefault((place, row["kind"]), []).append(
+        groups.setdefault((place, noun(row)), []).append(
             (round((px - x) ** 2 + (pz - z) ** 2, 1), row["number"], row))
-    for (place, kind), members in groups.items():
+    for (place, what), members in groups.items():
         for index, (_distance, _number, row) in enumerate(sorted(members, key=lambda m: m[:2]), 1):
-            row["name"] = f"{place} - {kind} Chest" + (f" {index}" if len(members) > 1 else "")
+            row["name"] = f"{place} - {what}" + (f" {index}" if len(members) > 1 else "")
+
+
+def burning(bootup: oead.Sarc):
+    """(x, z) -> whether an Eldin climate there sets Link on fire (BURNING)."""
+    fields = Beco(unpack(bytes(bootup.get_file(FIELD_AREAS).data)))
+    climates = {int(a["AreaNumber"]): str(a["Climate"])
+                for a in oead.byml.from_binary(unpack(bytes(bootup.get_file(AREA_DATA).data)))}
+    return lambda x, z: climates[fields.at(x, z)] in BURNING
 
 
 def base_content() -> Path:
@@ -377,9 +390,7 @@ def rows(game, base: Path) -> list[dict]:
     Divine Beasts' (beast_rows)."""
     content = game.content
     bootup = oead.Sarc(unpack((content / "Pack/Bootup.pack").read_bytes()))
-    fields = Beco(unpack(bytes(bootup.get_file(FIELD_AREAS).data)))
-    climates = {int(a["AreaNumber"]): str(a["Climate"])
-                for a in oead.byml.from_binary(unpack(bytes(bootup.get_file(AREA_DATA).data)))}
+    heat = burning(bootup)
     towers = map_towers(content)
     named = area_regions(towers)
     maps = {name: game.read_aoc(chests.unit(name)) for name in chests.MAP_HASHES}
@@ -438,7 +449,7 @@ def rows(game, base: Path) -> list[dict]:
         out.append({"number": number, "flag": flag, "kind": kind, "region": region,
                     "name": None,                       # name_chests
                     "position": [round(x, 1), round(y, 1), round(z, 1)],
-                    "heat": climates[fields.at(x, z)] in BURNING,
+                    "heat": heat(x, z),
                     "requires": sorted(requires), "no_progression": reason})
     name_chests(out, places(game, bootup), lambda x, z: named[towers.at(x, z)])
     return sorted(out + shrine_rows(game, base) + beast_rows(game), key=lambda row: row["number"])

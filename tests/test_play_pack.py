@@ -16,7 +16,7 @@ def slot_file(folder, *, name="Player", slot=1, checksum="checksum", container=F
     """A BOTW slot file, as the world writes it (placements left empty): the
     container of botw_world/slot_file.py, or the plain manifest of earlier seeds."""
     manifest = {"schema": 1, "game": "Breath of the Wild", "seed": "test-seed", "slot": slot,
-                "slot_name": name, "slot_data": {"world_schema": 6, "client_schema": 3},
+                "slot_name": name, "slot_data": {"world_schema": 7, "client_schema": 3},
                 "placements": [], "shops": [], **extra}
     if checksum is not None:
         manifest["data_package_checksum"] = checksum
@@ -223,6 +223,12 @@ class VersionTests(unittest.TestCase):
         self.assertEqual(play_seed.expected_placements({"stall_shop_items": 2}), base + 28)
         self.assertEqual(play_seed.expected_placements({"beedle_shop_items": 1, "stall_items": 3}),
                          base + 16 + 3)
+
+    def test_the_koroks_drawn_are_placements(self):
+        base = play_seed.expected_placements({})
+        self.assertEqual(play_seed.expected_placements({"korok_sanity": 1, "korok_locations": [20001, 20007]}),
+                         base + 2)
+        self.assertEqual(play_seed.expected_placements({"korok_sanity": 0}), base)
 
     def test_a_seed_of_unknown_schemas_names_the_version_it_needs(self):
         with tempfile.TemporaryDirectory() as temp:

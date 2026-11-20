@@ -32,6 +32,7 @@ template with "Generate Template Options". Every option is explained [below](#op
 | Songs of the Champions' Ballad | 4 |
 | Beedle's shops (option) | 0 to 32 |
 | Village stalls (option) | 0 to 28 |
+| Koroks (option `korok_sanity`) | 0 to 900 |
 
 ## Items
 
@@ -57,7 +58,8 @@ template with "Generate Template Options". Every option is explained [below](#op
 - Pouch upgrades: 4 for weapons, 3 for bows, 4 for shields. Each one is one of Hestu's, who offers one fewer.
 - The Master Cycle Zero (The Champions' Ballad), the Travel Medallion and the Korok Mask (The Master Trials).
 - Epona, registered at the stables.
-- Spirit Orbs, Ancient Cores, Star Fragments and Fairies. The Koroks still give their seeds, as in the game.
+- Spirit Orbs, Ancient Cores, Star Fragments and Fairies. The Koroks still give their seeds, as in the game, even
+  when they are locations.
 
 **Filler**
 

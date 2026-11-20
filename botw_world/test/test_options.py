@@ -6,7 +6,8 @@ from worlds.AutoWorld import call_all
 from . import BotwTestBase
 from .. import BotwWorld
 from .test_tracker import generate
-from ..catalog import ALL_SHRINES, CHEST_ID_BASE, CHESTS, FILLER, LOCATIONS, MAPS, RUNES, WEAPONS, requirements
+from ..catalog import (ALL_SHRINES, CHEST_ID_BASE, CHESTS, FILLER, KOROK_ID_BASE, KOROKS, LOCATIONS, MAPS, RUNES, TRAPS,
+                       WEAPONS, requirements)
 
 # The filler of the default options: 159 locations, 119 declared items, 14 maps.
 FILLER_SLOTS = 26
@@ -277,6 +278,41 @@ class TestShrineChestItems(BotwTestBase):
         for options in ({"shrine_chest_items": True}, {"chest_sanity": "check_only", "shrine_chest_items": True}):
             with self.subTest(options=options), self.assertRaises(OptionError):
                 generate(options)
+
+
+class TestKorokSanityOffByDefault(BotwTestBase):
+    def test_no_korok_location(self) -> None:
+        locations = {loc.name for loc in self.multiworld.get_locations(self.player)}
+        self.assertFalse(locations & self.world.location_name_groups["Koroks"])
+        self.assertNotIn("korok_locations", self.world.fill_slot_data())
+
+
+class TestKorokSanity(BotwTestBase):
+    options = {"korok_sanity": True, "korok_count": 40, "chest_sanity": "check_only", "trap_percentage": 100}
+
+    def test_korok_count_koroks_drawn_are_excluded_locations(self) -> None:
+        koroks = [loc for loc in self.multiworld.get_locations(self.player)
+                  if loc.name in self.world.location_name_groups["Koroks"]]
+        self.assertEqual(len(koroks), 40)
+        self.assertEqual({loc.progress_type for loc in koroks}, {LocationProgressType.EXCLUDED})
+        slot_data = self.world.fill_slot_data()
+        self.assertEqual((slot_data["korok_count"], slot_data["client_schema"], slot_data["world_schema"]),
+                         (40, 14, 7))
+        self.assertEqual(slot_data["korok_locations"], sorted(loc.address for loc in koroks))
+        self.assertTrue(all(KOROK_ID_BASE < loc.address <= KOROK_ID_BASE + len(KOROKS) for loc in koroks))
+
+    def test_they_bring_no_more_traps(self) -> None:
+        with_koroks = generate(self.options)
+        without = generate({"chest_sanity": "check_only", "trap_percentage": 100})
+        self.assertEqual(sum(item.name in TRAPS for item in with_koroks.itempool),
+                         sum(item.name in TRAPS for item in without.itempool))
+        self.assertEqual(len(with_koroks.itempool), len(without.itempool) + 40)
+
+    def test_universal_tracker_finds_the_seeds_koroks(self) -> None:
+        passed = BotwWorld.interpret_slot_data(self.world.fill_slot_data())
+        again = generate({}, passthrough=passed, seed=7)
+        names = {loc.name for loc in again.get_locations(1) if loc.name in self.world.location_name_groups["Koroks"]}
+        self.assertEqual(names, {row["name"] for row in self.world.koroks})
 
 
 class TestCutsceneRemoved(BotwTestBase):
