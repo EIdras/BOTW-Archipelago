@@ -31,6 +31,14 @@ class KorokDataTests(unittest.TestCase):
         self.assertEqual(len(set(names)), len(names))
         self.assertTrue(all(name.isascii() and " - Korok" in name for name in names))
 
+    def test_what_the_puzzles_take(self):
+        self.assertEqual(collections.Counter(tuple(row["requires"]) for row in ROWS),
+                         {(): 812, ("Progressive Remote Bomb",): 53, ("Magnesis",): 34, ("Gerudo Set",): 1})
+        self.assertEqual(collections.Counter(row["no_progression"] for row in ROWS),
+                         {None: 862, "fire": 20, "ice": 18})
+        town = next(row for row in ROWS if row["requires"] == ["Gerudo Set"])
+        self.assertEqual(town["name"], "Gerudo Town - Korok 1")
+
     @unittest.skipUnless(HAS_DLC, "requires the DLC")
     @full_build
     def test_the_world_data_is_the_games(self):

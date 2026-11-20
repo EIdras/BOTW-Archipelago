@@ -13,7 +13,12 @@ order of their flags from 1:
   * name: "<place> - Korok", numbered from the place's name on the map outwards
     when the place has several, as the chests' (tools/chest_locations.py);
   * heat: an Eldin climate that sets Link on fire at its position;
-  * requires: what the map says its puzzle takes (none read yet).
+  * requires: what its puzzle takes, from the actors linked to it, either way and
+    through link tags (LINK_TAGS), or right next to it: bombs for a cracked wall or
+    breakable rocks (the chests' BREAKABLE), Magnesis for an iron plate, box, block or
+    chain (IRON: by a Korok well, a chained iron ball to lift out of the mud into a stump); the Gerudo Set inside Gerudo Town (the chests' GUARDED);
+  * no_progression: "ice" (behind an ice wall) or "fire" (behind ivy to burn): no
+    fire source is an item of the world.
 
 The world reads this file only: it cannot read the game's files.
 --check compares the file with the game's.
@@ -31,13 +36,20 @@ import oead  # noqa: E402
 
 from botw_patch import chests  # noqa: E402
 from botw_patch.resources import unpack  # noqa: E402
-from tools.chest_locations import burning, encode, name_rows, places  # noqa: E402
+from tools.chest_locations import (BOMBS, BREAKABLE, GUARDED, NEAR, burning, encode, inside,  # noqa: E402
+                                   name_rows, places)
 from tools.map_regions import area_regions, map_towers  # noqa: E402
 
 OUTPUT = ROOT / "botw_world/data/koroks.json"
 ACTORS = {"Npc_HiddenKorokGround": "Ground", "Npc_HiddenKorokFly": "Fly"}
 COUNT = 900
 MAIN_FIELD = "Map/MainField"
+# The actors a puzzle's links go through to the Korok, and how many links deep.
+LINK_TAGS = ("LinkTag", "SwitchTag", "AreaObserver", "EventTag", "TimerTag", "SignalFlowchart", "Area",
+             "LocationTag")
+DEPTH = 4
+IRON = ("Obj_BoxIron", "Obj_BoardIron", "FldObj_Chain", "FldObj_PushRockIron")
+NO_PROGRESSION = {"IceWall": "ice", "Obj_Plant_IvyBurn": "fire"}
 
 
 def units(game) -> list[str]:
@@ -47,15 +59,65 @@ def units(game) -> list[str]:
     return sorted(path.relative_to(game.aoc).as_posix() for path in (game.aoc / MAIN_FIELD).glob("*/*.smubin"))
 
 
+def puzzle(korok, by: dict, links: dict) -> set[str]:
+    """The actors linked to a Korok, either way, through link tags."""
+    seen, frontier, names = {int(korok["HashId"])}, [int(korok["HashId"])], set()
+    for _ in range(DEPTH):
+        reached = []
+        for key in frontier:
+            for other in links.get(key, ()):
+                if other in seen or other not in by:
+                    continue
+                seen.add(other)
+                name = str(by[other]["UnitConfigName"])
+                if name not in ACTORS:
+                    names.add(name)
+                    if name.startswith(LINK_TAGS):
+                        reached.append(other)
+        frontier = reached
+    return names
+
+
+def requirements(korok, names: set[str], nearby: list, guarded: list) -> tuple[list[str], str | None]:
+    """What a Korok's puzzle takes, and why no progression can wait on it."""
+    x, y, z = (float(v) for v in korok["Translate"])
+    close = {str(obj["UnitConfigName"]) for obj in nearby if obj is not korok
+             and abs(float(obj["Translate"][0]) - x) < NEAR[0] and abs(float(obj["Translate"][2]) - z) < NEAR[0]
+             and abs(float(obj["Translate"][1]) - y) < NEAR[1]}
+    requires = {BOMBS for name in names | close if name.startswith(BREAKABLE)}
+    requires |= {"Magnesis" for name in names | close if name.startswith(IRON)}
+    requires |= {item for area, item in guarded if inside(area, x, z)}
+    reason = next((why for actor, why in NO_PROGRESSION.items() if any(n.startswith(actor) for n in names)), None)
+    return sorted(requires), reason
+
+
 def rows(game) -> list[dict]:
     content = game.content
     bootup = oead.Sarc(unpack((content / "Pack/Bootup.pack").read_bytes()))
     heat = burning(bootup)
     towers = map_towers(content)
     named = area_regions(towers)
-    found = [(chests.flag(obj), ACTORS[str(obj["UnitConfigName"])], obj) for name in units(game)
-             for obj in oead.byml.from_binary(unpack(game.read_aoc(name)))["Objs"]
-             if str(obj["UnitConfigName"]) in ACTORS]
+    sections, grid = {}, {}
+    for name in units(game):
+        objs = sections.setdefault(name.rsplit("/", 1)[0], [])
+        objs.extend(oead.byml.from_binary(unpack(game.read_aoc(name)))["Objs"])
+    found, puzzles = [], {}
+    for objs in sections.values():
+        by, links = {int(obj["HashId"]): obj for obj in objs}, {}
+        for obj in objs:
+            grid.setdefault(cell(obj), []).append(obj)
+            for link in (obj["LinksToObj"] if "LinksToObj" in obj else []):
+                ends = int(obj["HashId"]), int(link["DestUnitHashId"])
+                links.setdefault(ends[0], []).append(ends[1])
+                links.setdefault(ends[1], []).append(ends[0])
+        for obj in objs:
+            if str(obj["UnitConfigName"]) in ACTORS:
+                found.append((chests.flag(obj), ACTORS[str(obj["UnitConfigName"])], obj))
+                puzzles[chests.flag(obj)] = puzzle(obj, by, links)
+    every = {int(obj["HashId"]): obj for objs in sections.values() for obj in objs}
+    if not set(GUARDED) <= set(every):
+        raise ValueError("an area of GUARDED is not in the main field's maps")
+    guarded = [(every[key], item) for key, item in GUARDED.items()]
     flags = sorted(flag for flag, _kind, _obj in found)
     if len(set(flags)) != COUNT or len(flags) != COUNT:
         raise ValueError(f"{len(set(flags))} Korok flags, {COUNT} expected")
@@ -63,12 +125,20 @@ def rows(game) -> list[dict]:
     out = []
     for flag, kind, obj in found:
         x, y, z = (float(v) for v in obj["Translate"])
+        nearby = [other for dx in (-1, 0, 1) for dz in (-1, 0, 1)
+                  for other in grid.get((cell(obj)[0] + dx, cell(obj)[1] + dz), ())]
+        requires, reason = requirements(obj, puzzles[flag], nearby, guarded)
         out.append({"number": numbers[flag], "flag": flag, "kind": kind, "region": named[towers.at(x, z)],
                     "name": None,                       # name_rows
                     "position": [round(x, 1), round(y, 1), round(z, 1)],
-                    "heat": heat(x, z), "requires": []})
+                    "heat": heat(x, z), "requires": requires, "no_progression": reason})
     name_rows(out, places(game, bootup), lambda x, z: named[towers.at(x, z)], lambda _row: "Korok")
     return sorted(out, key=lambda row: row["number"])
+
+
+def cell(obj) -> tuple[int, int]:
+    """The 10 m square of the map an actor stands in, seen from above."""
+    return int(float(obj["Translate"][0]) // 10), int(float(obj["Translate"][2]) // 10)
 
 
 def main() -> None:

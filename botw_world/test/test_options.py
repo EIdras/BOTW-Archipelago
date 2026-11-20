@@ -309,6 +309,11 @@ class TestKorokSanity(BotwTestBase):
                          sum(item.name in TRAPS for item in without.itempool))
         self.assertEqual(len(with_koroks.itempool), len(without.itempool) + 40)
 
+    def test_a_koroks_puzzle_is_in_its_rule(self) -> None:
+        for item in ("Magnesis", "Progressive Remote Bomb", "Gerudo Set"):
+            row = next(row for row in KOROKS if row["requires"] == [item])
+            self.assertIn(((item,), 1), requirements(row))
+
     def test_universal_tracker_finds_the_seeds_koroks(self) -> None:
         passed = BotwWorld.interpret_slot_data(self.world.fill_slot_data())
         again = generate({}, passthrough=passed, seed=7)
