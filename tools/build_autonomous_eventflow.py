@@ -54,6 +54,34 @@ def add_entry(raw):
     return result, ["independent presentation entry; no campfire continuation or grant"]
 
 
+def restore_campfire_cancel(raw):
+    """Give the campfire's cancel back its vanilla continuation.
+
+    The presentation stages were built on the cancel edge of the rest's choice
+    (Event3, case 3); the standalone entry replaced that chain, which was left
+    on the edge: cancelling a rest showed an empty Archipelago window.
+    """
+    flow = read_flow(raw)
+    chart = flow.flowchart
+    before = graph_snapshot(flow)
+    events = {e.name: e for e in chart.events}
+    choice, resume = events["Event3"].data, events["Event76"]
+    if choice.cases[3].v.name != "APDisplay_Sound":
+        raise ValueError("unexpected campfire cancel edge")
+    choice.cases[3] = make_rindex(resume)
+    leftover = {name for name in events if name.startswith("APDisplay_")}
+    chart.events[:] = [e for e in chart.events if e.name not in leftover]
+    result = write_flow(flow)
+    after = graph_snapshot(read_flow(result))
+    expected = copy.deepcopy(before)
+    for name in leftover:
+        del expected["events"][name]
+    expected["events"]["Event3"]["cases"][3] = "Event76"
+    if after != expected:
+        raise ValueError("restoring the campfire cancel changed another event")
+    return result, ["campfire cancel: vanilla continuation, leftover presentation chain removed"]
+
+
 def add_info(raw):
     info = oead.byml.from_binary(unpack(raw))
     key = f"Demo007_1<{ENTRY}>"

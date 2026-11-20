@@ -36,8 +36,12 @@ class TestShrinesOutsideThePlateau(LogicTestBase):
 
 class TestEitherWay(LogicTestBase):
     def test_either_rune_opens_a_shrine_with_two_ways(self) -> None:
-        self.assertEqual(LOGIC["Maka Rah Shrine"]["runes"], "Magnesis/Progressive Stasis")
-        self.assertAccessDependency(["Maka Rah Shrine"], [["Magnesis", "Progressive Stasis"]], only_check_listed=True)
+        self.assertEqual(LOGIC["Maka Rah Shrine"]["runes"], "Cryonis|Magnesis/Progressive Stasis")
+        self.assertAccessDependency(["Maka Rah Shrine"], [["Cryonis", "Magnesis"], ["Cryonis", "Progressive Stasis"]],
+                                    only_check_listed=True)
+
+    def test_a_rune_that_both_ways_need_is_required(self) -> None:
+        self.assertAccessDependency(["Maka Rah Shrine"], [["Cryonis"]], only_check_listed=True)
 
 
 class TestWhatTheGameBlocks(LogicTestBase):

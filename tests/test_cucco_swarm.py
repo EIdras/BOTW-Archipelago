@@ -289,7 +289,6 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.runtime.deliveries.backend.request_death = lambda: requested.append(1) or True
         self.runtime.state["pending_deathlinks"] = [{
             "time": 1.0, "source": "Other", "cause": "", "received_at": __import__("time").time()}]
-        self.runtime._deathlink_announced_at = 0.0     # announced long ago
         await self.start_blocking_swarm()
         await self.runtime._deathlink_tick()
         self.assertEqual(requested, [])

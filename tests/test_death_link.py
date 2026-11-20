@@ -34,15 +34,34 @@ class EntryTests(unittest.TestCase):
         out, _ = death_link.add_entry(raw)
         chart = read_flow(out).flowchart
         (entry,) = [e for e in chart.entry_points if e.name == death_link.ENTRY]
-        mark = entry.main_event.v.data
+        # Armed or not: the client takes the arming back from an entry the
+        # game holds behind another event, which would freeze Link.
+        armed = entry.main_event.v.data
+        self.assertEqual((str(armed.actor.v.identifier), str(armed.actor_query.v)),
+                         ("EventSystemActor", "CheckFlag"))
+        self.assertEqual(dict(armed.params.data), {"FlagName": "APDeathLinkArmed"})
+        self.assertEqual(set(armed.cases), {0, 1})
+        skip = armed.cases[0].v.data
+        self.assertEqual((str(skip.actor_action.v), dict(skip.params.data)),
+                         ("Demo_FlagON", {"FlagName": "APDeathLinkSkipped", "IsWaitFinish": True}))
+        self.assertIsNone(skip.nxt.v)
+        mark = armed.cases[1].v.data
         self.assertEqual((str(mark.actor.v.identifier), str(mark.actor_action.v)),
                          ("EventSystemActor", "Demo_FlagON"))
         self.assertEqual(dict(mark.params.data), {"FlagName": "APDeathLinkKill", "IsWaitFinish": True})
-        hit = mark.nxt.v.data
+        take = mark.nxt.v.data              # after the mark: the arming gone, the flag set
+        self.assertEqual((str(take.actor_action.v), dict(take.params.data)),
+                         ("Demo_FlagOFF", {"FlagName": "APDeathLinkArmed", "IsWaitFinish": True}))
+        hit = take.nxt.v.data
         self.assertEqual((str(hit.actor.v.identifier), str(hit.actor_action.v)),
                          ("GameROMPlayer", "Demo_ApplyDamage"))
         self.assertEqual(dict(hit.params.data), {"IsWaitFinish": True, "Value": 1000})
-        alive = hit.nxt.v.data
+        # The hit lands after Demo_ApplyDamage finishes: the check waits for it.
+        wait = hit.nxt.v.data
+        self.assertEqual((str(wait.actor.v.identifier), str(wait.actor_action.v)),
+                         ("EventSystemActor", "Demo_WaitFrame"))
+        self.assertEqual(dict(wait.params.data), {"IsWaitFinish": True, "Frame": 30})
+        alive = wait.nxt.v.data
         self.assertEqual(str(alive.actor_query.v), "ComparePlayerHeart")
         self.assertEqual(dict(alive.params.data), {"Threshold": 1})
         # Survived: the flag goes off. Dead: no case, the flag stays set.
@@ -54,15 +73,17 @@ class EntryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             death_link.add_entry(out)
 
-    def test_the_flag_is_a_volatile_bool(self):
+    def test_the_flags_are_volatile_bools(self):
         boot = oead.Sarc(unpack((CONTENT / "Pack/Bootup.pack").read_bytes()))
         out, _ = death_link.add_flag(bytes(boot.get_file(death_link.GAMEDATA).data))
         archive = oead.Sarc(unpack(out))
-        found = [dict(entry) for f in archive.get_files() if f.name.startswith("/bool_data_")
-                 for entry in oead.byml.from_binary(bytes(f.data))["bool_data"]
-                 if entry["DataName"] == "APDeathLinkKill"]
-        self.assertEqual(len(found), 1)
-        self.assertEqual((found[0]["IsSave"], int(found[0]["InitValue"])), (False, 0))
+        for name in ("APDeathLinkKill", "APDeathLinkArmed", "APDeathLinkSkipped"):
+            found = [dict(entry) for f in archive.get_files() if f.name.startswith("/bool_data_")
+                     for entry in oead.byml.from_binary(bytes(f.data))["bool_data"]
+                     if entry["DataName"] == name]
+            self.assertEqual(len(found), 1, name)
+            self.assertEqual((found[0]["IsSave"], int(found[0]["InitValue"]),
+                              found[0]["IsOneTrigger"]), (False, 0, False), name)
 
     def test_attacker_names_come_from_the_game_texts(self):
         names = death_link.attacker_names((CONTENT / death_link.MESSAGES).read_bytes())
@@ -103,6 +124,7 @@ class BackendTests(unittest.TestCase):
         backend = CemuNativeDeliveryBackend(game, "seed", 1, 7, catalog=NativeDeliveryCatalog(path),
                                             request=request, lock_factory=None)
         backend._state = lambda: (7, 0, 0)
+        backend._busy = lambda: False
         return backend, calls
 
     def test_the_death_entry_is_requested_from_its_flow(self):
@@ -131,6 +153,41 @@ class BackendTests(unittest.TestCase):
             self.assertEqual(backend.death_cause("Zelda"), "Zelda was slain by a Cucco")
         self.assertEqual(lines, ["Link's death as the game tells it: cause 0, raw 0x20000, "
                                  "attacker Kokko_Simple"])
+
+    def test_no_death_is_asked_while_link_is_busy(self):
+        # A kill run in a cutscene leaves Link frozen at 0 hearts.
+        with tempfile.TemporaryDirectory() as directory:
+            backend, calls = self.backend(directory, {"death_link": {
+                "entry": "APDeathLink", "flow": "OperationGuide"}})
+            backend._busy = lambda: True
+            self.assertIs(backend.request_death(), False)
+            self.assertEqual(calls, [])
+
+    def test_the_request_arms_the_entry_and_a_refusal_disarms_it(self):
+        flags = {}
+
+        def key(name):
+            return zlib.crc32(name.encode()) & 0xFFFFFFFF
+
+        live = SimpleNamespace(get=lambda h, kind: flags.get(h, False),
+                               set=lambda h, value, kind: flags.__setitem__(h, bool(value)) or True)
+        names = {"entry": "APDeathLink", "flow": "OperationGuide", "flag": "APDeathLinkKill",
+                 "armed": "APDeathLinkArmed", "skipped": "APDeathLinkSkipped"}
+        for native_return, armed in ((1, True), (0, False)):
+            with tempfile.TemporaryDirectory() as directory:
+                backend, _ = self.backend(directory, {"death_link": names}, native_return=native_return)
+                backend.game.live = live
+                flags.clear()
+                flags[key("APDeathLinkSkipped")] = True     # an earlier skip
+                backend.request_death()
+                self.assertEqual(backend.death_link_state(), (armed, False, False))
+                backend.disarm_death()
+                self.assertEqual(backend.death_link_state(), (False, False, False))
+        with tempfile.TemporaryDirectory() as directory:
+            backend, _ = self.backend(directory, {"death_link": {"entry": "APDeathLink",
+                                                                 "flow": "OperationGuide"}})
+            backend.game.live = live
+            self.assertIsNone(backend.death_link_state())   # a pack without the arming
 
     def test_a_refused_request_is_asked_again_and_an_old_pack_has_none(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -219,10 +276,11 @@ class Game:
 class RuntimeTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.directory = tempfile.TemporaryDirectory()
+        self.lines = []
         self.game = Game()
         self.runtime = BotwClientRuntime(
             "localhost:1", "Player", state_path=Path(self.directory.name) / "state.json",
-            log=lambda _: None,
+            log=self.lines.append,
             game_factory=lambda: self.game, tip_factory=object)
         self.runtime.state = self.runtime.state_store.select("seed", 0, 1)
         self.ap = SimpleNamespace(deathlinks=asyncio.Queue(), death_link_enabled=True,
@@ -276,43 +334,42 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.ap.send_death.assert_awaited_once_with("Player fell to their death")
         self.assertFalse(self.runtime.state["pending_outgoing_death"])
 
-    async def test_a_received_death_is_announced_then_kills_without_echo(self):
+    async def test_a_received_death_kills_at_once_then_is_told_without_echo(self):
         await self.tick()
         await self.receive()
-        with patch.object(runtime_module, "DEATHLINK_LEAD_SECONDS", 0.0):
-            await self.tick()                       # announced
-            self.assertEqual(self.runtime._journal_notes,
-                             [("{0}DeathLink{/}: Alice fell", None)])
-            self.assertEqual(self.requests, [])
-            await self.tick()                       # killed
-            await self.tick(2)                      # dead: not sent back
+        await self.tick()                           # killed, unannounced
+        self.assertEqual(len(self.requests), 1)
+        self.assertEqual(self.runtime._journal_notes,
+                         [("{0}DeathLink{/}: Alice fell", None)])
+        await self.tick(2)                          # dead: not sent back
         self.assertEqual(len(self.requests), 1)
         self.assertEqual(self.runtime.state["pending_deathlinks"], [])
         self.ap.send_death.assert_not_awaited()
 
-    async def test_the_announcement_waits_for_a_safe_moment(self):
+    async def test_the_kill_waits_for_a_safe_moment(self):
         await self.tick()
         self.game.safe = False
         await self.receive()
         await self.tick(2)
+        self.assertEqual(self.requests, [])
         self.assertEqual(self.runtime._journal_notes, [])
+        self.assertEqual(self.lines.count("DeathLink waiting: game not ready (?)"), 1)
         self.assertEqual(len(self.runtime.state["pending_deathlinks"]), 1)
 
     async def test_a_refused_request_keeps_the_death(self):
         self.result = False
         await self.tick()
         await self.receive()
-        with patch.object(runtime_module, "DEATHLINK_LEAD_SECONDS", 0.0):
-            await self.tick(2)
+        await self.tick()
         self.assertEqual(len(self.requests), 1)
         self.assertEqual(len(self.runtime.state["pending_deathlinks"]), 1)
+        self.assertEqual(self.runtime._journal_notes, [])
 
     async def test_a_pack_without_the_entry_drops_the_death(self):
         self.result = None
         await self.tick()
         await self.receive()
-        with patch.object(runtime_module, "DEATHLINK_LEAD_SECONDS", 0.0):
-            await self.tick(3)
+        await self.tick(3)
         self.assertEqual(len(self.requests), 1)
         self.assertEqual(self.runtime.state["pending_deathlinks"], [])
 
@@ -345,8 +402,7 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
     async def kill(self):
         await self.tick()
         await self.receive()
-        with patch.object(runtime_module, "DEATHLINK_LEAD_SECONDS", 0.0):
-            await self.tick(2)                      # announced, killed
+        await self.tick()                           # killed
 
     async def test_the_flag_keeps_the_death_from_echoing_whatever_the_time(self):
         with patch.object(runtime_module, "DEATHLINK_ECHO_SECONDS", 0.0):
@@ -363,21 +419,171 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
         await self.tick()
         self.ap.send_death.assert_awaited_once_with("Player fell to their death")
 
-    async def test_a_flag_left_set_by_a_survival_counts_only_for_a_while(self):
-        self.flag = True
-        self.result = "survived"                    # Mipha saved Link, flag left set
-        await self.kill()
-        with patch.object(runtime_module, "DEATHLINK_FLAG_SECONDS", 0.0), \
-                patch.object(runtime_module, "DEATHLINK_ECHO_SECONDS", 0.0):
+    async def test_a_survival_spends_the_request(self):
+        self.result = "survived"                    # Mipha saved Link
+        with patch.object(runtime_module, "DEATHLINK_ECHO_SECONDS", 0.0):
+            await self.kill()
+            self.flag = True                        # the entry ran...
+            await self.tick()
+            self.flag = False                       # ...and took its flag off
+            await self.tick()
+            self.flag = True                        # whatever it reads later
             self.game.dead = True
             await self.tick()
         self.ap.send_death.assert_awaited_once()
 
-    async def test_a_death_right_after_the_request_is_ours_whatever_the_flag(self):
-        self.flag = False                           # read as unset (seen in a room)
+    async def test_a_stale_flag_without_a_request_hides_no_death(self):
+        self.flag = True                            # left set by an earlier DeathLink
+        await self.tick()
+        self.game.dead = True
+        await self.tick()
+        self.ap.send_death.assert_awaited_once()
+
+    async def test_a_death_with_the_flag_off_is_sent_even_right_after_the_request(self):
+        self.result = "held"                        # the entry has not run yet
         await self.kill()
-        await self.tick()                           # dead in the same seconds
+        self.game.dead = True                       # killed by a Bokoblin meanwhile
+        await self.tick()
+        self.ap.send_death.assert_awaited_once()
+
+    async def test_a_request_held_through_a_cutscene_stays_pending(self):
+        # Requested as the tower's event began: the game ran it 40 s later, at
+        # its end (measured, 17/11); the flag off till then is no survival.
+        self.result = "held"
+        with patch.object(runtime_module, "DEATHLINK_ECHO_SECONDS", 0.0):
+            await self.kill()
+            await self.tick(3)                      # alive, the flag still off
+            self.flag, self.game.dead = True, True  # the entry runs at last
+            await self.tick()
         self.ap.send_death.assert_not_awaited()
+
+    async def test_a_death_held_by_a_menu_is_ours_by_its_flag(self):
+        # Requested as the player opened the map: Link dies when it closes,
+        # a minute later or more (seen in play); the flag stays set till then.
+        self.result = "held"                        # taken, Link not dead yet
+        with patch.object(runtime_module, "DEATHLINK_ECHO_SECONDS", 0.0):
+            await self.kill()
+            self.flag = True
+            await self.tick(3)                      # the menu still open
+            self.game.dead = True
+            await self.tick()
+        self.ap.send_death.assert_not_awaited()
+
+    async def test_a_late_death_with_the_flag_off_is_sent(self):
+        self.result = "held"
+        with patch.object(runtime_module, "DEATHLINK_ECHO_SECONDS", 0.0):
+            await self.kill()
+            self.flag = False
+            self.game.dead = True
+            await self.tick()
+        self.ap.send_death.assert_awaited_once()
+
+    def arming(self):
+        """The entry as the pack has it: armed by the request; the game runs it
+        at once ("strike") or holds it behind an event ("hold")."""
+        backend = self.runtime.deliveries.backend
+        self.armed = self.skipped = False
+        self.frames, self.game.frame_tick = 1000, lambda: self.frames
+        self.run = "strike"
+
+        def request_death():
+            self.requests.append(time.monotonic())
+            self.armed, self.skipped = True, False
+            if self.run == "strike":
+                self.strike()
+            return True
+
+        def disarm():
+            self.armed = False
+
+        def clear_skip():
+            self.skipped = False
+
+        backend.request_death = request_death
+        backend.death_link_state = lambda: (self.armed, self.flag, self.skipped)
+        backend.disarm_death, backend.clear_death_skip = disarm, clear_skip
+
+    def strike(self, dies=True):
+        """The entry runs: armed, it takes the arming and strikes; disarmed,
+        it marks its skip."""
+        if self.armed:
+            self.flag, self.armed = True, False
+            self.game.dead = dies
+        else:
+            self.skipped = True
+
+    async def test_an_armed_entry_kills_at_once(self):
+        self.arming()
+        await self.tick()
+        await self.receive()
+        await self.tick(3)
+        self.assertEqual(len(self.requests), 1)
+        self.assertEqual(self.runtime.state["pending_deathlinks"], [])
+        self.ap.send_death.assert_not_awaited()
+
+    async def test_an_entry_held_by_an_event_is_disarmed_then_asked_again(self):
+        # A shrine's terminal holds the entry and runs it as it ends, where a
+        # strike would freeze Link (measured 17/11).
+        self.arming()
+        self.run = "hold"
+        await self.tick()
+        await self.receive()
+        await self.tick()                           # asked, not started
+        self.frames += runtime_module.DEATHLINK_HOLD_FRAMES
+        await self.tick()                           # held: disarmed
+        self.assertFalse(self.armed)
+        self.assertEqual(len(self.runtime.state["pending_deathlinks"]), 1)
+        await self.tick(2)                          # no second request while it is held
+        self.assertEqual(len(self.requests), 1)
+        self.strike()                               # the event ends: the entry skips
+        self.assertFalse(self.game.dead)
+        self.run = "strike"
+        await self.tick()                           # its skip seen, asked again: killed
+        self.assertFalse(self.skipped)
+        await self.tick(2)
+        self.assertEqual(len(self.requests), 2)
+        self.assertEqual(self.runtime.state["pending_deathlinks"], [])
+        self.ap.send_death.assert_not_awaited()
+
+    async def test_an_entry_that_strikes_as_it_is_disarmed_is_ours(self):
+        self.arming()
+        self.run = "hold"
+        await self.tick()
+        await self.receive()
+        await self.tick()
+        self.frames += runtime_module.DEATHLINK_HOLD_FRAMES
+        self.strike()                               # started just before the disarm
+        await self.tick(3)
+        self.ap.send_death.assert_not_awaited()
+        self.assertEqual(self.runtime.state["pending_deathlinks"], [])
+
+    async def test_a_fairy_still_saves_link(self):
+        self.arming()
+        self.run = "hold"
+        await self.tick()
+        await self.receive()
+        await self.tick()
+        self.strike(dies=False)                     # struck, a fairy saved him...
+        self.flag = False                           # ...the flag off before any tick saw it
+        await self.tick(3)
+        self.assertEqual(self.runtime.state["pending_deathlinks"], [])
+        self.assertEqual(len(self.requests), 1)     # spent, not asked again
+        self.game.dead = True                       # a Bokoblin later
+        await self.tick()
+        self.ap.send_death.assert_awaited_once()
+
+    async def test_a_death_of_his_own_while_held_is_sent_and_spends_it(self):
+        self.arming()
+        self.run = "hold"
+        await self.tick()
+        await self.receive()
+        await self.tick()
+        self.frames += runtime_module.DEATHLINK_HOLD_FRAMES
+        await self.tick()                           # disarmed
+        self.game.dead = True                       # killed meanwhile
+        await self.tick()
+        self.ap.send_death.assert_awaited_once()
+        self.assertEqual(self.runtime.state["pending_deathlinks"], [])
 
     async def test_a_pack_without_the_flag_falls_back_on_the_time(self):
         self.runtime.deliveries.backend.killed_by_death_link = lambda: None

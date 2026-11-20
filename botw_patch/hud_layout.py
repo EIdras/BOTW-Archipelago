@@ -42,22 +42,24 @@ TEXTURES = {ONLINE: "Nt_APOnline_00^l.bflim", OFFLINE: "Nt_APOffline_00^l.bflim"
 # nothing else is drawn: placed by eye in the game (lab/tools/cemu/hud_place.py).
 POSITION = (609.0, -302.0)
 SIZE = 26.4
-# The minimap: N_InOut_00 of PaWeather_00, inside the screen's Pa_Weather_00.
-# On a 21:9 screen the game stretches the HUD; the mods that keep it in shape
-# fix the panes they know, by name, and leave the indicator stretched. So the
-# indicator is built as the minimap is, and follows it:
+# The weather box above the minimap: N_InOut_00 of PaWeather_00, inside the
+# screen's Pa_Weather_00 (the minimap itself, AppMap_00, is placed by code).
+# On an ultrawide screen the game stretches the HUD; the mods that keep it in
+# shape fix the panes they know, by name, and leave the indicator stretched.
+# So the indicator is built as the weather box is, and follows it:
 #   * the community Graphics pack's Ultrawide HUD Mode (a code patch) scales
 #     and moves, as the screen loads, the N_InOut_00 of a part Pa_Weather_00:
 #     the indicator's logos sit in a null pane Pa_Weather_00 > N_InOut_00 of
-#     their own part, beside the minimap, and get the same treatment;
-#   * the UltraWide 21:9 UI Fix (layout files) squeezes the screen's
+#     their own part and get the same treatment;
+#   * a layout mod (the UltraWide 21:9 UI Fix) squeezes the screen's
 #     Pa_Weather_00 and moves its N_InOut_00 out: the indicator's part takes
-#     that position and scale, and its N_InOut_00 the minimap's x plus offset.
-MINIMAP_LAYOUT = "blyt/PaWeather_00.bflyt"
-MINIMAP_PART = "Pa_Weather_00"
-MINIMAP_PANE = "N_InOut_00"
-MINIMAP_X = 362.0                           # the game's own
-MINIMAP_OFFSET = POSITION[0] - MINIMAP_X
+#     that position and scale, and its N_InOut_00 the weather box's x plus
+#     offset (the seed's pack is built over the player's mods).
+WEATHER_LAYOUT = "blyt/PaWeather_00.bflyt"
+WEATHER_PART = "Pa_Weather_00"
+WEATHER_PANE = "N_InOut_00"
+WEATHER_X = 362.0                           # the game's own
+WEATHER_OFFSET = POSITION[0] - WEATHER_X
 TEXTURE_SIZE = 64
 FORMAT_RGBA8_SRGB = 20                      # FLIM format of the ^l textures
 TILE_MODE, SWIZZLE = 4, 2                   # as Nt_KeySmall_00^l (flags 0x44)
@@ -135,23 +137,23 @@ def pane_scale(data: bytes) -> tuple[float, float]:
     return struct.unpack_from(">ff", data, 0x3c)
 
 
-def minimap_x(layout: bytes) -> float:
-    """The minimap's x in PaWeather_00 (MINIMAP_X in the game's own)."""
+def weather_x(layout: bytes) -> float:
+    """The weather box's x in PaWeather_00 (WEATHER_X in the game's own)."""
     _, sections = read_layout(layout)
     for magic, data in sections:
-        if magic in (b"pan1", b"prt1", b"pic1") and pane_name(data) == MINIMAP_PANE:
+        if magic in (b"pan1", b"prt1", b"pic1") and pane_name(data) == WEATHER_PANE:
             return pane_x(data)
-    raise ValueError(f"{MINIMAP_PANE} not in {MINIMAP_LAYOUT}")
+    raise ValueError(f"{WEATHER_PANE} not in {WEATHER_LAYOUT}")
 
 
 # --- the part layout -----------------------------------------------------------
 
-def part_layout(template: bytes, minimap: float = MINIMAP_X) -> bytes:
-    """PaAPStatus_00: RootPane > Pa_Weather_00 > N_InOut_00 (the minimap's x
-    plus MINIMAP_OFFSET) > [P_APOffline_00 (visible), P_APOnline_00]."""
+def part_layout(template: bytes, weather: float = WEATHER_X) -> bytes:
+    """PaAPStatus_00: RootPane > Pa_Weather_00 > N_InOut_00 (the weather box's
+    x plus WEATHER_OFFSET) > [P_APOffline_00 (visible), P_APOnline_00]."""
     return picture_layout(template, PART_LAYOUT, SIZE, [
         (OFFLINE, TEXTURES[OFFLINE], True), (ONLINE, TEXTURES[ONLINE], False)],
-        nest=[(MINIMAP_PART, 0.0), (MINIMAP_PANE, minimap + MINIMAP_OFFSET)])
+        nest=[(WEATHER_PART, 0.0), (WEATHER_PANE, weather + WEATHER_OFFSET)])
 
 
 def picture_layout(template: bytes, layout: str, size: float,
@@ -227,7 +229,7 @@ def picture_layout(template: bytes, layout: str, size: float,
 def add_part(screen: bytes) -> tuple[bytes, dict]:
     """MainScreen_00 with Pa_APStatus_00 after the last child of N_All_00,
     where the screen's Pa_Weather_00 is and as it is scaled (its layout puts
-    the logos beside the minimap: part_layout)."""
+    the logos beside the weather box: part_layout)."""
     header, sections = read_layout(screen)
     names = [pane_name(data) if magic in (b"pan1", b"prt1", b"pic1") else None
              for magic, data in sections]
@@ -359,12 +361,12 @@ def patch_archive(raw_sarc: bytes, icon_raw: bytes) -> tuple[bytes, dict]:
     added = [f"blyt/{PART_LAYOUT}.bflyt", *(f"timg/{t}" for t in TEXTURES.values())]
     if any(archive.get_file(name) is not None for name in added):
         raise ValueError("indicator already in the archive")
-    weather = archive.get_file(MINIMAP_LAYOUT)
-    minimap = minimap_x(bytes(weather.data)) if weather is not None else MINIMAP_X
+    found = archive.get_file(WEATHER_LAYOUT)
+    weather = weather_x(bytes(found.data)) if found is not None else WEATHER_X
     screen, detail = add_part(bytes(archive.get_file(SCREEN).data))
     writer.files[SCREEN] = screen
     writer.files[f"blyt/{PART_LAYOUT}.bflyt"] = part_layout(
-        bytes(archive.get_file(TEMPLATE).data), minimap)
+        bytes(archive.get_file(TEMPLATE).data), weather)
     for name, raw in textures(icon_raw).items():
         writer.files[name] = raw
     return bytes(writer.write()[1]), {**detail, "added": added}

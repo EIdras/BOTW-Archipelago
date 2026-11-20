@@ -494,11 +494,55 @@ class CemuNativeDeliveryBackend:
         """Kill Link through the pack's DeathLink entry: True once the game took
         the request, False when it is to be asked again later, None when the
         pack has no such entry. An unknown outcome counts as taken: a death
-        requested twice would kill twice."""
+        requested twice would kill twice. Asked only while Link is free, as a
+        delivery, and armed: the game may still take the entry during an event
+        (a cutscene, a shrine's terminal) and run it at its end, where a hit
+        would freeze Link; the client then takes the arming back (runtime)."""
         found = self.catalog.death_link_entry()
         if found is None:
             return None
-        return self._request_once(*found) is not False
+        if self._busy():
+            self.death_wait_reason = "Link not free (a menu, a dialogue, an event, a loading)"
+            return False
+        self._set_death_flag("armed", True)
+        self._set_death_flag("skipped", False)
+        taken = self._request_once(*found) is not False
+        if not taken:
+            self.death_wait_reason = "the game did not take the request"
+            self._set_death_flag("armed", False)
+        return taken
+
+    def _death_flag_name(self, key: str) -> str | None:
+        value = self.catalog.data.get("death_link")
+        return str(value[key]) if isinstance(value, dict) and value.get(key) else None
+
+    def _set_death_flag(self, key: str, value: bool) -> None:
+        """Write the entry's volatile flag `key` (catalog "armed", "skipped"),
+        live; nothing for a pack without it. Raises when it does not read back."""
+        name = self._death_flag_name(key)
+        live = getattr(self.game, "live", None)
+        if name is None or live is None:
+            return
+        flag = zlib.crc32(name.encode()) & 0xFFFFFFFF
+        if not live.set(flag, value, "bool") or bool(live.get(flag, "bool")) != value:
+            raise RuntimeError(f"{name}: not written")
+
+    def death_link_state(self) -> tuple[bool, bool, bool] | None:
+        """(armed, flag, skipped) of the DeathLink entry, or None: a pack
+        without the arming (botw_patch/death_link.py)."""
+        names = [self._death_flag_name(key) for key in ("armed", "flag", "skipped")]
+        live = getattr(self.game, "live", None)
+        if None in names or live is None:
+            return None
+        values = [live.get(zlib.crc32(name.encode()) & 0xFFFFFFFF, "bool") for name in names]
+        return None if None in values else tuple(bool(value) for value in values)
+
+    def disarm_death(self) -> None:
+        """Take the arming back from an entry the game holds."""
+        self._set_death_flag("armed", False)
+
+    def clear_death_skip(self) -> None:
+        self._set_death_flag("skipped", False)
 
     def killed_by_death_link(self) -> bool | None:
         """Is the DeathLink entry's flag set (a death it caused)? None when the
