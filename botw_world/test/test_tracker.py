@@ -112,3 +112,52 @@ class TestRegeneration(unittest.TestCase):
 
     def test_a_normal_generation_is_not_changed_by_the_tracker(self):
         self.assertIsNone(generate(OPTIONS).worlds[1].passed_stalls)
+
+
+class MapTabTests(unittest.TestCase):
+    """Universal Tracker's map tab (botw_world/tracker.py): the player's PopTracker pack, Link's
+    mark from the room's data storage, the items beside the map."""
+
+    def test_the_map_tab_reads_the_players_pack(self):
+        from .. import tracker
+        config = BotwWorld.tracker_world
+        self.assertEqual(config["external_pack_key"], "ut_pack_path")
+        self.assertEqual((config["map_page_maps"], config["map_page_locations"]),
+                         ("maps/maps.json", "locations/locations.json"))
+        self.assertEqual(BotwWorld.settings_key, "botw_options")
+        self.assertIn("ut_pack_path", tracker.BotwSettings.__annotations__)
+        self.assertFalse(tracker.TrackerPackPath.required)
+        # The key the client writes (botw_client/uat.py ROOM_KEY), for a slot of a team.
+        self.assertEqual(config["location_setting_key"].format(team=0, player=3), "botw_link_0_3")
+        for layout in config["map_page_item_layouts_left"]:
+            self.assertFalse(set(layout["items"]) - set(BotwWorld.item_name_to_id), layout["name"])
+
+    def test_link_is_placed_by_the_packs_grid(self):
+        import json
+        import os
+        import tempfile
+        import zipfile
+        from .. import tracker
+        grid = {"origin_x": -6000.0, "origin_z": -5000.0, "scale": 0.2, "left": 162, "top": 180,
+                "cell": 20.0, "rows": 84, "cols": 104}
+        with tempfile.TemporaryDirectory() as folder:
+            pack = os.path.join(folder, "poptracker", tracker.PACK)
+            os.makedirs(os.path.dirname(pack))
+            with zipfile.ZipFile(pack, "w") as archive:
+                archive.writestr("maps/link_grid.json", json.dumps(grid))
+            self.assertEqual(tracker.link_coords(0, {"x": -1000, "z": 1500, "region": "Great Plateau"}, pack),
+                             (838, 1120, tracker.LINK_ICON))
+            self.assertIsNone(tracker.link_coords(0, "", pack))              # nothing written yet
+            self.assertIsNone(tracker.link_coords(0, {"x": -5900, "z": 0}, pack))   # off the map shown
+            self.assertEqual(tracker.built_pack({"BOTW_AP_DATA": folder}), pack)
+            self.assertEqual(tracker.built_pack({"BOTW_AP_DATA": os.path.join(folder, "none")}), "")
+        self.assertIsNone(tracker.link_coords(0, {"x": 0, "z": 0}, os.path.join(folder, "gone.zip")))
+        # A pack with the arrows: his mark faces where he does.
+        with tempfile.TemporaryDirectory() as folder:
+            pack = os.path.join(folder, tracker.PACK)
+            with zipfile.ZipFile(pack, "w") as archive:
+                archive.writestr("maps/link_grid.json", json.dumps(dict(grid, arrows=tracker.ARROWS)))
+            here = {"x": -1000, "z": 1500, "region": "Great Plateau"}
+            self.assertEqual(tracker.link_coords(0, dict(here, heading=95), pack), (838, 1120, "images/link/04.png"))
+            self.assertEqual(tracker.link_coords(0, dict(here, heading=350), pack)[2], "images/link/00.png")
+            self.assertEqual(tracker.link_coords(0, here, pack)[2], tracker.LINK_ICON)

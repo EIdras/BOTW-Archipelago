@@ -47,6 +47,22 @@ game, so that no file of the game is in the repository.
   `region_lock`. Green would read as a check in logic: once the region is open, `botw_update_regions` checks its
   marker (grey, as a location done), the Great Plateau's from the start. The markers are hidden
   (`botw_regions_shown`) when the slot data's `tower_maps` is vanilla. Without the update, neither is drawn.
+- **Link on the map** (`link_marks`, `scripts/uat.lua`): the pack's variant has the `uat` flag, and PopTracker reads
+  the variables of the client's UAT server (`botw_client/uat.py`): `region`, `x`, `z` (whole units, MainField) and
+  `heading` (degrees, 0 up the map). PopTracker draws a location as a shape, never an image, in its player's colors,
+  and moves none: Link's mark is one location of no check (`locations/link.json`) with a diamond in each 100 m cell
+  of the map, each shown only in its cell (`restrict_visibility_rules` and `force_invisibility_rules` on two hidden
+  counters, `link_row` and `link_col`, that the script sets). A single `{}` section keeps it one blue; the script adds
+  a white glow (PopTracker 0.32). The "Follow" toggle frames the region Link enters (`Zoom` and `Pan` UI hints,
+  PopTracker 0.34; the views, `REGION_VIEWS` of `scripts/view.lua`, fit each region's tower area), never a move
+  inside it.
+- **Universal Tracker's map** (`botw_world/tracker.py`, the world's `tracker_world`): its Map tab reads this pack,
+  found where the launcher writes it or asked for once (`botw_options.ut_pack_path` in `host.yaml`): the map, the
+  locations' places, the items' icons; what is in logic is the world's. Link reaches it through the room's data
+  storage, `botw_link_<team>_<slot>`, written by the client at most every 2 s, when he moved 50 m, turned 22.5° or
+  changed region. His mark is the game map's own arrow (`Nt_MapPlayerIconNew_00^s` and its shadow, from the
+  update's `Layout/Common.sblarc`), turned in 16 images, `images/link/NN.png`; the heading is the third column of
+  the player actor's matrix. Universal Tracker draws only squares, which grow with the map as it zooms.
 - **Positions** (`data/location_positions.json`, built by `tools/build_location_positions.py` from the DLC's map
   units, checked by a test): shrines and towers from their `LocationMarker`, a rune terminal at its plateau shrine,
   a Divine Beast and its heart at the beast's marker during its quest, the Great Fairies at their fountain, Beedle at

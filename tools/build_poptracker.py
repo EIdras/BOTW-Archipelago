@@ -54,7 +54,7 @@ SOURCE_FILES = ("tools/build_poptracker.py", "tools/maptex.py", "tools/uitex.py"
                 "tools/poptracker_regions.py",
                 "tools/map_regions.py", "data/location_positions.json",
                 "tools/poptracker/scripts/init.lua", "tools/poptracker/scripts/logic.lua",
-                "tools/poptracker/scripts/autotracking/archipelago.lua")
+                "tools/poptracker/scripts/autotracking/archipelago.lua", "tools/poptracker/scripts/uat.lua")
 
 
 def catalog():
@@ -568,6 +568,19 @@ CATEGORIES = {"Shrines": ("Shrine", "Rune Terminal"), "Towers": ("Tower",), "Sho
                          "Goal"),
               "Koroks": ("Korok",), "Chests": ("Chest",), "Dungeon Chests": ("Dungeon Chest",)}
 SHOW_REGIONS = "show_regions"
+# Link on the map, told by the client through UAT (botw_client/uat.py, scripts/uat.lua): his
+# mark in the cell of LINK_CELL world units he stands in (link_marks), and with the "Follow"
+# toggle the view of the region he enters (region_views).
+SHOW_LINK, FOLLOW_REGION = "show_link", "follow_region"
+LINK_ROW, LINK_COL = "link_row", "link_col"
+LINK_CELL = 100
+LINK_SIZE = 44                    # pixels of his mark (a check's square 30)
+LINK_COLOUR = "#20ffff"           # his buttons' and Universal Tracker's mark (link_dot)
+LINK_ICON_SIZE = 56               # map pixels of Universal Tracker's mark (maps.json)
+LINK_ARROWS = 16                  # its arrows, one a turn (botw_world/tracker.py ARROWS)
+# The game map's own mark of Link: an arrow (a mask) and its shadow.
+ARROW_TEXTURES = ("Nt_MapPlayerIconNew_00^s", "Nt_MapPlayerIconNewSh_00^s")
+ARROW_NARROWING = 0.7
 
 
 def shown(kind: str) -> str:
@@ -576,8 +589,9 @@ def shown(kind: str) -> str:
 
 
 def toggle_codes() -> list[str]:
-    """The codes of the "Map" group's toggles: the categories, then the regions' markers."""
-    return [shown(kinds[0]) for kinds in CATEGORIES.values()] + [SHOW_REGIONS]
+    """The codes of the "Map" group's toggles: the categories, the regions' markers, then
+    Link's mark and the view following his region."""
+    return [shown(kinds[0]) for kinds in CATEGORIES.values()] + [SHOW_REGIONS, SHOW_LINK, FOLLOW_REGION]
 
 
 # --- The "Map" group's buttons -------------------------------------------------
@@ -690,11 +704,99 @@ def diamond(colour: str = GOLD, size: int = 48) -> np.ndarray:
     return image.astype(np.uint8)
 
 
+def link_dot(colour: str = LINK_COLOUR, size: int = 48) -> np.ndarray:
+    """Link's mark, with no heading to show: a dot in a white ring, on a soft shadow that
+    keeps it seen on the sea. RGBA."""
+    y, x = np.mgrid[0:size, 0:size] + 0.5
+    distance = np.hypot(x - size / 2, y - size / 2) / (size / 2)      # 1 at the edge
+    dot = np.clip((0.48 - distance) * size / 2 + 0.5, 0, 1)[..., None]
+    ring = np.clip((0.68 - distance) * size / 2 + 0.5, 0, 1)
+    shadow = np.clip((1 - distance) / 0.32, 0, 1) * 0.6
+    image = np.zeros((size, size, 4))
+    image[..., :3] = (rgb(colour) * dot + 255 * (1 - dot)) * ring[..., None]
+    image[..., 3] = np.maximum(ring, shadow) * 255
+    return image.astype(np.uint8)
+
+
+def rotated(image: np.ndarray, degrees: float) -> np.ndarray:
+    """A square image (floats, alpha premultiplied) turned clockwise about its centre, bilinear."""
+    size = image.shape[0]
+    y, x = np.mgrid[0:size, 0:size] + 0.5 - size / 2
+    angle = np.radians(degrees)
+    sx = x * np.cos(angle) + y * np.sin(angle) + size / 2 - 0.5     # where each pixel comes from
+    sy = y * np.cos(angle) - x * np.sin(angle) + size / 2 - 0.5
+    x0, y0 = np.floor(sx).astype(int), np.floor(sy).astype(int)
+    fx, fy = (sx - x0)[..., None], (sy - y0)[..., None]
+    padded = np.pad(image, ((1, 1), (1, 1), (0, 0)))
+
+    def at(row, column):
+        return padded[np.clip(row + 1, 0, size + 1), np.clip(column + 1, 0, size + 1)]
+    return (at(y0, x0) * (1 - fx) * (1 - fy) + at(y0, x0 + 1) * fx * (1 - fy)
+            + at(y0 + 1, x0) * (1 - fx) * fy + at(y0 + 1, x0 + 1) * fx * fy)
+
+
+def link_arrows(content: Path | None, size: int = 64) -> dict[str, np.ndarray]:
+    """Universal Tracker's mark facing each of LINK_ARROWS ways, clockwise from up the map: the
+    game map's own arrow in LINK_COLOUR, framed in white, on its shadow; the dot without them."""
+    try:
+        from tools import uitex
+        textures = uitex.textures(content) if content is not None else {}
+        arrow, shadow = (uitex.decode(textures[name]) for name in ARROW_TEXTURES)
+    except (OSError, KeyError, ValueError):
+        return {f"images/link/{turn:02d}.png": link_dot(size=size) for turn in range(LINK_ARROWS)}
+    # Square about the centre, room for the shadow at any turn.
+    rows, columns = np.nonzero(shadow[..., 3] > 4)
+    centre = shadow.shape[0] / 2
+    half = int(np.ceil(np.hypot(rows + 0.5 - centre, columns + 0.5 - centre).max())) + 1
+    window = slice(int(centre) - half, int(centre) + half)
+    # Narrowed: as wide as the game draws it, turned, it no longer shows where it points.
+    across = (np.arange(size) + 0.5 - size / 2) / ARROW_NARROWING + size / 2 - 0.5
+    masks = [np.array([np.interp(across, np.arange(size), row, left=0, right=0)
+                       for row in resized(image[window, window], size)[..., 3] / 255])
+             for image in (arrow, shadow)]
+    pointed, dark = masks[0], np.clip(masks[1] * 2, 0, 0.85)
+    frame = pointed.copy()                                   # the arrow grown by 2.5 pixels
+    padded = np.pad(pointed, 3)
+    for dy in range(-3, 4):
+        for dx in range(-3, 4):
+            if dx * dx + dy * dy <= 6.25:
+                frame = np.maximum(frame, padded[3 + dy:3 + dy + size, 3 + dx:3 + dx + size])
+    rgb_, alpha = np.zeros((size, size, 3)), dark.copy()     # premultiplied: black, white, colour
+    for colour, cover in (((255, 255, 255), frame), (rgb(LINK_COLOUR), pointed)):
+        rgb_ = np.array(colour) * cover[..., None] + rgb_ * (1 - cover[..., None])
+        alpha = cover + alpha * (1 - cover)
+    image = np.dstack([rgb_, alpha])
+    arrows = {}
+    for turn in range(LINK_ARROWS):
+        turned = rotated(image, turn * 360 / LINK_ARROWS)
+        cover = np.clip(turned[..., 3:4], 0, 1)
+        straight = np.where(cover > 0, turned[..., :3] / np.maximum(cover, 1e-6), 0)
+        arrows[f"images/link/{turn:02d}.png"] = np.dstack(
+            [np.clip(straight, 0, 255), cover * 255]).round().astype(np.uint8)
+    return arrows
+
+
+def magnifier(colour: str = LINK_COLOUR, size: int = 48) -> np.ndarray:
+    """The "Follow" button's icon: a magnifying glass. RGBA."""
+    y, x = np.mgrid[0:size, 0:size] + 0.5
+    centre, radius, width = size * 0.4, size * 0.27, size * 0.09
+    ring = width - np.abs(np.hypot(x - centre, y - centre) - radius)
+    along = ((x - centre) + (y - centre)) / np.sqrt(2)               # the handle, down to the right
+    across = np.abs((x - centre) - (y - centre)) / np.sqrt(2)
+    handle = np.minimum(np.minimum(width * 1.2 - across, along - radius), size * 0.8 - along)
+    image = np.zeros((size, size, 4))
+    image[..., :3] = rgb("#ffffff")
+    image[..., 3] = np.clip(np.maximum(ring, handle) + 0.5, 0, 1) * 255
+    return image.astype(np.uint8)
+
+
 def map_toggles(icons: dict[str, np.ndarray]) -> tuple[list, dict]:
     """The "Map" group's toggles, all on at first, and their buttons' images."""
     entries, images = [], {}
     looks = {name: (icons.get(name), DOT[kinds[0]]) for name, kinds in CATEGORIES.items()}
     looks["Regions"] = (diamond(), GOLD)
+    looks["Link"] = (link_dot(), LINK_COLOUR)
+    looks["Follow"] = (magnifier(), LINK_COLOUR)
     for (name, (glyph, colour)), item in zip(looks.items(), toggle_codes()):
         path = f"images/buttons/{item}.png"
         images[path] = button(glyph, colour, name[:3].upper())
@@ -939,7 +1041,7 @@ def layouts(cat, drawn: poptracker_regions.Drawn | None = None) -> dict:
         "item_grid": {"type": "itemgrid", "item_margin": "3,3", "item_size": "40,40",
                       "h_alignment": "center", "rows": grid},
         "map_toggles": {"type": "itemgrid", "item_margin": "3,3", "item_size": "32,32", "h_alignment": "center",
-                        "rows": [toggle_codes()[:4], toggle_codes()[4:]]},
+                        "rows": [toggle_codes()[:4], toggle_codes()[4:8], toggle_codes()[8:]]},
         "region_tiles": {"type": "itemgrid", "item_margin": "3,3", "item_size": f"{width},{height}",
                          "h_alignment": "center", "rows": tiles},
         "tracker_default": {"type": "container", "background": "#00000000", "content": {
@@ -1010,20 +1112,85 @@ def regions_panel(cat, image: np.ndarray, box: tuple[int, int, int, int],
         return None
 
 
-def regions_on_map(cat, crop: np.ndarray, box: tuple[int, int, int, int], places: list,
-                   lookup: poptracker_regions.Lookup | None) -> list:
+def region_pixels(lookup: poptracker_regions.Lookup | None, box: tuple[int, int, int, int]) -> np.ndarray | None:
+    """The region of each pixel of the map shown (names, None outside); None without the tower areas."""
+    if lookup is None:
+        return None
+    left, top, right, bottom = box
+    try:
+        return lookup(np.arange(left, right), np.arange(top, bottom))
+    except (OSError, ValueError, KeyError):
+        return None
+
+
+def region_views(where: np.ndarray | None, margin: float = 0.9) -> dict[str, list]:
+    """{region: [zoom, x, y]}: the view of the map shown that frames a region, its zoom (1, the
+    whole map; PopTracker's "Zoom" hint) and its centre in pixels ("Pan")."""
+    if where is None:
+        return {}
+    height, width = where.shape
+    views = {}
+    for region in sorted(set(where.ravel()) - {None}):
+        ys, xs = np.nonzero(where == region)
+        x0, x1, y0, y1 = xs.min(), xs.max() + 1, ys.min(), ys.max() + 1
+        zoom = max(1.0, margin * min(width / (x1 - x0), height / (y1 - y0)))
+        views[region] = [round(zoom, 2), int((x0 + x1) // 2), int((y0 + y1) // 2)]
+    return views
+
+
+def link_marks(where: np.ndarray | None, box: tuple[int, int, int, int]) -> tuple[dict, list]:
+    """Link's mark: the grid of LINK_CELL world units over the map shown, as scripts/uat.lua
+    finds his cell from his position (LINK_GRID), and the location of his mark, one spot a cell
+    holding land (`where`, every cell without it). A spot is shown when the hidden counters
+    link_row and link_col are its row and column, from 1 (0: nowhere), and the toggle on."""
+    left, top, right, bottom = box
+    cell = LINK_CELL * SCALE
+    rows, cols = int(np.ceil((bottom - top) / cell)), int(np.ceil((right - left) / cell))
+    grid = {"origin_x": maptex.ORIGIN[0], "origin_z": maptex.ORIGIN[1], "scale": SCALE,
+            "left": left, "top": top, "cell": cell, "rows": rows, "cols": cols}
+    spots = []
+    for row in range(rows):
+        for col in range(cols):
+            y0, x0 = int(row * cell), int(col * cell)
+            if where is not None and (where[y0:int(y0 + cell), x0:int(x0 + cell)] == None).all():  # noqa: E711
+                continue
+            spots.append({"map": MAP, "x": int(x0 + cell / 2), "y": int(y0 + cell / 2), "size": LINK_SIZE,
+                          "border_thickness": 4, "shape": "diamond",
+                          "restrict_visibility_rules": [[f"{LINK_ROW}:{row + 1}", f"{LINK_COL}:{col + 1}"]],
+                          "force_invisibility_rules": [[f"{LINK_ROW}:{row + 2}"], [f"{LINK_COL}:{col + 2}"]]})
+    # Blue, the colour of no check: a section only to look ({}); scripts/uat.lua adds a white glow
+    # (Highlight). PopTracker draws shapes in its own colours, those of its player's settings:
+    # no image, no colour of the pack's own, and two sections are drawn in two colours.
+    return grid, [{"name": "Link", "visibility_rules": [[SHOW_LINK]],
+                   "sections": [{"name": "Link", "access_rules": [["{}"]]}],
+                   "map_locations": spots}]
+
+
+def link_counters(grid: dict) -> list:
+    """The hidden counters of Link's cell (link_marks)."""
+    return [{"name": name, "type": "consumable", "img": "images/dots/opened.png", "codes": item,
+             "min_quantity": 0, "max_quantity": grid[size] + 1}
+            for name, item, size in (("Link's row", LINK_ROW, "rows"), ("Link's column", LINK_COL, "cols"))]
+
+
+def view_lua(views: dict, grid: dict) -> str:
+    return "\n".join(["-- Generated by tools/build_poptracker.py: do not edit.",
+                      f"MAP_NAME = {lua_value(MAP)}",
+                      f"REGION_VIEWS = {lua_value(views)}",
+                      f"LINK_GRID = {lua_value(grid)}",
+                      f"FOLLOW_REGION, LINK_ROW, LINK_COL = {lua_value(FOLLOW_REGION)}, "
+                      f"{lua_value(LINK_ROW)}, {lua_value(LINK_COL)}", ""])
+
+
+def regions_on_map(cat, crop: np.ndarray, places: list, where: np.ndarray | None) -> list:
     """The regions drawn on the big map (`crop`, RGB, changed in place) and their
     markers, locations of no check: a large diamond in a gold ring a region, red
     its map not received, yellow received but out of reach with region_lock, and
     once the region is open checked (grey) by botw_update_regions, the Great
     Plateau's from the start: green would read as a check in logic. Hidden when
-    the towers reveal the maps (botw_regions_shown). None without the tower areas."""
-    if lookup is None:
-        return []
-    left, top, right, bottom = box
-    try:
-        where = lookup(np.arange(left, right), np.arange(top, bottom))
-    except (OSError, ValueError, KeyError):
+    the towers reveal the maps (botw_regions_shown). None without the tower areas
+    (`where`, region_pixels)."""
+    if where is None:
         return []
     checks = [(spot["x"], spot["y"]) for place in places for spot in place["map_locations"]]
     regions = [START_REGION, *sorted(cat.MAPS)]
@@ -1068,10 +1235,18 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
     else:
         image = plain_map()
     lookup = region_lookup()
+    where = region_pixels(lookup, (left, top, right, bottom))
     crop = np.ascontiguousarray(image[top:bottom, left:right])
     # The region markers keep clear of the checks, not of the small marks, mostly hidden.
-    markers = regions_on_map(cat, crop, (left, top, right, bottom),
-                             [place for place in place_entries if "shape" not in place["map_locations"][0]], lookup)
+    markers = regions_on_map(cat, crop, [place for place in place_entries
+                                         if "shape" not in place["map_locations"][0]], where)
+    grid, link = link_marks(where, (left, top, right, bottom))
+    files["scripts/view.lua"] = view_lua(region_views(where), grid).encode()
+    item_entries += link_counters(grid)
+    # Universal Tracker's map (botw_world/tracker.py): Link's mark, where the grid finds him.
+    files["maps/link_grid.json"] = json.dumps(dict(grid, arrows=LINK_ARROWS)).encode()
+    images["images/link.png"] = link_dot(size=64)
+    images.update(link_arrows(update))
     alpha = np.full(crop.shape[:2] + (1,), 255, dtype=np.uint8)
     images["images/map.png"] = np.concatenate([crop, alpha], 2)
     drawn = regions_panel(cat, image, (left, top, right, bottom), lookup) if game_map else None
@@ -1086,15 +1261,17 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
     files["items/items.json"] = json.dumps(item_entries, indent=1).encode()
     files["locations/locations.json"] = json.dumps(place_entries, indent=1).encode()
     files["locations/regions.json"] = json.dumps(markers, indent=1).encode()
+    files["locations/link.json"] = json.dumps(link, indent=1).encode()
     files["maps/maps.json"] = json.dumps([{
         "name": MAP, "location_size": 30, "location_border_thickness": 3,
+        "location_icon_size": LINK_ICON_SIZE,   # Universal Tracker's own, PopTracker skips it
         "img": "images/map.png"}], indent=1).encode()
     files["layouts/tracker.json"] = json.dumps(layouts(cat, drawn), indent=1).encode()
     files["manifest.json"] = json.dumps({
         "name": "Breath of the Wild Archipelago", "game_name": cat.GAME,
         "package_uid": PACK_NAME, "package_version": cat.WORLD_VERSION,
         "platform": "wiiu", "author": "EIdras", "min_poptracker_version": "0.26.2",
-        "variants": {"map": {"display_name": "Map tracker", "flags": ["ap"]}}}, indent=1).encode()
+        "variants": {"map": {"display_name": "Map tracker", "flags": ["ap", "uat"]}}}, indent=1).encode()
     output.mkdir(parents=True, exist_ok=True)
     target = output / f"{PACK_NAME}.zip"
     with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as archive:

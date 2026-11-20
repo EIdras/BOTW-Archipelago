@@ -5,7 +5,7 @@ import hashlib
 import json
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from BaseClasses import Item, ItemClassification, Location, LocationProgressType, MultiWorld, Region, Tutorial
 from worlds.AutoWorld import WebWorld, World
@@ -17,6 +17,7 @@ from .catalog import (CHESTS, FILLER, GAME, GENTLE_REGIONS, GOAL_LOCATION, INNER
                       OPEN_BORDERS, TRAPS, TRAVEL_SHRINES, TRAVEL_TERMINALS, WEAPON_LEVELS, WORLD_VERSION, categories,
                       map_keys, requirements)
 from .options import OPTION_GROUPS, PRESETS, BotwOptions, ChestSanity, EarlyMap, TowerMaps, WeaponOrder
+from .tracker import TRACKER_WORLD, BotwSettings
 from .slot_file import BotwSlotFile
 
 
@@ -62,6 +63,10 @@ class BotwWorld(World):
     # Universal Tracker shows as "glitched" (out of logic, but possible) what this
     # item, which only it gives itself, would reach: a region without its map.
     glitches_item_name = "Region Without Its Map"
+    # Universal Tracker's map tab (botw_world/tracker.py), and where its pack is (host.yaml).
+    tracker_world = TRACKER_WORLD
+    settings: ClassVar[BotwSettings]
+    settings_key = "botw_options"
     # weapon_order loosely_smoothed: how far, in levels, a weapon may move.
     WEAPON_LEVEL_SPREAD = 1.5
     STALL_IDS = frozenset(r["id"] for r in LOCATIONS if "Stall" in categories(r))

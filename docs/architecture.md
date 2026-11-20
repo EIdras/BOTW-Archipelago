@@ -114,6 +114,9 @@ slot file alone, without reaching any server.
   sets foot in a closed region is sent back to the last safe ground outside it, by the game's own return of the
   Great Plateau aimed there, with his life kept; the journal then says what opens that region (`region_return.py`).
   With no safe ground known outside for 3 s, the return falls back to the Great Plateau's clifftop.
+- **Link on the trackers' map**: twice a second, Link's region, position and heading in the MainField (`region_border.FieldReader`)
+  go to PopTracker through a local UAT server (`uat.py`, port 65399), and, seldom, to the room's data storage for
+  Universal Tracker ([poptracker.md](reference/poptracker.md), "Link on the map").
 
 ## The player's Cemu (`tools/cemu_install.py`, `tools/cemu_profile.py`)
 

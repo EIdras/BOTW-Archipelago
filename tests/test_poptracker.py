@@ -114,7 +114,7 @@ class PackTests(unittest.TestCase):
         toggles = {entry.get("codes"): entry for entry in self.json("items/items.json")
                    if str(entry.get("codes", "")).startswith("show_")}
         self.assertEqual(set(toggles), {"show_shrines", "show_towers", "show_shops", "show_others", "show_koroks",
-                                        "show_chests", "show_dungeon_chests", "show_regions"})
+                                        "show_chests", "show_dungeon_chests", "show_regions", "show_link"})
         self.assertTrue(all(entry["initial_active_state"] for entry in toggles.values()))
         # A button each: a rounded square, its corners clear.
         for entry in toggles.values():
@@ -122,7 +122,7 @@ class PackTests(unittest.TestCase):
         image = poptracker.button(None, "#3a8fd6", "SHR")
         self.assertEqual((image.shape, image[0, 0, 3], image[32, 32, 3]), ((64, 64, 4), 0, 255))
         self.assertEqual(self.json("layouts/tracker.json")["map_toggles"]["rows"],
-                         [list(toggles)[:4], list(toggles)[4:]])
+                         [list(toggles)[:4], list(toggles)[4:8], ["show_link", "follow_region"]])
         places = {place["name"]: place for place in self.json("locations/locations.json")}
         self.assertEqual(places["Hebra Tower"]["visibility_rules"], [["show_towers"]])
         self.assertEqual(places["Ja Baij Shrine"]["visibility_rules"], [["show_shrines"]])
@@ -133,6 +133,54 @@ class PackTests(unittest.TestCase):
             self.assertTrue(all(rule[0] in toggles for rule in place["visibility_rules"]), place["name"])
         for kind in poptracker.DOT:
             self.assertIn(poptracker.shown(kind), toggles)
+
+    def test_link_has_a_mark_in_each_cell_found_from_his_position(self):
+        link = self.json("locations/link.json")
+        self.assertEqual([place["name"] for place in link], ["Link"])
+        self.assertEqual(link[0]["visibility_rules"], [["show_link"]])
+        self.assertEqual(link[0]["sections"], [{"name": "Link", "access_rules": [["{}"]]}])
+        view = self.pack.read("scripts/view.lua").decode()
+        grid = {key: float(value) for key, value in re.findall(r'\["(\w+)"\] = (-?[\d.]+)',
+                                                                view.split("LINK_GRID")[1])}
+        counters = {entry["codes"]: entry for entry in self.json("items/items.json")
+                    if entry.get("codes") in ("link_row", "link_col")}
+        self.assertEqual((counters["link_row"]["max_quantity"], counters["link_col"]["max_quantity"]),
+                         (grid["rows"] + 1, grid["cols"] + 1))
+        spots = link[0]["map_locations"]
+        self.assertLessEqual(len(spots), grid["rows"] * grid["cols"])
+        for spot in spots[::97]:
+            (row, col), = [(int(r.split(":")[1]), int(c.split(":")[1])) for r, c in spot["restrict_visibility_rules"]]
+            self.assertEqual(spot["force_invisibility_rules"], [[f"link_row:{row + 1}"], [f"link_col:{col + 1}"]])
+            # The world position at the spot, its cell as scripts/uat.lua finds it.
+            x = (spot["x"] + grid["left"]) / grid["scale"] + grid["origin_x"]
+            z = (spot["y"] + grid["top"]) / grid["scale"] + grid["origin_z"]
+            found = (int(((z - grid["origin_z"]) * grid["scale"] - grid["top"]) // grid["cell"]) + 1,
+                     int(((x - grid["origin_x"]) * grid["scale"] - grid["left"]) // grid["cell"]) + 1)
+            self.assertEqual(found, (row, col))
+        uat = self.pack.read("scripts/uat.lua").decode()
+        self.assertIn("math.floor(((x - grid.origin_x) * grid.scale - grid.left) / grid.cell) + 1", uat)
+        self.assertIn("math.floor(((z - grid.origin_z) * grid.scale - grid.top) / grid.cell) + 1", uat)
+        init = self.pack.read("scripts/init.lua").decode()
+        self.assertIn('Tracker:AddLocations("locations/link.json")', init)
+        self.assertIn('if ScriptHost.AddVariableWatch then\n    ScriptHost:LoadScript("scripts/uat.lua")', init)
+
+    def test_a_region_view_frames_it_and_the_client_names_it_alike(self):
+        where = np.full((100, 200), None, dtype=object)
+        where[10:30, 20:60] = "Hebra"
+        where[50:100, 0:200] = "Central"
+        views = poptracker.region_views(where)
+        self.assertEqual(views["Hebra"], [round(0.9 * min(200 / 40, 100 / 20), 2), 40, 20])
+        self.assertEqual(views["Central"], [1.0, 100, 75])          # never below the whole map
+        self.assertEqual(poptracker.region_views(None), {})
+        lookup = poptracker.region_lookup()
+        if lookup is None:
+            return
+        from botw_client.region_border import load_areas
+        view = self.pack.read("scripts/view.lua").decode()
+        named = set(re.findall(r'\["([^"]+)"\] = \{[\d.]+, \d+, \d+\}', view.split("LINK_GRID")[0]))
+        self.assertIn(poptracker.START_REGION, named)
+        self.assertTrue(set(self.cat.MAPS) <= named)
+        self.assertTrue(named <= load_areas().regions)
 
     def test_every_code_the_logic_names_is_an_item_of_the_pack(self):
         codes = set()
@@ -248,7 +296,7 @@ class PackTests(unittest.TestCase):
     def test_the_manifest_asks_for_archipelago_auto_tracking(self):
         manifest = self.json("manifest.json")
         self.assertEqual(manifest["game_name"], "Breath of the Wild")
-        self.assertEqual(manifest["variants"]["map"]["flags"], ["ap"])
+        self.assertEqual(manifest["variants"]["map"]["flags"], ["ap", "uat"])
         self.assertIn("scripts/autotracking/archipelago.lua", self.pack.namelist())
 
     def test_without_the_base_game_the_map_is_a_plain_grid(self):

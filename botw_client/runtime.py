@@ -335,6 +335,8 @@ class BotwClientRuntime:
         # fog's and the message's leases must outlast it.
         self._border_gap = 0.0
         self._border_failure = None
+        # PopTracker's UAT (_feed_loop): why Link's position cannot be read (logged once).
+        self._feed_failure = None
         self._session_identity = None
         self._session_locations = None
         self.lease_error = None
@@ -669,6 +671,48 @@ class BotwClientRuntime:
                 except Exception:  # noqa: BLE001 - Cemu may be gone: the timers lapse alone
                     pass
                 self._border = None
+
+    async def _feed_loop(self):
+        """PopTracker's UAT (botw_client/uat.py): Link's region and position in the MainField,
+        read every FEED_SECONDS, nothing written; the server closed at the end. Universal
+        Tracker's map reads them from the room (RoomThrottle: seldom)."""
+        from .region_border import FieldReader, load_areas
+        from .uat import FEED_SECONDS, RoomThrottle, UatServer, room_set, whereabouts
+        server, room = UatServer(log=self.log), RoomThrottle()
+        if await server.start() is not None:
+            self.log(f"PopTracker (UAT): Link's whereabouts at port {server.port}")
+        reader = None
+        try:
+            while not self.stop_event.is_set() and self.game.cave:
+                await asyncio.sleep(FEED_SECONDS)
+                try:
+                    if reader is None:
+                        process, cave = self.game.process, self.game.cave
+                        reader = FieldReader(lambda guest, size: process.read(cave.base + guest, size))
+                    if self._border_areas is None:
+                        self._border_areas = await asyncio.to_thread(load_areas)
+                    (_kind, _name, field, position), heading = await asyncio.to_thread(
+                        lambda: (reader.where(), reader.heading()))
+                    values = whereabouts(field, position, self._border_areas, heading)
+                except Exception as exc:  # noqa: BLE001 - the tracker must not stop the session
+                    failure = f"{type(exc).__name__}: {exc}"
+                    if failure != self._feed_failure:
+                        self.log(f"PopTracker (UAT): Link's position unavailable: {failure}")
+                        self._feed_failure = failure
+                    await asyncio.sleep(5.0)
+                    continue
+                if not values:
+                    continue
+                await server.set(**values)
+                ap = self.ap
+                if getattr(ap, "connected", False) and getattr(ap, "slot", None) is not None and room.due(values):
+                    try:
+                        await ap.send(room_set(ap.team, ap.slot, values))
+                        room.sent(values)
+                    except Exception:  # noqa: BLE001 - sent again at the next move
+                        pass
+        finally:
+            await server.close()
 
     def _make_border(self, slot):
         import zlib
@@ -2695,6 +2739,7 @@ class BotwClientRuntime:
             self.game.cave.sub_disarm()
         lease = asyncio.create_task(self._lease_loop(), name="BOTW shrine lease")
         border = asyncio.create_task(self._border_loop(), name="BOTW region border")
+        feed = asyncio.create_task(self._feed_loop(), name="BOTW PopTracker feed")
         try:
             while not self.stop_event.is_set() and self.game.cave:
                 if self.lease_error:
@@ -2763,6 +2808,11 @@ class BotwClientRuntime:
             border.cancel()
             try:
                 await border
+            except asyncio.CancelledError:
+                pass
+            feed.cancel()
+            try:
+                await feed
             except asyncio.CancelledError:
                 pass
             if self._reconnect_task:

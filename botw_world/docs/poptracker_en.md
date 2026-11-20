@@ -4,7 +4,7 @@
 **Trackers** · [Mods](mods_en.md) · [Troubleshooting](troubleshooting_en.md)
 
 Two trackers follow a Breath of the Wild game: [PopTracker](#poptracker), a map of Hyrule, and
-[Universal Tracker](#universal-tracker), a list in Archipelago's own client.
+[Universal Tracker](#universal-tracker), a list and a map in Archipelago's own client.
 
 <!-- ![The PopTracker pack](../../docs/images/poptracker.png) -->
 
@@ -82,6 +82,10 @@ Divine Beast share one square beside it. They appear once the tracker is connect
 chests, chests of the shrines and Divine Beasts, and the regions' diamonds. Once your slot has reached its goal and is
 released, every location is checked and the whole map turns grey.
 
+While you play from the BOTW Archipelago window, two more buttons follow Link. **Link** shows where he is: a blue
+diamond with a white glow, on the 100 m square he stands in (in a shrine, where he went in). **Follow** frames each
+region he enters on the map (PopTracker 0.34 or later); the map stays where it is while he walks inside a region.
+
 ### The items panel
 
 The panel next to the map shows the items that matter for the logic (runes, Paraglider, armor, Divine Beasts
@@ -140,6 +144,12 @@ your items let you reach.
 
 `/explain <location>` says what a location still asks for. A location out of logic but possible (a region's map
 missing) shows as "glitched".
+
+With Universal Tracker 0.3.8 or later, its **Map** tab shows the PopTracker pack's map of Hyrule: your seed's
+locations colored by the world's logic, your items and maps beside it, and Link as an arrow facing where he faces,
+updated every few seconds while you play. It takes the map from the pack the launcher builds (Settings > PopTracker
+pack); the first time, if it cannot find it, it asks for `botw_archipelago.zip`. Universal Tracker draws every
+location as a square, which grows with the map as you zoom in.
 
 ---
 

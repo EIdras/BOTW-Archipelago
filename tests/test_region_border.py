@@ -143,6 +143,16 @@ class SignTests(unittest.TestCase):
         sign.tick()
         self.assertEqual(memory.writes, [])
 
+    def test_his_heading_is_read_from_the_axis_he_faces(self):
+        memory = game((-1000.0, 200.0, 1500.0))
+        reader = rb.FieldReader(memory.read)
+        self.assertIsNone(reader.heading())                       # no axis: nothing to tell
+        for forward, heading in (((0.0, -1.0), 0.0), ((1.0, 0.0), 90.0), ((-0.7071, 0.7071), 225.0)):
+            for offset, value in zip(rb.FORWARD, forward):
+                memory.put(PLAYER + offset, struct.pack(">f", value))
+            self.assertAlmostEqual(reader.heading(), heading, places=2)
+        self.assertEqual(reader.position(), (-1000.0, 200.0, 1500.0))
+
     def test_out_of_the_main_field_or_its_position_behind_nothing_shows(self):
         memory = game((-5.0, 100.0, 0.0), kind="CDungeon", name="Dungeon072")
         sign, holds = border(memory)

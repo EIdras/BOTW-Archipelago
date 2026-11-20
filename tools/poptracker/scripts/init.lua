@@ -7,6 +7,7 @@ Tracker:AddItems("items/items.json")
 Tracker:AddMaps("maps/maps.json")
 Tracker:AddLocations("locations/locations.json")
 Tracker:AddLocations("locations/regions.json")
+Tracker:AddLocations("locations/link.json")
 Tracker:AddLayouts("layouts/tracker.json")
 
 ScriptHost:AddOnLocationSectionChangedHandler("botw events", botw_update_events)
@@ -20,4 +21,7 @@ botw_regions_changed()
 
 if PopVersion and Archipelago then
     ScriptHost:LoadScript("scripts/autotracking/archipelago.lua")
+end
+if ScriptHost.AddVariableWatch then
+    ScriptHost:LoadScript("scripts/uat.lua")
 end

@@ -65,6 +65,9 @@ SETTLE_SECONDS = 3.0      # ... or so long after it, whatever the position does
 MAP_TYPE = 0x1054F644     # ksys::StageInfo, two sead::FixedSafeString<32> buffers
 MAP_NAME = 0x1054F670
 MAIN_FIELD = "MainField"
+# The player actor's matrix: 3 lines of 4 floats from + 0x1F8, the position ending each line.
+POSITION = (0x204, 0x214, 0x224)
+FORWARD = (0x200, 0x220)  # x and z of the axis he faces: the matrix's third column
 WORLD_MGR = 0x1047BE88
 MGR_COUNT, MGR_ARRAY, ENV_INDEX = 0x45C, 0x464, 6
 FOG, FOG_TIMER = 0x3CEB0, 0x3CF0C       # ratio, near, far; the timer
@@ -137,27 +140,13 @@ def cell(position) -> str:
     return f"{chr((int(position[0]) + 5000) // 1000 + ord('A'))}-{chr((int(position[2]) + 4000) // 1000 + ord('1'))}"
 
 
-class RegionBorder:
-    """read(guest, size) -> bytes or None, write(guest, data) -> bool, hold(index, passes) ->
-    bool (mailbox Cave.hold_center), closed() -> the closed regions or None (nothing shown),
-    back: a RegionReturn or None, playing() -> bool Link in play and alive (None: always),
-    closures() -> the hold's count of messages closed by the game, or None. tick() reads,
-    decides, and writes the fog
-    and the message."""
+class FieldReader:
+    """Link's position in the MainField, read(guest, size) -> bytes or None: the stage, its
+    map's name and the player actor's position (in_field())."""
 
-    def __init__(self, read: Callable, write: Callable, hold: Callable, areas: Areas,
-                 closed: Callable, *, back=None, playing=None, closures=None, clock=time.monotonic):
-        self.read, self.write, self.hold, self.areas = read, write, hold, areas
-        self.back, self.playing, self.closures_source = back, playing, closures
-        self.play, self.play_at = False, None
-        self.settled_at, self.backoff_until = 0.0, 0.0
-        self.closures, self.counted, self.backoff, self.held_since = 0, None, BACKOFF, None
-        self.closed_source, self.clock = closed, clock
-        self.closed, self.closed_at = None, None
+    def __init__(self, read: Callable, clock=time.monotonic):
+        self.read, self.clock = read, clock
         self.kind = self.settle = self.last = None
-        self.fog = self.message = False
-        self.code_ok = None
-        self.state = {}
 
     def u32(self, guest: int) -> int | None:
         raw = self.read(guest, 4)
@@ -167,16 +156,28 @@ class RegionBorder:
         raw = self.read(guest, 32)
         return raw.split(b"\0", 1)[0].decode("ascii", "replace") if raw else None
 
-    def position(self):
+    def floats(self, offsets) -> tuple | None:
+        """The player actor's floats at `offsets`, None without him or one unreadable."""
         info = self.u32(PLAYER_INFO)
         player = self.u32(info + 0x30) if in_guest(info) else None
         if not in_guest(player):
             return None
-        raw = [self.read(player + offset, 4) for offset in (0x204, 0x214, 0x224)]
+        raw = [self.read(player + offset, 4) for offset in offsets]
         if not all(r and len(r) == 4 for r in raw):
             return None
-        position = tuple(struct.unpack(">f", r)[0] for r in raw)
-        return position if all(math.isfinite(c) and abs(c) < 10000 for c in position) else None
+        values = tuple(struct.unpack(">f", r)[0] for r in raw)
+        return values if all(math.isfinite(v) for v in values) else None
+
+    def position(self):
+        position = self.floats(POSITION)
+        return position if position and all(abs(c) < 10000 for c in position) else None
+
+    def heading(self) -> float | None:
+        """Where Link faces, in degrees: 0 up the map (north, -z), 90 east (+x)."""
+        forward = self.floats(FORWARD)
+        if not forward or forward[0] ** 2 + forward[1] ** 2 < 0.01:
+            return None
+        return math.degrees(math.atan2(forward[0], -forward[1])) % 360
 
     def in_field(self, kind, name, position) -> bool:
         """The MainField, its position up to date: the name is Link's cell, and after a change
@@ -192,6 +193,34 @@ class RegionBorder:
             if before is None or math.dist(before, position) > JUMP or now - since >= SETTLE_SECONDS:
                 self.settle = None
         return self.settle is None
+
+    def where(self):
+        """(stage, map, field, position): field once in_field()."""
+        kind, name, position = self.text(MAP_TYPE), self.text(MAP_NAME), self.position()
+        return kind, name, self.in_field(kind, name, position), position
+
+
+class RegionBorder(FieldReader):
+    """read(guest, size) -> bytes or None, write(guest, data) -> bool, hold(index, passes) ->
+    bool (mailbox Cave.hold_center), closed() -> the closed regions or None (nothing shown),
+    back: a RegionReturn or None, playing() -> bool Link in play and alive (None: always),
+    closures() -> the hold's count of messages closed by the game, or None. tick() reads,
+    decides, and writes the fog
+    and the message."""
+
+    def __init__(self, read: Callable, write: Callable, hold: Callable, areas: Areas,
+                 closed: Callable, *, back=None, playing=None, closures=None, clock=time.monotonic):
+        super().__init__(read, clock)
+        self.write, self.hold, self.areas = write, hold, areas
+        self.back, self.playing, self.closures_source = back, playing, closures
+        self.play, self.play_at = False, None
+        self.settled_at, self.backoff_until = 0.0, 0.0
+        self.closures, self.counted, self.backoff, self.held_since = 0, None, BACKOFF, None
+        self.closed_source = closed
+        self.closed, self.closed_at = None, None
+        self.fog = self.message = False
+        self.code_ok = None
+        self.state = {}
 
     def env(self) -> int | None:
         """The live EnvMgr, looked up at every use (a stage load may move it)."""
@@ -230,8 +259,7 @@ class RegionBorder:
         now = self.clock()
         if (self.closed_at is None or now - self.closed_at >= CLOSED_SECONDS) and not (self.back and self.back.busy):
             self.closed, self.closed_at = self.closed_source(), now
-        kind, name, position = self.text(MAP_TYPE), self.text(MAP_NAME), self.position()
-        field = self.in_field(kind, name, position)
+        kind, name, field, position = self.where()
         region = self.areas.region_at(position[0], position[2]) if field else None
         nearest = None
         if field and self.closed:
