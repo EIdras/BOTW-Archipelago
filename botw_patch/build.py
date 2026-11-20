@@ -21,6 +21,11 @@ RECIPES = {
     # (the item "Flamebreaker Set"). Goron City's shop stays: the logic puts
     # the city itself behind the set.
     "SanrokuMini_Lizard": lambda data: suppress_gift(data, "Armor_011_Upper"),
+    # A piece of a set that is an item: the Rubber Helm of Thunder Magnet (the
+    # "Rubber Set"; no pouch test in front of it) and the Zora Greaves of Lynel
+    # Safari (the "Zora Set"). The quests still end as in the game.
+    "FironeMini_TerribleThunder": lambda data: suppress_reward(data, "Armor_046_Head"),
+    "RinelSearch": lambda data: suppress_gift(data, "Armor_006_Lower"),
 }
 # Unmodified Wii U EUR v208 resources, measured from the mounted update.
 # Do not silently apply a recipe to a different revision or a merged mod.
@@ -33,6 +38,8 @@ SOURCE_HASHES = {
     "Demo344_0": "e306237e3aded5e5f844e38d1aaa930af1e8e3aa89d759d66b634b3309072597",
     "Water_Relic": "49fed6eab6dc32488aabbcdd13590709fdf3aad9a23a9c48593732c6da256533",
     "SanrokuMini_Lizard": "32f65d0b6c584f5c476beec4c115faa19b42467c7feb75441e23487f14235f11",
+    "FironeMini_TerribleThunder": "684a8dd52a1372ce3cc1fd521dd744e70698b011f65f3097cce4d8efb1b27d86",
+    "RinelSearch": "929ba3e73e452f9dc2283c9dad7e7e9d23121850dfa575f8eb7ffbff81de3301",
 }
 
 

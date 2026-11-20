@@ -55,6 +55,8 @@ REWARD_PACKS = {
     "Event/Demo344_0.sbeventpack": "95269f3867b4d3b85826d188958069f1ffee453a5a9850446c75fc971b5bf841",
     "Event/Water_Relic.sbeventpack": "1175e0ec31235025dc8734cfb9a51b9a99da33dad9af1f516bf7873fcf392eb4",
     "Event/SanrokuMini_Lizard.sbeventpack": "9f0348baa67d638ae3a542d82fb22054cacf3d0cf2ad4e95383d269d203bddcf",
+    "Event/FironeMini_TerribleThunder.sbeventpack": "485b1caaab87ed94197deccfc4f1375819ba995e9111e4eac54b15fcce898613",
+    "Event/RinelSearch.sbeventpack": "fe4ecbafd72d86d660d784eec3dede11e185c48e1e66971349fbdc33c26c8b6e",
 }
 # The English texts, for the names of what can kill Link (DeathLink); the
 # same version as the Archipelago quest's (botw_patch/ap_quest.py).

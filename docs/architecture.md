@@ -32,8 +32,8 @@ content-addressed (its folder is named after the hash of its content), reproduci
   - The rewards of the checked locations are taken out where the game gives them (rune terminals, pedestals, Divine
     Beasts...): the check still happens, the vanilla reward does not. A Divine Beast's heart container is picked up
     without the game's get window, its check's message is enough (`botw_patch/beast_heart.py`). An item the logic
-    counts on comes from the multiworld only: King Dorephan keeps his Zora armor, Kima her Flamebreaker armor
-    (`botw_patch/build.py`, `suppress_gift`), Goron City's armor shop is sold out (`botw_patch/goron_armor.py`).
+    counts on comes from the multiworld only: King Dorephan keeps his Zora armor, Kima her Flamebreaker armor,
+    Cima her Rubber Helm and Laflat her Zora Greaves (`botw_patch/build.py`, `suppress_gift`), Goron City's armor shop is sold out (`botw_patch/goron_armor.py`).
   - EventFlow entries appended to resident flowcharts (`Demo007_1`, `OperationGuide`): one guarded entry per delivery
     step of each item, which the client requests (`botw_patch/delivery_flow.py`).
   - GameData flags of the integration: the session token of the save, the delivery cursor, shop records.
@@ -101,7 +101,7 @@ slot file alone, without reaching any server.
   gives its seed: nothing in the pack changes.
 - **Quests**: with `side_quest_sanity` or `shrine_quest_sanity`, a quest's location is the flag its last step
   raises (`botw_world/data/quests.json`, made from the game's quest list by `tools/quest_locations.py`). The
-  quest still gives its reward; a shrine quest takes its shrine's logic.
+  quest still gives its reward, but for a piece of a set item (above); a shrine quest takes its shrine's logic.
 - **DeathLink**: Link's death (`CurrentHart` at 0) is sent to the room; a received death is announced in the journal,
   then requests the pack's entry `OperationGuide<APDeathLink>`, the game's own damage action with a lethal value
   ([death_link.md](reference/death_link.md)).

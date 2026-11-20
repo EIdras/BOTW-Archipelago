@@ -103,9 +103,9 @@ def tree(path):
 hashes = {n:digest(raw) for n,raw in tree(a).items() if n != 'manifest.json'}
 # Every installed file (metadata excluded): the native code, the resources,
 # the Archipelago quest (QuestProduct, entries, ActorInfo, texts in 7 languages), the sanctum's gate, the gifts of the
-# Zora King and Kima, Goron City's armor shop, Purah's upgrades and her camera.
-assert len(hashes) == 42
-assert digest(encode(hashes)) == '28273a389e17fdbc9fcf1a0c38b83527f4580c08d85f06213725461f5c57dba9', 'new pin: ' + digest(encode(hashes))
+# Zora King, Kima, Cima and Laflat, Goron City's armor shop, Purah's upgrades and her camera.
+assert len(hashes) == 44
+assert digest(encode(hashes)) == 'afff1b289e4c2144a79633a25273cf9be5096b383348ee6396478caa1e9d46a5', 'new pin: ' + digest(encode(hashes))
 binding = load_seed(work/'analysis.json', 1, work/'seed.zip')
 verify_pack(a, binding)
 try:

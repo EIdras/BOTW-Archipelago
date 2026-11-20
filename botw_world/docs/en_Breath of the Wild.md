@@ -41,8 +41,9 @@ The Koroks are many: by default, 95 % of those that are locations hold filler of
 `korok_progression`, the others may hold items needed to finish a game, and the logic asks what each
 Korok's puzzle takes (bombs, Magnesis, the Gerudo Set in Gerudo Town).
 
-A quest is checked once it is finished, and still gives its reward. The quests hold nothing needed to
-finish a game. A shrine quest asks what its shrine asks. Left out of the side quests: Slated for
+A quest is checked once it is finished, and still gives its reward, but for the pieces of set items:
+Thunder Magnet's Rubber Helm and Lynel Safari's Zora Greaves, which the Rubber and Zora Sets bring. The
+quests hold nothing needed to finish a game. A shrine quest asks what its shrine asks. Left out of the side quests: Slated for
 Upgrades (Purah's upgrades are locations already), A Gift from the Monks, The Statue's Bargain, and the
 EX quests of The Master Trials.
 

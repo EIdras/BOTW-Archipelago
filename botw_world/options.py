@@ -323,7 +323,8 @@ class KorokProgression(Toggle):
 class SideQuestSanity(Toggle):
     """Whether the side quests are locations: finishing one sends its location's
     item, and a window says what was found and for whom. The quest still gives its
-    reward. 73 quests; left out: Slated for Upgrades (Purah's upgrades are
+    reward, but Thunder Magnet's Rubber Helm and Lynel Safari's Zora Greaves,
+    whose sets are items. 73 quests; left out: Slated for Upgrades (Purah's upgrades are
     locations already), A Gift from the Monks, The Statue's Bargain, and the EX
     quests of The Master Trials. They hold nothing needed to finish a game."""
     display_name = "Side Quest Sanity"
