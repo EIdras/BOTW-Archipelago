@@ -31,6 +31,9 @@ it restarts on archipelago.gg: take the new one from the room's page.
 **The tracker shows something wrong.**
 See the [trackers' troubleshooting](poptracker_en.md#troubleshooting).
 
+**A campfire, a free bed or a Great Plateau shrine terminal offers no "A".**
+As in the base game, they wait for the Great Plateau Tower, which can be reached from the start.
+
 ## Logs
 
 Each session writes its logs to `%LOCALAPPDATA%\BOTW Archipelago\play-seeds\<seed>\sessions\<date>\`: the client's
