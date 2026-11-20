@@ -271,7 +271,8 @@ class ShrineChestItems(Toggle):
 class KorokSanity(Toggle):
     """Whether Koroks are locations: finding one sends its location's item, and a
     window says what was found and for whom. The Korok still gives its seed, so
-    Hestu is unchanged. The Koroks hold nothing needed to finish a game."""
+    Hestu is unchanged. The Koroks hold nothing needed to finish a game, unless
+    korok_progression says otherwise."""
     display_name = "Korok Sanity"
 
 
@@ -287,12 +288,21 @@ class KorokCount(Range):
 class KorokLocalFiller(Range):
     """With korok_sanity, the share in percent of those Koroks that hold filler of
     your own world, placed there before the multiworld is filled: they send nothing
-    to the other players. The other Koroks hold any item no progression needs, from
-    any world, and add their filler to the multiworld."""
+    to the other players. The other Koroks hold any item no progression needs (any
+    item with korok_progression), from any world, and add their filler to the
+    multiworld."""
     display_name = "Korok Local Filler"
     range_start = 0
     range_end = 100
     default = 95
+
+
+class KorokProgression(Toggle):
+    """With korok_sanity, whether Koroks may hold items needed to finish a game.
+    The logic asks what each Korok's puzzle takes: bombs for cracked rocks,
+    Magnesis for iron, Death Mountain's heat, the Gerudo Set in Gerudo Town. A
+    Korok behind an ice wall or ivy to burn still holds nothing needed."""
+    display_name = "Korok Progression"
 
 
 @dataclass
@@ -321,6 +331,7 @@ class BotwOptions(PerGameCommonOptions):
     korok_sanity: KorokSanity
     korok_count: KorokCount
     korok_local_filler: KorokLocalFiller
+    korok_progression: KorokProgression
     trap_percentage: TrapPercentage
     trap_weights: TrapWeights
 
@@ -335,7 +346,7 @@ OPTION_GROUPS = [
     OptionGroup("Master Cycle Zero", [BikeAnywhere]),
     OptionGroup("Cutscenes", [CutsceneSkip]),
     OptionGroup("Chests", [ChestSanity, ChestProgression, ShrineChestItems]),
-    OptionGroup("Koroks", [KorokSanity, KorokCount, KorokLocalFiller]),
+    OptionGroup("Koroks", [KorokSanity, KorokCount, KorokLocalFiller, KorokProgression]),
     OptionGroup("Traps", [TrapPercentage, TrapWeights]),
 ]
 

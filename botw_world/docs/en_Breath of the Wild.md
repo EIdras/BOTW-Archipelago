@@ -35,7 +35,9 @@ template with "Generate Template Options". Every option is explained [below](#op
 | Koroks (option `korok_sanity`) | 0 to 900 |
 
 The Koroks are many: by default, 95 % of those that are locations hold filler of your own world
-(`korok_local_filler`), so that they don't flood the other players with filler.
+(`korok_local_filler`), so that they don't flood the other players with filler. With
+`korok_progression`, the others may hold items needed to finish a game, and the logic asks what each
+Korok's puzzle takes (bombs, Magnesis, the Gerudo Set in Gerudo Town).
 
 ## Items
 

@@ -16,7 +16,9 @@ order of their flags from 1:
   * requires: what its puzzle takes, from the actors linked to it, either way and
     through link tags (LINK_TAGS), or right next to it: bombs for a cracked wall or
     breakable rocks (the chests' BREAKABLE), Magnesis for an iron plate, box, block or
-    chain (IRON: by a Korok well, a chained iron ball to lift out of the mud into a stump); the Gerudo Set inside Gerudo Town (the chests' GUARDED);
+    chain (IRON: by a Korok well, a chained iron ball to lift out of the mud into a stump; the
+    metal block missing from a set to match); the Gerudo Set inside Gerudo Town (the chests'
+    GUARDED); and for a few, what their links do not show (EXTRA);
   * no_progression: "ice" (behind an ice wall) or "fire" (behind ivy to burn): no
     fire source is an item of the world.
 
@@ -48,7 +50,12 @@ MAIN_FIELD = "Map/MainField"
 LINK_TAGS = ("LinkTag", "SwitchTag", "AreaObserver", "EventTag", "TimerTag", "SignalFlowchart", "Area",
              "LocationTag")
 DEPTH = 4
-IRON = ("Obj_BoxIron", "Obj_BoardIron", "FldObj_Chain", "FldObj_PushRockIron")
+IRON = ("Obj_BoxIron", "Obj_BoardIron", "FldObj_Chain", "FldObj_PushRockIron", "FldObj_KorokStoneLift")
+# What a few Koroks take that their links do not show: the Paraglider for Mount Hylia - Korok 4
+# (the logic asks it of every region but the Great Plateau), and Magnesis for River of the Dead -
+# Korok 1, under a pier, reached on a metal platform.
+EXTRA = {"MainField_Npc_HiddenKorokFly_3618750795": ("Paraglider",),
+         "MainField_Npc_HiddenKorokFly_3434613859": ("Magnesis",)}
 NO_PROGRESSION = {"IceWall": "ice", "Obj_Plant_IvyBurn": "fire"}
 
 
@@ -128,6 +135,7 @@ def rows(game) -> list[dict]:
         nearby = [other for dx in (-1, 0, 1) for dz in (-1, 0, 1)
                   for other in grid.get((cell(obj)[0] + dx, cell(obj)[1] + dz), ())]
         requires, reason = requirements(obj, puzzles[flag], nearby, guarded)
+        requires = sorted({*requires, *EXTRA.get(flag, ())})
         out.append({"number": numbers[flag], "flag": flag, "kind": kind, "region": named[towers.at(x, z)],
                     "name": None,                       # name_rows
                     "position": [round(x, 1), round(y, 1), round(z, 1)],

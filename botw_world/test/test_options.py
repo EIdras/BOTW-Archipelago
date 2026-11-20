@@ -313,6 +313,8 @@ class TestKorokSanity(BotwTestBase):
         for item in ("Magnesis", "Progressive Remote Bomb", "Gerudo Set"):
             row = next(row for row in KOROKS if row["requires"] == [item])
             self.assertIn(((item,), 1), requirements(row))
+        hylia = next(row for row in KOROKS if row["name"] == "Mount Hylia - Korok 4")
+        self.assertIn((("Paraglider",), 1), requirements(hylia))
 
     def test_universal_tracker_finds_the_seeds_koroks(self) -> None:
         passed = BotwWorld.interpret_slot_data(self.world.fill_slot_data())
@@ -340,6 +342,25 @@ class TestKorokLocalFiller(BotwTestBase):
     def test_the_default_keeps_most_of_them_local(self) -> None:
         world = generate({"korok_sanity": True, "korok_count": 100}).worlds[1]
         self.assertEqual(sum(world.get_location(row["name"]).locked for row in world.koroks), 95)
+
+
+class TestKorokProgression(BotwTestBase):
+    options = {"korok_sanity": True, "korok_count": 900, "korok_local_filler": 0, "korok_progression": True}
+
+    def test_the_koroks_whose_puzzle_the_items_solve_may_hold_progression(self) -> None:
+        excluded = {loc.name for loc in self.multiworld.get_locations(self.player)
+                    if loc.progress_type == LocationProgressType.EXCLUDED}
+        self.assertEqual(excluded & self.world.location_name_groups["Koroks"],
+                         {row["name"] for row in KOROKS if row["no_progression"]})
+        distribute_items_restrictive(self.multiworld)
+        koroks = [self.multiworld.get_location(row["name"], self.player) for row in KOROKS]
+        self.assertTrue(any(loc.item.advancement for loc in koroks))
+        self.assertFalse(any(loc.item.advancement for loc in koroks if loc.name in excluded))
+        self.assertTrue(self.multiworld.can_beat_game())
+
+    def test_korok_progression_needs_korok_sanity(self) -> None:
+        with self.assertRaises(OptionError):
+            generate({"korok_progression": True})
 
 
 class TestCutsceneRemoved(BotwTestBase):

@@ -33,11 +33,14 @@ class KorokDataTests(unittest.TestCase):
 
     def test_what_the_puzzles_take(self):
         self.assertEqual(collections.Counter(tuple(row["requires"]) for row in ROWS),
-                         {(): 812, ("Progressive Remote Bomb",): 53, ("Magnesis",): 34, ("Gerudo Set",): 1})
+                         {(): 745, ("Progressive Remote Bomb",): 53, ("Magnesis",): 100,
+                          ("Magnesis", "Paraglider"): 1, ("Gerudo Set",): 1})
         self.assertEqual(collections.Counter(row["no_progression"] for row in ROWS),
                          {None: 862, "fire": 20, "ice": 18})
         town = next(row for row in ROWS if row["requires"] == ["Gerudo Set"])
         self.assertEqual(town["name"], "Gerudo Town - Korok 1")
+        gliding = [row["name"] for row in ROWS if "Paraglider" in row["requires"]]
+        self.assertEqual(gliding, ["Mount Hylia - Korok 4"])
 
     @unittest.skipUnless(HAS_DLC, "requires the DLC")
     @full_build

@@ -118,6 +118,8 @@ class BotwWorld(World):
             raise OptionError(f"{self.player_name}: towers_need_maps needs tower_maps on region_keys")
         if self.options.chest_progression and not self.options.chest_sanity:
             raise OptionError(f"{self.player_name}: chest_progression needs chest_sanity")
+        if self.options.korok_progression and not self.options.korok_sanity:
+            raise OptionError(f"{self.player_name}: korok_progression needs korok_sanity")
         if self.options.shrine_chest_items and self.options.chest_sanity != ChestSanity.option_ap_items:
             raise OptionError(f"{self.player_name}: shrine_chest_items needs chest_sanity on ap_items")
         if self.options.map_travel_points and self.options.tower_maps == TowerMaps.option_vanilla:
@@ -183,11 +185,13 @@ class BotwWorld(World):
                     loc.progress_type = LocationProgressType.EXCLUDED
                 regions[row["region"]].locations.append(loc)
                 self.set_rule(loc, self.location_rule(row))
-        # korok_sanity: korok_count Koroks drawn by the seed, all excluded.
+        # korok_sanity: korok_count Koroks drawn by the seed, excluded, but with
+        # korok_progression those whose puzzle the world's items solve.
         self.koroks = self.chosen_koroks()
         for row in self.koroks:
             loc = BotwLocation(self.player, row["name"], row["id"], regions[row["region"]])
-            loc.progress_type = LocationProgressType.EXCLUDED
+            if not self.options.korok_progression or row["no_progression"]:
+                loc.progress_type = LocationProgressType.EXCLUDED
             regions[row["region"]].locations.append(loc)
             self.set_rule(loc, self.location_rule(row))
         goal = self.multiworld.get_location(GOAL_LOCATION, self.player)
@@ -410,8 +414,8 @@ class BotwWorld(World):
                     and location.item.player == self.player and WEAPON_LEVELS.get(location.item.name)]
             self.random.shuffle(mine)
             locations += mine
-        # The excluded locations (chest_sanity's chests, but those chest_progression
-        # opens) take no useful weapon:
+        # The excluded locations (chest_sanity's chests and korok_sanity's Koroks, but
+        # those chest_progression and korok_progression open) take no useful weapon:
         # their weapons are ordered among them, the others' among the others.
         for excluded in (False, True):
             self._order_weapons_in([location for location in locations
