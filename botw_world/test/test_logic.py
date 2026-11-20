@@ -127,7 +127,34 @@ class TestMasterSword(LogicTestBase):
         self.assertTrue(self.can_reach_location("Master Sword Pedestal"))
 
 
-HARD = {**MAPLESS, "sanctum_divine_beasts": 0, "sanctum_shrines": 0,
+class TestVanillaStatues(LogicTestBase):
+    # Room for the 66 more items: Koroks that hold no local filler.
+    options = {**MAPLESS, "spirit_orbs": "vanilla_statues", "korok_sanity": True, "korok_local_filler": 0}
+
+    def test_the_statues_give_the_hearts_and_the_stamina(self) -> None:
+        names = [item.name for item in self.multiworld.itempool if item.player == self.player]
+        self.assertEqual(names.count("Spirit Orb"), 108)
+        self.assertNotIn("Heart Container", names)
+        self.assertNotIn("Stamina Vessel", names)
+        # Those the Master Sword asks for are progression; the others, filler, may lie in a Korok.
+        self.assertEqual(sum(item.advancement for item in self.get_items_by_name("Spirit Orb")), 40)
+
+    def test_the_master_sword_needs_forty_spirit_orbs(self) -> None:
+        self.collect_by_name("Paraglider")
+        orbs = self.get_items_by_name("Spirit Orb")
+        self.collect(orbs[:39])
+        self.assertFalse(self.can_reach_location("Master Sword Pedestal"))
+        self.collect(orbs[39])
+        self.assertTrue(self.can_reach_location("Master Sword Pedestal"))
+
+    def test_without_room_the_option_says_what_to_turn_on(self) -> None:
+        from Options import OptionError
+        from .test_tracker import generate
+        with self.assertRaisesRegex(OptionError, "chest_sanity"):
+            generate({"spirit_orbs": "vanilla_statues"})
+
+
+HARD ={**MAPLESS, "sanctum_divine_beasts": 0, "sanctum_shrines": 0,
         "sanctum_master_sword": False, "sanctum_runes": False}
 
 

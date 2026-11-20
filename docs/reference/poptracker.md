@@ -71,7 +71,9 @@ game, so that no file of the game is in the repository.
   locations: a stable's two Beedle items, a stall's, a beast and its heart, a plateau shrine and its terminal,
   Purah's three upgrades.
 - **Logic**: `botw_world/catalog.requirements`, the world's own, generated into `scripts/data.lua`; a location is
-  reachable when each of its groups is met by one of its items. An event "Freed - Divine Beast X" counts as the world
+  reachable when each of its groups is met by one of its items; a heart container, with the slot data's `spirit_orbs`
+  on `vanilla_statues`, is four Spirit Orbs received (their counter, next to the shrines cleared). An event "Freed -
+  Divine Beast X" counts as the world
   counts it, the beast reachable (its own groups), not checked: a heart container is picked up before the beast's
   control unit. The region maps (`catalog.map_keys`, `MAP_KEYS` in `data.lua`) are an optional rule in brackets,
   `[$botw_maps|<id>]`: when the slot data's `tower_maps` is `region_keys` (2) and a map is missing, the location is a
@@ -107,7 +109,7 @@ game, so that no file of the game is in the repository.
   3. a label drawn by the builder, in the same style.
 
   The game draws no image of most items, and only stand-ins of the others (an armour's effect, an inventory tab,
-  white masks): the icons of every item of the grid (`RELEASE_ICONS`, 52) are published apart from the code: `tracker-icons.zip`, the file attached to the GitHub release
+  white masks): the icons of every item of the grid (`RELEASE_ICONS`, 53) are published apart from the code: `tracker-icons.zip`, the file attached to the GitHub release
   `tracker-icons` (Nintendo's images, never committed). The launcher, when it builds the pack, and the command by
   hand fetch it once into `<data>/poptracker/icons/release` (`fetch_icons`: PNG files only, no paths, 4 MB at most;
   the client's TLS roots, Windows' and certifi's, as a new Windows lacks GitHub's); offline, the game's stand-ins

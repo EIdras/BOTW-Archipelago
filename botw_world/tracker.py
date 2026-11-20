@@ -26,7 +26,7 @@ LINK_ICON = "images/link.png"
 # His mark facing where he faces: the pack's arrow turned ARROWS times around, from up the map
 # (tools/build_poptracker.py link_arrows).
 ARROWS, ARROW_ICON = 16, "images/link/{:02d}.png"
-# The items beside the map, as the pack's own grid (tools/build_poptracker.py ROWS).
+# The items beside the map, as the pack's own grid (tools/build_poptracker.py ROWS), and the Spirit Orbs.
 ITEMS = ["Paraglider", "Magnesis", "Progressive Remote Bomb", "Progressive Stasis", "Cryonis",
          "Progressive Sheikah Sensor", "Progressive Revali's Gale", "Progressive Daruk's Protection",
          "Progressive Urbosa's Fury", "Progressive Mipha's Grace", "Master Sword", "Hylian Shield",
@@ -34,7 +34,7 @@ ITEMS = ["Paraglider", "Magnesis", "Progressive Remote Bomb", "Progressive Stasi
          "Rubber Set", "Progressive Climbing Gear", "Progressive Stealth Set", "Barbarian Set", "Ancient Set",
          "Radiant Set", "Heart Container", "Stamina Vessel", "Champion's Tunic", "Ancient Bridle",
          "Ancient Saddle", "Korok Mask", "Master Cycle Zero", "Travel Medallion", "Epona",
-         "Weapon Pouch Upgrade", "Bow Pouch Upgrade", "Shield Pouch Upgrade"]
+         "Weapon Pouch Upgrade", "Bow Pouch Upgrade", "Shield Pouch Upgrade", "Spirit Orb"]
 MAP_ITEMS = sorted(MAPS.values())
 
 

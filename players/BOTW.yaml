@@ -52,6 +52,11 @@ Breath of the Wild:
   # skips is skipped at once, its effects kept. The mode can be changed after the build, in Cemu (the Archipelago
   # pack's Cutscenes preset)
   cutscene_skip: off
+  # containers or vanilla_statues: how hearts and stamina are won. containers: 17 heart containers, 5 stamina vessels
+  # and 20 Spirit Orbs are items. vanilla_statues: 108 Spirit Orbs and no container, the Goddess Statues give them all
+  # (four orbs each), and the Master Sword asks for 40 orbs. That adds 66 items, which need room: chest_sanity, or
+  # korok_sanity with a lower korok_local_filler
+  spirit_orbs: containers
   # off, check_only or ap_items: whether the chests of Hyrule's surface (1,180), of its shrines (174) and of the
   # Divine Beasts (35, sent once a beast is freed if left inside) are locations. check_only: opening a chest sends
   # its item and the chest keeps its own contents. ap_items: each chest of the surface and of the Divine Beasts holds

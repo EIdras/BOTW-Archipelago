@@ -16,9 +16,15 @@ from .catalog import (CHESTS, FILLER, GAME, GENTLE_REGIONS, GOAL_LOCATION, INNER
                       NEIGHBOURS,
                       OPEN_BORDERS, QUESTS, TRAPS, TRAVEL_SHRINES, TRAVEL_TERMINALS, WEAPON_LEVELS, WORLD_VERSION, categories,
                       map_keys, requirements)
-from .options import OPTION_GROUPS, PRESETS, BotwOptions, ChestSanity, EarlyMap, TowerMaps, WeaponOrder
+from .options import OPTION_GROUPS, PRESETS, BotwOptions, ChestSanity, EarlyMap, SpiritOrbs, TowerMaps, WeaponOrder
 from .tracker import TRACKER_WORLD, BotwSettings
 from .slot_file import BotwSlotFile
+
+
+# The Goddess Statues' trade: four Spirit Orbs for a heart container or a stamina vessel.
+ORBS_PER_TRADE = 4
+# The most heart containers a location asks for: the Master Sword's.
+HEARTS_NEEDED = max(count for row in LOCATIONS for names, count in requirements(row) if names == ("Heart Container",))
 
 
 class BotwItem(Item):
@@ -106,7 +112,7 @@ class BotwWorld(World):
     SLOT_OPTIONS = ("goal", "goal_shrines", "sanctum_divine_beasts", "sanctum_shrines",
                     "sanctum_master_sword", "sanctum_runes", "beedle_shop_items", "stall_items", "tower_maps",
                     "towers_need_maps", "region_lock", "map_travel_points", "bike_anywhere",
-                    "cutscene_skip", "chest_sanity", "shrine_chest_items", "korok_sanity", "korok_count",
+                    "cutscene_skip", "spirit_orbs", "chest_sanity", "shrine_chest_items", "korok_sanity", "korok_count",
                     "side_quest_sanity", "shrine_quest_sanity")
     # The region each map opens: {item: region}.
     MAP_REGIONS = {item: region for region, item in MAPS.items()}
@@ -248,7 +254,7 @@ class BotwWorld(World):
         its maps (map_keys; a tower's with towers_need_maps), or Universal Tracker's
         stand-in for a missing map. With region_lock, its region's entrances hold its
         map, and a quest through another region needs to reach that region."""
-        rule = self.rule(requirements(row))
+        rule = self.rule(self.needs(row))
         maps = map_keys(row, bool(self.options.towers_need_maps)) \
             if self.options.tower_maps == TowerMaps.option_region_keys else ()
         parts = [] if isinstance(rule, True_) else [rule]
@@ -257,6 +263,15 @@ class BotwWorld(World):
         elif maps:
             parts.append(Or(Has(maps[0]) if len(maps) == 1 else HasAll(*maps), Has(self.glitches_item_name)))
         return And(*parts) if len(parts) > 1 else parts[0] if parts else rule
+
+    def needs(self, row) -> tuple:
+        """A location's requirements(); with spirit_orbs on vanilla_statues, its
+        heart containers are the Spirit Orbs the statues trade for them."""
+        groups = requirements(row)
+        if self.options.spirit_orbs != SpiritOrbs.option_vanilla_statues:
+            return groups
+        return tuple((("Spirit Orb",), count * ORBS_PER_TRADE) if names == ("Heart Container",) else (names, count)
+                     for names, count in groups)
 
     @staticmethod
     def rule(groups) -> Rule:
@@ -277,7 +292,7 @@ class BotwWorld(World):
         ganon = self.multiworld.get_location(GOAL_LOCATION, player)
         needed = (["Master Sword"] if options.sanctum_master_sword else []) + (
             sorted(self.item_name_groups["Runes"]) if options.sanctum_runes else [])
-        parts = [self.rule(requirements(next(r for r in LOCATIONS if r["name"] == GOAL_LOCATION)))]
+        parts = [self.rule(self.needs(next(r for r in LOCATIONS if r["name"] == GOAL_LOCATION)))]
         if needed:
             parts.append(HasAll(*needed))
         if options.sanctum_divine_beasts.value:
@@ -302,6 +317,9 @@ class BotwWorld(World):
         # when the maps are region keys.
         needed = (name == "Master Sword" and self.options.sanctum_master_sword
                   or name in MAPS.values() and self.options.tower_maps == TowerMaps.option_region_keys)
+        if name == "Spirit Orb" and self.options.spirit_orbs == SpiritOrbs.option_vanilla_statues:
+            # Many, and only their number counts.
+            return BotwItem(name, ItemClassification.progression_skip_balancing, row["id"], self.player)
         classification = (ItemClassification.progression if row.get("progression") or needed else
                           ItemClassification.useful if row.get("useful") else
                           ItemClassification.trap if row.get("trap") else ItemClassification.filler)
@@ -346,13 +364,26 @@ class BotwWorld(World):
         local = self.random.sample(self.koroks, len(self.koroks) * self.options.korok_local_filler.value // 100)
         for row in local:
             self.get_location(row["name"]).place_locked_item(self.create_item(self.get_filler_item_name()))
-        pool = [self.create_item(row["name"]) for row in ITEMS if not row.get("trap")
-                and row["name"] not in MAPS.values() for _ in range(int(row.get("count", 1)))]
+        counts = {row["name"]: int(row.get("count", 1)) for row in ITEMS
+                  if not row.get("trap") and row["name"] not in MAPS.values()}
+        if self.options.spirit_orbs == SpiritOrbs.option_vanilla_statues:
+            # The statues give the hearts and the stamina, for the orbs in their place.
+            counts["Spirit Orb"] += ORBS_PER_TRADE * (counts.pop("Heart Container") + counts.pop("Stamina Vessel"))
+        pool = [self.create_item(name) for name, count in counts.items() for _ in range(count)]
         pool += [self.create_item(name) for name in self.maps()]
         # Main.py applies start_inventory_from_pool centrally after create_items.
         capacity = len(self.multiworld.get_unfilled_locations(self.player))
         if len(pool) > capacity:
+            if self.options.spirit_orbs == SpiritOrbs.option_vanilla_statues:
+                raise OptionError(f"{self.player_name}: spirit_orbs on vanilla_statues needs "
+                                  f"{len(pool) - capacity} more locations: turn on chest_sanity, or korok_sanity "
+                                  "with a lower korok_local_filler")
             raise ValueError("BOTW item pool exceeds available locations")
+        if self.options.spirit_orbs == SpiritOrbs.option_vanilla_statues:
+            # The logic counts the orbs of the Master Sword's hearts; the others are filler, which a
+            # Korok or a chest that holds nothing needed may hold too.
+            for item in [item for item in pool if item.name == "Spirit Orb"][ORBS_PER_TRADE * HEARTS_NEEDED:]:
+                item.classification = ItemClassification.filler
         # Traps as many as without the chests, the Koroks and the quests, which would bring hundreds more.
         extra = (len(CHESTS) if self.options.chest_sanity else 0) + len(self.koroks) - len(local) + len(self.quests)
         pool.extend(self.create_item(name) for name in self.trap_names(max(0, capacity - len(pool) - extra)))

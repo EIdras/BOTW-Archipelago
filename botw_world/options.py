@@ -225,6 +225,21 @@ class TrapWeights(OptionCounter):
     default = {name: 1 for name in TRAPS}
 
 
+class SpiritOrbs(Choice):
+    """How hearts and stamina are won. The Goddess Statues trade four Spirit Orbs
+    for a heart container or a stamina vessel, as in the game, whichever you choose.
+    containers: 17 heart containers, 5 stamina vessels and 20 Spirit Orbs are items;
+    the logic counts the heart containers.
+    vanilla_statues: 108 Spirit Orbs are items, and no heart container nor stamina
+    vessel: the statues give them all. The Master Sword asks for 40 Spirit Orbs, ten
+    heart containers. This adds 66 items, which need room: chest_sanity, or
+    korok_sanity with fewer Koroks holding your own filler (korok_local_filler)."""
+    display_name = "Spirit Orbs"
+    option_containers = 0
+    option_vanilla_statues = 1
+    default = 0
+
+
 class ChestSanity(Choice):
     """Whether the chests of Hyrule's surface (1,180), of its shrines (174) and of
     the Divine Beasts (35) are locations.
@@ -341,6 +356,7 @@ class BotwOptions(PerGameCommonOptions):
     map_travel_points: MapTravelPoints
     bike_anywhere: BikeAnywhere
     cutscene_skip: CutsceneSkip
+    spirit_orbs: SpiritOrbs
     chest_sanity: ChestSanity
     chest_progression: ChestProgression
     shrine_chest_items: ShrineChestItems
@@ -363,6 +379,7 @@ OPTION_GROUPS = [
     OptionGroup("Maps", [TowerMaps, EarlyMap, TowersNeedMaps, RegionLock, MapTravelPoints]),
     OptionGroup("Master Cycle Zero", [BikeAnywhere]),
     OptionGroup("Cutscenes", [CutsceneSkip]),
+    OptionGroup("Spirit Orbs", [SpiritOrbs]),
     OptionGroup("Chests", [ChestSanity, ChestProgression, ShrineChestItems]),
     OptionGroup("Koroks", [KorokSanity, KorokCount, KorokLocalFiller, KorokProgression]),
     OptionGroup("Quests", [SideQuestSanity, ShrineQuestSanity]),

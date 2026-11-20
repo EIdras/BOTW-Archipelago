@@ -91,7 +91,8 @@ region he enters on the map (PopTracker 0.34 or later); the map stays where it i
 The panel next to the map shows the items that matter for the logic (runes, Paraglider, armor, Divine Beasts
 freed, shrines cleared...), and a few that it does not need but you may want to follow: Master Cycle Zero, the
 Travel Medallion, Epona, the Korok Mask and the pouch upgrades. A bright icon is an item you have; a number is how
-many you have (a progressive item, a pouch upgrade).
+many you have (a progressive item, a pouch upgrade, the Spirit Orbs received: with `spirit_orbs` on
+`vanilla_statues`, the logic counts four as a heart container).
 
 ### The regions panel
 

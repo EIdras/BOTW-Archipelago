@@ -60,7 +60,7 @@ EX quests of The Master Trials.
 - The four champions' abilities, progressive: the first copy is the ability, the second the upgraded power of the
   Champions' Ballad (shorter recharge).
 - Progressive Climbing Gear and Progressive Stealth Set (three pieces each).
-- 17 Heart Containers and 5 Stamina Vessels.
+- 17 Heart Containers and 5 Stamina Vessels, or 88 more Spirit Orbs in their place ([`spirit_orbs`](#spirit-orbs)).
 - The maps of the 14 regions (all but the Great Plateau's), with the [`tower_maps`](#region-maps) option.
 
 **Useful items**
@@ -111,7 +111,8 @@ its rune, and leaving it needs the Paraglider. Beyond, the logic asks only for w
 - **The Champions' Ballad** once the four Divine Beasts are freed; its trials on the Great Plateau want the four
   runes, and each song what the way to its champion's region asks.
 - **A freed Divine Beast** for its heart container, and for the shrines whose quest opens after it.
-- **13 hearts for the Master Sword**, as in the game: 10 Heart Containers.
+- **13 hearts for the Master Sword**, as in the game: 10 Heart Containers, or 40 Spirit Orbs with
+  [`spirit_orbs`](#spirit-orbs) on `vanilla_statues`.
 
 Only what these rules name is progression. The champions' abilities, the other armor, the climbing gear and the
 stamina vessels help without being required.
@@ -135,6 +136,7 @@ stamina vessels help without being required.
 | | [`map_travel_points`](#map-travel-points) | false | A map received opens a travel point |
 | Master Cycle Zero | [`bike_anywhere`](#master-cycle-zero-anywhere) | false | The bike in the desert and on Death Mountain |
 | Cutscenes | [`cutscene_skip`](#skip-cutscenes) | false | + alone skips a cutscene, from a first game on |
+| Spirit Orbs | [`spirit_orbs`](#spirit-orbs) | `containers` | Hearts and stamina as items, or from the statues |
 | Traps | [`trap_percentage`, `trap_weights`](#traps) | 0 | Share of the filler turned into traps |
 | | `death_link` | false | [DeathLink](#deathlink) |
 
@@ -262,6 +264,21 @@ On `removed` (experimental), every cutscene `fast` skips is skipped at once, wit
 The mode can be changed once the game pack is built: in Cemu, Options > Graphic packs, the Archipelago pack's Cutscenes
 preset ("Skipped with +" or "Removed (experimental)"). Change it before the game starts: Cemu pauses some seconds when it
 is changed in game, and it takes effect when the game restarts. The launcher keeps the choice for the seed.
+
+### Spirit Orbs
+
+As in the game, any Goddess Statue (the Temple of Time's on the Great Plateau too) trades four Spirit Orbs for a heart
+container or a stamina vessel, as you choose.
+
+| `spirit_orbs` | Items | The Master Sword asks for |
+|---|---|---|
+| `containers` (default) | 17 Heart Containers, 5 Stamina Vessels, 20 Spirit Orbs | 10 Heart Containers |
+| `vanilla_statues` | 108 Spirit Orbs: the statues give every heart and stamina vessel | 40 Spirit Orbs |
+
+With `vanilla_statues`, the logic counts on the statues' hearts: trading for stamina, or trading hearts back at the
+Horned Statue in Hateno, keeps the Master Sword waiting. Only 40 orbs are needed; the others may lie anywhere, a Korok or
+a chest that holds nothing needed too. The 66 more items need room: without it, generation stops and says so.
+`chest_sanity`, or `korok_sanity` with a lower `korok_local_filler`, gives it.
 
 ### DeathLink
 

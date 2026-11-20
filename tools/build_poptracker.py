@@ -96,6 +96,8 @@ ROWS = [
      ("Weapon Pouch Upgrade", "WPN", LIFE), ("Bow Pouch Upgrade", "BOW", LIFE),
      ("Shield Pouch Upgrade", "SHLD", LIFE)],
 ]
+# The most Spirit Orbs a seed holds: the game's, one a shrine.
+SPIRIT_ORBS = 120
 # The regions panel (tools/poptracker_regions.py): a tile a region of the tower
 # maps (the world's tower_maps option), laid out as Hyrule; the Great Plateau's,
 # where the game starts, always lit. Its label stands for its map when the pack
@@ -241,6 +243,7 @@ ICON_NAMES = {
     "freed_divine_beast_vah_medoh": ["Vah Medoh", "Divine Beast Vah Medoh", "Medoh Emblem"],
     "freed_divine_beast_vah_naboris": ["Vah Naboris", "Divine Beast Vah Naboris", "Naboris Emblem"],
     "shrines_cleared": ["Shrine", "Map Shrine", "Shrine of Trials", "Spirit Orb"],
+    "spirit_orb": ["Spirit Orb"],
     # The squares' images in a place's popup: the map's own icons.
     "dot_shrine": ["Map Shrine"], "dot_shop": ["Map Store"], "dot_stall": ["Map Store"],
 }
@@ -506,6 +509,13 @@ def items(cat, icons: dict[str, bytes] | None = None) -> tuple[list, dict, dict]
     entries.append({"name": "Shrines cleared", "type": "consumable",
                     "img": "images/items/shrines_cleared.png", "codes": "shrines_cleared",
                     "min_quantity": 0, "max_quantity": 120})
+    # The Spirit Orbs received: with spirit_orbs on vanilla_statues, the logic's
+    # heart containers, four each (scripts/logic.lua).
+    orb = rows["Spirit Orb"]
+    ids[orb["id"]] = code(orb["name"])
+    image("images/items/spirit_orb.png", "spirit_orb", "ORB", LIFE)
+    entries.append({"name": orb["name"], "type": "consumable", "img": "images/items/spirit_orb.png",
+                    "codes": "spirit_orb", "min_quantity": 0, "max_quantity": SPIRIT_ORBS})
     # Toggled by the auto-tracker so that the rules are evaluated again.
     images["images/items/seed_loaded.png"] = icon("AP", EVENT)
     entries.append({"name": "Seed loaded", "type": "toggle",
@@ -1021,7 +1031,7 @@ def data_lua(cat, item_ids: dict, sections: dict, requirements: dict, maps: dict
 
 def layouts(cat, drawn: poptracker_regions.Drawn | None = None) -> dict:
     grid = [[code(name) for name, _label, _colour in row] for row in ROWS]
-    grid.append([code(name) for name, _ in BEAST_ROW] + ["shrines_cleared"])
+    grid.append([code(name) for name, _ in BEAST_ROW] + ["shrines_cleared", "spirit_orb"])
     tiles = [[f"{code(region)}_tile" if region == START_REGION else f"{code(cat.MAPS[region])}_tile"
               for region in row] for row in REGION_PANEL]
     width, height = poptracker_regions.TILE

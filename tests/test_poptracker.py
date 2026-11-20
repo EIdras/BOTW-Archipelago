@@ -193,6 +193,17 @@ class PackTests(unittest.TestCase):
             for item in re.findall(r'"([a-z0-9_]+)"', group):
                 self.assertIn(item, codes)
 
+    def test_with_vanilla_statues_four_spirit_orbs_count_as_a_heart_container(self):
+        orb = next(row for row in self.cat.ITEMS if row["name"] == "Spirit Orb")
+        entry = next(entry for entry in self.json("items/items.json") if entry["name"] == "Spirit Orb")
+        self.assertEqual((entry["type"], entry["codes"], entry["max_quantity"]), ("consumable", "spirit_orb", 120))
+        self.assertIn(f'[{orb["id"]}] = "spirit_orb"', self.pack.read("scripts/data.lua").decode())
+        self.assertEqual(self.json("layouts/tracker.json")["item_grid"]["rows"][-1][-1], "spirit_orb")
+        logic = self.pack.read("scripts/logic.lua").decode()
+        self.assertIn('if code == "heart_container" and SLOT_DATA.spirit_orbs == VANILLA_STATUES then', logic)
+        # botw_world/options.py: SpiritOrbs.option_vanilla_statues.
+        self.assertIn("local VANILLA_STATUES, ORBS_PER_TRADE = 1, 4", logic)
+
     def test_a_region_without_its_map_is_a_sequence_break(self):
         sections = {section["name"]: section for place in self.json("locations/locations.json")
                     for section in place["sections"]}

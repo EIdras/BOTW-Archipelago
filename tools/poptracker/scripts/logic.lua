@@ -6,11 +6,22 @@ SLOT_DATA = {}
 -- nil before a connection: everything is shown.
 SEED_LOCATIONS = nil
 
+-- spirit_orbs (slot data) on vanilla_statues: no heart container among the items,
+-- the Goddess Statues trade four Spirit Orbs for one.
+local VANILLA_STATUES, ORBS_PER_TRADE = 1, 4
+
+local function count(code)
+    if code == "heart_container" and SLOT_DATA.spirit_orbs == VANILLA_STATUES then
+        return math.floor(Tracker:ProviderCountForCode("spirit_orb") / ORBS_PER_TRADE)
+    end
+    return Tracker:ProviderCountForCode(code)
+end
+
 local function met(groups)
     for _, group in ipairs(groups) do
         local found = false
         for _, code in ipairs(group[1]) do
-            if Tracker:ProviderCountForCode(code) >= group[2] then
+            if count(code) >= group[2] then
                 found = true
                 break
             end
