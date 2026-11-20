@@ -555,7 +555,152 @@ def region_items(cat, drawn: poptracker_regions.Drawn | None) -> tuple[list, dic
 DOT = {"Shrine": "#3a8fd6", "Tower": "#e08a2c", "Divine Beast": "#c94a4a", "Shop": "#2fa36b",
        "Stall": "#2fa36b", "Great Fairy": "#d65fb5", "Master Sword": "#e6d23a",
        "Rune Terminal": "#3ac0c9", "Rune Upgrade": "#3ac0c9", "Champions' Ballad": "#c94a4a",
-       "Goal": "#ffffff"}
+       "Goal": "#ffffff", "Korok": "#8fc73e", "Chest": "#c8a050", "Dungeon Chest": "#9b7be0"}
+# The small marks of korok_sanity and chest_sanity, up to 2 289 of them, a check's
+# square 30: a Korok a diamond, a chest a square; a shrine's or a Divine Beast's
+# chests one square together, beside it (DUNGEON_OFFSET pixels).
+SMALL = {"Korok": ("diamond", 18), "Chest": ("rect", 12), "Dungeon Chest": ("rect", 14)}
+DUNGEON_OFFSET = 18
+# The map's categories, each shown or hidden by a toggle of the "Map" group, all
+# shown at first: {name: the kinds of DOT it shows}. The regions' markers apart.
+CATEGORIES = {"Shrines": ("Shrine", "Rune Terminal"), "Towers": ("Tower",), "Shops": ("Shop", "Stall"),
+              "Others": ("Divine Beast", "Great Fairy", "Master Sword", "Rune Upgrade", "Champions' Ballad",
+                         "Goal"),
+              "Koroks": ("Korok",), "Chests": ("Chest",), "Dungeon Chests": ("Dungeon Chest",)}
+SHOW_REGIONS = "show_regions"
+
+
+def shown(kind: str) -> str:
+    """The code of the toggle that shows a kind of DOT on the map."""
+    return next(f"show_{code(name)}" for name, kinds in CATEGORIES.items() if kind in kinds)
+
+
+def toggle_codes() -> list[str]:
+    """The codes of the "Map" group's toggles: the categories, then the regions' markers."""
+    return [shown(kinds[0]) for kinds in CATEGORIES.values()] + [SHOW_REGIONS]
+
+
+# --- The "Map" group's buttons -------------------------------------------------
+
+BUTTON_SIZE = 64                  # pixels of a button's image (PopTracker shows it at 32)
+GOLD = "#d4af37"                  # the regions' markers' ring (regions_on_map)
+# A category's icon on its button, from the player's update: an interface texture
+# (white masks, the map's own, large), a cell of the map's stamps (the star, the
+# chest), or an inventory icon (the Korok seed, in colour). The dungeons' chests:
+# the chest with a shrine's icon in its corner (button_icons).
+BUTTON_ICONS = {"Shrines": "Nt_MapDungeonNewL_00^t", "Towers": "Nt_MapTowerNewL_00^t",
+                "Shops": "Nt_RupeeIconNew_00^l", "Koroks": "Obj_KorokNuts",
+                "Others": ("Nt_MapStampIconMarge_00^f", 4), "Chests": ("Nt_MapStampIconMarge_00^f", 5)}
+
+
+def button_icons(content: Path | None) -> dict[str, np.ndarray]:
+    """{category: RGBA} of BUTTON_ICONS, those the update has."""
+    if content is None:
+        return {}
+    from tools import bitemico, uitex
+    found = {}
+    try:
+        textures = uitex.textures(content)
+    except (OSError, KeyError, ValueError):
+        textures = {}
+    for name, source in BUTTON_ICONS.items():
+        try:
+            if isinstance(source, tuple):
+                strip = uitex.decode(textures[source[0]])
+                side = strip.shape[0]
+                image = strip[:, source[1] * side:(source[1] + 1) * side]
+            elif source.startswith("Obj_"):
+                item = bitemico.load(content / f"UI/StockItem/{source}.sbitemico")
+                image = np.frombuffer(bytes(item.read_rgba()), np.uint8).reshape(item.height, item.width, 4)
+            else:
+                image = uitex.decode(textures[source])
+            found[name] = trimmed(image)
+        except (OSError, KeyError, ValueError):
+            continue
+    if "Chests" in found and "Shrines" in found:
+        found["Dungeon Chests"] = badged(found["Chests"], found["Shrines"], DOT["Shrine"])
+    return found
+
+
+def badged(glyph: np.ndarray, badge: np.ndarray, colour: str) -> np.ndarray:
+    """`glyph` with `badge` (a white mask) in its lower right corner, in `colour`
+    on a dark outline. RGBA."""
+    size = glyph.shape[0] * 2
+    canvas = resized(glyph, size)                           # premultiplied
+    side = size * 11 // 20
+    mask = resized(badge, side)[..., 3] / 255
+    padded = np.pad(mask, 3)
+    outline = mask.copy()
+    for dy in range(-3, 4):
+        for dx in range(-3, 4):
+            outline = np.maximum(outline, padded[3 + dy:3 + dy + side, 3 + dx:3 + dx + side])
+    area = canvas[size - side:, size - side:]
+    for alpha, tint in ((outline, rgb("#10161a")), (mask, rgb(colour))):
+        area[..., :3] = tint * alpha[..., None] + area[..., :3] * (1 - alpha[..., None])
+        area[..., 3] = 255 * alpha + area[..., 3] * (1 - alpha)
+    canvas[..., :3] /= np.maximum(canvas[..., 3:4] / 255, 1e-6)
+    return np.clip(canvas, 0, 255).astype(np.uint8)
+
+
+def resized(image: np.ndarray, side: int) -> np.ndarray:
+    """A square RGBA image at side x side, each pixel the mean of what it covers
+    (alpha premultiplied); a small one doubled first, so as not to blur it."""
+    while image.shape[0] < side:
+        image = image.repeat(2, 0).repeat(2, 1)
+    size = image.shape[0]
+    edges = np.arange(side + 1) * size / side
+    source = np.arange(size)[None, :]
+    weights = np.clip(np.minimum(edges[1:, None], source + 1) - np.maximum(edges[:-1, None], source), 0, None)
+    weights /= weights.sum(1, keepdims=True)
+    pixels = image.astype(np.float64)
+    pixels[..., :3] *= pixels[..., 3:4] / 255
+    return np.einsum("ij,jkc,lk->ilc", weights, pixels, weights)
+
+
+def button(glyph: np.ndarray | None, colour: str, label: str, size: int = BUTTON_SIZE) -> np.ndarray:
+    """A button of the "Map" group: a rounded dark square framed in its category's
+    colour, its icon in the middle (`label` in letters without one). RGBA."""
+    y, x = np.mgrid[0:size, 0:size] + 0.5
+    radius, half = size * 0.22, size / 2 - 0.5
+    qx, qy = np.abs(x - size / 2) - (half - radius), np.abs(y - size / 2) - (half - radius)
+    distance = (np.hypot(np.maximum(qx, 0), np.maximum(qy, 0)) + np.minimum(np.maximum(qx, qy), 0)
+                - radius)                                   # < 0 inside the rounded square
+    inside = np.clip(0.5 - distance, 0, 1)
+    ring = np.clip(np.minimum(distance + size * 0.07, 0.5 - distance), 0, 1) * inside
+    top, bottom = rgb("#3a4a55"), rgb("#161e24")
+    out = (top + (bottom - top) * (y / size)[..., None]) * (1 - ring[..., None]) + rgb(colour) * ring[..., None]
+    if glyph is None:
+        glyph = icon(label, colour, 48)
+    side = round(size * 0.62)
+    mark = resized(trimmed(glyph), side)
+    at = (size - side) // 2
+    area = out[at:at + side, at:at + side]
+    out[at:at + side, at:at + side] = mark[..., :3] + area * (1 - mark[..., 3:4] / 255)
+    return np.dstack([np.clip(out, 0, 255), inside * 255]).astype(np.uint8)
+
+
+def diamond(colour: str = GOLD, size: int = 48) -> np.ndarray:
+    """A region's marker as the big map draws it: a diamond in a gold ring. RGBA."""
+    y, x = np.mgrid[0:size, 0:size] + 0.5
+    distance = np.abs(x - size / 2) + np.abs(y - size / 2)
+    edge = size / 2 - 1
+    image = np.zeros((size, size, 4))
+    image[..., :3] = np.where((distance > edge - 7)[..., None], rgb(colour), rgb("#c94a4a"))
+    image[..., 3] = np.clip(edge - distance + 0.5, 0, 1) * 255
+    return image.astype(np.uint8)
+
+
+def map_toggles(icons: dict[str, np.ndarray]) -> tuple[list, dict]:
+    """The "Map" group's toggles, all on at first, and their buttons' images."""
+    entries, images = [], {}
+    looks = {name: (icons.get(name), DOT[kinds[0]]) for name, kinds in CATEGORIES.items()}
+    looks["Regions"] = (diamond(), GOLD)
+    for (name, (glyph, colour)), item in zip(looks.items(), toggle_codes()):
+        path = f"images/buttons/{item}.png"
+        images[path] = button(glyph, colour, name[:3].upper())
+        entries.append({"name": f"Show {name}", "type": "toggle", "img": path, "codes": item,
+                        "initial_active_state": True})
+    return entries, images
 
 
 def place_of(row: dict) -> str:
@@ -576,10 +721,17 @@ def world_requirements(cat, row: dict) -> tuple:
     """requirements(row), an event "Freed - Divine Beast X" counted as the world
     counts it (botw_world, create_regions: the beast reachable, not checked):
     the beast's own groups. A heart container is picked up before the beast's
-    control unit is."""
+    control unit is. Every shrine cleared (a chest's ALL_SHRINES): the count of
+    shrines cleared (botw_update_events)."""
     rows = {other["name"]: other for other in cat.LOCATIONS}
     out = []
-    for names, count in cat.requirements(row):
+    groups = cat.requirements(row)
+    cleared = [names for names, _count in groups if names[0].startswith("Cleared - ")]
+    if cleared:
+        out.append((("Shrines cleared",), len(cleared)))
+    for names, count in groups:
+        if names in cleared:
+            continue
         if any(name.startswith("Freed - ") for name in names):
             if len(names) != 1:
                 raise ValueError(f"{row['name']}: an event among alternatives")
@@ -623,7 +775,30 @@ def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[l
     the maps each location asks for when the maps are region keys, and the
     regions it asks to reach with region_lock."""
     places: dict[str, dict] = {}
+    kind_of: dict[str, str] = {}            # a place's kind of DOT, its first location's
     sections, requirements, maps, regions = {}, {}, {}, {}
+
+    def rules(row: dict, key: str, section: dict) -> None:
+        """A location's logic: its requirements and its maps, then its regions."""
+        section["access_rules"] = [[f"$botw_access|{row['id']}"]]
+        requirements[row["id"]] = world_requirements(cat, row)
+        sections[row["id"]] = f"@{key}/{row['name']}"
+        keys = world_map_keys(cat, row)
+        if keys:
+            maps[row["id"]] = keys
+        reached(row, section)
+
+    def reached(row: dict, section: dict) -> None:
+        """With region_lock, the regions a location asks for, the goal's too."""
+        reach = world_regions(cat, row)
+        if reach:
+            # With region_lock, its regions out of reach, a location is out of
+            # reach (botw_regions). Optional, in brackets: without its maps, a
+            # sequence break (yellow, botw_maps). Ganon asks for no map, nor do the towers
+            # without towers_need_maps.
+            section["access_rules"][0] += [f"$botw_regions|{row['id']}", f"[$botw_maps|{row['id']}]"]
+            regions[row["id"]] = reach
+
     for row in cat.LOCATIONS:
         name = row["name"]
         kinds = set(row["category"].split("|"))
@@ -635,6 +810,7 @@ def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[l
         kind = next(k for k in DOT if k in kinds) if kinds & set(DOT) else "Shrine"
         x, y = maptex.pixel(*positions[name], SCALE)
         x, y = x - origin[0], y - origin[1]
+        kind_of.setdefault(key, kind)
         place = places.setdefault(key, {
             "name": key, "chest_unopened_img": f"images/dots/{code(kind)}.png",
             "chest_opened_img": "images/dots/opened.png",
@@ -642,27 +818,51 @@ def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[l
         section = {"name": name, "item_count": 1}
         if name == cat.GOAL_LOCATION:
             section["access_rules"] = [["$botw_ganon"]]
+            reached(row, section)
         else:
-            section["access_rules"] = [[f"$botw_access|{row['id']}"]]
-            requirements[row["id"]] = world_requirements(cat, row)
-            sections[row["id"]] = f"@{key}/{name}"
-            keys = world_map_keys(cat, row)
-            if keys:
-                maps[row["id"]] = keys
-        reach = world_regions(cat, row)
-        if reach:
-            # With region_lock, its regions out of reach, a location is out of
-            # reach (botw_regions). Optional, in brackets: without its maps, a
-            # sequence break (yellow, botw_maps). Ganon asks for no map, nor do the towers
-            # without towers_need_maps.
-            section["access_rules"][0] += [f"$botw_regions|{row['id']}", f"[$botw_maps|{row['id']}]"]
-            regions[row["id"]] = reach
+            rules(row, key, section)
         if kinds & {"Shop", "Stall"}:
             # Shown when the seed has it (one of a place's items is enough).
             section["visibility_rules"] = [[f"$botw_in_seed|{row['id']}"]]
             place.setdefault("visibility_rules", []).append([f"$botw_in_seed|{row['id']}"])
         place["sections"].append(section)
+    # A place is shown with its category (map_toggles).
+    for key, place in places.items():
+        place["visibility_rules"] = [[shown(kind_of[key]), *rule] for rule in place.get("visibility_rules", [[]])]
+    # korok_sanity's Koroks and chest_sanity's chests, a small mark each (SMALL),
+    # shown once connected to a seed that has it (botw_seed_has): none before, nor
+    # in a seed without them. A chest of a shrine or a Divine Beast, whose position
+    # is inside it, is in its dungeon's mark, beside the dungeon's square.
+    for key, kind, rows, (world_x, world_z) in small_marks(cat, positions):
+        x, y = maptex.pixel(world_x, world_z, SCALE)
+        shape, size = SMALL[kind]
+        place = places[key] = {
+            "name": key, "chest_unopened_img": f"images/dots/{code(kind)}.png",
+            "chest_opened_img": "images/dots/opened.png", "visibility_rules": [],
+            "map_locations": [{"map": MAP, "x": x - origin[0], "y": y - origin[1], "size": size, "shape": shape}],
+            "sections": []}
+        for row in rows:
+            has = f"$botw_seed_has|{row['id']}"
+            section = {"name": row["name"], "item_count": 1, "visibility_rules": [[has]]}
+            rules(row, key, section)
+            place["sections"].append(section)
+            place["visibility_rules"].append([shown(kind), has])
     return list(places.values()), sections, requirements, maps, regions
+
+
+def small_marks(cat, positions: dict) -> list[tuple[str, str, list, list]]:
+    """The small marks: (name, kind of SMALL, locations, [x, z] as positions'),
+    a Korok's, a chest's of the surface, and a dungeon's chests together."""
+    dungeons: dict[str, list] = {}
+    for row in cat.CHESTS:
+        if row.get("dungeon"):
+            dungeons.setdefault(row["dungeon"], []).append(row)
+    marks = [(row["name"], "Korok" if row["category"] == "Korok" else "Chest", [row],
+              [row["position"][0], row["position"][2]])
+             for row in cat.KOROKS + cat.CHESTS if not row.get("dungeon")]
+    return marks + [(f"{dungeon} Chests", "Dungeon Chest", rows,
+                     [value + DUNGEON_OFFSET / SCALE for value in positions[dungeon]])
+                    for dungeon, rows in dungeons.items()]
 
 
 def lua_value(value) -> str:
@@ -738,6 +938,8 @@ def layouts(cat, drawn: poptracker_regions.Drawn | None = None) -> dict:
     return {
         "item_grid": {"type": "itemgrid", "item_margin": "3,3", "item_size": "40,40",
                       "h_alignment": "center", "rows": grid},
+        "map_toggles": {"type": "itemgrid", "item_margin": "3,3", "item_size": "32,32", "h_alignment": "center",
+                        "rows": [toggle_codes()[:4], toggle_codes()[4:]]},
         "region_tiles": {"type": "itemgrid", "item_margin": "3,3", "item_size": f"{width},{height}",
                          "h_alignment": "center", "rows": tiles},
         "tracker_default": {"type": "container", "background": "#00000000", "content": {
@@ -745,6 +947,8 @@ def layouts(cat, drawn: poptracker_regions.Drawn | None = None) -> dict:
                 {"type": "dock", "dock": "left", "v_alignment": "stretch", "content": [
                     {"type": "group", "header": "Items", "dock": "top",
                      "content": {"type": "layout", "key": "item_grid"}},
+                    {"type": "group", "header": "Shown on the map", "dock": "top",
+                     "content": {"type": "layout", "key": "map_toggles"}},
                     {"type": "group", "header": "Regions", "dock": "top", "content": regions},
                     {"type": "group", "header": "Pinned locations", "content": {
                         "type": "recentpins", "style": "wrapped", "h_alignment": "stretch",
@@ -831,7 +1035,7 @@ def regions_on_map(cat, crop: np.ndarray, box: tuple[int, int, int, int], places
             item = code(cat.MAPS[region])
             rules = [[item, f"[{item}_reached]"]]
         markers.append({
-            "name": f"{region} Region", "visibility_rules": [["$botw_regions_shown"]],
+            "name": f"{region} Region", "visibility_rules": [["$botw_regions_shown", SHOW_REGIONS]],
             "sections": [{"name": "Region", "access_rules": rules}],
             "map_locations": [{"map": MAP, "x": x, "y": y, "size": REGION_MARKER, "border_thickness": 4,
                                "shape": "diamond"}]})
@@ -847,7 +1051,8 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
     update = update_content()
     found = {**ui_icons(update), **stock_icons(update), **game_icons(icons)}
     item_entries, images, item_ids = items(cat, found)
-    left, top, right, bottom = crop_box(positions)
+    left, top, right, bottom = crop_box({**positions, **{name: at for name, _kind, _rows, at
+                                                         in small_marks(cat, positions)}})
     place_entries, sections, requirements, maps, regions = locations(cat, positions, (left, top))
     files["scripts/data.lua"] = data_lua(cat, item_ids, sections, requirements, maps, regions).encode()
     for kind, colour in DOT.items():
@@ -864,13 +1069,18 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
         image = plain_map()
     lookup = region_lookup()
     crop = np.ascontiguousarray(image[top:bottom, left:right])
-    markers = regions_on_map(cat, crop, (left, top, right, bottom), place_entries, lookup)
+    # The region markers keep clear of the checks, not of the small marks, mostly hidden.
+    markers = regions_on_map(cat, crop, (left, top, right, bottom),
+                             [place for place in place_entries if "shape" not in place["map_locations"][0]], lookup)
     alpha = np.full(crop.shape[:2] + (1,), 255, dtype=np.uint8)
     images["images/map.png"] = np.concatenate([crop, alpha], 2)
     drawn = regions_panel(cat, image, (left, top, right, bottom), lookup) if game_map else None
     region_entries, region_images = region_items(cat, drawn)
     item_entries += region_entries
     images.update(region_images)
+    toggle_entries, toggle_images = map_toggles(button_icons(update))
+    item_entries += toggle_entries
+    images.update(toggle_images)
     files.update({path: value if isinstance(value, bytes) else png(value)
                   for path, value in images.items()})
     files["items/items.json"] = json.dumps(item_entries, indent=1).encode()
@@ -898,7 +1108,7 @@ def stamp(content: Path | None) -> str:
     import hashlib
     digest = hashlib.sha256()
     for name in (*SOURCE_FILES, "botw_world/catalog.py", "botw_world/data/items.json",
-                 "botw_world/data/locations.json", "botw_world/data/logic.csv",
+                 "botw_world/data/locations.json", "botw_world/data/logic.csv", "botw_world/data/koroks.json",
                  "botw_world/archipelago.json"):
         digest.update((ROOT / name).read_bytes())
     digest.update(str(content).encode() + str(update_content()).encode())

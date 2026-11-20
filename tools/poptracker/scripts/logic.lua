@@ -173,6 +173,12 @@ function botw_in_seed(id)
     return SEED_LOCATIONS == nil or SEED_LOCATIONS[tonumber(id)] == true
 end
 
+-- A Korok (korok_sanity) or a chest (chest_sanity) is shown only once connected
+-- to a seed that has it: up to 2 289 of them, none before.
+function botw_seed_has(id)
+    return SEED_LOCATIONS ~= nil and SEED_LOCATIONS[tonumber(id)] == true
+end
+
 -- Hyrule Castle's sanctum stays sealed until the seed's requirements are met
 -- (botw_patch/ganon_gate.py, slot data "sanctum_*").
 function botw_ganon()

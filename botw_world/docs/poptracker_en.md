@@ -75,7 +75,11 @@ Each square is a place on the map; hover it to see its locations, click it to se
 | Grey | Already checked |
 
 A square holding several locations (a stable's two Beedle items, a plateau shrine and its terminal) can show more
-than one color. Shops and stalls only appear when your seed has them. Once your slot has reached its goal and is
+than one color. Shops and stalls only appear when your seed has them. With `korok_sanity`, the Koroks your seed
+drew are small diamonds, and with `chest_sanity` the chests are small squares; the chests inside a shrine or a
+Divine Beast share one square beside it. They appear once the tracker is connected to the room. The buttons of
+"Shown on the map", on the left, hide or show each kind: shrines, towers, shops and stalls, the others, Koroks,
+chests, chests of the shrines and Divine Beasts, and the regions' diamonds. Once your slot has reached its goal and is
 released, every location is checked and the whole map turns grey.
 
 ### The items panel
