@@ -305,6 +305,22 @@ class KorokProgression(Toggle):
     display_name = "Korok Progression"
 
 
+class SideQuestSanity(Toggle):
+    """Whether the side quests are locations: finishing one sends its location's
+    item, and a window says what was found and for whom. The quest still gives its
+    reward. 73 quests; left out: Slated for Upgrades (Purah's upgrades are
+    locations already), A Gift from the Monks, The Statue's Bargain, and the EX
+    quests of The Master Trials. They hold nothing needed to finish a game."""
+    display_name = "Side Quest Sanity"
+
+
+class ShrineQuestSanity(Toggle):
+    """Whether the 42 shrine quests are locations: finishing one, which raises its
+    shrine, sends its location's item. Each asks what its shrine asks. They hold
+    nothing needed to finish a game."""
+    display_name = "Shrine Quest Sanity"
+
+
 @dataclass
 class BotwOptions(PerGameCommonOptions):
     start_inventory_from_pool: StartInventoryPool
@@ -332,6 +348,8 @@ class BotwOptions(PerGameCommonOptions):
     korok_count: KorokCount
     korok_local_filler: KorokLocalFiller
     korok_progression: KorokProgression
+    side_quest_sanity: SideQuestSanity
+    shrine_quest_sanity: ShrineQuestSanity
     trap_percentage: TrapPercentage
     trap_weights: TrapWeights
 
@@ -347,6 +365,7 @@ OPTION_GROUPS = [
     OptionGroup("Cutscenes", [CutsceneSkip]),
     OptionGroup("Chests", [ChestSanity, ChestProgression, ShrineChestItems]),
     OptionGroup("Koroks", [KorokSanity, KorokCount, KorokLocalFiller, KorokProgression]),
+    OptionGroup("Quests", [SideQuestSanity, ShrineQuestSanity]),
     OptionGroup("Traps", [TrapPercentage, TrapWeights]),
 ]
 

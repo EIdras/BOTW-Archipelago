@@ -14,7 +14,7 @@ from rule_builder.rules import And, CanReachRegion, Has, HasAll, HasAny, HasFrom
 
 from .catalog import (CHESTS, FILLER, GAME, GENTLE_REGIONS, GOAL_LOCATION, INNER_REGIONS, ITEMS, KOROKS, LOCATIONS, MAPS,
                       NEIGHBOURS,
-                      OPEN_BORDERS, TRAPS, TRAVEL_SHRINES, TRAVEL_TERMINALS, WEAPON_LEVELS, WORLD_VERSION, categories,
+                      OPEN_BORDERS, QUESTS, TRAPS, TRAVEL_SHRINES, TRAVEL_TERMINALS, WEAPON_LEVELS, WORLD_VERSION, categories,
                       map_keys, requirements)
 from .options import OPTION_GROUPS, PRESETS, BotwOptions, ChestSanity, EarlyMap, TowerMaps, WeaponOrder
 from .tracker import TRACKER_WORLD, BotwSettings
@@ -57,7 +57,8 @@ class BotwWorld(World):
     item_name_to_id = {row["name"]: row["id"] for row in ITEMS}
     location_name_to_id = {**{row["name"]: row["id"] for row in LOCATIONS if row["name"] != GOAL_LOCATION},
                            **{row["name"]: row["id"] for row in CHESTS},
-                           **{row["name"]: row["id"] for row in KOROKS}}
+                           **{row["name"]: row["id"] for row in KOROKS},
+                           **{row["name"]: row["id"] for row in QUESTS}}
     item_name_groups = {"Runes": {"Magnesis", "Progressive Remote Bomb", "Progressive Stasis", "Cryonis"},
                         "Weapons": set(WEAPON_LEVELS), "Maps": set(MAPS.values())}
     # Universal Tracker shows as "glitched" (out of logic, but possible) what this
@@ -90,6 +91,10 @@ class BotwWorld(World):
         "Koroks": {r["name"] for r in KOROKS},
         **{f"Koroks: {region}": {r["name"] for r in KOROKS if r["region"] == region}
            for region in sorted({r["region"] for r in KOROKS})},
+        "Quests": {r["name"] for r in QUESTS},
+        **{f"{kind} Quests": {r["name"] for r in QUESTS if r["kind"] == kind} for kind in ("Side", "Shrine")},
+        **{f"Quests: {region}": {r["name"] for r in QUESTS if r["region"] == region}
+           for region in sorted({r["region"] for r in QUESTS})},
     }
     # Shop prices drawn by the seed, in rupees: SHOP_PRICE_STEPS * 5.
     SHOP_PRICE_STEPS = (4, 40)
@@ -101,7 +106,8 @@ class BotwWorld(World):
     SLOT_OPTIONS = ("goal", "goal_shrines", "sanctum_divine_beasts", "sanctum_shrines",
                     "sanctum_master_sword", "sanctum_runes", "beedle_shop_items", "stall_items", "tower_maps",
                     "towers_need_maps", "region_lock", "map_travel_points", "bike_anywhere",
-                    "cutscene_skip", "chest_sanity", "shrine_chest_items", "korok_sanity", "korok_count")
+                    "cutscene_skip", "chest_sanity", "shrine_chest_items", "korok_sanity", "korok_count",
+                    "side_quest_sanity", "shrine_quest_sanity")
     # The region each map opens: {item: region}.
     MAP_REGIONS = {item: region for region, item in MAPS.items()}
     # The stall locations of the slot data, when Universal Tracker regenerates.
@@ -110,6 +116,8 @@ class BotwWorld(World):
     passed_koroks: set[int] | None = None
     # korok_sanity: the Korok rows that are locations (create_regions).
     koroks: list[dict]
+    # side_quest_sanity, shrine_quest_sanity: the quest rows that are locations (create_regions).
+    quests: list[dict]
 
     @staticmethod
     def interpret_slot_data(slot_data: dict[str, Any]) -> dict[str, Any]:
@@ -197,6 +205,14 @@ class BotwWorld(World):
             loc = BotwLocation(self.player, row["name"], row["id"], regions[row["region"]])
             if not self.options.korok_progression or row["no_progression"]:
                 loc.progress_type = LocationProgressType.EXCLUDED
+            regions[row["region"]].locations.append(loc)
+            self.set_rule(loc, self.location_rule(row))
+        # side_quest_sanity, shrine_quest_sanity: the quests, excluded.
+        self.quests = [row for row in QUESTS if (self.options.side_quest_sanity if row["kind"] == "Side"
+                                                 else self.options.shrine_quest_sanity)]
+        for row in self.quests:
+            loc = BotwLocation(self.player, row["name"], row["id"], regions[row["region"]])
+            loc.progress_type = LocationProgressType.EXCLUDED
             regions[row["region"]].locations.append(loc)
             self.set_rule(loc, self.location_rule(row))
         goal = self.multiworld.get_location(GOAL_LOCATION, self.player)
@@ -337,8 +353,8 @@ class BotwWorld(World):
         capacity = len(self.multiworld.get_unfilled_locations(self.player))
         if len(pool) > capacity:
             raise ValueError("BOTW item pool exceeds available locations")
-        # Traps as many as without the chests and the Koroks, which would bring hundreds more.
-        extra = (len(CHESTS) if self.options.chest_sanity else 0) + len(self.koroks) - len(local)
+        # Traps as many as without the chests, the Koroks and the quests, which would bring hundreds more.
+        extra = (len(CHESTS) if self.options.chest_sanity else 0) + len(self.koroks) - len(local) + len(self.quests)
         pool.extend(self.create_item(name) for name in self.trap_names(max(0, capacity - len(pool) - extra)))
         pool.extend(self.create_item(self.get_filler_item_name()) for _ in range(capacity - len(pool)))
         self.multiworld.itempool.extend(pool)
@@ -419,8 +435,8 @@ class BotwWorld(World):
                     and location.item.player == self.player and WEAPON_LEVELS.get(location.item.name)]
             self.random.shuffle(mine)
             locations += mine
-        # The excluded locations (chest_sanity's chests and korok_sanity's Koroks, but
-        # those chest_progression and korok_progression open) take no useful weapon:
+        # The excluded locations (chest_sanity's chests, korok_sanity's Koroks and the quests,
+        # but those chest_progression and korok_progression open) take no useful weapon:
         # their weapons are ordered among them, the others' among the others.
         for excluded in (False, True):
             self._order_weapons_in([location for location in locations
@@ -461,13 +477,16 @@ class BotwWorld(World):
         # 13: chest_sanity, the chests as locations, which one of 12 neither sees opened nor, with
         #     ap_items, empties: only the seeds with chest_sanity ask for it.
         # 14: korok_sanity, the Koroks as locations, which one of 13 does not see found.
-        # World schema 7: the Koroks among the locations.
+        # 15: side_quest_sanity or shrine_quest_sanity, the quests as locations, which one of 14
+        #     does not see finished.
+        # World schema 7: the Koroks among the locations; 8: then the quests.
         # stall_locations: the stalls drawn by the seed, for Universal Tracker.
         # korok_locations: with korok_sanity, the Koroks drawn by the seed, for Universal Tracker.
         # region_borders: with region_lock, the borders the seed's logic crosses.
         # travel_shrines: with map_travel_points, the shrine each map opens and its terminal's flag.
-        client = 14 if self.options.korok_sanity else 13 if self.options.chest_sanity else 12
-        return {"client_schema": client, "world_schema": 7,
+        client = 15 if self.quests else 14 if self.options.korok_sanity \
+            else 13 if self.options.chest_sanity else 12
+        return {"client_schema": client, "world_schema": 8,
                 "world_version": WORLD_VERSION,
                 "death_link": bool(self.options.death_link.value),
                 **self.options.as_dict(*self.SLOT_OPTIONS),

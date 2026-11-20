@@ -10,8 +10,8 @@ from pathlib import Path
 
 from .backend import DeliveryCommand, DeliveryCoordinator, DeliveryStatus
 from .game import BotwGame, GameNotReady, game_starting
-from .locations import (CHEST_NUMBERS, CHESTS_SENT_WITH, KOROK_NAMES, SCHEMA_LOCATION_COUNTS, load_targets,
-                        tower_activation_flag)
+from .locations import (CHEST_NUMBERS, CHESTS_SENT_WITH, KOROK_NAMES, QUEST_NAMES, SCHEMA_LOCATION_COUNTS,
+                        load_targets, tower_activation_flag)
 from .paths import DATA
 from .pouch_watch import StrayShopItems
 from .protocol import ArchipelagoClient, DeathLinkEvent, LocationInfo
@@ -85,8 +85,9 @@ CLIENT_SCHEMA = 2
 # goal and the sanctum's requirements, 6 the new filler, 7 the weapons, 8 the travel items,
 # 9 Epona and the Master Cycle Zero selected only when no rune is, 10 the tower maps,
 # 11 the Downpour, Yiga Ambush and Paranoia traps, 12 the travel points a map opens,
-# 13 the chests as locations, their AP items taken out of the pouch, 14 the Koroks as locations.
-BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
+# 13 the chests as locations, their AP items taken out of the pouch, 14 the Koroks as locations,
+# 15 the quests as locations.
+BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
 # The mutations that present the item themselves: no AP window before them.
 VANILLA_WINDOWS = ("get_demo_actor", "champion_actor", "rune_download", "rune_power_up", "trap",
                    "native_trap",
@@ -1413,9 +1414,10 @@ class BotwClientRuntime:
         if names and self._session_locations is not None:
             # A check absent from this seed (older world schema) is not sent.
             ignored = [name for name in names if name not in self._session_locations]
-            # A save's open chests and found Koroks in a seed without them: tracked by every
-            # client, said by none.
-            said = [name for name in ignored if name not in CHEST_NUMBERS and name not in KOROK_NAMES]
+            # A save's open chests, found Koroks and finished quests in a seed without them:
+            # tracked by every client, said by none.
+            said = [name for name in ignored
+                    if name not in CHEST_NUMBERS and name not in KOROK_NAMES and name not in QUEST_NAMES]
             if said:
                 self.log("not in this seed, ignored: " + ", ".join(said))
             if ignored:

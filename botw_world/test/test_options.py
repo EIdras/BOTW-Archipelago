@@ -6,8 +6,8 @@ from worlds.AutoWorld import call_all
 from . import BotwTestBase
 from .. import BotwWorld
 from .test_tracker import generate
-from ..catalog import (ALL_SHRINES, CHEST_ID_BASE, CHESTS, FILLER, KOROK_ID_BASE, KOROKS, LOCATIONS, MAPS, RUNES, TRAPS,
-                       WEAPONS, requirements)
+from ..catalog import (ALL_SHRINES, CHEST_ID_BASE, CHESTS, FILLER, KOROK_ID_BASE, KOROKS, LOCATIONS, MAPS,
+                       QUEST_ID_BASE, QUESTS, RUNES, TRAPS, WEAPONS, map_keys, requirements)
 
 # The filler of the default options: 159 locations, 119 declared items, 14 maps.
 FILLER_SLOTS = 26
@@ -298,7 +298,7 @@ class TestKorokSanity(BotwTestBase):
         self.assertEqual({loc.progress_type for loc in koroks}, {LocationProgressType.EXCLUDED})
         slot_data = self.world.fill_slot_data()
         self.assertEqual((slot_data["korok_count"], slot_data["client_schema"], slot_data["world_schema"]),
-                         (40, 14, 7))
+                         (40, 14, 8))
         self.assertEqual(slot_data["korok_locations"], sorted(loc.address for loc in koroks))
         self.assertTrue(all(KOROK_ID_BASE < loc.address <= KOROK_ID_BASE + len(KOROKS) for loc in koroks))
 
@@ -361,6 +361,65 @@ class TestKorokProgression(BotwTestBase):
     def test_korok_progression_needs_korok_sanity(self) -> None:
         with self.assertRaises(OptionError):
             generate({"korok_progression": True})
+
+
+class TestQuestSanityOffByDefault(BotwTestBase):
+    def test_no_quest_location_by_default(self) -> None:
+        locations = {loc.name for loc in self.multiworld.get_locations(self.player)}
+        self.assertFalse(locations & self.world.location_name_groups["Quests"])
+        self.assertNotEqual(self.world.fill_slot_data()["client_schema"], 15)
+
+
+class TestSideQuestSanity(BotwTestBase):
+    options = {"side_quest_sanity": True, "trap_percentage": 100}
+
+    def test_the_side_quests_are_excluded_locations(self) -> None:
+        quests = [loc for loc in self.multiworld.get_locations(self.player)
+                  if loc.name in self.world.location_name_groups["Quests"]]
+        self.assertEqual({loc.name for loc in quests}, self.world.location_name_groups["Side Quests"])
+        self.assertEqual(len(quests), 73)
+        self.assertEqual({loc.progress_type for loc in quests}, {LocationProgressType.EXCLUDED})
+        self.assertTrue(all(QUEST_ID_BASE < loc.address <= QUEST_ID_BASE + 155 for loc in quests))
+        slot_data = self.world.fill_slot_data()
+        self.assertEqual((slot_data["side_quest_sanity"], slot_data["shrine_quest_sanity"],
+                          slot_data["client_schema"], slot_data["world_schema"]), (1, 0, 15, 8))
+
+    def test_they_bring_no_more_traps(self) -> None:
+        with_quests = generate(self.options)
+        without = generate({"trap_percentage": 100})
+        self.assertEqual(sum(item.name in TRAPS for item in with_quests.itempool),
+                         sum(item.name in TRAPS for item in without.itempool))
+        self.assertEqual(len(with_quests.itempool), len(without.itempool) + 73)
+
+    def test_a_side_quests_place_is_in_its_rule(self) -> None:
+        town = next(row for row in QUESTS if row["name"] == "Gerudo Town - The Thunder Helm")
+        self.assertIn((("Gerudo Set",), 1), requirements(town))
+        mine = next(row for row in QUESTS if row["name"] == "Southern Mine - Fireproof Lizard Roundup")
+        self.assertTrue(mine["heat"])
+        self.assertNotEqual(requirements(mine), requirements({**mine, "heat": False}))
+
+    def test_universal_tracker_finds_the_seeds_quests(self) -> None:
+        passed = BotwWorld.interpret_slot_data(self.world.fill_slot_data())
+        again = generate({}, passthrough=passed, seed=7)
+        names = {loc.name for loc in again.get_locations(1) if loc.name in self.world.location_name_groups["Quests"]}
+        self.assertEqual(names, self.world.location_name_groups["Side Quests"])
+
+
+class TestShrineQuestSanity(BotwTestBase):
+    options = {"shrine_quest_sanity": True}
+
+    def test_the_shrine_quests_are_excluded_locations_with_their_shrines_logic(self) -> None:
+        quests = [loc for loc in self.multiworld.get_locations(self.player)
+                  if loc.name in self.world.location_name_groups["Quests"]]
+        self.assertEqual({loc.name for loc in quests}, self.world.location_name_groups["Shrine Quests"])
+        self.assertEqual(len(quests), 42)
+        self.assertEqual({loc.progress_type for loc in quests}, {LocationProgressType.EXCLUDED})
+        shrines = {row["name"]: row for row in LOCATIONS}
+        for row in QUESTS:
+            if row["kind"] == "Shrine":
+                self.assertEqual(requirements(row), requirements(shrines[row["shrine"]]))
+                self.assertEqual(map_keys(row), map_keys(shrines[row["shrine"]]))
+        self.assertEqual(self.world.fill_slot_data()["client_schema"], 15)
 
 
 class TestCutsceneRemoved(BotwTestBase):

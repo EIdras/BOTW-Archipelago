@@ -23,6 +23,12 @@ CHESTS = [{**row, "id": CHEST_ID_BASE + row["number"], "category": "Chest"} for 
 KOROK_ID_BASE = 20000
 KOROKS = [{**row, "id": KOROK_ID_BASE + row["number"], "category": "Korok"} for row in json.loads(
     files(__package__).joinpath("data/koroks.json").read_text(encoding="utf-8"))]
+# The side and shrine quests, with side_quest_sanity and shrine_quest_sanity (data/quests.json, from
+# tools/quest_locations.py): a location's id is QUEST_ID_BASE plus the quest's number. A shrine quest
+# names the shrine it raises (its "shrine"), whose logic it takes.
+QUEST_ID_BASE = 30000
+QUESTS = [{**row, "id": QUEST_ID_BASE + row["number"], "category": "Quest"} for row in json.loads(
+    files(__package__).joinpath("data/quests.json").read_text(encoding="utf-8"))]
 RUNES = ("Magnesis", "Progressive Remote Bomb", "Progressive Stasis", "Cryonis")
 TRAPS = tuple(row["name"] for row in ITEMS if row.get("trap"))
 # What reaching each location takes in the game (data/logic.csv, one row each):
@@ -157,16 +163,18 @@ def requirements(row: dict) -> tuple[tuple[tuple[str, ...], int], ...]:
     only promises what it can rely on. A chest's are in its row of data/chests.json:
     the heat of its place and the runes the map says it takes; a chest inside a
     shrine or a Divine Beast has that location's row, with every rune (which one a
-    side chest takes, no data tells). A Korok's are in its row of data/koroks.json,
-    as a chest's of the surface."""
+    side chest takes, no data tells). A Korok's and a side quest's are in its row
+    of data/koroks.json or data/quests.json, as a chest's of the surface; a shrine
+    quest has its shrine's row."""
     groups = [] if row["region"] == "Great Plateau" else [(("Paraglider",), 1)]
-    if row["category"] in ("Chest", "Korok") and not row.get("dungeon"):
+    if surface(row):
         groups += [(names, 1) for names in CLIMATES["heat" if row["heat"] else "none"]]
         shrines = [loc["name"] for loc in LOCATIONS if "Shrine" in categories(loc)]
         return tuple(groups + [((f"Cleared - {shrine}",), 1) for name in row["requires"] if name == ALL_SHRINES
                                for shrine in shrines]
                      + [((name,), 1) for name in row["requires"] if name != ALL_SHRINES])
-    logic = {**LOGIC[row["dungeon"]], "runes": "all"} if row["category"] == "Chest" else LOGIC[row["name"]]
+    logic = {**LOGIC[row["dungeon"]], "runes": "all"} if row["category"] == "Chest" \
+        else LOGIC[row["shrine"]] if row["category"] == "Quest" else LOGIC[row["name"]]
     groups += [(names, 1) for names in CLIMATES[logic["climate"]]]
     runes = logic["runes"]
     groups += [(tuple(group.split("/")), 1) for group in
@@ -184,11 +192,17 @@ def map_keys(row: dict, towers: bool = False) -> tuple[str, ...]:
     then any its logic.csv extra names (a quest that goes through another region)."""
     own = () if row["region"] in MAPLESS_REGIONS or "Tower" in categories(row) and not towers \
         else (MAPS[row["region"]],)
-    if row["category"] in ("Chest", "Korok") and not row.get("dungeon"):
+    if surface(row):
         return own
-    extra = tuple(name for name in LOGIC[row.get("dungeon") or row["name"]]["extra"].split("|")
+    extra = tuple(name for name in LOGIC[row.get("dungeon") or row.get("shrine") or row["name"]]["extra"].split("|")
                   if name in MAPS.values())
     return own + tuple(name for name in extra if name not in own)
+
+
+def surface(row: dict) -> bool:
+    """Whether a location's logic is read at its place (a chest of the surface, a
+    Korok, a side quest), not in a location's row of data/logic.csv."""
+    return row["category"] in ("Chest", "Korok", "Quest") and not row.get("dungeon") and not row.get("shrine")
 
 
 def required_items(row: dict) -> set[str]:
@@ -270,7 +284,26 @@ def _check_koroks() -> None:
             raise ValueError(f"{row['name']}: unknown region or requirement")
 
 
+def _check_quests() -> None:
+    """Quest rows: unique names, of no other location, ids above the Koroks',
+    known regions and requirements, and a shrine quest in its shrine's region."""
+    names, ids = {row["name"] for row in QUESTS}, {row["id"] for row in QUESTS}
+    if len(names) != len(QUESTS) or len(ids) != len(QUESTS) \
+            or names & {row["name"] for row in [*LOCATIONS, *CHESTS, *KOROKS]}:
+        raise ValueError("Quest names or ids are not unique")
+    if min(ids) <= max(row["id"] for row in KOROKS):
+        raise ValueError("Quest ids overlap the Koroks'")
+    shrines = {row["name"]: row["region"] for row in LOCATIONS if "Shrine" in categories(row)}
+    regions, known = {row["region"] for row in LOCATIONS}, {row["name"] for row in ITEMS}
+    for row in QUESTS:
+        if row["region"] not in regions or not set(row["requires"]) <= known \
+                or row["kind"] not in ("Side", "Shrine") or (row["kind"] == "Shrine") != ("shrine" in row) \
+                or "shrine" in row and shrines.get(row["shrine"]) != row["region"]:
+            raise ValueError(f"{row['name']}: unknown region, kind, shrine or requirement")
+
+
 _check_logic()
 _check_weapons()
 _check_chests()
 _check_koroks()
+_check_quests()

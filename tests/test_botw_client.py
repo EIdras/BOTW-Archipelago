@@ -10,7 +10,7 @@ from pathlib import Path
 
 from botw_client import gamedata_table
 from botw_client.items import load_item_map, validate_item_map
-from botw_client.locations import (CHEST_NUMBERS, EXPECTED_LOCATION_COUNT, KOROK_NAMES, LocationTarget,
+from botw_client.locations import (CHEST_NUMBERS, EXPECTED_LOCATION_COUNT, KOROK_NAMES, QUEST_NAMES, LocationTarget,
                                    LocationTracker, load_targets)
 from botw_client.protocol import (ArchipelagoClient, LocationInfo, NetworkItem,
                                   decode_location_info, decode_network_item,
@@ -54,7 +54,7 @@ class ClientDataTests(unittest.TestCase):
     def test_locations_are_complete_unique_and_match_gamedata(self):
         targets = load_targets()
         # The catalogue's rows, then the chests and the Koroks.
-        count = EXPECTED_LOCATION_COUNT + len(CHEST_NUMBERS) + len(KOROK_NAMES)
+        count = EXPECTED_LOCATION_COUNT + len(CHEST_NUMBERS) + len(KOROK_NAMES) + len(QUEST_NAMES)
         self.assertEqual(len(targets), count)
         self.assertEqual(len({target.name for target in targets}), count)
         self.assertEqual(len({target.hash_u32 for target in targets}), count)
@@ -97,7 +97,12 @@ class ClientDataTests(unittest.TestCase):
                          [(target.name, target.flag) for target in load_targets(world_schema=6)][len(world):])
         koroks = json.loads((ROOT / "botw_world" / "data" / "koroks.json").read_text(encoding="utf-8"))
         self.assertEqual([(row["name"], row["flag"]) for row in koroks],
-                         [(target.name, target.flag) for target in load_targets()][len(world) + len(chests):])
+                         [(target.name, target.flag)
+                          for target in load_targets(world_schema=7)][len(world) + len(chests):])
+        quests = json.loads((ROOT / "botw_world" / "data" / "quests.json").read_text(encoding="utf-8"))
+        self.assertEqual([(row["name"], row["flag"]) for row in quests],
+                         [(target.name, target.flag)
+                          for target in load_targets()][len(world) + len(chests) + len(koroks):])
         hearts = {entry["name"]: entry["gamedata_flag"] for entry in world
                   if entry["category"] == "Divine Beast Heart"}
         self.assertEqual(hearts, {
