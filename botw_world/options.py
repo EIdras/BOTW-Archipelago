@@ -284,6 +284,17 @@ class KorokCount(Range):
     default = 100
 
 
+class KorokLocalFiller(Range):
+    """With korok_sanity, the share in percent of those Koroks that hold filler of
+    your own world, placed there before the multiworld is filled: they send nothing
+    to the other players. The other Koroks hold any item no progression needs, from
+    any world, and add their filler to the multiworld."""
+    display_name = "Korok Local Filler"
+    range_start = 0
+    range_end = 100
+    default = 95
+
+
 @dataclass
 class BotwOptions(PerGameCommonOptions):
     start_inventory_from_pool: StartInventoryPool
@@ -309,6 +320,7 @@ class BotwOptions(PerGameCommonOptions):
     shrine_chest_items: ShrineChestItems
     korok_sanity: KorokSanity
     korok_count: KorokCount
+    korok_local_filler: KorokLocalFiller
     trap_percentage: TrapPercentage
     trap_weights: TrapWeights
 
@@ -323,7 +335,7 @@ OPTION_GROUPS = [
     OptionGroup("Master Cycle Zero", [BikeAnywhere]),
     OptionGroup("Cutscenes", [CutsceneSkip]),
     OptionGroup("Chests", [ChestSanity, ChestProgression, ShrineChestItems]),
-    OptionGroup("Koroks", [KorokSanity, KorokCount]),
+    OptionGroup("Koroks", [KorokSanity, KorokCount, KorokLocalFiller]),
     OptionGroup("Traps", [TrapPercentage, TrapWeights]),
 ]
 

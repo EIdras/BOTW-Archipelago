@@ -317,6 +317,10 @@ class BotwWorld(World):
         return list(MAPS.values())
 
     def create_items(self) -> None:
+        # korok_local_filler: that share of the Koroks hold filler of this world.
+        local = self.random.sample(self.koroks, len(self.koroks) * self.options.korok_local_filler.value // 100)
+        for row in local:
+            self.get_location(row["name"]).place_locked_item(self.create_item(self.get_filler_item_name()))
         pool = [self.create_item(row["name"]) for row in ITEMS if not row.get("trap")
                 and row["name"] not in MAPS.values() for _ in range(int(row.get("count", 1)))]
         pool += [self.create_item(name) for name in self.maps()]
@@ -325,7 +329,7 @@ class BotwWorld(World):
         if len(pool) > capacity:
             raise ValueError("BOTW item pool exceeds available locations")
         # Traps as many as without the chests and the Koroks, which would bring hundreds more.
-        extra = (len(CHESTS) if self.options.chest_sanity else 0) + len(self.koroks)
+        extra = (len(CHESTS) if self.options.chest_sanity else 0) + len(self.koroks) - len(local)
         pool.extend(self.create_item(name) for name in self.trap_names(max(0, capacity - len(pool) - extra)))
         pool.extend(self.create_item(self.get_filler_item_name()) for _ in range(capacity - len(pool)))
         self.multiworld.itempool.extend(pool)

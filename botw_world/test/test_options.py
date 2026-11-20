@@ -288,7 +288,8 @@ class TestKorokSanityOffByDefault(BotwTestBase):
 
 
 class TestKorokSanity(BotwTestBase):
-    options = {"korok_sanity": True, "korok_count": 40, "chest_sanity": "check_only", "trap_percentage": 100}
+    options = {"korok_sanity": True, "korok_count": 40, "korok_local_filler": 0, "chest_sanity": "check_only",
+               "trap_percentage": 100}
 
     def test_korok_count_koroks_drawn_are_excluded_locations(self) -> None:
         koroks = [loc for loc in self.multiworld.get_locations(self.player)
@@ -313,6 +314,27 @@ class TestKorokSanity(BotwTestBase):
         again = generate({}, passthrough=passed, seed=7)
         names = {loc.name for loc in again.get_locations(1) if loc.name in self.world.location_name_groups["Koroks"]}
         self.assertEqual(names, {row["name"] for row in self.world.koroks})
+
+
+class TestKorokLocalFiller(BotwTestBase):
+    options = {"korok_sanity": True, "korok_count": 40, "korok_local_filler": 50, "chest_sanity": "check_only",
+               "trap_percentage": 100}
+
+    def test_that_share_of_the_koroks_hold_filler_of_this_world(self) -> None:
+        koroks = [loc for loc in self.multiworld.get_locations(self.player)
+                  if loc.name in self.world.location_name_groups["Koroks"]]
+        local = [loc for loc in koroks if loc.locked]
+        self.assertEqual(len(local), 20)
+        self.assertTrue(all(loc.item.player == self.player and not loc.item.advancement
+                            and loc.item.name not in TRAPS for loc in local))
+
+    def test_only_the_others_add_to_the_pool(self) -> None:
+        without = generate({"chest_sanity": "check_only", "trap_percentage": 100})
+        self.assertEqual(len(generate(self.options).itempool), len(without.itempool) + 20)
+
+    def test_the_default_keeps_most_of_them_local(self) -> None:
+        world = generate({"korok_sanity": True, "korok_count": 100}).worlds[1]
+        self.assertEqual(sum(world.get_location(row["name"]).locked for row in world.koroks), 95)
 
 
 class TestCutsceneRemoved(BotwTestBase):

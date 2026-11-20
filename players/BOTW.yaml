@@ -74,6 +74,9 @@ Breath of the Wild:
   # With korok_sanity, how many of the 900 Koroks are locations, drawn by the seed (900: every one). Each adds an
   # item to the multiworld, mostly filler
   korok_count: 100
+  # With korok_sanity, the share in percent of those Koroks that hold filler of your own world: they send nothing to
+  # the other players (0 to 100). The others hold any item no progression needs, from any world
+  korok_local_filler: 95
   # Share of the filler (arrows, elixirs, weapons, gems, rupees) that becomes traps, 0 to 100, and how likely each is
   # compared with the others (a trap left out never comes up): Weapon Shatter, Blood Moon,
   # Rupoor, Hearts Down, Strip Down, Cucco Swarm, Yiga Ambush, Paranoia, Downpour. The cuccos, the Yiga
