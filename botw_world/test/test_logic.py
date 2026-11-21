@@ -204,6 +204,12 @@ class TestManyStatueChecks(LogicTestBase):
         with self.assertRaisesRegex(OptionError, "statue_offerings at 30"):
             generate({"spirit_orbs": "statue_checks", "statue_offerings": 30, "korok_sanity": True})
 
+    def test_universal_tracker_regenerates_it_without_korok_progression(self) -> None:
+        from .. import BotwWorld
+        from .test_tracker import generate
+        again = generate({}, passthrough=BotwWorld.interpret_slot_data(self.world.fill_slot_data()), seed=7)
+        self.assertEqual(len(again.worlds[1].offerings), 30)
+
 
 HARD ={**MAPLESS, "sanctum_divine_beasts": 0, "sanctum_shrines": 0,
         "sanctum_master_sword": False, "sanctum_runes": False}

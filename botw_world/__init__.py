@@ -116,6 +116,10 @@ class BotwWorld(World):
                     "side_quest_sanity", "shrine_quest_sanity")
     # The region each map opens: {item: region}.
     MAP_REGIONS = {item: region for region, item in MAPS.items()}
+    # Whether Universal Tracker regenerates the world from the slot data (generate_early). It never
+    # fills: what only shapes the fill (korok_local_filler, the progression options) is left out of the
+    # slot data, so the world places no local filler and checks no room for it (create_items).
+    regenerated = False
     # The stall locations of the slot data, when Universal Tracker regenerates.
     passed_stalls: set[int] | None = None
     # korok_sanity's Koroks given back by the slot data, when Universal Tracker regenerates.
@@ -148,6 +152,7 @@ class BotwWorld(World):
         passed = getattr(self.multiworld, "re_gen_passthrough", {}).get(self.game)
         if not passed:
             return
+        self.regenerated = True
         for name in self.SLOT_OPTIONS:
             if name in passed:
                 getattr(self.options, name).value = passed[name]
@@ -374,7 +379,8 @@ class BotwWorld(World):
 
     def create_items(self) -> None:
         # korok_local_filler: that share of the Koroks hold filler of this world.
-        local = self.random.sample(self.koroks, len(self.koroks) * self.options.korok_local_filler.value // 100)
+        local = [] if self.regenerated else self.random.sample(
+            self.koroks, len(self.koroks) * self.options.korok_local_filler.value // 100)
         for row in local:
             self.get_location(row["name"]).place_locked_item(self.create_item(self.get_filler_item_name()))
         counts = {row["name"]: int(row.get("count", 1)) for row in ITEMS
@@ -389,7 +395,7 @@ class BotwWorld(World):
         pool += [self.create_item(name) for name in self.maps()]
         # Main.py applies start_inventory_from_pool centrally after create_items.
         capacity = len(self.multiworld.get_unfilled_locations(self.player))
-        if self.options.spirit_orbs == SpiritOrbs.option_statue_checks:
+        if self.options.spirit_orbs == SpiritOrbs.option_statue_checks and not self.regenerated:
             # Every orb is progression, which no excluded location (a Korok, a chest, a quest) holds.
             excluded = sum(1 for loc in self.multiworld.get_unfilled_locations(self.player)
                            if loc.progress_type == LocationProgressType.EXCLUDED)
