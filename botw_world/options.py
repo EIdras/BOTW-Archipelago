@@ -249,8 +249,9 @@ class StatueOfferings(Range):
     """With spirit_orbs on statue_checks, how many trades at the Goddess Statues are
     locations. Four Spirit Orbs per offering are items: five take the 20 of containers,
     and each one more adds four orbs and a location. Every orb is progression, which
-    the Koroks and the chests hold only with korok_progression or chest_progression:
-    above some ten offerings, turn one of them on."""
+    the Koroks, the chests and the quests hold only with korok_progression,
+    chest_progression or quest_progression: above some ten offerings, turn one of
+    them on."""
     display_name = "Statue Offerings"
     range_start = 1
     range_end = 30
@@ -343,16 +344,29 @@ class SideQuestSanity(Toggle):
     reward, but Thunder Magnet's Rubber Helm and Lynel Safari's Zora Greaves,
     whose sets are items. 73 quests; left out: Slated for Upgrades (Purah's upgrades are
     locations already), A Gift from the Monks, The Statue's Bargain, and the EX
-    quests of The Master Trials. They hold nothing needed to finish a game. My Hero
-    asks for the Master Sword, which then becomes a progression item."""
+    quests of The Master Trials. They hold nothing needed to finish a game, unless
+    quest_progression says otherwise. My Hero asks for the Master Sword, which then
+    becomes a progression item."""
     display_name = "Side Quest Sanity"
 
 
 class ShrineQuestSanity(Toggle):
     """Whether the 42 shrine quests are locations: finishing one, which raises its
     shrine, sends its location's item. Each asks what its shrine asks. They hold
-    nothing needed to finish a game."""
+    nothing needed to finish a game, unless quest_progression says otherwise."""
     display_name = "Shrine Quest Sanity"
+
+
+class QuestProgression(Toggle):
+    """With side_quest_sanity or shrine_quest_sanity, whether quests may hold items
+    needed to finish a game. The logic asks what each quest takes: a shrine quest
+    what its shrine asks; a side quest a rune, an armor set, a Divine Beast freed,
+    the Camera or the maps of the regions it goes through. Hylian Homeowner and A
+    Gift for the Great Fairy (rupees), The Weapon Connoisseur (weapons), From the
+    Ground Up and the two Tarrey Town quests that follow it (long), Hunt for the
+    Giant Horse and The Royal White Stallion (two stamina wheels to tame the horse)
+    still hold nothing needed."""
+    display_name = "Quest Progression"
 
 
 @dataclass
@@ -386,6 +400,7 @@ class BotwOptions(PerGameCommonOptions):
     korok_progression: KorokProgression
     side_quest_sanity: SideQuestSanity
     shrine_quest_sanity: ShrineQuestSanity
+    quest_progression: QuestProgression
     trap_percentage: TrapPercentage
     trap_weights: TrapWeights
 
@@ -402,7 +417,7 @@ OPTION_GROUPS = [
     OptionGroup("Spirit Orbs", [SpiritOrbs, StatueOfferings]),
     OptionGroup("Chests", [ChestSanity, ChestProgression, ShrineChestItems]),
     OptionGroup("Koroks", [KorokSanity, KorokCount, KorokLocalFiller, KorokProgression]),
-    OptionGroup("Quests", [SideQuestSanity, ShrineQuestSanity]),
+    OptionGroup("Quests", [SideQuestSanity, ShrineQuestSanity, QuestProgression]),
     OptionGroup("Traps", [TrapPercentage, TrapWeights]),
 ]
 

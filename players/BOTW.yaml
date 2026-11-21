@@ -93,12 +93,18 @@ Breath of the Wild:
   korok_progression: false
   # Whether the 73 side quests are locations: finishing one sends its item, and the quest still gives its reward
   # (but Thunder Magnet's Rubber Helm and Lynel Safari's Zora Greaves: their sets are items). Left out: Slated for
-  # Upgrades, A Gift from the Monks, The Statue's Bargain and the EX quests. They hold nothing needed to finish a game.
-  # My Hero asks for the Master Sword, which then becomes a progression item
+  # Upgrades, A Gift from the Monks, The Statue's Bargain and the EX quests. Unless quest_progression, they hold nothing
+  # needed to finish a game. My Hero asks for the Master Sword, which then becomes a progression item
   side_quest_sanity: false
   # Whether the 42 shrine quests are locations: finishing one, which raises its shrine, sends its item. Each asks
-  # what its shrine asks. They hold nothing needed to finish a game
+  # what its shrine asks. Unless quest_progression, they hold nothing needed to finish a game
   shrine_quest_sanity: false
+  # With side_quest_sanity or shrine_quest_sanity, quests may hold items needed to finish a game: the logic asks what
+  # each takes (a shrine quest its shrine's; a side quest a rune, an armor set, a Divine Beast freed, the Camera, the
+  # maps of the regions it goes through). Hylian Homeowner, A Gift for the Great Fairy, The Weapon Connoisseur, From
+  # the Ground Up and the two Tarrey Town quests after it, Hunt for the Giant Horse and The Royal White Stallion (two
+  # stamina wheels to tame the horse) still hold nothing needed
+  quest_progression: false
   # Share of the filler (arrows, elixirs, weapons, gems, rupees) that becomes traps, 0 to 100, and how likely each is
   # compared with the others (a trap left out never comes up): Weapon Shatter, Blood Moon,
   # Rupoor, Hearts Down, Strip Down, Cucco Swarm, Yiga Ambush, Paranoia, Downpour. The cuccos, the Yiga

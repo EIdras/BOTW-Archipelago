@@ -89,6 +89,8 @@ LEFT_OUT = {
 GUARDED = {"Gerudo": "Gerudo Set"}
 NO_PROGRESSION = {"HatenoMini_MyHome": "rupees", "UMiiMini_MakeVillage": "long",
                   "HatenoMini_WeaponMania": "weapons",          # eight given weapons from all over Hyrule
+                  # Horses that take two stamina wheels to tame (or an Enduring elixir), which no rule asks for
+                  "FironeMini_GiantHorse": "stamina", "HyruleDepthMini_WhiteHorse": "stamina",
                   "TabantaBridgeMini_Sundial": "rupees"}        # a Great Fairy, up to 10,000 rupees
 # The Camera: Purah restores it at Hateno's lab (Demo032_0), in the quest Impa gives in Kakariko; the
 # maps of the lab's Rune Upgrade locations and of Kah Yah's.

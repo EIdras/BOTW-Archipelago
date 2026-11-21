@@ -420,6 +420,25 @@ class TestSideQuestSanity(BotwTestBase):
             self.assertEqual(world.create_item("Master Sword").advancement, progression)
 
 
+class TestQuestProgression(BotwTestBase):
+    options = {"side_quest_sanity": True, "shrine_quest_sanity": True, "quest_progression": True}
+
+    def test_the_quests_but_eight_may_hold_progression(self) -> None:
+        quests = [self.multiworld.get_location(row["name"], self.player) for row in QUESTS]
+        excluded = {loc.name for loc in quests if loc.progress_type == LocationProgressType.EXCLUDED}
+        self.assertEqual(excluded, {row["name"] for row in QUESTS if row["no_progression"]})
+        self.assertEqual(len(excluded), 8)
+        distribute_items_restrictive(self.multiworld)
+        self.assertTrue(any(loc.item.advancement for loc in quests))
+        self.assertFalse(any(loc.item.advancement for loc in quests if loc.name in excluded))
+        self.assertTrue(self.multiworld.can_beat_game())
+
+    def test_quest_progression_needs_a_quest_sanity(self) -> None:
+        with self.assertRaises(OptionError):
+            generate({"quest_progression": True})
+        generate({"shrine_quest_sanity": True, "quest_progression": True})
+
+
 class TestSideQuestSanityRegionLock(BotwTestBase):
     options = {"side_quest_sanity": True, "region_lock": True, "sanctum_master_sword": False}
 

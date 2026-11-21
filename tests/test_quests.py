@@ -59,7 +59,8 @@ class QuestDataTests(unittest.TestCase):
         self.assertEqual({quest: row["no_progression"] for quest, row in side.items() if row["no_progression"]},
                          {"HatenoMini_MyHome": "rupees", "UMiiMini_MakeVillage": "long",
                           "HatenoMini_WeaponMania": "weapons", "TabantaBridgeMini_Sundial": "rupees",
-                          "UMiiMini_GiveCake": "long", "UMiiMini_RichmansHobby": "long"})
+                          "UMiiMini_GiveCake": "long", "UMiiMini_RichmansHobby": "long",
+                          "FironeMini_GiantHorse": "stamina", "HyruleDepthMini_WhiteHorse": "stamina"})
         # The Adventure Log says Faron, whose name is marked in Lake's tower area: Wabbin's place.
         self.assertEqual(side["FironeMini_HeartPond"]["region"], "Faron")
         self.assertTrue(all(row["maps"] == [] for row in ROWS if row["kind"] == "Shrine"))

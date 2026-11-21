@@ -145,6 +145,10 @@ class BotwWorld(World):
             raise OptionError(f"{self.player_name}: chest_progression needs chest_sanity")
         if self.options.korok_progression and not self.options.korok_sanity:
             raise OptionError(f"{self.player_name}: korok_progression needs korok_sanity")
+        if self.options.quest_progression and not (self.options.side_quest_sanity
+                                                   or self.options.shrine_quest_sanity):
+            raise OptionError(f"{self.player_name}: quest_progression needs side_quest_sanity "
+                              "or shrine_quest_sanity")
         if self.options.shrine_chest_items and self.options.chest_sanity != ChestSanity.option_ap_items:
             raise OptionError(f"{self.player_name}: shrine_chest_items needs chest_sanity on ap_items")
         if self.options.map_travel_points and self.options.tower_maps == TowerMaps.option_vanilla:
@@ -220,12 +224,14 @@ class BotwWorld(World):
                 loc.progress_type = LocationProgressType.EXCLUDED
             regions[row["region"]].locations.append(loc)
             self.set_rule(loc, self.location_rule(row))
-        # side_quest_sanity, shrine_quest_sanity: the quests, excluded.
+        # side_quest_sanity, shrine_quest_sanity: the quests, excluded, but with
+        # quest_progression all but those of no_progression (rupees, weapons, long, stamina).
         self.quests = [row for row in QUESTS if (self.options.side_quest_sanity if row["kind"] == "Side"
                                                  else self.options.shrine_quest_sanity)]
         for row in self.quests:
             loc = BotwLocation(self.player, row["name"], row["id"], regions[row["region"]])
-            loc.progress_type = LocationProgressType.EXCLUDED
+            if not self.options.quest_progression or row["no_progression"]:
+                loc.progress_type = LocationProgressType.EXCLUDED
             regions[row["region"]].locations.append(loc)
             self.set_rule(loc, self.location_rule(row))
         # spirit_orbs on statue_checks: the statues' trades. Offering k takes 4k orbs, and a
@@ -404,7 +410,7 @@ class BotwWorld(World):
             if short > 0:
                 raise OptionError(f"{self.player_name}: statue_offerings at {len(self.offerings)} needs {short} "
                                   "more locations that may hold progression: lower it, or turn on "
-                                  "korok_progression or chest_progression")
+                                  "korok_progression, chest_progression or quest_progression")
         if len(pool) > capacity:
             if self.options.spirit_orbs == SpiritOrbs.option_vanilla_statues:
                 raise OptionError(f"{self.player_name}: spirit_orbs on vanilla_statues needs "
@@ -499,7 +505,7 @@ class BotwWorld(World):
             self.random.shuffle(mine)
             locations += mine
         # The excluded locations (chest_sanity's chests, korok_sanity's Koroks and the quests,
-        # but those chest_progression and korok_progression open) take no useful weapon:
+        # but those chest_progression, korok_progression and quest_progression open) take no useful weapon:
         # their weapons are ordered among them, the others' among the others.
         for excluded in (False, True):
             self._order_weapons_in([location for location in locations

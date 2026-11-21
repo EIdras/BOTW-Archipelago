@@ -44,9 +44,12 @@ Korok's puzzle takes (bombs, Magnesis, the Gerudo Set in Gerudo Town).
 
 A quest is checked once it is finished, and still gives its reward, but for the pieces of set items:
 Thunder Magnet's Rubber Helm and Lynel Safari's Zora Greaves, which the Rubber and Zora Sets bring. The
-quests hold nothing needed to finish a game. A shrine quest asks what its shrine asks. A side quest asks what
+quests hold nothing needed to finish a game, unless `quest_progression`. A shrine quest asks what its shrine asks. A side quest asks what
 it takes in the game: a rune, an armor set, a Divine Beast freed, the Camera (Purah's, in Hateno) and the maps of
-the regions it goes through; My Hero asks for the Master Sword, which then becomes a progression item. Left out of the side quests: Slated for
+the regions it goes through; My Hero asks for the Master Sword, which then becomes a progression item. With
+`quest_progression`, Hylian Homeowner and A Gift for the Great Fairy (rupees), The Weapon Connoisseur (weapons), From
+the Ground Up and the two Tarrey Town quests that follow it (long), Hunt for the Giant Horse and The Royal White
+Stallion (two stamina wheels to tame the horse, or an Enduring elixir) still hold nothing needed. Left out of the side quests: Slated for
 Upgrades (Purah's upgrades are locations already), A Gift from the Monks, The Statue's Bargain, and the
 EX quests of The Master Trials.
 
@@ -290,7 +293,8 @@ With `statue_checks`, each trade at a statue is a location, "Goddess Statue - Of
 gives nothing more: the offering sends its item, whatever you chose. Its scene shows the Archipelago item instead of
 the heart or vessel, and so do the Divine Beasts' heart containers. Offering k asks for 4×k orbs, and the Temple of
 Time's statue for a shrine cleared first, as in the game. Five offerings take the 20 orbs of `containers`; above some
-ten, the orbs need locations that may hold progression: `korok_progression` or `chest_progression` gives them.
+ten, the orbs need locations that may hold progression: `korok_progression`, `chest_progression` or
+`quest_progression` gives them.
 
 ### DeathLink
 
