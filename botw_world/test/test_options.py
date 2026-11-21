@@ -404,6 +404,32 @@ class TestSideQuestSanity(BotwTestBase):
         names = {loc.name for loc in again.get_locations(1) if loc.name in self.world.location_name_groups["Quests"]}
         self.assertEqual(names, self.world.location_name_groups["Side Quests"])
 
+    def test_a_side_quest_asks_for_events_and_other_regions_maps(self) -> None:
+        delivery = next(row for row in QUESTS if row["name"] == "Bank of Wishes - Special Delivery")
+        self.assertIn((("Freed - Divine Beast Vah Ruta",), 1), requirements(delivery))
+        bones = next(row for row in QUESTS if row["name"] == "Serenne Stable - Leviathan Bones")
+        self.assertEqual(set(map_keys(bones)), {MAPS[region] for region in (
+            "Woodland", "Hateno", "Dueling Peaks", "Hebra", "Wasteland", "Eldin")})
+
+    def test_my_hero_makes_the_master_sword_progression(self) -> None:
+        hero = next(row for row in QUESTS if row["name"] == "Outskirt Stable - My Hero")
+        self.assertIn((("Master Sword",), 1), requirements(hero))
+        for options, progression in (({"side_quest_sanity": True, "sanctum_master_sword": False}, True),
+                                     ({"sanctum_master_sword": False}, False)):
+            world = generate(options).worlds[1]
+            self.assertEqual(world.create_item("Master Sword").advancement, progression)
+
+
+class TestSideQuestSanityRegionLock(BotwTestBase):
+    options = {"side_quest_sanity": True, "region_lock": True, "sanctum_master_sword": False}
+
+    def test_a_side_quest_waits_for_the_regions_it_goes_through(self) -> None:
+        location = self.multiworld.get_location("Serenne Stable - Leviathan Bones", self.player)
+        self.collect_by_name(["Paraglider", *(name for name in MAPS.values() if name != MAPS["Hebra"])])
+        self.assertFalse(location.can_reach(self.multiworld.state))
+        self.collect_by_name([MAPS["Hebra"]])
+        self.assertTrue(location.can_reach(self.multiworld.state))
+
 
 class TestShrineQuestSanity(BotwTestBase):
     options = {"shrine_quest_sanity": True}

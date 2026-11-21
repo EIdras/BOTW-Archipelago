@@ -93,7 +93,8 @@ Breath of the Wild:
   korok_progression: false
   # Whether the 73 side quests are locations: finishing one sends its item, and the quest still gives its reward
   # (but Thunder Magnet's Rubber Helm and Lynel Safari's Zora Greaves: their sets are items). Left out: Slated for
-  # Upgrades, A Gift from the Monks, The Statue's Bargain and the EX quests. They hold nothing needed to finish a game
+  # Upgrades, A Gift from the Monks, The Statue's Bargain and the EX quests. They hold nothing needed to finish a game.
+  # My Hero asks for the Master Sword, which then becomes a progression item
   side_quest_sanity: false
   # Whether the 42 shrine quests are locations: finishing one, which raises its shrine, sends its item. Each asks
   # what its shrine asks. They hold nothing needed to finish a game

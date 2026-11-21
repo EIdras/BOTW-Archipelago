@@ -44,7 +44,9 @@ Korok's puzzle takes (bombs, Magnesis, the Gerudo Set in Gerudo Town).
 
 A quest is checked once it is finished, and still gives its reward, but for the pieces of set items:
 Thunder Magnet's Rubber Helm and Lynel Safari's Zora Greaves, which the Rubber and Zora Sets bring. The
-quests hold nothing needed to finish a game. A shrine quest asks what its shrine asks. Left out of the side quests: Slated for
+quests hold nothing needed to finish a game. A shrine quest asks what its shrine asks. A side quest asks what
+it takes in the game: a rune, an armor set, a Divine Beast freed, the Camera (Purah's, in Hateno) and the maps of
+the regions it goes through; My Hero asks for the Master Sword, which then becomes a progression item. Left out of the side quests: Slated for
 Upgrades (Purah's upgrades are locations already), A Gift from the Monks, The Statue's Bargain, and the
 EX quests of The Master Trials.
 

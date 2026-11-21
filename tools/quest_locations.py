@@ -12,13 +12,20 @@ kept, each a check: the quest still gives its reward.
   * quest: the quest's name in the game's files;
   * kind: "Side" (a side quest, Mini) or "Shrine" (a shrine quest, Sub);
   * shrine: a shrine quest's shrine, a location already (SHRINES), whose logic the quest takes;
-  * region: a side quest's, the tower area of the place its entry of the Adventure Log names; a shrine
-    quest's, its shrine's;
+  * region: a side quest's, the tower area of the place its entry of the Adventure Log names (or of its
+    giver, GIVERS); a shrine quest's, its shrine's;
   * name: "<place> - <quest>", that place and the quest's English name;
   * position: the place on the map;
   * heat: an Eldin climate that sets Link on fire at the place;
-  * requires: a side quest's, the Gerudo Set inside Gerudo Town (GUARDED);
-  * no_progression: why no progression can wait on the quest (NO_PROGRESSION).
+  * requires: a side quest's items and events: the Gerudo Set inside Gerudo Town (GUARDED), then its
+    logic (below);
+  * maps: the maps of the other regions a side quest goes through;
+  * no_progression: why no progression can wait on the quest (NO_PROGRESSION), or on the quest it follows.
+
+A side quest's logic is written by hand (SIDE_LOGIC), from what its flows check on the way to each of its
+steps (items, equipment, pictures) and from where the map holds what they check; then what the flag it
+depends on asks (QuestProduct's QuestDependencyFlag): another quest's finish flag brings that quest's
+logic, any other flag its DEPENDENCIES entry. A new dependency flag fails the build.
 
 Left out: the main quests, the shrine quests' records of mini-games (Sub quests without a shrine), and
 LEFT_OUT. The world reads this file only: it cannot read the game's files. --check compares the file with
@@ -80,7 +87,67 @@ LEFT_OUT = {
 }
 # The places where the logic asks the Gerudo Set: inside Gerudo Town.
 GUARDED = {"Gerudo": "Gerudo Set"}
-NO_PROGRESSION = {"HatenoMini_MyHome": "rupees", "UMiiMini_MakeVillage": "long"}
+NO_PROGRESSION = {"HatenoMini_MyHome": "rupees", "UMiiMini_MakeVillage": "long",
+                  "HatenoMini_WeaponMania": "weapons",          # eight given weapons from all over Hyrule
+                  "TabantaBridgeMini_Sundial": "rupees"}        # a Great Fairy, up to 10,000 rupees
+# The Camera: Purah restores it at Hateno's lab (Demo032_0), in the quest Impa gives in Kakariko; the
+# maps of the lab's Rune Upgrade locations and of Kah Yah's.
+CAMERA = "Camera"
+CAMERA_MAPS = ("Hateno Map", "Dueling Peaks Map")
+# What a side quest asks beyond its region: items, events ("Freed - <Divine Beast>", "Cleared - <shrine>"),
+# CAMERA, other regions' maps ("<region> Map") and the quests it follows (by name, their logic in turn).
+SIDE_LOGIC = {
+    "FironeMini_TerribleThunder": ("Magnesis",),        # the iron chest that draws the lightning
+    "GoronMini_WallCrackTBox": ("Progressive Remote Bomb",),     # the Drillshaft behind a cracked wall
+    "HateeluMini_Treasure": ("Magnesis",),              # iron chests, as the chests' rule
+    "UotoriMini_SinkTreasure": ("Magnesis",),
+    "isso_treasure_mini": ("Magnesis",),
+    "HyruleDepthMini_WhiteHorse": ("Ridgeland Map",),   # GameRomHorseZelda
+    "MinakkareMini_Dragonfly": ("Ridgeland Map",),      # Animal_Insect_I, placed in Ridgeland only
+    "OneHundred": ("Gerudo Map",),
+    "RitoMini_IceGolem": ("Hebra Map",),                # the Frost Talus
+    "ZoraMini_FlowedWife": ("Lake Map",),
+    "My_Hero": ("Master Sword",),                       # Weapon_Sword_070 in the pouch, on every path
+    "ZoraMini_DiveChallenge": ("Zora Set",),            # back up the waterfall
+    # The three Korok trials of the forest, shrine quests whose shrines' logic the events hold.
+    "KorokMini_KorokShiren": ("Cleared - Daag Chokah Shrine", "Cleared - Kuhn Sidajj Shrine",
+                              "Cleared - Maag Halan Shrine"),
+    # Pictures: Kilton, a Blupee (Dueling Peaks), a Lynel (Hateno), the three Leviathans, a Stalhorse
+    # (placed in Lake), the Eighth Heroine's statue and her sword (both in the Gerudo Highlands, the
+    # quests given outside Gerudo Town by Bozai, who asks for the Gerudo outfit), Purah to meet Robbie.
+    "HigakkareMini_StrangeMan": (CAMERA,),
+    "KorokMini_UMAShiren": (CAMERA,),
+    "RinelSearch": (CAMERA,),
+    "MarittaMini_BigWhales": ("Hebra Map", "Wasteland Map", "Eldin Map"),
+    "SetugenUmayadoMini_Umahonephoto": ("Lake Map",),
+    "Gerudo_Ch_SnowMT": ("Gerudo Set", "Gerudo Map"),
+    "Gerudo_Ch_SnowBoots": ("Gerudo Set", "Gerudo Map"),
+    "HatenoMini_BlueFire": (CAMERA, "Akkala Map"),
+    # Tarrey Town's people, there once From the Ground Up has built it.
+    "UMiiMini_GiveCake": ("UMiiMini_MakeVillage",),
+    "UMiiMini_RichmansHobby": ("UMiiMini_MakeVillage",),
+}
+# What a dependency flag that is no quest's finish flag asks; nothing when it is set where the quest
+# is given (a talk there).
+DEPENDENCIES = {
+    "Water_Relic_Finished": ("Freed - Divine Beast Vah Ruta",),
+    "Electric_Relic_Finished": ("Freed - Divine Beast Vah Naboris",),
+    "Clear_RemainsFire": ("Freed - Divine Beast Vah Rudania",),
+    "Clear_RemainsWind": ("Freed - Divine Beast Vah Medoh",),
+    "IsGet_Obj_Camera": (CAMERA,),
+    # Set by Purah after her Sheikah Sensor upgrade (Npc_AncientDoctor Event398): that location's map.
+    "AncientLabo_AncientAssistant001_SSLv2Get": ("Dueling Peaks Map",),
+    # The first try at the Master Sword's pull (botw_patch/pedestal.py), with any hearts.
+    "IsPlayed_Demo104_0": (),
+    "Find_Impa_Finish": (), "Gerudo_Ch_Helmet_Activated": (),
+    "Water_Relic_Activated": (), "Water_Relic_Step1_1": (),
+    "Water_Relic_ArmorSend": (),        # set past the Zora King's gift, which build.py only empties
+}
+# A quest whose Adventure Log place is a region's name marked in another tower's area: its giver's
+# place (map unit, actor). Wabbin stands at the Lover's Pond, west of Lurelin.
+GIVERS = {"FironeMini_HeartPond": ("H-8", "Npc_SouthernVillage016")}
+# Regions without a map.
+MAPLESS = ("Great Plateau", "Hyrule Castle")
 # The marks of a place, by preference: a marker of the map, a pointer, an area.
 MARK_KINDS = ("LocationMarker", "LocationPointer", "area")
 
@@ -166,7 +233,7 @@ def rows(game) -> list[dict]:
     places, names = texts(game)
     where = marks(game, bootup)
     regions = shrine_regions()
-    out = []
+    out, dependencies = [], {}
     for quest in quests:
         quest_id, kind = str(quest["Name"]), KINDS.get(str(quest["Type"]))
         if kind is None or quest_id in LEFT_OUT or kind == "Shrine" and quest_id not in SHRINES:
@@ -174,17 +241,68 @@ def rows(game) -> list[dict]:
         flag, place = finish_flag(quest), str(quest["Location"])
         if flag not in numbers:
             raise ValueError(f"{quest_id}: its finish flag {flag} is not saved")
-        x, y, z = where[place]
+        x, y, z = giver(game, *GIVERS[quest_id]) if quest_id in GIVERS else where[place]
         shrine = SHRINES.get(quest_id)
+        if kind == "Side" and "QuestDependencyFlag" in quest:
+            dependencies[quest_id] = str(quest["QuestDependencyFlag"])
         out.append({"number": numbers[flag], "flag": flag, "quest": quest_id, "kind": kind,
                     **({"shrine": shrine} if shrine else {}),
                     "region": regions[shrine] if shrine else named[towers.at(x, z)],
                     "name": f"{places[place]} - {names[quest_id]}", "position": [x, y, z],
                     "heat": heat(x, z), "requires": [GUARDED[place]] if place in GUARDED and not shrine else [],
-                    "no_progression": NO_PROGRESSION.get(quest_id)})
+                    "maps": [], "no_progression": NO_PROGRESSION.get(quest_id)})
     if {row["quest"] for row in out if row["kind"] == "Shrine"} != set(SHRINES):
         raise ValueError("SHRINES names a quest the game does not list as a shrine quest")
+    side_logic(out, dependencies)
     return sorted(out, key=lambda row: row["number"])
+
+
+def giver(game, unit: str, actor: str) -> tuple[float, float, float]:
+    """Where a map unit of the main field holds an actor, its only one."""
+    found = [obj["Translate"] for obj in oead.byml.from_binary(
+        unpack(game.read_aoc(f"Map/MainField/{unit}/{unit}_Static.smubin")))["Objs"]
+        if str(obj["UnitConfigName"]) == actor]
+    if len(found) != 1:
+        raise ValueError(f"{unit} holds {len(found)} {actor}")
+    return tuple(round(float(found[0][axis]), 1) for axis in range(3))
+
+
+def side_logic(rows: list[dict], dependencies: dict[str, str]) -> None:
+    """Each side quest's requires, maps and no_progression: its SIDE_LOGIC, and what its dependency flag
+    asks, with the logic of the quests it follows (whose regions' maps it needs as well)."""
+    by_quest = {row["quest"]: row for row in rows}
+    quest_of = {row["flag"]: row["quest"] for row in rows}
+    unknown = sorted(set(dependencies.values()) - set(quest_of) - set(DEPENDENCIES))
+    if unknown or not set(SIDE_LOGIC) <= {row["quest"] for row in rows if row["kind"] == "Side"}:
+        raise ValueError(f"a dependency flag without logic ({unknown}) or SIDE_LOGIC names no side quest")
+
+    def resolve(quest: str, path: tuple[str, ...]) -> tuple[set[str], set[str], str | None]:
+        if quest in path:
+            raise ValueError(f"{quest}: its dependencies loop")
+        row = by_quest[quest]
+        requires, maps, reason = set(row["requires"]), set(), row["no_progression"]
+        flag = dependencies.get(quest)
+        for term in (*SIDE_LOGIC.get(quest, ()),
+                     *((quest_of[flag],) if flag in quest_of else DEPENDENCIES.get(flag, ()))):
+            if term in by_quest:
+                needs, through, why = resolve(term, path + (quest,))
+                if by_quest[term]["region"] != row["region"]:
+                    if by_quest[term]["region"] in MAPLESS:
+                        raise ValueError(f"{quest} follows a quest of {by_quest[term]['region']}")
+                    through.add(f"{by_quest[term]['region']} Map")
+                requires, maps, reason = requires | needs, maps | through, reason or why
+            elif term == CAMERA:
+                maps |= set(CAMERA_MAPS)
+            elif term.endswith(" Map"):
+                maps.add(term)
+            else:
+                requires.add(term)
+        return requires, maps - {f"{row['region']} Map"}, reason
+
+    for row in rows:
+        if row["kind"] == "Side":
+            requires, maps, reason = resolve(row["quest"], ())
+            row.update(requires=sorted(requires), maps=sorted(maps), no_progression=reason)
 
 
 def main() -> None:

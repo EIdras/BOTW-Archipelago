@@ -46,11 +46,27 @@ class QuestDataTests(unittest.TestCase):
                 self.assertNotIn("shrine", row)
 
     def test_what_the_side_quests_take(self):
-        town = sorted(row["name"] for row in ROWS if row["requires"])
+        side = {row["quest"]: row for row in ROWS if row["kind"] == "Side"}
+        town = [row for row in side.values() if row["name"].startswith("Gerudo Town - ")]
         self.assertEqual(len(town), 6)
-        self.assertTrue(all(name.startswith("Gerudo Town - ") for name in town))
-        self.assertEqual({row["quest"]: row["no_progression"] for row in ROWS if row["no_progression"]},
-                         {"HatenoMini_MyHome": "rupees", "UMiiMini_MakeVillage": "long"})
+        self.assertTrue(all("Gerudo Set" in row["requires"] for row in town))
+        # The Camera, which Purah restores at Hateno's lab: Hateno's and Dueling Peaks' maps.
+        for quest in ("Gerudo_Ch_SnowMT", "MarittaMini_BigWhales", "RinelSearch", "HatenoMini_BlueFire"):
+            self.assertIn("Dueling Peaks Map", side[quest]["maps"])
+        # After a Divine Beast, or after another quest (whose logic it takes).
+        self.assertIn("Freed - Divine Beast Vah Ruta", side["Bottle_Mes"]["requires"])
+        self.assertEqual(side["Gerudo_Ch_SnowBoots"]["maps"], side["Gerudo_Ch_SnowMT"]["maps"])
+        self.assertEqual({quest: row["no_progression"] for quest, row in side.items() if row["no_progression"]},
+                         {"HatenoMini_MyHome": "rupees", "UMiiMini_MakeVillage": "long",
+                          "HatenoMini_WeaponMania": "weapons", "TabantaBridgeMini_Sundial": "rupees",
+                          "UMiiMini_GiveCake": "long", "UMiiMini_RichmansHobby": "long"})
+        # The Adventure Log says Faron, whose name is marked in Lake's tower area: Wabbin's place.
+        self.assertEqual(side["FironeMini_HeartPond"]["region"], "Faron")
+        self.assertTrue(all(row["maps"] == [] for row in ROWS if row["kind"] == "Shrine"))
+
+    def test_a_new_dependency_flag_fails_the_build(self):
+        with self.assertRaisesRegex(ValueError, "Unknown_Flag"):
+            quest_locations.side_logic([dict(row) for row in ROWS], {"Bottle_Mes": "Unknown_Flag"})
 
     @unittest.skipUnless(HAS_DLC, "requires the DLC")
     @full_build

@@ -29,6 +29,9 @@ KOROKS = [{**row, "id": KOROK_ID_BASE + row["number"], "category": "Korok"} for 
 QUEST_ID_BASE = 30000
 QUESTS = [{**row, "id": QUEST_ID_BASE + row["number"], "category": "Quest"} for row in json.loads(
     files(__package__).joinpath("data/quests.json").read_text(encoding="utf-8"))]
+# The items a side quest asks for that are no progression otherwise (My Hero's Master Sword): with
+# side_quest_sanity, progression.
+SIDE_QUEST_ITEMS = frozenset(name for row in QUESTS if row["kind"] == "Side" for name in row["requires"])
 # The Goddess Statues' offerings, with spirit_orbs on statue_checks: offering k, the k-th
 # trade of four Spirit Orbs at any statue, is location OFFERING_ID_BASE + k, made once
 # Npc_Goddess_UtuwaSum, which each trade raises by four, reaches 4k (botw_client/locations.py).
@@ -171,8 +174,9 @@ def requirements(row: dict) -> tuple[tuple[tuple[str, ...], int], ...]:
     the heat of its place and the runes the map says it takes; a chest inside a
     shrine or a Divine Beast has that location's row, with every rune (which one a
     side chest takes, no data tells). A Korok's and a side quest's are in its row
-    of data/koroks.json or data/quests.json, as a chest's of the surface; a shrine
-    quest has its shrine's row."""
+    of data/koroks.json or data/quests.json, as a chest's of the surface (a quest's may
+    name events: a Divine Beast freed, a shrine cleared); a shrine quest has its
+    shrine's row."""
     groups = [] if row["region"] == "Great Plateau" else [(("Paraglider",), 1)]
     if surface(row):
         groups += [(names, 1) for names in CLIMATES["heat" if row["heat"] else "none"]]
@@ -196,11 +200,12 @@ def requirements(row: dict) -> tuple[tuple[tuple[str, ...], int], ...]:
 def map_keys(row: dict, towers: bool = False) -> tuple[str, ...]:
     """The maps a location asks for when the maps are region keys: its region's,
     but for the mapless regions and, unless `towers` (towers_need_maps), a tower,
-    then any its logic.csv extra names (a quest that goes through another region)."""
+    then any its logic.csv extra names (a quest that goes through another region),
+    or a side quest's "maps"."""
     own = () if row["region"] in MAPLESS_REGIONS or "Tower" in categories(row) and not towers \
         else (MAPS[row["region"]],)
     if surface(row):
-        return own
+        return own + tuple(name for name in row.get("maps", ()) if name not in own)
     extra = tuple(name for name in LOGIC[row.get("dungeon") or row.get("shrine") or row["name"]]["extra"].split("|")
                   if name in MAPS.values())
     return own + tuple(name for name in extra if name not in own)
@@ -293,7 +298,8 @@ def _check_koroks() -> None:
 
 def _check_quests() -> None:
     """Quest rows: unique names, of no other location, ids above the Koroks',
-    known regions and requirements, and a shrine quest in its shrine's region."""
+    known regions, requirements (items, Divine Beasts freed, shrines cleared) and
+    maps, and a shrine quest in its shrine's region."""
     names, ids = {row["name"] for row in QUESTS}, {row["id"] for row in QUESTS}
     if len(names) != len(QUESTS) or len(ids) != len(QUESTS) \
             or names & {row["name"] for row in [*LOCATIONS, *CHESTS, *KOROKS]}:
@@ -301,9 +307,12 @@ def _check_quests() -> None:
     if min(ids) <= max(row["id"] for row in KOROKS):
         raise ValueError("Quest ids overlap the Koroks'")
     shrines = {row["name"]: row["region"] for row in LOCATIONS if "Shrine" in categories(row)}
-    regions, known = {row["region"] for row in LOCATIONS}, {row["name"] for row in ITEMS}
+    regions = {row["region"] for row in LOCATIONS}
+    known = {*(row["name"] for row in ITEMS), *(f"Cleared - {name}" for name in shrines),
+             *(f"Freed - {row['name']}" for row in LOCATIONS if "Divine Beast" in categories(row))}
     for row in QUESTS:
         if row["region"] not in regions or not set(row["requires"]) <= known \
+                or not set(row["maps"]) <= set(MAPS.values()) - {MAPS.get(row["region"])} \
                 or row["kind"] not in ("Side", "Shrine") or (row["kind"] == "Shrine") != ("shrine" in row) \
                 or "shrine" in row and shrines.get(row["shrine"]) != row["region"]:
             raise ValueError(f"{row['name']}: unknown region, kind, shrine or requirement")

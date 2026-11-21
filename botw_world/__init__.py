@@ -14,7 +14,7 @@ from rule_builder.rules import And, CanReachRegion, Has, HasAll, HasAny, HasFrom
 
 from .catalog import (CHESTS, FILLER, GAME, GENTLE_REGIONS, GOAL_LOCATION, INNER_REGIONS, ITEMS, KOROKS, LOCATIONS, MAPS,
                       NEIGHBOURS,
-                      OFFERINGS, OPEN_BORDERS, ORBS_PER_TRADE, QUESTS, TRAPS, TRAVEL_SHRINES, TRAVEL_TERMINALS, WEAPON_LEVELS, WORLD_VERSION, categories,
+                      OFFERINGS, OPEN_BORDERS, ORBS_PER_TRADE, QUESTS, SIDE_QUEST_ITEMS, TRAPS, TRAVEL_SHRINES, TRAVEL_TERMINALS, WEAPON_LEVELS, WORLD_VERSION, categories,
                       map_keys, requirements)
 from .options import OPTION_GROUPS, PRESETS, BotwOptions, ChestSanity, EarlyMap, SpiritOrbs, TowerMaps, WeaponOrder
 from .tracker import TRACKER_WORLD, BotwSettings
@@ -324,9 +324,11 @@ class BotwWorld(World):
         if name == self.glitches_item_name:
             return BotwItem(name, ItemClassification.progression, None, self.player)
         row = next(r for r in ITEMS if r["name"] == name)
-        # A rule names the Master Sword only when the sanctum asks for it, a map
-        # when the maps are region keys.
+        # A rule names the Master Sword only when the sanctum or a side quest (My
+        # Hero) asks for it, a map when the maps are region keys. A side quest
+        # counts excluded too: every location must be reachable.
         needed = (name == "Master Sword" and self.options.sanctum_master_sword
+                  or name in SIDE_QUEST_ITEMS and self.options.side_quest_sanity
                   or name in MAPS.values() and self.options.tower_maps == TowerMaps.option_region_keys)
         if name == "Spirit Orb" and self.options.spirit_orbs != SpiritOrbs.option_containers:
             # Many, and only their number counts.
