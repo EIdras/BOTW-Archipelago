@@ -55,8 +55,11 @@ Breath of the Wild:
   # containers or vanilla_statues: how hearts and stamina are won. containers: 17 heart containers, 5 stamina vessels
   # and 20 Spirit Orbs are items. vanilla_statues: 108 Spirit Orbs and no container, the Goddess Statues give them all
   # (four orbs each), and the Master Sword asks for 40 orbs. That adds 66 items, which need room: chest_sanity, or
-  # korok_sanity with a lower korok_local_filler
+  # korok_sanity with a lower korok_local_filler. statue_checks: each trade at a statue is a location (Goddess Statue -
+  # Offering k, 4k orbs) and gives nothing more; four orbs per offering are items, and the containers too
   spirit_orbs: containers
+  # 1 to 30: with statue_checks, how many trades are locations
+  statue_offerings: 5
   # off, check_only or ap_items: whether the chests of Hyrule's surface (1,180), of its shrines (174) and of the
   # Divine Beasts (35, sent once a beast is freed if left inside) are locations. check_only: opening a chest sends
   # its item and the chest keeps its own contents. ap_items: each chest of the surface and of the Divine Beasts holds

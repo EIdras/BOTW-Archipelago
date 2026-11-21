@@ -24,10 +24,11 @@ MASTER_CSV = ROOT / "data" / "locations_master.csv"
 # ends of the 4 Champions' Ballads (220 rows); 6: the same rows, then the
 # chests of chest_sanity (botw_world/data/chests.json, CHEST_SCHEMA); 7: then
 # the Koroks of korok_sanity (botw_world/data/koroks.json, KOROK_SCHEMA); 8: then
-# the side and shrine quests (botw_world/data/quests.json, QUEST_SCHEMA).
+# the side and shrine quests (botw_world/data/quests.json, QUEST_SCHEMA); 9: then
+# the Goddess Statues' offerings (OFFERING_SCHEMA).
 # botw_world declares its schema in slot_data["world_schema"].
-SCHEMA_LOCATION_COUNTS = {1: 149, 2: 153, 3: 185, 4: 213, 5: 220, 6: 220, 7: 220, 8: 220}
-WORLD_SCHEMA = 8
+SCHEMA_LOCATION_COUNTS = {1: 149, 2: 153, 3: 185, 4: 213, 5: 220, 6: 220, 7: 220, 8: 220, 9: 220}
+WORLD_SCHEMA = 9
 # The first schema whose locations include the chests, by the vanilla flag each
 # keeps once its contents are taken (tools/chest_locations.py).
 CHEST_SCHEMA = 6
@@ -40,6 +41,14 @@ KOROKS_JSON = ROOT / "botw_world" / "data" / "koroks.json"
 # sets once finished (tools/quest_locations.py).
 QUEST_SCHEMA = 8
 QUESTS_JSON = ROOT / "botw_world" / "data" / "quests.json"
+# The first schema whose locations include the Goddess Statues' offerings (the world's
+# spirit_orbs on statue_checks, botw_world/catalog.py OFFERINGS): each trade at a statue
+# raises the saved s32 OFFERING_FLAG by ORBS_PER_TRADE (Demo034_0, GetMatome), and
+# offering k is made once it reaches ORBS_PER_TRADE * k.
+OFFERING_SCHEMA = 9
+OFFERING_FLAG = "Npc_Goddess_UtuwaSum"
+ORBS_PER_TRADE = 4
+OFFERING_NAMES = tuple(f"Goddess Statue - Offering {k}" for k in range(1, 31))
 CHEST_ITEM_PREFIX = "AP_Chest_"
 # The Great Plateau's tower reveals its own map: its map is no item.
 PLATEAU_TOWER_FLAG = "MapTower_07"
@@ -93,6 +102,9 @@ class LocationTarget:
     # A custom flag a pack may track this location by instead (a tower whose map
     # is an item: tower_activation_flag), when the game has it.
     pack_flag: str | None = None
+    # The value the flag reaches when the location is made: a count's (s32) step, as
+    # an offering's; 1 for a bool, or an s32 set once.
+    minimum: int = 1
 
     @property
     def pack_hash(self) -> int | None:
@@ -133,9 +145,12 @@ def load_targets(path: Path = MASTER_CSV,
     if world_schema >= QUEST_SCHEMA:
         targets += [LocationTarget(row["name"], row["flag"], zlib.crc32(row["flag"].encode()))
                     for row in _QUEST_ROWS]
+    if world_schema >= OFFERING_SCHEMA:
+        targets += [LocationTarget(name, OFFERING_FLAG, zlib.crc32(OFFERING_FLAG.encode()), "s32",
+                                   minimum=ORBS_PER_TRADE * k) for k, name in enumerate(OFFERING_NAMES, 1)]
     if len({target.name for target in targets}) != len(targets):
         raise ValueError("duplicate location names")
-    if len({target.hash_u32 for target in targets}) != len(targets):
+    if len({(target.hash_u32, target.minimum) for target in targets}) != len(targets):
         raise ValueError("duplicate location hashes")
     gamedata = gamedata_table.load()
     hashes = {flag_name: int(hash_value) & 0xFFFFFFFF
@@ -233,7 +248,6 @@ class LocationTracker:
             for target in self.targets
             if target.optional or target.hash_u32 not in index
         }
-        self.by_hash = {target.hash_u32: target for target in self.targets}
         self.low = self.addresses[0][1] if self.addresses else 0
         self.high = self.addresses[-1][1] + 8 if self.addresses else 0
         self.span = self.high - self.low
@@ -258,17 +272,16 @@ class LocationTracker:
             raw = self.process.read(address, 4 if kind == "s32" else 1)
             if not raw:
                 raise RuntimeError("incomplete live AP GameData read")
-            values[hash_u32] = (int(int.from_bytes(raw, "big") != 0) if kind == "s32"
+            # An s32 as it is, which a count's locations compare to their minimum.
+            values[hash_u32] = (int.from_bytes(raw, "big", signed=True) if kind == "s32"
                                 else raw[0] & 1)
         self.last_read_ms = (time.perf_counter() - started) * 1000
         return values
 
     def poll(self) -> list[str]:
-        current = self.snapshot()
-        if self.previous is None:
-            changed = [self.by_hash[h].name for h, value in current.items() if value]
-        else:
-            changed = [self.by_hash[h].name for h, value in current.items()
-                       if value and not self.previous.get(h, 0)]
+        current, before = self.snapshot(), self.previous
+        changed = [target.name for target in self.targets
+                   if current.get(target.hash_u32, 0) >= target.minimum
+                   and (before is None or before.get(target.hash_u32, 0) < target.minimum)]
         self.previous = current
         return list(dict.fromkeys(changed))     # a location seen by two of its flags

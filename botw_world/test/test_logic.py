@@ -154,6 +154,57 @@ class TestVanillaStatues(LogicTestBase):
             generate({"spirit_orbs": "vanilla_statues"})
 
 
+class TestStatueChecks(LogicTestBase):
+    options = {**MAPLESS, "spirit_orbs": "statue_checks"}
+
+    def offerings(self) -> list:
+        return [loc for loc in self.multiworld.get_locations(self.player)
+                if loc.name in self.world.location_name_groups["Goddess Statue Offerings"]]
+
+    def test_five_offerings_take_the_twenty_orbs_and_the_hearts_stay_items(self) -> None:
+        self.assertEqual([(loc.name, loc.address) for loc in self.offerings()],
+                         [(f"Goddess Statue - Offering {k}", 40000 + k) for k in range(1, 6)])
+        names = [item.name for item in self.multiworld.itempool if item.player == self.player]
+        self.assertEqual((names.count("Spirit Orb"), names.count("Heart Container"), names.count("Stamina Vessel")),
+                         (20, 17, 5))
+        self.assertTrue(all(item.advancement for item in self.get_items_by_name("Spirit Orb")))
+        slot_data = self.world.fill_slot_data()
+        self.assertEqual((slot_data["spirit_orbs"], slot_data["statue_offerings"], slot_data["client_schema"],
+                          slot_data["world_schema"]), (2, 5, 16, 9))
+
+    def test_offering_k_needs_4k_orbs_and_a_shrine_cleared(self) -> None:
+        orbs = self.get_items_by_name("Spirit Orb")
+        self.collect(orbs[:4])
+        self.assertFalse(self.can_reach_location("Goddess Statue - Offering 1"))     # the Temple's statue
+        self.collect_by_name("Magnesis")
+        self.assertTrue(self.can_reach_location("Goddess Statue - Offering 1"))
+        self.assertFalse(self.can_reach_location("Goddess Statue - Offering 2"))
+        self.collect(orbs[4:19])
+        self.assertFalse(self.can_reach_location("Goddess Statue - Offering 5"))
+        self.collect(orbs[19])
+        self.assertTrue(self.can_reach_location("Goddess Statue - Offering 5"))
+
+    def test_the_master_sword_still_needs_ten_heart_containers(self) -> None:
+        self.collect_by_name("Paraglider")
+        self.collect(self.get_items_by_name("Heart Container")[:10])
+        self.assertTrue(self.can_reach_location("Master Sword Pedestal"))
+
+
+class TestManyStatueChecks(LogicTestBase):
+    options = {**MAPLESS, "spirit_orbs": "statue_checks", "statue_offerings": 30,
+               "korok_sanity": True, "korok_progression": True, "korok_local_filler": 0}
+
+    def test_thirty_offerings_take_120_orbs(self) -> None:
+        names = [item.name for item in self.multiworld.itempool if item.player == self.player]
+        self.assertEqual(names.count("Spirit Orb"), 120)
+
+    def test_without_room_the_option_says_what_to_lower(self) -> None:
+        from Options import OptionError
+        from .test_tracker import generate
+        with self.assertRaisesRegex(OptionError, "statue_offerings at 30"):
+            generate({"spirit_orbs": "statue_checks", "statue_offerings": 30, "korok_sanity": True})
+
+
 HARD ={**MAPLESS, "sanctum_divine_beasts": 0, "sanctum_shrines": 0,
         "sanctum_master_sword": False, "sanctum_runes": False}
 

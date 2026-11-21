@@ -298,7 +298,7 @@ class TestKorokSanity(BotwTestBase):
         self.assertEqual({loc.progress_type for loc in koroks}, {LocationProgressType.EXCLUDED})
         slot_data = self.world.fill_slot_data()
         self.assertEqual((slot_data["korok_count"], slot_data["client_schema"], slot_data["world_schema"]),
-                         (40, 14, 8))
+                         (40, 14, 9))
         self.assertEqual(slot_data["korok_locations"], sorted(loc.address for loc in koroks))
         self.assertTrue(all(KOROK_ID_BASE < loc.address <= KOROK_ID_BASE + len(KOROKS) for loc in koroks))
 
@@ -382,7 +382,7 @@ class TestSideQuestSanity(BotwTestBase):
         self.assertTrue(all(QUEST_ID_BASE < loc.address <= QUEST_ID_BASE + 155 for loc in quests))
         slot_data = self.world.fill_slot_data()
         self.assertEqual((slot_data["side_quest_sanity"], slot_data["shrine_quest_sanity"],
-                          slot_data["client_schema"], slot_data["world_schema"]), (1, 0, 15, 8))
+                          slot_data["client_schema"], slot_data["world_schema"]), (1, 0, 15, 9))
 
     def test_they_bring_no_more_traps(self) -> None:
         with_quests = generate(self.options)

@@ -33,7 +33,7 @@ from tools import build_plateau_sensor_candidate as sensor
 from tools import build_master_sword_candidate as sword
 from botw_patch import (ballad_ends, beast_heart, bike_anywhere, camera_sensor, chests, cutscene_skip, death_link,
                         downpour, ganon_gate, gerudo_outfit, goron_armor, horses, hud_layout, loading_icon,
-                        pedestal, purah_upgrades, traps)
+                        pedestal, purah_upgrades, statue_checks, traps)
 from botw_patch.ap_quest import INPUT_HASHES as STATUS_INPUTS
 
 TITLE = "Pack/TitleBG.pack"
@@ -130,6 +130,7 @@ def stage_names(shops: list | None = None, status: dict | None = None) -> list[s
             *(["the Archipelago quest"] if status else []), *(["the region maps"] if tower_maps(status) else []),
             *(["the Master Cycle Zero"] if bike_anywhere.enabled(status) else []),
             *(["the cutscenes"] if cutscene_skip.enabled(status) else []),
+            *(["the Goddess Statues"] if statue_checks.enabled(status) else []),
             *(["the chests"] if chests.enabled(status) else []), "the texts"]
 
 
@@ -356,6 +357,11 @@ def _generate(game: GameFiles, binding_token: int, shops: list | None, status: d
         # The flow-played cutscenes made cancellable (botw_patch/cutscene_skip.py).
         files, edits = cutscene_skip.generate(files, game)
         changes.extend(edits)
+    if statue_checks.enabled(status):
+        stage()
+        # The statues' trades are locations: they give nothing more (botw_patch/statue_checks.py).
+        files, edits = statue_checks.generate(files, game)
+        changes.extend(edits)
     if chests.enabled(status):
         stage()
         # Every chest of the field and of the Divine Beasts holds the Archipelago
@@ -450,6 +456,11 @@ def build(content, output: Path, *, binding_token: int, shops: list | None = Non
         manifest["cutscene_skip"] = sorted(cutscene_skip.FLOWS)
         manifest["source_hashes"].update({name: digest((ROOT / name).read_bytes())
                                           for name in cutscene_skip.SOURCE_FILES})
+    if statue_checks.enabled(status):
+        # Only for seeds that ask for it, so that the others keep their identity.
+        manifest["statue_checks"] = statue_checks.GIFT
+        manifest["source_hashes"].update({name: digest((ROOT / name).read_bytes())
+                                          for name in statue_checks.SOURCE_FILES})
     if chests.enabled(status):
         # Only for seeds that ask for it, so that the others keep their identity.
         manifest["chests"] = chests.CHEST_COUNT

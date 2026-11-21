@@ -35,6 +35,7 @@ template with "Generate Template Options". Every option is explained [below](#op
 | Koroks (option `korok_sanity`) | 0 to 900 |
 | Side quests (option `side_quest_sanity`) | 0 or 73 |
 | Shrine quests (option `shrine_quest_sanity`) | 0 or 42 |
+| Goddess Statue offerings (option [`spirit_orbs`](#spirit-orbs)) | 0, or 1 to 30 |
 
 The Koroks are many: by default, 95 % of those that are locations hold filler of your own world
 (`korok_local_filler`), so that they don't flood the other players with filler. With
@@ -275,11 +276,18 @@ container or a stamina vessel, as you choose.
 |---|---|---|
 | `containers` (default) | 17 Heart Containers, 5 Stamina Vessels, 20 Spirit Orbs | 10 Heart Containers |
 | `vanilla_statues` | 108 Spirit Orbs: the statues give every heart and stamina vessel | 40 Spirit Orbs |
+| `statue_checks` | 17 Heart Containers, 5 Stamina Vessels, four Spirit Orbs per offering | 10 Heart Containers |
 
 With `vanilla_statues`, the logic counts on the statues' hearts: trading for stamina, or trading hearts back at the
 Horned Statue in Hateno, keeps the Master Sword waiting. Only 40 orbs are needed; the others may lie anywhere, a Korok or
 a chest that holds nothing needed too. The 66 more items need room: without it, generation stops and says so.
 `chest_sanity`, or `korok_sanity` with a lower `korok_local_filler`, gives it.
+
+With `statue_checks`, each trade at a statue is a location, "Goddess Statue - Offering 1" to the number
+`statue_offerings` sets (5 by default, up to 30). The statue still takes the orbs and asks for a heart or stamina, then
+gives nothing more: the offering sends its item, whatever you chose. Offering k asks for 4×k orbs, and the Temple of
+Time's statue for a shrine cleared first, as in the game. Five offerings take the 20 orbs of `containers`; above some
+ten, the orbs need locations that may hold progression: `korok_progression` or `chest_progression` gives them.
 
 ### DeathLink
 

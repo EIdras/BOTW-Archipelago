@@ -102,6 +102,9 @@ slot file alone, without reaching any server.
 - **Quests**: with `side_quest_sanity` or `shrine_quest_sanity`, a quest's location is the flag its last step
   raises (`botw_world/data/quests.json`, made from the game's quest list by `tools/quest_locations.py`). The
   quest still gives its reward, but for a piece of a set item (above); a shrine quest takes its shrine's logic.
+- **Goddess Statues**: with `spirit_orbs` on `statue_checks`, offering k is made once `Npc_Goddess_UtuwaSum`, which
+  each trade raises by four, reaches 4k (one saved s32 for every offering, `botw_client/locations.py`). The
+  seed's pack makes the statue's gift a wait (`botw_patch/statue_checks.py`).
 - **DeathLink**: Link's death (`CurrentHart` at 0) is sent to the room; a received death is announced in the journal,
   then requests the pack's entry `OperationGuide<APDeathLink>`, the game's own damage action with a lethal value
   ([death_link.md](reference/death_link.md)).

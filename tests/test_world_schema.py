@@ -3,8 +3,8 @@ import unittest
 from pathlib import Path
 
 from botw_client import gamedata_table
-from botw_client.locations import (CHEST_NUMBERS, KOROK_NAMES, QUEST_NAMES, SCHEMA_LOCATION_COUNTS, WORLD_SCHEMA,
-                                   load_targets)
+from botw_client.locations import (CHEST_NUMBERS, KOROK_NAMES, OFFERING_NAMES, QUEST_NAMES, SCHEMA_LOCATION_COUNTS,
+                                   WORLD_SCHEMA, load_targets)
 from botw_client.runtime import BotwClientRuntime, FatalClientError
 
 HEARTS = ["Vah Ruta Heart Container", "Vah Rudania Heart Container",
@@ -19,8 +19,8 @@ class CatalogueSchemaTests(unittest.TestCase):
         old, new = load_targets(world_schema=1), load_targets(world_schema=2)
         shops, stalls = load_targets(world_schema=3), load_targets(world_schema=4)
         upgrades, chests = load_targets(world_schema=5), load_targets(world_schema=6)
-        koroks, quests = load_targets(world_schema=7), load_targets()
-        self.assertEqual(WORLD_SCHEMA, 8)
+        koroks, quests, offerings = load_targets(world_schema=7), load_targets(world_schema=8), load_targets()
+        self.assertEqual(WORLD_SCHEMA, 9)
         self.assertEqual((len(old), len(new), len(shops), len(stalls), len(upgrades)),
                          (SCHEMA_LOCATION_COUNTS[1], SCHEMA_LOCATION_COUNTS[2],
                           SCHEMA_LOCATION_COUNTS[3], SCHEMA_LOCATION_COUNTS[4],
@@ -31,6 +31,8 @@ class CatalogueSchemaTests(unittest.TestCase):
         self.assertEqual(len(koroks), len(chests) + len(KOROK_NAMES))
         self.assertEqual(quests[:len(koroks)], koroks)
         self.assertEqual(len(quests), len(koroks) + len(QUEST_NAMES))
+        self.assertEqual(offerings[:len(quests)], quests)
+        self.assertEqual([target.name for target in offerings[len(quests):]], list(OFFERING_NAMES))
         self.assertEqual(upgrades[:len(stalls)], stalls)
         # Purah's upgrades: saved bools of the mod's own; the Ballads' ends: the game's.
         self.assertEqual([(t.name.rsplit(" - ", 1)[-1], t.kind, t.optional) for t in upgrades[len(stalls):]], [
@@ -46,7 +48,7 @@ class CatalogueSchemaTests(unittest.TestCase):
         self.assertTrue(all(t.optional and t.kind == "s32" for t in stalls[len(new):]))
         self.assertEqual(stalls[len(shops)].name, "Rito Village - General Stall Item 1")
         with self.assertRaises(ValueError):
-            load_targets(world_schema=9)
+            load_targets(world_schema=10)
 
 
 class RuntimeSchemaTests(unittest.IsolatedAsyncioTestCase):
@@ -74,7 +76,7 @@ class RuntimeSchemaTests(unittest.IsolatedAsyncioTestCase):
                 runtime = self.runtime(directory, "Breath of the Wild", slot_data)
                 self.assertEqual(runtime._world_schema(), expected)
             with self.assertRaises(FatalClientError):
-                self.runtime(directory, "Breath of the Wild", {"world_schema": 9})._world_schema()
+                self.runtime(directory, "Breath of the Wild", {"world_schema": 10})._world_schema()
 
     @NEEDS_TABLE
     def test_manual_schema_comes_from_its_data_package(self):
@@ -99,6 +101,9 @@ class RuntimeSchemaTests(unittest.IsolatedAsyncioTestCase):
                                           + upgrades + chests + sorted(KOROK_NAMES))._world_schema(), 7)
             self.assertEqual(self.runtime(directory, "Manual_BOTW", names=old + HEARTS + shops + stalls + upgrades
                                           + chests + sorted(KOROK_NAMES) + sorted(QUEST_NAMES))._world_schema(), 8)
+            self.assertEqual(self.runtime(directory, "Manual_BOTW", names=old + HEARTS + shops + stalls + upgrades
+                                          + chests + sorted(KOROK_NAMES) + sorted(QUEST_NAMES)
+                                          + list(OFFERING_NAMES))._world_schema(), 9)
 
     @NEEDS_TABLE
     async def test_a_check_absent_from_the_seed_is_not_sent(self):
@@ -121,12 +126,13 @@ class RuntimeSchemaTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(any("Vah Ruta Heart Container" in line for line in logs))
 
     @NEEDS_TABLE
-    async def test_a_korok_or_quest_found_in_a_seed_without_it_is_neither_sent_nor_said(self):
+    async def test_a_korok_quest_or_offering_found_in_a_seed_without_it_is_neither_sent_nor_said(self):
         old, korok, quest = [target.name for target in load_targets(world_schema=1)], min(KOROK_NAMES), min(QUEST_NAMES)
+        offering = OFFERING_NAMES[0]
 
         class Game:
             def poll_locations(self):
-                return [korok, quest, "Great Plateau Tower"]
+                return [korok, quest, offering, "Great Plateau Tower"]
 
         with tempfile.TemporaryDirectory() as directory:
             logs = []
@@ -138,7 +144,7 @@ class RuntimeSchemaTests(unittest.IsolatedAsyncioTestCase):
             runtime.state = runtime.state_store.select("seed", 0, 1, "package")
             await runtime._poll_locations()
             self.assertEqual(runtime.state["pending_checks"], ["Great Plateau Tower"])
-            self.assertFalse(any(korok in line or quest in line for line in logs))
+            self.assertFalse(any(korok in line or quest in line or offering in line for line in logs))
 
 
 if __name__ == "__main__":

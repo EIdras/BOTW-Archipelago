@@ -233,11 +233,28 @@ class SpiritOrbs(Choice):
     vanilla_statues: 108 Spirit Orbs are items, and no heart container nor stamina
     vessel: the statues give them all. The Master Sword asks for 40 Spirit Orbs, ten
     heart containers. This adds 66 items, which need room: chest_sanity, or
-    korok_sanity with fewer Koroks holding your own filler (korok_local_filler)."""
+    korok_sanity with fewer Koroks holding your own filler (korok_local_filler).
+    statue_checks: each trade at a statue is a location, up to statue_offerings of them,
+    and gives nothing more; heart containers and stamina vessels are items, as with
+    containers, and four Spirit Orbs per offering. Offering k asks for 4k orbs, and the
+    Temple of Time's statue for a shrine cleared first, as in the game."""
     display_name = "Spirit Orbs"
     option_containers = 0
     option_vanilla_statues = 1
+    option_statue_checks = 2
     default = 0
+
+
+class StatueOfferings(Range):
+    """With spirit_orbs on statue_checks, how many trades at the Goddess Statues are
+    locations. Four Spirit Orbs per offering are items: five take the 20 of containers,
+    and each one more adds four orbs and a location. Every orb is progression, which
+    the Koroks and the chests hold only with korok_progression or chest_progression:
+    above some ten offerings, turn one of them on."""
+    display_name = "Statue Offerings"
+    range_start = 1
+    range_end = 30
+    default = 5
 
 
 class ChestSanity(Choice):
@@ -358,6 +375,7 @@ class BotwOptions(PerGameCommonOptions):
     bike_anywhere: BikeAnywhere
     cutscene_skip: CutsceneSkip
     spirit_orbs: SpiritOrbs
+    statue_offerings: StatueOfferings
     chest_sanity: ChestSanity
     chest_progression: ChestProgression
     shrine_chest_items: ShrineChestItems
@@ -380,7 +398,7 @@ OPTION_GROUPS = [
     OptionGroup("Maps", [TowerMaps, EarlyMap, TowersNeedMaps, RegionLock, MapTravelPoints]),
     OptionGroup("Master Cycle Zero", [BikeAnywhere]),
     OptionGroup("Cutscenes", [CutsceneSkip]),
-    OptionGroup("Spirit Orbs", [SpiritOrbs]),
+    OptionGroup("Spirit Orbs", [SpiritOrbs, StatueOfferings]),
     OptionGroup("Chests", [ChestSanity, ChestProgression, ShrineChestItems]),
     OptionGroup("Koroks", [KorokSanity, KorokCount, KorokLocalFiller, KorokProgression]),
     OptionGroup("Quests", [SideQuestSanity, ShrineQuestSanity]),

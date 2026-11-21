@@ -14,15 +14,13 @@ from rule_builder.rules import And, CanReachRegion, Has, HasAll, HasAny, HasFrom
 
 from .catalog import (CHESTS, FILLER, GAME, GENTLE_REGIONS, GOAL_LOCATION, INNER_REGIONS, ITEMS, KOROKS, LOCATIONS, MAPS,
                       NEIGHBOURS,
-                      OPEN_BORDERS, QUESTS, TRAPS, TRAVEL_SHRINES, TRAVEL_TERMINALS, WEAPON_LEVELS, WORLD_VERSION, categories,
+                      OFFERINGS, OPEN_BORDERS, ORBS_PER_TRADE, QUESTS, TRAPS, TRAVEL_SHRINES, TRAVEL_TERMINALS, WEAPON_LEVELS, WORLD_VERSION, categories,
                       map_keys, requirements)
 from .options import OPTION_GROUPS, PRESETS, BotwOptions, ChestSanity, EarlyMap, SpiritOrbs, TowerMaps, WeaponOrder
 from .tracker import TRACKER_WORLD, BotwSettings
 from .slot_file import BotwSlotFile
 
 
-# The Goddess Statues' trade: four Spirit Orbs for a heart container or a stamina vessel.
-ORBS_PER_TRADE = 4
 # The most heart containers a location asks for: the Master Sword's.
 HEARTS_NEEDED = max(count for row in LOCATIONS for names, count in requirements(row) if names == ("Heart Container",))
 
@@ -64,7 +62,8 @@ class BotwWorld(World):
     location_name_to_id = {**{row["name"]: row["id"] for row in LOCATIONS if row["name"] != GOAL_LOCATION},
                            **{row["name"]: row["id"] for row in CHESTS},
                            **{row["name"]: row["id"] for row in KOROKS},
-                           **{row["name"]: row["id"] for row in QUESTS}}
+                           **{row["name"]: row["id"] for row in QUESTS},
+                           **{row["name"]: row["id"] for row in OFFERINGS}}
     item_name_groups = {"Runes": {"Magnesis", "Progressive Remote Bomb", "Progressive Stasis", "Cryonis"},
                         "Weapons": set(WEAPON_LEVELS), "Maps": set(MAPS.values())}
     # Universal Tracker shows as "glitched" (out of logic, but possible) what this
@@ -101,6 +100,7 @@ class BotwWorld(World):
         **{f"{kind} Quests": {r["name"] for r in QUESTS if r["kind"] == kind} for kind in ("Side", "Shrine")},
         **{f"Quests: {region}": {r["name"] for r in QUESTS if r["region"] == region}
            for region in sorted({r["region"] for r in QUESTS})},
+        "Goddess Statue Offerings": {r["name"] for r in OFFERINGS},
     }
     # Shop prices drawn by the seed, in rupees: SHOP_PRICE_STEPS * 5.
     SHOP_PRICE_STEPS = (4, 40)
@@ -112,7 +112,7 @@ class BotwWorld(World):
     SLOT_OPTIONS = ("goal", "goal_shrines", "sanctum_divine_beasts", "sanctum_shrines",
                     "sanctum_master_sword", "sanctum_runes", "beedle_shop_items", "stall_items", "tower_maps",
                     "towers_need_maps", "region_lock", "map_travel_points", "bike_anywhere",
-                    "cutscene_skip", "spirit_orbs", "chest_sanity", "shrine_chest_items", "korok_sanity", "korok_count",
+                    "cutscene_skip", "spirit_orbs", "statue_offerings", "chest_sanity", "shrine_chest_items", "korok_sanity", "korok_count",
                     "side_quest_sanity", "shrine_quest_sanity")
     # The region each map opens: {item: region}.
     MAP_REGIONS = {item: region for region, item in MAPS.items()}
@@ -124,6 +124,8 @@ class BotwWorld(World):
     koroks: list[dict]
     # side_quest_sanity, shrine_quest_sanity: the quest rows that are locations (create_regions).
     quests: list[dict]
+    # spirit_orbs on statue_checks: the offerings that are locations (create_regions).
+    offerings: list[dict]
 
     @staticmethod
     def interpret_slot_data(slot_data: dict[str, Any]) -> dict[str, Any]:
@@ -221,6 +223,15 @@ class BotwWorld(World):
             loc.progress_type = LocationProgressType.EXCLUDED
             regions[row["region"]].locations.append(loc)
             self.set_rule(loc, self.location_rule(row))
+        # spirit_orbs on statue_checks: the statues' trades. Offering k takes 4k orbs, and a
+        # shrine cleared, which the Temple of Time's statue asks for (Demo034_0_0).
+        self.offerings = OFFERINGS[:self.options.statue_offerings.value] \
+            if self.options.spirit_orbs == SpiritOrbs.option_statue_checks else []
+        cleared = tuple(sorted(f"Cleared - {name}" for name in self.location_name_groups["Shrines"]))
+        for row in self.offerings:
+            loc = BotwLocation(self.player, row["name"], row["id"], regions[row["region"]])
+            regions[row["region"]].locations.append(loc)
+            self.set_rule(loc, self.rule(((("Spirit Orb",), ORBS_PER_TRADE * row["number"]), (cleared, 1))))
         goal = self.multiworld.get_location(GOAL_LOCATION, self.player)
         goal.place_locked_item(BotwItem("Victory", ItemClassification.progression, None, self.player))
 
@@ -317,7 +328,7 @@ class BotwWorld(World):
         # when the maps are region keys.
         needed = (name == "Master Sword" and self.options.sanctum_master_sword
                   or name in MAPS.values() and self.options.tower_maps == TowerMaps.option_region_keys)
-        if name == "Spirit Orb" and self.options.spirit_orbs == SpiritOrbs.option_vanilla_statues:
+        if name == "Spirit Orb" and self.options.spirit_orbs != SpiritOrbs.option_containers:
             # Many, and only their number counts.
             return BotwItem(name, ItemClassification.progression_skip_balancing, row["id"], self.player)
         classification = (ItemClassification.progression if row.get("progression") or needed else
@@ -369,10 +380,23 @@ class BotwWorld(World):
         if self.options.spirit_orbs == SpiritOrbs.option_vanilla_statues:
             # The statues give the hearts and the stamina, for the orbs in their place.
             counts["Spirit Orb"] += ORBS_PER_TRADE * (counts.pop("Heart Container") + counts.pop("Stamina Vessel"))
+        elif self.options.spirit_orbs == SpiritOrbs.option_statue_checks:
+            # Four orbs per offering, which gives nothing more: none is left over.
+            counts["Spirit Orb"] = ORBS_PER_TRADE * len(self.offerings)
         pool = [self.create_item(name) for name, count in counts.items() for _ in range(count)]
         pool += [self.create_item(name) for name in self.maps()]
         # Main.py applies start_inventory_from_pool centrally after create_items.
         capacity = len(self.multiworld.get_unfilled_locations(self.player))
+        if self.options.spirit_orbs == SpiritOrbs.option_statue_checks:
+            # Every orb is progression, which no excluded location (a Korok, a chest, a quest) holds.
+            excluded = sum(1 for loc in self.multiworld.get_unfilled_locations(self.player)
+                           if loc.progress_type == LocationProgressType.EXCLUDED)
+            short = max(len(pool) - capacity,
+                        sum(1 for item in pool if item.advancement or item.useful) - (capacity - excluded))
+            if short > 0:
+                raise OptionError(f"{self.player_name}: statue_offerings at {len(self.offerings)} needs {short} "
+                                  "more locations that may hold progression: lower it, or turn on "
+                                  "korok_progression or chest_progression")
         if len(pool) > capacity:
             if self.options.spirit_orbs == SpiritOrbs.option_vanilla_statues:
                 raise OptionError(f"{self.player_name}: spirit_orbs on vanilla_statues needs "
@@ -510,14 +534,16 @@ class BotwWorld(World):
         # 14: korok_sanity, the Koroks as locations, which one of 13 does not see found.
         # 15: side_quest_sanity or shrine_quest_sanity, the quests as locations, which one of 14
         #     does not see finished.
-        # World schema 7: the Koroks among the locations; 8: then the quests.
+        # 16: spirit_orbs on statue_checks, the statues' offerings as locations, which one of 15
+        #     does not see made.
+        # World schema 7: the Koroks among the locations; 8: then the quests; 9: then the offerings.
         # stall_locations: the stalls drawn by the seed, for Universal Tracker.
         # korok_locations: with korok_sanity, the Koroks drawn by the seed, for Universal Tracker.
         # region_borders: with region_lock, the borders the seed's logic crosses.
         # travel_shrines: with map_travel_points, the shrine each map opens and its terminal's flag.
-        client = 15 if self.quests else 14 if self.options.korok_sanity \
+        client = 16 if self.offerings else 15 if self.quests else 14 if self.options.korok_sanity \
             else 13 if self.options.chest_sanity else 12
-        return {"client_schema": client, "world_schema": 8,
+        return {"client_schema": client, "world_schema": 9,
                 "world_version": WORLD_VERSION,
                 "death_link": bool(self.options.death_link.value),
                 **self.options.as_dict(*self.SLOT_OPTIONS),

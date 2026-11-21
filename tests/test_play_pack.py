@@ -16,7 +16,7 @@ def slot_file(folder, *, name="Player", slot=1, checksum="checksum", container=F
     """A BOTW slot file, as the world writes it (placements left empty): the
     container of botw_world/slot_file.py, or the plain manifest of earlier seeds."""
     manifest = {"schema": 1, "game": "Breath of the Wild", "seed": "test-seed", "slot": slot,
-                "slot_name": name, "slot_data": {"world_schema": 8, "client_schema": 3},
+                "slot_name": name, "slot_data": {"world_schema": 9, "client_schema": 3},
                 "placements": [], "shops": [], **extra}
     if checksum is not None:
         manifest["data_package_checksum"] = checksum
@@ -239,7 +239,7 @@ class VersionTests(unittest.TestCase):
 
     def test_a_seed_of_unknown_schemas_names_the_version_it_needs(self):
         with tempfile.TemporaryDirectory() as temp:
-            path = slot_file(Path(temp), slot_data={"world_schema": 9, "client_schema": 3,
+            path = slot_file(Path(temp), slot_data={"world_schema": 10, "client_schema": 3,
                                                     "world_version": "2.0.0"})
             with self.assertRaisesRegex(ValueError, "world 2.0.0, which this version .* cannot play"):
                 play_seed.read_seed(path)

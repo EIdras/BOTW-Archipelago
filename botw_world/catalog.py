@@ -29,6 +29,13 @@ KOROKS = [{**row, "id": KOROK_ID_BASE + row["number"], "category": "Korok"} for 
 QUEST_ID_BASE = 30000
 QUESTS = [{**row, "id": QUEST_ID_BASE + row["number"], "category": "Quest"} for row in json.loads(
     files(__package__).joinpath("data/quests.json").read_text(encoding="utf-8"))]
+# The Goddess Statues' offerings, with spirit_orbs on statue_checks: offering k, the k-th
+# trade of four Spirit Orbs at any statue, is location OFFERING_ID_BASE + k, made once
+# Npc_Goddess_UtuwaSum, which each trade raises by four, reaches 4k (botw_client/locations.py).
+OFFERING_ID_BASE = 40000
+ORBS_PER_TRADE = 4
+OFFERINGS = [{"name": f"Goddess Statue - Offering {k}", "id": OFFERING_ID_BASE + k, "number": k,
+              "region": "Great Plateau", "category": "Offering"} for k in range(1, 31)]
 RUNES = ("Magnesis", "Progressive Remote Bomb", "Progressive Stasis", "Cryonis")
 TRAPS = tuple(row["name"] for row in ITEMS if row.get("trap"))
 # What reaching each location takes in the game (data/logic.csv, one row each):
