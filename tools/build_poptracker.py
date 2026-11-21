@@ -565,18 +565,28 @@ def region_items(cat, drawn: poptracker_regions.Drawn | None) -> tuple[list, dic
 DOT = {"Shrine": "#3a8fd6", "Tower": "#e08a2c", "Divine Beast": "#c94a4a", "Shop": "#2fa36b",
        "Stall": "#2fa36b", "Great Fairy": "#d65fb5", "Master Sword": "#e6d23a",
        "Rune Terminal": "#3ac0c9", "Rune Upgrade": "#3ac0c9", "Champions' Ballad": "#c94a4a",
-       "Goal": "#ffffff", "Korok": "#8fc73e", "Chest": "#c8a050", "Dungeon Chest": "#9b7be0"}
-# The small marks of korok_sanity and chest_sanity, up to 2 289 of them, a check's
-# square 30: a Korok a diamond, a chest a square; a shrine's or a Divine Beast's
-# chests one square together, beside it (DUNGEON_OFFSET pixels).
-SMALL = {"Korok": ("diamond", 18), "Chest": ("rect", 12), "Dungeon Chest": ("rect", 14)}
+       "Goal": "#ffffff", "Korok": "#8fc73e", "Chest": "#c8a050", "Dungeon Chest": "#9b7be0",
+       "Quest": "#ff8a65"}
+# The small marks of korok_sanity, chest_sanity and the quests' sanities, up to 2 404
+# of them, a check's square 30: a Korok a diamond, a chest a square; a shrine's or a
+# Divine Beast's chests one square together, beside it (DUNGEON_OFFSET pixels); the
+# quests given at one place one square together.
+SMALL = {"Korok": ("diamond", 18), "Chest": ("rect", 12), "Dungeon Chest": ("rect", 14), "Quest": ("rect", 18)}
 DUNGEON_OFFSET = 18
+# A quest's mark that would cover a check's square or a dungeon's chests (its centre
+# nearer than QUEST_CLEAR pixels across and down) moves beside it, once or twice
+# QUEST_CLEAR pixels off, to the first of QUEST_STEPS that is clear (small_marks): the
+# givers stand at the stables', stalls' and shrines' squares.
+QUEST_CLEAR = 24
+QUEST_STEPS = ((0, 0),) + tuple((dx * k, dz * k) for k in (1, 2) for dx, dz in (
+    (0, -1), (-1, 0), (1, 0), (0, 1), (-1, -1), (1, -1), (-1, 1), (1, 1)))
 # The map's categories, each shown or hidden by a toggle of the "Map" group, all
 # shown at first: {name: the kinds of DOT it shows}. The regions' markers apart.
 CATEGORIES = {"Shrines": ("Shrine", "Rune Terminal"), "Towers": ("Tower",), "Shops": ("Shop", "Stall"),
               "Others": ("Divine Beast", "Great Fairy", "Master Sword", "Rune Upgrade", "Champions' Ballad",
                          "Goal"),
-              "Koroks": ("Korok",), "Chests": ("Chest",), "Dungeon Chests": ("Dungeon Chest",)}
+              "Koroks": ("Korok",), "Chests": ("Chest",), "Dungeon Chests": ("Dungeon Chest",),
+              "Quests": ("Quest",)}
 SHOW_REGIONS = "show_regions"
 # Link on the map, told by the client through UAT (botw_client/uat.py, scripts/uat.lua): his
 # mark in the cell of LINK_CELL world units he stands in (link_marks), and with the "Follow"
@@ -610,11 +620,12 @@ BUTTON_SIZE = 64                  # pixels of a button's image (PopTracker shows
 GOLD = "#d4af37"                  # the regions' markers' ring (regions_on_map)
 # A category's icon on its button, from the player's update: an interface texture
 # (white masks, the map's own, large), a cell of the map's stamps (the star, the
-# chest), or an inventory icon (the Korok seed, in colour). The dungeons' chests:
+# chest, the quests' mark), or an inventory icon (the Korok seed, in colour). The dungeons' chests:
 # the chest with a shrine's icon in its corner (button_icons).
 BUTTON_ICONS = {"Shrines": "Nt_MapDungeonNewL_00^t", "Towers": "Nt_MapTowerNewL_00^t",
                 "Shops": "Nt_RupeeIconNew_00^l", "Koroks": "Obj_KorokNuts",
-                "Others": ("Nt_MapStampIconMarge_00^f", 4), "Chests": ("Nt_MapStampIconMarge_00^f", 5)}
+                "Others": ("Nt_MapStampIconMarge_00^f", 4), "Chests": ("Nt_MapStampIconMarge_00^f", 5),
+                "Quests": "Nt_ChallengeMarkL_00^t"}
 
 
 def button_icons(content: Path | None) -> dict[str, np.ndarray]:
@@ -829,39 +840,49 @@ def place_of(row: dict) -> str:
     return name
 
 
+EVENTS = ("Freed - ", "Cleared - ")
+
+
+def event_location(cat, row: dict, name: str) -> dict | None:
+    """The location an event names, "Freed - Divine Beast X" or a quest's "Cleared - X
+    Shrine"; None for another name, and for the shrines of a chest's ALL_SHRINES."""
+    if not name.startswith(EVENTS) or cat.ALL_SHRINES in row.get("requires", ()):
+        return None
+    return next(other for other in cat.LOCATIONS if other["name"] == name.split(" - ", 1)[1])
+
+
 def world_requirements(cat, row: dict) -> tuple:
-    """requirements(row), an event "Freed - Divine Beast X" counted as the world
-    counts it (botw_world, create_regions: the beast reachable, not checked):
-    the beast's own groups. A heart container is picked up before the beast's
-    control unit is. Every shrine cleared (a chest's ALL_SHRINES): the count of
-    shrines cleared (botw_update_events)."""
-    rows = {other["name"]: other for other in cat.LOCATIONS}
+    """requirements(row), an event counted as the world counts it (botw_world,
+    create_regions: the beast or the shrine reachable, not checked): its location's
+    own groups. A heart container is picked up before the beast's control unit
+    is. Every shrine cleared (a chest's ALL_SHRINES): the count of shrines cleared
+    (botw_update_events)."""
     out = []
     groups = cat.requirements(row)
-    cleared = [names for names, _count in groups if names[0].startswith("Cleared - ")]
-    if cleared:
+    if cat.ALL_SHRINES in row.get("requires", ()):
+        cleared = [names for names, _count in groups if names[0].startswith("Cleared - ")]
         out.append((("Shrines cleared",), len(cleared)))
+        groups = [group for group in groups if group[0] not in cleared]
     for names, count in groups:
-        if names in cleared:
-            continue
-        if any(name.startswith("Freed - ") for name in names):
+        events = [event_location(cat, row, name) for name in names]
+        if any(events):
             if len(names) != 1:
                 raise ValueError(f"{row['name']}: an event among alternatives")
-            out.extend(world_requirements(cat, rows[names[0][len("Freed - "):]]))
+            out.extend(world_requirements(cat, events[0]))
         else:
             out.append((names, count))
     return tuple(dict.fromkeys(out))
 
 
 def world_map_keys(cat, row: dict) -> tuple[str, ...]:
-    """map_keys(row), and those of the Divine Beast an event names, as
-    world_requirements counts the beast."""
-    rows = {other["name"]: other for other in cat.LOCATIONS}
+    """map_keys(row), and those of the location an event names, as
+    world_requirements counts it."""
     keys = list(cat.map_keys(row))
     for names, _count in cat.requirements(row):
         for name in names:
-            if name.startswith("Freed - "):
-                keys += world_map_keys(cat, rows[name[len("Freed - "):]])
+            event = event_location(cat, row, name)
+            if event:
+                keys += world_map_keys(cat, event)
     return tuple(dict.fromkeys(keys))
 
 
@@ -941,7 +962,7 @@ def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[l
     # A place is shown with its category (map_toggles).
     for key, place in places.items():
         place["visibility_rules"] = [[shown(kind_of[key]), *rule] for rule in place.get("visibility_rules", [[]])]
-    # korok_sanity's Koroks and chest_sanity's chests, a small mark each (SMALL),
+    # korok_sanity's Koroks, chest_sanity's chests and the quests, a small mark each (SMALL),
     # shown once connected to a seed that has it (botw_seed_has): none before, nor
     # in a seed without them. A chest of a shrine or a Divine Beast, whose position
     # is inside it, is in its dungeon's mark, beside the dungeon's square.
@@ -964,7 +985,8 @@ def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[l
 
 def small_marks(cat, positions: dict) -> list[tuple[str, str, list, list]]:
     """The small marks: (name, kind of SMALL, locations, [x, z] as positions'),
-    a Korok's, a chest's of the surface, and a dungeon's chests together."""
+    a Korok's, a chest's of the surface, a dungeon's chests together, and the
+    quests given at one place together ("<place> Quests"), a quest alone by its name."""
     dungeons: dict[str, list] = {}
     for row in cat.CHESTS:
         if row.get("dungeon"):
@@ -972,9 +994,25 @@ def small_marks(cat, positions: dict) -> list[tuple[str, str, list, list]]:
     marks = [(row["name"], "Korok" if row["category"] == "Korok" else "Chest", [row],
               [row["position"][0], row["position"][2]])
              for row in cat.KOROKS + cat.CHESTS if not row.get("dungeon")]
-    return marks + [(f"{dungeon} Chests", "Dungeon Chest", rows,
-                     [value + DUNGEON_OFFSET / SCALE for value in positions[dungeon]])
-                    for dungeon, rows in dungeons.items()]
+    marks += [(f"{dungeon} Chests", "Dungeon Chest", rows,
+               [value + DUNGEON_OFFSET / SCALE for value in positions[dungeon]])
+              for dungeon, rows in dungeons.items()]
+    givers: dict[tuple, list] = {}
+    for row in cat.QUESTS:
+        givers.setdefault((row["position"][0], row["position"][2]), []).append(row)
+    squares = list(positions.values()) + [at for _name, kind, _rows, at in marks if kind == "Dungeon Chest"]
+    clear = QUEST_CLEAR / SCALE
+
+    def free(x, z):
+        return all(abs(x - left) >= clear or abs(z - top) >= clear for left, top in squares)
+
+    for (x, z), rows in givers.items():
+        spot = next(([x + dx * clear, z + dz * clear] for dx, dz in QUEST_STEPS
+                     if free(x + dx * clear, z + dz * clear)), [x, z])
+        squares.append(spot)
+        name = rows[0]["name"] if len(rows) == 1 else f"{rows[0]['name'].split(' - ')[0]} Quests"
+        marks.append((name, "Quest", rows, spot))
+    return marks
 
 
 def lua_value(value) -> str:
@@ -1296,7 +1334,7 @@ def stamp(content: Path | None) -> str:
     digest = hashlib.sha256()
     for name in (*SOURCE_FILES, "botw_world/catalog.py", "botw_world/data/items.json",
                  "botw_world/data/locations.json", "botw_world/data/logic.csv", "botw_world/data/koroks.json",
-                 "botw_world/archipelago.json"):
+                 "botw_world/data/chests.json", "botw_world/data/quests.json", "botw_world/archipelago.json"):
         digest.update((ROOT / name).read_bytes())
     digest.update(str(content).encode() + str(update_content()).encode())
     for key, data in sorted(game_icons(ICONS_FOLDER).items()):
