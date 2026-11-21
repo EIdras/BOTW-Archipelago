@@ -77,11 +77,14 @@ Each square is a place on the map; hover it to see its locations, click it to se
 A square holding several locations (a stable's two Beedle items, a plateau shrine and its terminal) can show more
 than one color. Shops and stalls only appear when your seed has them. With `korok_sanity`, the Koroks your seed
 drew are small diamonds, and with `chest_sanity` the chests are small squares; the chests inside a shrine or a
-Divine Beast share one square beside it. With `side_quest_sanity` or `shrine_quest_sanity`, the quests are squares
-where they are given, those of one village or stable together, beside its other squares. They appear once the
-tracker is connected to the room. The buttons of "Shown on the map", on the left, hide or show each kind: shrines,
-towers, shops and stalls, the others, Koroks, chests, chests of the shrines and Divine Beasts, quests, and the
-regions' diamonds. Once your slot has reached its goal and is
+Divine Beast share one square beside it. With `side_quest_sanity` or `shrine_quest_sanity`, the quests are
+squares where they are given, those of one village or stable together, beside its other squares. With
+`spirit_orbs` on `statue_checks`, the offerings share one square at the Temple of Time's Goddess Statue:
+any Goddess Statue takes them, and the square stands at the one the logic counts on, which asks for a shrine
+cleared first. They appear once the tracker is connected to the room. The buttons of "Shown on
+the map", on the left, hide or show each kind: shrines, towers, shops and stalls, the others (the offerings with
+them), Koroks, chests, chests of the shrines and Divine Beasts, quests, and
+the regions' diamonds. Once your slot has reached its goal and is
 released, every location is checked and the whole map turns grey.
 
 While you play from the BOTW Archipelago window, two more buttons follow Link. **Link** shows where he is: a blue

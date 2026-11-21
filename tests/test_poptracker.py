@@ -37,7 +37,7 @@ class PackTests(unittest.TestCase):
     def test_every_location_has_one_section_on_the_map(self):
         places = self.json("locations/locations.json")
         names = [section["name"] for place in places for section in place["sections"]]
-        every = self.cat.LOCATIONS + self.cat.KOROKS + self.cat.CHESTS + self.cat.QUESTS
+        every = self.cat.LOCATIONS + self.cat.KOROKS + self.cat.CHESTS + self.cat.QUESTS + self.cat.OFFERINGS
         self.assertEqual(sorted(names), sorted(row["name"] for row in every))
         # The map is cut to the squares, MARGIN pixels around them.
         header = self.pack.read("images/map.png")[16:24]
@@ -65,7 +65,8 @@ class PackTests(unittest.TestCase):
     def test_the_autotracker_knows_every_ap_location_and_item(self):
         data = self.pack.read("scripts/data.lua").decode()
         sections = dict(re.findall(r'\[(\d+)\] = "(@[^"]+)"', data.split("REQUIREMENTS")[0]))
-        expected = {row["id"] for row in self.cat.LOCATIONS + self.cat.KOROKS + self.cat.CHESTS + self.cat.QUESTS
+        every = self.cat.LOCATIONS + self.cat.KOROKS + self.cat.CHESTS + self.cat.QUESTS + self.cat.OFFERINGS
+        expected = {row["id"] for row in every
                     if row["name"] != self.cat.GOAL_LOCATION}
         self.assertEqual({int(key) for key in sections}, expected)
         places = {place["name"]: {s["name"] for s in place["sections"]}
@@ -144,6 +145,26 @@ class PackTests(unittest.TestCase):
         self.assertIn("Woodland Map", poptracker.world_map_keys(self.cat, trials))
         self.assertNotIn("shrines_cleared", next(line for line in data.splitlines()
                                                  if line.strip().startswith(f"[{trials['id']}] = {{{{")))
+
+    def test_the_offerings_share_a_mark_at_the_statue_with_the_worlds_rule(self):
+        places = {place["name"]: place for place in self.json("locations/locations.json")}
+        place = places[poptracker.OFFERINGS_MARK[0]]
+        self.assertEqual([section["name"] for section in place["sections"]],
+                         [row["name"] for row in self.cat.OFFERINGS])
+        self.assertEqual(place["visibility_rules"],
+                         [["show_others", f"$botw_seed_has|{row['id']}"] for row in self.cat.OFFERINGS])
+        # No other mark covers it.
+        at = place["map_locations"][0]
+        for other in places.values():
+            if other is not place:
+                there = other["map_locations"][0]
+                reach = (at["size"] + there.get("size", 30)) / 2
+                self.assertTrue(abs(at["x"] - there["x"]) >= reach or abs(at["y"] - there["y"]) >= reach, other["name"])
+        # Offering k: 4k orbs received and a shrine cleared, on the Great Plateau.
+        data = self.pack.read("scripts/data.lua").decode()
+        third = self.cat.OFFERINGS[2]
+        self.assertIn(f'[{third["id"]}] = {{{{{{"spirit_orb"}}, 12}}, {{{{"shrines_cleared"}}, 1}}}},', data)
+        self.assertNotIn(f"[{third['id']}] = {{", data.split("MAP_KEYS")[1].split("GOAL_REQUIREMENTS")[0])
 
     def test_each_category_of_the_map_has_its_toggle_on_at_first(self):
         toggles = {entry.get("codes"): entry for entry in self.json("items/items.json")
@@ -285,7 +306,7 @@ class PackTests(unittest.TestCase):
         self.assertEqual(regions[str(goal)], '{"Hyrule Castle"}')
         self.assertIn('INNER_REGIONS = {["Hyrule Castle"] = "Central"}', data)
         # The Great Plateau is always reached: its locations have no bracket.
-        every = self.cat.LOCATIONS + self.cat.KOROKS + self.cat.CHESTS + self.cat.QUESTS
+        every = self.cat.LOCATIONS + self.cat.KOROKS + self.cat.CHESTS + self.cat.QUESTS + self.cat.OFFERINGS
         plateau = {str(row["id"]) for row in every if row["region"] == "Great Plateau"}
         self.assertFalse(plateau & set(regions))
         self.assertEqual(len(regions), len(every) - len(plateau))

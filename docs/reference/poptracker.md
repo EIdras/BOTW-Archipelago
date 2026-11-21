@@ -69,7 +69,10 @@ game, so that no file of the game is in the repository.
   his NPC, a stall at its merchant, the Master Sword at its pedestal, Purah's upgrades at her lab, a song of the
   Champions' Ballad at its Divine Beast's marker, Ganon at Hyrule Castle. One square on the map can hold several
   locations: a stable's two Beedle items, a stall's, a beast and its heart, a plateau shrine and its terminal,
-  Purah's three upgrades.
+  Purah's three upgrades. The Goddess Statue's offerings (`spirit_orbs` on `statue_checks`) share one small mark
+  at the Temple of Time's statue (`OFFERINGS_MARK`), shown once connected to a seed that has them: any statue
+  takes an offering (one flow, one counter), the mark stands at the one the logic counts on. Their rule is the
+  world's, 4×k Spirit Orbs received, and one shrine cleared (the tracker's count, as the statue asks).
 - **Logic**: `botw_world/catalog.requirements`, the world's own, generated into `scripts/data.lua`; a location is
   reachable when each of its groups is met by one of its items; a heart container, with the slot data's `spirit_orbs`
   on `vanilla_statues`, is four Spirit Orbs received (their counter, next to the shrines cleared). An event "Freed -

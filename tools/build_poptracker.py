@@ -566,12 +566,18 @@ DOT = {"Shrine": "#3a8fd6", "Tower": "#e08a2c", "Divine Beast": "#c94a4a", "Shop
        "Stall": "#2fa36b", "Great Fairy": "#d65fb5", "Master Sword": "#e6d23a",
        "Rune Terminal": "#3ac0c9", "Rune Upgrade": "#3ac0c9", "Champions' Ballad": "#c94a4a",
        "Goal": "#ffffff", "Korok": "#8fc73e", "Chest": "#c8a050", "Dungeon Chest": "#9b7be0",
-       "Quest": "#ff8a65"}
+       "Quest": "#ff8a65", "Offering": "#8fe8ff"}
 # The small marks of korok_sanity, chest_sanity and the quests' sanities, up to 2 404
 # of them, a check's square 30: a Korok a diamond, a chest a square; a shrine's or a
 # Divine Beast's chests one square together, beside it (DUNGEON_OFFSET pixels); the
 # quests given at one place one square together.
-SMALL = {"Korok": ("diamond", 18), "Chest": ("rect", 12), "Dungeon Chest": ("rect", 14), "Quest": ("rect", 18)}
+SMALL = {"Korok": ("diamond", 18), "Chest": ("rect", 12), "Dungeon Chest": ("rect", 14), "Quest": ("rect", 18),
+         "Offering": ("rect", 18)}
+# spirit_orbs on statue_checks: the Goddess Statues' offerings, one mark together at
+# the Temple of Time's statue (TwnObj_GoddesStatue_A_01 at (-822.6, 229.6, 2027.4)),
+# the one the Great Plateau's logic counts on; any statue takes them. [x, z], 40 units
+# south of it, clear of the Temple's Korok and chests.
+OFFERINGS_MARK = ("Goddess Statue Offerings", [-822.6, 2067.4])
 DUNGEON_OFFSET = 18
 # A quest's mark that would cover a check's square or a dungeon's chests (its centre
 # nearer than QUEST_CLEAR pixels across and down) moves beside it, once or twice
@@ -584,7 +590,7 @@ QUEST_STEPS = ((0, 0),) + tuple((dx * k, dz * k) for k in (1, 2) for dx, dz in (
 # shown at first: {name: the kinds of DOT it shows}. The regions' markers apart.
 CATEGORIES = {"Shrines": ("Shrine", "Rune Terminal"), "Towers": ("Tower",), "Shops": ("Shop", "Stall"),
               "Others": ("Divine Beast", "Great Fairy", "Master Sword", "Rune Upgrade", "Champions' Ballad",
-                         "Goal"),
+                         "Goal", "Offering"),
               "Koroks": ("Korok",), "Chests": ("Chest",), "Dungeon Chests": ("Dungeon Chest",),
               "Quests": ("Quest",)}
 SHOW_REGIONS = "show_regions"
@@ -857,6 +863,10 @@ def world_requirements(cat, row: dict) -> tuple:
     own groups. A heart container is picked up before the beast's control unit
     is. Every shrine cleared (a chest's ALL_SHRINES): the count of shrines cleared
     (botw_update_events)."""
+    if row["category"] == "Offering":
+        # Offering k (create_regions): 4k Spirit Orbs, and a shrine cleared, which
+        # the Temple of Time's statue asks for: one counted here.
+        return ((("Spirit Orb",), cat.ORBS_PER_TRADE * row["number"]), (("Shrines cleared",), 1))
     out = []
     groups = cat.requirements(row)
     if cat.ALL_SHRINES in row.get("requires", ()):
@@ -876,7 +886,9 @@ def world_requirements(cat, row: dict) -> tuple:
 
 def world_map_keys(cat, row: dict) -> tuple[str, ...]:
     """map_keys(row), and those of the location an event names, as
-    world_requirements counts it."""
+    world_requirements counts it. An offering asks for none (the Great Plateau's)."""
+    if row["category"] == "Offering":
+        return ()
     keys = list(cat.map_keys(row))
     for names, _count in cat.requirements(row):
         for name in names:
@@ -1012,6 +1024,7 @@ def small_marks(cat, positions: dict) -> list[tuple[str, str, list, list]]:
         squares.append(spot)
         name = rows[0]["name"] if len(rows) == 1 else f"{rows[0]['name'].split(' - ')[0]} Quests"
         marks.append((name, "Quest", rows, spot))
+    marks.append((OFFERINGS_MARK[0], "Offering", cat.OFFERINGS, OFFERINGS_MARK[1]))
     return marks
 
 
