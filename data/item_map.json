@@ -61,7 +61,7 @@
     {"name":"Bow Pouch Upgrade","delivery":{"kind":"pouch_slot","pouch":"bow"},"display_actor":"Item_AP"},
     {"name":"Shield Pouch Upgrade","delivery":{"kind":"pouch_slot","pouch":"shield"},"display_actor":"Item_AP"},
 
-    {"name":"Spirit Orb","delivery":{"kind":"actors","actors":["Obj_DungeonClearSeal"]},"display_actor":"Obj_DungeonClearSeal","pickup":true},
+    {"name":"Spirit Orb","delivery":{"kind":"actors","actors":["Obj_DungeonClearSeal"]},"display_actor":"Obj_DungeonClearSeal","pickup":true,"window":"always"},
     {"name":"Ancient Core","delivery":{"kind":"actors","actors":["Item_Enemy_30"]},"display_actor":"Item_Enemy_30","pickup":true},
     {"name":"Star Fragment","delivery":{"kind":"actors","actors":["Item_Ore_J"]},"display_actor":"Item_Ore_J","pickup":true},
     {"name":"Korok Seed","delivery":{"kind":"actors","actors":["Obj_KorokNuts"]},"display_actor":"Obj_KorokNuts","pickup":true},

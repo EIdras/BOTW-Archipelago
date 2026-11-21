@@ -305,6 +305,11 @@ class ReceivedAnnouncementTests(unittest.TestCase):
         r.game = type("G", (), {"item_map": {name: {"window": "always"}}})()
         self.assertFalse(r._repeat_filler(2))
 
+    def test_a_spirit_orb_received_again_keeps_its_window(self):
+        # The orbs after the first must not fall back to a pickup notice at the screen's side.
+        from botw_client.items import load_item_map
+        self.assertEqual(load_item_map()["Spirit Orb"]["window"], "always")
+
     def test_a_useful_item_cheated_in_again_keeps_its_window(self):
         # /send and !getitem give flags 0: a Gerudo Set or a pouch upgrade
         # received again that way came quietly, as a filler.
