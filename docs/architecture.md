@@ -105,7 +105,9 @@ slot file alone, without reaching any server.
   side quest the logic written for it there (`SIDE_LOGIC`, then what the flag it depends on asks).
 - **Goddess Statues**: with `spirit_orbs` on `statue_checks`, offering k is made once `Npc_Goddess_UtuwaSum`, which
   each trade raises by four, reaches 4k (one saved s32 for every offering, `botw_client/locations.py`). The
-  seed's pack makes the statue's gift a wait (`botw_patch/statue_checks.py`).
+  seed's pack makes the statue's gift a wait (`botw_patch/statue_checks.py`), and draws the two containers with the
+  Archipelago model. Their scene's animation moves only the model whose name its AS carries
+  (`Demo034_0-C05-Item_HeartUtuwa-A-0`): both play a copy named after the model, listed in `EventInfo`.
 - **DeathLink**: Link's death (`CurrentHart` at 0) is sent to the room; a received death is announced in the journal,
   then requests the pack's entry `OperationGuide<APDeathLink>`, the game's own damage action with a lethal value
   ([death_link.md](reference/death_link.md)).

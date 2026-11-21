@@ -287,7 +287,8 @@ a chest that holds nothing needed too. The 66 more items need room: without it, 
 
 With `statue_checks`, each trade at a statue is a location, "Goddess Statue - Offering 1" to the number
 `statue_offerings` sets (5 by default, up to 30). The statue still takes the orbs and asks for a heart or stamina, then
-gives nothing more: the offering sends its item, whatever you chose. Offering k asks for 4×k orbs, and the Temple of
+gives nothing more: the offering sends its item, whatever you chose. Its scene shows the Archipelago item instead of
+the heart or vessel, and so do the Divine Beasts' heart containers. Offering k asks for 4×k orbs, and the Temple of
 Time's statue for a shrine cleared first, as in the game. Five offerings take the 20 orbs of `containers`; above some
 ten, the orbs need locations that may hold progression: `korok_progression` or `chest_progression` gives them.
 

@@ -18,6 +18,9 @@ from tools import play_seed
 
 UPDATE = Path.home() / "AppData/Roaming/Cemu/mlc01/usr/title/0005000e/101c9500/content"
 HAS_UPDATE = (UPDATE / statue_checks.ARCHIVE).is_file()
+SCENE_FILES = {statue_checks.BOOTUP, statue_checks.ACTOR_INFO,
+               *(f"Actor/Pack/{actor}.sbactorpack" for actor in statue_checks.CONTAINERS)}
+MODEL_FILES = {f"Model/AP_Item_00{part}.sbfres" for part in ("", ".Tex1", ".Tex2")}
 
 
 class Memory:
@@ -80,7 +83,7 @@ class StageTests(unittest.TestCase):
     def test_the_statue_takes_the_orbs_counts_the_trade_and_gives_nothing(self):
         files = {statue_checks.TABLE: (UPDATE / statue_checks.TABLE).read_bytes()}
         out, changes = statue_checks.generate(files, UPDATE)
-        self.assertEqual(set(out), {statue_checks.ARCHIVE, statue_checks.TABLE})
+        self.assertEqual(set(out), {statue_checks.ARCHIVE, statue_checks.TABLE, *SCENE_FILES, *MODEL_FILES})
         sarc = oead.Sarc(unpack(out[statue_checks.ARCHIVE]))
         events = graph_snapshot(read_flow(bytes(sarc.get_file("EventFlow/Demo034_0.bfevfl").data)))["events"]
         self.assertEqual(events[statue_checks.GIFT]["actor_action"], "Demo_WaitFrame")
@@ -90,6 +93,40 @@ class StageTests(unittest.TestCase):
         self.assertIn("Demo_IncreaseGameDataInt", actions)              # the trade still counted
         with self.assertRaises(ValueError):     # once only
             statue_checks.generate({**files, **out}, UPDATE)
+
+    @unittest.skipUnless(HAS_UPDATE, "the game's files are read")
+    def test_the_scene_shows_the_archipelago_item_and_moves_it(self):
+        files = {statue_checks.TABLE: (UPDATE / statue_checks.TABLE).read_bytes()}
+        out, _changes = statue_checks.generate(files, UPDATE)
+        scene = oead.Sarc(unpack(out[statue_checks.ARCHIVE]))
+        events = graph_snapshot(read_flow(bytes(scene.get_file("EventFlow/Demo034_0.bfevfl").data)))["events"]
+        played = [e["params"]["ASName"] for e in events.values() if e.get("actor_action") == "Demo_PlayASForDemo"
+                  and "Utuwa" in e.get("actor", "") + str(e.get("params", {}).get("ASName", ""))]
+        self.assertEqual(played, [statue_checks.SCENE_AS] * 2)
+        self.assertEqual(statue_checks.SCENE_AS, "Demo034_0-C05-AP_Item_00-A-0")
+        heart = statue_checks.AS_PATH.format(statue_checks.CONTAINERS["Obj_HeartUtuwa_A_01"])
+        self.assertEqual(bytes(scene.get_file(statue_checks.AS_PATH.format(statue_checks.SCENE_AS)).data),
+                         bytes(scene.get_file(heart).data))
+        for actor in statue_checks.CONTAINERS:
+            pack = oead.Sarc(unpack(out[f"Actor/Pack/{actor}.sbactorpack"]))
+            models = oead.aamp.ParameterIO.from_binary(bytes(pack.get_file(f"Actor/ModelList/{actor}.bmodellist").data))
+            data = models.lists["ModelData"].lists["ModelData_0"]
+            self.assertEqual(str(data.objects["Base"].params["Folder"].v), "AP_Item_00")
+            self.assertEqual(str(data.lists["Unit"].objects["Unit_0"].params["UnitName"].v), "AP_Item_00")
+        info = oead.byml.from_binary(unpack(out[statue_checks.ACTOR_INFO]))
+        self.assertEqual({str(e["name"]): (str(e["bfres"]), str(e["mainModel"])) for e in info["Actors"]
+                          if str(e["name"]) in statue_checks.CONTAINERS},
+                         {actor: ("AP_Item_00", "AP_Item_00") for actor in statue_checks.CONTAINERS})
+        bootup = oead.Sarc(unpack(out[statue_checks.BOOTUP]))
+        entries = oead.byml.from_binary(unpack(bytes(bootup.get_file(statue_checks.EVENT_INFO).data)))
+        self.assertIn(statue_checks.SCENE_AS, [str(a["file"]) for a in entries["Demo034_0<GetMatome>"]["as"]])
+
+    @unittest.skipUnless(HAS_UPDATE, "the game's files are read")
+    def test_a_model_already_added_is_kept(self):
+        files = {statue_checks.TABLE: (UPDATE / statue_checks.TABLE).read_bytes(),
+                 **{name: b"model of an earlier stage" for name in MODEL_FILES}}
+        out, _changes = statue_checks.generate(files, UPDATE)
+        self.assertEqual({name: out[name] for name in MODEL_FILES}, {name: files[name] for name in MODEL_FILES})
 
 
 if __name__ == "__main__":
