@@ -8,8 +8,9 @@ from worlds.AutoWorld import call_all
 from . import BotwTestBase
 from .. import BotwWorld
 from .test_tracker import generate
-from ..catalog import (ALL_SHRINES, BOSS_ID_BASE, BOSSES, CHEST_ID_BASE, CHESTS, FILLER, ITEMS, KOROK_ID_BASE, KOROKS,
-                       LOCATIONS, MAPS, QUEST_ID_BASE, QUESTS, RUNES, TRAPS, WEAPONS, map_keys, requirements)
+from ..catalog import (ALL_SHRINES, BOSS_ID_BASE, BOSSES, CHEST_ID_BASE, CHESTS, EXTRA_FILLER, FILLER, ITEMS,
+                       KOROK_ID_BASE, KOROKS, LOCATIONS, MAPS, QUEST_ID_BASE, QUESTS, RUNES, TRAPS, WEAPONS,
+                       map_keys, requirements)
 
 # The filler of the default options: 159 locations, 119 declared items, 14 maps.
 FILLER_SLOTS = 26
@@ -664,3 +665,36 @@ class TestBonusItemsEverySanity(BotwTestBase):
         self.assertFalse(any(loc.progress_type == LocationProgressType.EXCLUDED for loc in placed
                              if loc.item.useful))
         self.assertTrue(self.multiworld.can_beat_game())
+
+
+class TestExtraFillerOffByDefault(BotwTestBase):
+    def test_the_filler_stays_as_it_was(self) -> None:
+        before = {name for _, family in FILLER.values() for name in family}
+        extra = {name for _, family in EXTRA_FILLER.values() for name in family} - before
+        self.assertEqual(len(extra), 28)
+        self.assertFalse(extra & {self.world.get_filler_item_name() for _ in range(2000)})
+        self.assertLess(self.world.fill_slot_data()["client_schema"], 20)
+
+
+class TestExtraFiller(BotwTestBase):
+    options = {"extra_filler": True}
+
+    def test_the_filler_is_drawn_by_the_extra_weights(self) -> None:
+        self.assertEqual(sum(weight for weight, _ in EXTRA_FILLER.values()), 100)
+        families = {name: family for family, (_, items) in EXTRA_FILLER.items() for name in items}
+        rows = {row["name"]: row for row in ITEMS}
+        extra = set(families) - {name for _, family in FILLER.values() for name in family}
+        self.assertEqual({(rows[name].get("filler"), rows[name].get("count")) for name in extra}, {(True, 0)})
+        names = [self.world.get_filler_item_name() for _ in range(3000)]
+        for family, (weight, _items) in EXTRA_FILLER.items():
+            share = sum(families[name] == family for name in names) / len(names)
+            self.assertAlmostEqual(share, weight / 100, delta=0.04, msg=family)
+        self.assertIn("20 Bomb Arrows", names)
+        # The rest of the pool as without it.
+        without = generate({})
+        self.assertEqual(len(self.multiworld.itempool), len(without.itempool))
+        drawn = set(families) | set(TRAPS)
+        kept = [Counter(item.name for item in multiworld.itempool if item.name not in drawn)
+                for multiworld in (self.multiworld, without)]
+        self.assertEqual(kept[0], kept[1])
+        self.assertEqual(self.world.fill_slot_data()["client_schema"], 20)

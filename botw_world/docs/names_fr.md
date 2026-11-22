@@ -499,3 +499,31 @@ Archipelago affiche les noms anglais du jeu. Voici leurs équivalents dans le je
 | Zant's Helmet | Casque de Xanto |
 | Ravio's Hood | Capuche de Lavio |
 | Royal Guard Set | Béret de garde royal, Uniforme de garde royal, Bottes de garde royal |
+| Farosh's Scale | Écaille de Rordrac |
+| Farosh's Claw | Griffe de Rordrac |
+| Shard of Farosh's Fang | Éclat de croc de Rordrac |
+| Shard of Farosh's Horn | Éclat de corne de Rordrac |
+| Dinraal's Scale | Écaille d'Ordrac |
+| Dinraal's Claw | Griffe d'Ordrac |
+| Shard of Dinraal's Fang | Éclat de croc d'Ordrac |
+| Shard of Dinraal's Horn | Éclat de corne d'Ordrac |
+| Naydra's Scale | Écaille de Nedrac |
+| Naydra's Claw | Griffe de Nedrac |
+| Shard of Naydra's Fang | Éclat de croc de Nedrac |
+| Shard of Naydra's Horn | Éclat de corne de Nedrac |
+| Lynel Horn | Corne de Lynel |
+| Lynel Hoof | Sabot de Lynel |
+| Lynel Guts | Viscère de Lynel |
+| Ancient Screw | Vis antique |
+| Ancient Spring | Ressort antique |
+| Ancient Gear | Rouage antique |
+| Ancient Shaft | Arbre antique |
+| Luminous Stone | Gemme nox |
+| Hearty Durian | Durian max |
+| Big Hearty Truffle | Grosse truffe max |
+| Mighty Bananas | Bananes lame |
+| Silent Princess | Princesse de la sérénité |
+| Hearty Simmered Fruit | Chutney de fruits max |
+| Hearty Mushroom Skewer | Brochette de champis max |
+| Mighty Simmered Fruit | Chutney de fruits robusto |
+| 20 Bomb Arrows | 20 flèches explosives |

@@ -87,8 +87,8 @@ CLIENT_SCHEMA = 2
 # 11 the Downpour, Yiga Ambush and Paranoia traps, 12 the travel points a map opens,
 # 13 the chests as locations, their AP items taken out of the pouch, 14 the Koroks as locations,
 # 15 the quests as locations, 16 the Goddess Statues' offerings as locations, 17 the field
-# bosses as locations, 18 the Progressive Horse, 19 the bonus items.
-BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19)
+# bosses as locations, 18 the Progressive Horse, 19 the bonus items, 20 the extra filler.
+BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)
 # The mutations that present the item themselves: no AP window before them.
 VANILLA_WINDOWS = ("get_demo_actor", "champion_actor", "rune_download", "rune_power_up", "trap",
                    "native_trap",

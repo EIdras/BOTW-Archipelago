@@ -12,7 +12,7 @@ from worlds.AutoWorld import WebWorld, World
 from Options import OptionError
 from rule_builder.rules import And, CanReachRegion, Has, HasAll, HasAny, HasFromList, Or, Rule, True_
 
-from .catalog import (BOSSES, CHESTS, FILLER, GAME, GENTLE_REGIONS, GOAL_LOCATION, INNER_REGIONS, ITEMS, KOROKS, LOCATIONS, MAPS,
+from .catalog import (BOSSES, CHESTS, EXTRA_FILLER, FILLER, GAME, GENTLE_REGIONS, GOAL_LOCATION, INNER_REGIONS, ITEMS, KOROKS, LOCATIONS, MAPS,
                       NEIGHBOURS,
                       OFFERINGS, OPEN_BORDERS, ORBS_PER_TRADE, QUESTS, SIDE_QUEST_ITEMS, TRAPS, TRAVEL_SHRINES, TRAVEL_TERMINALS, WEAPON_LEVELS, WORLD_VERSION, categories,
                       map_keys, requirements)
@@ -366,8 +366,9 @@ class BotwWorld(World):
         return BotwItem(name, classification, row["id"], self.player)
 
     def get_filler_item_name(self) -> str:
-        """Arrows, elixirs, weapons, gems or rupees, drawn by FILLER's weights."""
-        families = list(FILLER.values())
+        """Arrows, elixirs, weapons, gems or rupees, drawn by FILLER's weights; with extra_filler,
+        materials and food too, by EXTRA_FILLER's."""
+        families = list((EXTRA_FILLER if self.options.extra_filler else FILLER).values())
         _weight, items = self.random.choices(families, weights=[w for w, _ in families])[0]
         return self.random.choices(list(items), weights=list(items.values()))[0]
 
@@ -596,7 +597,8 @@ class BotwWorld(World):
         # korok_locations: with korok_sanity, the Koroks drawn by the seed, for Universal Tracker.
         # region_borders: with region_lock, the borders the seed's logic crosses.
         # travel_shrines: with map_travel_points, the shrine each map opens and its terminal's flag.
-        client = 19 if self.options.bonus_items else 18 if self.options.progressive_horse \
+        client = 20 if self.options.extra_filler else 19 if self.options.bonus_items \
+            else 18 if self.options.progressive_horse \
             else 17 if self.bosses else 16 if self.offerings \
             else 15 if self.quests else 14 if self.options.korok_sanity else 13 if self.options.chest_sanity \
             else 12

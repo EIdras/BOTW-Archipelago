@@ -20,8 +20,8 @@ SOURCE = ROOT / ".build/ledger-validation/4e60affc56def09f/content"
 class NativeDeliveryCompilationTests(unittest.TestCase):
     def test_catalog_covers_verified_action_families_only(self):
         entries, unsupported = compile_native_entries()
-        # The Progressive Horse's four stages, the bonus items' 60 pieces.
-        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 270)
+        # The Progressive Horse's four stages, the bonus items' 60 pieces, the extra filler's 28.
+        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 298)
         self.assertEqual(set(unsupported), set())
         self.assertEqual(len({entry.entry_name for entry in entries}), len(entries))
         self.assertTrue(all(entry.plan.mutations for entry in entries))
@@ -238,6 +238,7 @@ class NativeDeliveryGraphTests(unittest.TestCase):
         drops = [s for s in self.specs if s.drop]
         self.assertEqual({s.item_name for s in drops}, {
             "Hylian Shield", "Star Fragment", "Diamond", "Ruby", "Sapphire", "Topaz", "Opal", "Amber",
+            "Luminous Stone",
             "Epona", "Progressive Horse", *weapons})
         (drop,) = [s for s in drops if s.item_name == "Hylian Shield"]
         main = self.spec("Hylian Shield")

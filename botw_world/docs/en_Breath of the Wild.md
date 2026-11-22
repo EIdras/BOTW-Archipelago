@@ -93,6 +93,7 @@ then asks for the boss's region and, on Death Mountain's burning slopes, the hea
 - Arrows (normal, fire, ice, shock, bomb, ancient), elixirs, gems and rupees.
 - Weapons, bows and shields: 83 of the game's, from the soldiers' to the Lynels', elemental and ancient ones, a few
   jokes (a Soup Ladle, a Pot Lid) and, rarely, the amiibo's treasures (Biggoron's Sword, the Twilight Bow...).
+- With [`extra_filler`](#extra-filler), what upgrades armor, hearty and mighty food, and 20 Bomb Arrows.
 - [Traps](#traps), with the `trap_percentage` option.
 
 ## Goal
@@ -154,6 +155,7 @@ stamina vessels help without being required.
 | Cutscenes | [`cutscene_skip`](#skip-cutscenes) | false | + alone skips a cutscene, from a first game on |
 | Spirit Orbs | [`spirit_orbs`](#spirit-orbs) | `containers` | Hearts and stamina as items, or from the statues |
 | Bonus Items | [`bonus_items`](#bonus-items) | 0 | Share of the filler turned into armor, saddles and bridles |
+| Filler | [`extra_filler`](#extra-filler) | false | Armor upgrade materials, food and 20 Bomb Arrows too |
 | Traps | [`trap_percentage`, `trap_weights`](#traps) | 0 | Share of the filler turned into traps |
 | | `death_link` | false | [DeathLink](#deathlink) |
 
@@ -335,6 +337,18 @@ most, none needed to finish a game:
 
 Traps keep their count: the bonus items take what they leave of the filler. The armor is useful, so it never
 goes where nothing useful may: the chests, Koroks, quests and bosses whose `*_progression` option is off.
+
+### Extra Filler
+
+With `extra_filler`, the filler holds two more families, and 20 Bomb Arrows among the arrows:
+
+- what upgrades armor at the Great Fairies: the scales, claws and shards of fangs and horns of Farosh, Dinraal
+  and Naydra, the Lynels' horns, hooves and guts, the Guardians' screws, springs, gears and shafts, and
+  Luminous Stones;
+- hearty and mighty food: a Hearty Durian, a Big Hearty Truffle, Mighty Bananas, a Silent Princess, or a dish,
+  Hearty Simmered Fruit, a Hearty Mushroom Skewer or Mighty Simmered Fruit.
+
+The arrows, elixirs, weapons, gems and rupees come a little less often.
 
 ### Traps
 

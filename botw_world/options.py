@@ -406,6 +406,14 @@ class BonusItems(Range):
     default = 0
 
 
+class ExtraFiller(Toggle):
+    """Adds to the filler what upgrades armor at the Great Fairies (the dragons' scales,
+    claws, fangs and horns, the Lynels' horns, hooves and guts, the Guardians' parts and
+    Luminous Stones), hearty and mighty food, raw or cooked, and 20 Bomb Arrows. The
+    arrows, elixirs, weapons, gems and rupees come a little less often."""
+    display_name = "Extra Filler"
+
+
 @dataclass
 class BotwOptions(PerGameCommonOptions):
     start_inventory_from_pool: StartInventoryPool
@@ -442,6 +450,7 @@ class BotwOptions(PerGameCommonOptions):
     boss_progression: BossProgression
     progressive_horse: ProgressiveHorse
     bonus_items: BonusItems
+    extra_filler: ExtraFiller
     trap_percentage: TrapPercentage
     trap_weights: TrapWeights
 
@@ -462,6 +471,7 @@ OPTION_GROUPS = [
     OptionGroup("Quests", [SideQuestSanity, ShrineQuestSanity, QuestProgression]),
     OptionGroup("Bosses", [BossSanity, BossProgression]),
     OptionGroup("Bonus Items", [BonusItems]),
+    OptionGroup("Filler", [ExtraFiller]),
     OptionGroup("Traps", [TrapPercentage, TrapWeights]),
 ]
 

@@ -1713,5 +1713,173 @@
     "useful": true,
     "id": 215,
     "bonus": true
+  },
+  {
+    "name": "Farosh's Scale",
+    "filler": true,
+    "count": 0,
+    "id": 219
+  },
+  {
+    "name": "Farosh's Claw",
+    "filler": true,
+    "count": 0,
+    "id": 220
+  },
+  {
+    "name": "Shard of Farosh's Fang",
+    "filler": true,
+    "count": 0,
+    "id": 221
+  },
+  {
+    "name": "Shard of Farosh's Horn",
+    "filler": true,
+    "count": 0,
+    "id": 222
+  },
+  {
+    "name": "Dinraal's Scale",
+    "filler": true,
+    "count": 0,
+    "id": 223
+  },
+  {
+    "name": "Dinraal's Claw",
+    "filler": true,
+    "count": 0,
+    "id": 224
+  },
+  {
+    "name": "Shard of Dinraal's Fang",
+    "filler": true,
+    "count": 0,
+    "id": 225
+  },
+  {
+    "name": "Shard of Dinraal's Horn",
+    "filler": true,
+    "count": 0,
+    "id": 226
+  },
+  {
+    "name": "Naydra's Scale",
+    "filler": true,
+    "count": 0,
+    "id": 227
+  },
+  {
+    "name": "Naydra's Claw",
+    "filler": true,
+    "count": 0,
+    "id": 228
+  },
+  {
+    "name": "Shard of Naydra's Fang",
+    "filler": true,
+    "count": 0,
+    "id": 229
+  },
+  {
+    "name": "Shard of Naydra's Horn",
+    "filler": true,
+    "count": 0,
+    "id": 230
+  },
+  {
+    "name": "Lynel Horn",
+    "filler": true,
+    "count": 0,
+    "id": 231
+  },
+  {
+    "name": "Lynel Hoof",
+    "filler": true,
+    "count": 0,
+    "id": 232
+  },
+  {
+    "name": "Lynel Guts",
+    "filler": true,
+    "count": 0,
+    "id": 233
+  },
+  {
+    "name": "Ancient Screw",
+    "filler": true,
+    "count": 0,
+    "id": 234
+  },
+  {
+    "name": "Ancient Spring",
+    "filler": true,
+    "count": 0,
+    "id": 235
+  },
+  {
+    "name": "Ancient Gear",
+    "filler": true,
+    "count": 0,
+    "id": 236
+  },
+  {
+    "name": "Ancient Shaft",
+    "filler": true,
+    "count": 0,
+    "id": 237
+  },
+  {
+    "name": "Luminous Stone",
+    "filler": true,
+    "count": 0,
+    "id": 238
+  },
+  {
+    "name": "Hearty Durian",
+    "filler": true,
+    "count": 0,
+    "id": 239
+  },
+  {
+    "name": "Big Hearty Truffle",
+    "filler": true,
+    "count": 0,
+    "id": 240
+  },
+  {
+    "name": "Mighty Bananas",
+    "filler": true,
+    "count": 0,
+    "id": 241
+  },
+  {
+    "name": "Silent Princess",
+    "filler": true,
+    "count": 0,
+    "id": 242
+  },
+  {
+    "name": "Hearty Simmered Fruit",
+    "filler": true,
+    "count": 0,
+    "id": 243
+  },
+  {
+    "name": "Hearty Mushroom Skewer",
+    "filler": true,
+    "count": 0,
+    "id": 244
+  },
+  {
+    "name": "Mighty Simmered Fruit",
+    "filler": true,
+    "count": 0,
+    "id": 245
+  },
+  {
+    "name": "20 Bomb Arrows",
+    "filler": true,
+    "count": 0,
+    "id": 246
   }
 ]

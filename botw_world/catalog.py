@@ -108,6 +108,25 @@ FILLER = {
     "rupees": (10, {"Blue Rupee": 30, "Red Rupee": 35, "Purple Rupee": 20, "Silver Rupee": 10,
                     "Gold Rupee": 5}),
 }
+# extra_filler: the same families a little lighter, 20 Bomb Arrows among the arrows, and two more:
+# what upgrades armor at the Great Fairies (the dragons' parts, the Lynels', the Guardians' and the
+# Luminous Stone), and hearty and mighty food, raw or cooked.
+EXTRA_FILLER = {
+    "arrows": (25, {**FILLER["arrows"][1], "20 Bomb Arrows": 0.5}),
+    "elixirs": (20, FILLER["elixirs"][1]),
+    "weapons": (22, FILLER["weapons"][1]),
+    "gems": (8, FILLER["gems"][1]),
+    "rupees": (9, FILLER["rupees"][1]),
+    "materials": (9, {name: 1 for name in (
+        "Farosh's Scale", "Farosh's Claw", "Shard of Farosh's Fang", "Shard of Farosh's Horn",
+        "Dinraal's Scale", "Dinraal's Claw", "Shard of Dinraal's Fang", "Shard of Dinraal's Horn",
+        "Naydra's Scale", "Naydra's Claw", "Shard of Naydra's Fang", "Shard of Naydra's Horn",
+        "Lynel Horn", "Lynel Hoof", "Lynel Guts", "Ancient Screw", "Ancient Spring", "Ancient Gear",
+        "Ancient Shaft", "Luminous Stone")}),
+    "food": (7, {name: 1 for name in (
+        "Hearty Durian", "Big Hearty Truffle", "Mighty Bananas", "Silent Princess",
+        "Hearty Simmered Fruit", "Hearty Mushroom Skewer", "Mighty Simmered Fruit")}),
+}
 PLATEAU_RUNES = {name: row["runes"] for name, row in LOGIC.items()
                  if name in ("Oman Au Shrine", "Ja Baij Shrine", "Owa Daim Shrine", "Keh Namut Shrine")}
 # The map of each region but the Great Plateau, an item: {region: item}. A tower

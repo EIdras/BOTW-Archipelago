@@ -118,6 +118,9 @@ Breath of the Wild:
   # Share of the filler that becomes bonus items, 0 to 100: armor (circlets, earrings, monster masks, the amiibo
   # and DLC sets...), saddles and bridles; 38 at most, none needed to finish a game. Traps keep their count
   bonus_items: 0
+  # More kinds of filler: what upgrades armor at the Great Fairies (dragon parts, Lynel parts, Guardian parts,
+  # Luminous Stones), hearty and mighty food, raw or cooked, and 20 Bomb Arrows
+  extra_filler: false
   # Share of the filler (arrows, elixirs, weapons, gems, rupees) that becomes traps, 0 to 100, and how likely each is
   # compared with the others (a trap left out never comes up): Weapon Shatter, Blood Moon,
   # Rupoor, Hearts Down, Strip Down, Cucco Swarm, Yiga Ambush, Paranoia, Downpour. The cuccos, the Yiga
