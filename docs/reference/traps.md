@@ -21,6 +21,9 @@ functions, as no EventFlow action can do them: Cucco Swarm ([below](#cucco-swarm
 | Yiga Ambush | none: the client's | two Yiga Footsoldiers and a Yiga archer fall on Link |
 | Downpour | none: the client's and the pack's | rain for 2 minutes, or a thunderstorm for 90 s |
 | Paranoia | none: the client's | a Guardian takes aim at Link from behind, and vanishes before it fires |
+| Freeze | none: the client's | the game's ice field on Link: frozen, half a heart |
+| Lightning Strike | none: the client's | Calamity Ganon's lightning at Link's feet: its sign, then the strike |
+| Fire | none: the client's | the game's fire field on Link: set on fire |
 
 **Weapon Shatter.** The game's flows delete an item by name (`EventSystemActor.Demo_DeletePorchItemInEquip
 {PorchItemName, DeleteNum}`: `Demo604_0` takes `Weapon_Sword_502`, `Demo622_0` a champion's power), and ask what Link
@@ -93,7 +96,8 @@ requested alone.
 `trap_percentage` (0 to 100, default 0): the share of the filler (arrows, elixirs, weapons, gems, rupees) taken by
 traps. `trap_weights`: how likely each trap is compared with the others, by item name; one left out, or at 0, never
 comes up; all at 0 with a percentage above 0 is an error at generation. The traps are drawn with the seed's random
-generator, so a seed is reproducible. Their classification is `trap`.
+generator, so a seed is reproducible. Their classification is `trap`. Freeze, Lightning Strike and Fire default to
+0: a seed made before them draws the same traps, and only a seed that can draw them asks for `client_schema` 21.
 
 ## Adding a trap
 
@@ -247,6 +251,24 @@ Measured with the setter called 30 times a second (lab probe 19, 09/10): the rai
 walls get slippery; in the desert at night, the thunderstorm first looked like a sandstorm, then brought lightning and
 rain; it held across a fast travel; the climate's weather came back within a few seconds. Inside a shrine, nothing
 shows.
+
+## Freeze, Fire and Lightning Strike
+
+Each is one actor of the game created where Link stands, with only a place (`@P`), as the Yiga Ambush creates its
+squad ([`botw_client/elemental_strike.py`](../../botw_client/elemental_strike.py)), once the trap's event has closed.
+Measured in lab probe 56 (22/11), outside, at normal speed:
+
+- `ExpandIceField` and `ExpandFireField`, the chemical fields the game leaves where ice or fire bursts (no model),
+  0.5 m above Link's feet. Ice: Link frozen, 2 quarters of a heart (death cause 2). Fire: Link on fire at once,
+  6 quarters then 2 a second until he moves or reaches water, the grass burnt a little around him (cause 4).
+- `LastBossThunder`, the final fight's lightning, vanilla, at Link's feet: its sign on the ground, then the strike
+  37 frames after the creation. Within about a metre, 12 quarters and a shock; at 3 m, nothing: Link can run from
+  it. The game counts it as a blast (cause 9) with `LastBossThunder` as the attacker, which the DeathLink names
+  "struck by lightning". In the air, the bolt stops where Link was.
+
+The fields vanish by themselves. `ExpandElectricField` (the Electric Chuchu's burst: 12 quarters, a shock) works
+too; the bolt alone was chosen for Lightning Strike, since it shows and can be dodged. Not measured: in water, in
+a shrine, in the rain.
 
 ## What EventFlow cannot do
 

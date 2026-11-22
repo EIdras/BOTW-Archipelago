@@ -1715,6 +1715,21 @@
     "bonus": true
   },
   {
+    "name": "Freeze",
+    "trap": true,
+    "id": 216
+  },
+  {
+    "name": "Lightning Strike",
+    "trap": true,
+    "id": 217
+  },
+  {
+    "name": "Fire",
+    "trap": true,
+    "id": 218
+  },
+  {
     "name": "Farosh's Scale",
     "filler": true,
     "count": 0,

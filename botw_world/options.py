@@ -6,6 +6,9 @@ from Options import (Choice, DeathLink, OptionCounter, OptionGroup, PerGameCommo
 
 from .catalog import TRAPS
 
+# Off unless Trap Weights gives them a weight: a seed made before them draws the same traps.
+ELEMENTAL_TRAPS = ("Freeze", "Lightning Strike", "Fire")
+
 
 class Goal(Choice):
     """What finishes your game.
@@ -210,7 +213,10 @@ class TrapPercentage(Range):
     bow and armor back in the pouch, Cucco Swarm sends the angry cuccos' swarm, Yiga
     Ambush two Yiga Footsoldiers and a Yiga archer, Paranoia a Guardian that takes
     aim at Link and vanishes before it fires, and Downpour rain for 2 minutes or a
-    thunderstorm for 90 s. The cuccos, the Yiga and the lightning can kill."""
+    thunderstorm for 90 s. Freeze freezes Link, Fire sets him on fire, and Lightning
+    Strike calls Calamity Ganon's lightning on him: a sign on the ground, then the
+    strike, which he can run from. These three come up only if Trap Weights gives
+    them a weight. The cuccos, the Yiga, the lightning and the elements can kill."""
     display_name = "Trap Percentage"
     range_start = 0
     range_end = 100
@@ -220,11 +226,11 @@ class TrapPercentage(Range):
 class TrapWeights(OptionCounter):
     """How likely each trap is compared with the others: a trap of weight 2 comes up
     twice as often as one of weight 1. A trap left out of the list, or of weight 0,
-    never comes up."""
+    never comes up. Freeze, Lightning Strike and Fire are at 0 unless given a weight."""
     display_name = "Trap Weights"
     valid_keys = frozenset(TRAPS)
     min = 0
-    default = {name: 1 for name in TRAPS}
+    default = {name: 0 if name in ELEMENTAL_TRAPS else 1 for name in TRAPS}
 
 
 class SpiritOrbs(Choice):

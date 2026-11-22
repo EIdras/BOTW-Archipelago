@@ -20,8 +20,9 @@ SOURCE = ROOT / ".build/ledger-validation/4e60affc56def09f/content"
 class NativeDeliveryCompilationTests(unittest.TestCase):
     def test_catalog_covers_verified_action_families_only(self):
         entries, unsupported = compile_native_entries()
-        # The Progressive Horse's four stages, the bonus items' 60 pieces, the extra filler's 28.
-        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 298)
+        # The Progressive Horse's four stages, the bonus items' 60 pieces, the extra filler's 28,
+        # the elemental traps' 3.
+        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 301)
         self.assertEqual(set(unsupported), set())
         self.assertEqual(len({entry.entry_name for entry in entries}), len(entries))
         self.assertTrue(all(entry.plan.mutations for entry in entries))
@@ -194,7 +195,7 @@ class NativeDeliveryGraphTests(unittest.TestCase):
             "Traveler's Saddle", "Traveler's Bridle", "Knight's Saddle", "Knight's Bridle", "Royal Saddle",
             "Royal Bridle", "Monster Saddle", "Monster Bridle", "Extravagant Saddle", "Extravagant Bridle",
             *(trap.item for trap in TRAPS if trap.host == QUIET_FLOW), "Cucco Swarm", "Downpour",
-            "Yiga Ambush", "Paranoia"})
+            "Yiga Ambush", "Paranoia", "Freeze", "Lightning Strike", "Fire"})
         # The traps' own entries come first, then the delivery entries.
         added = [name for name, _ in quiet["entry_points"][len(vanilla["entry_points"]):]]
         self.assertEqual(quiet["entry_points"][:len(vanilla["entry_points"])],

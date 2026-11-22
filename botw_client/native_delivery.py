@@ -723,6 +723,25 @@ class CemuNativeDeliveryBackend:
         status = self._in_one_turn(work)
         return outcome if status == "ok" else status
 
+    def elemental_strike(self, effect: str) -> dict[str, int] | str:
+        """Play the Freeze, Fire or Lightning Strike trap (botw_client/elemental_strike.py),
+        in one turn of the invoker, with Link free as the Yiga Ambush: {outcome: count},
+        or why not now."""
+        from .elemental_strike import strike
+        reason = self._drop_blocked()
+        if reason:
+            return reason
+        since = self._frames_since_commit()
+        if since is not None and since < SETTLE_FRAMES:
+            return f"the trap's event closing ({since}/{SETTLE_FRAMES} frames of 1/30 s)"
+        outcome: dict[str, int] = {}
+
+        def work(read, write):
+            outcome.update(strike(read, write, self._call, effect))
+            return "ok"
+        status = self._in_one_turn(work)
+        return outcome if status == "ok" else status
+
     def downpour(self, kind: int, frames: int) -> bool:
         """Hold the weather `kind` for `frames` frames of the world (the Downpour
         trap, botw_client/downpour.py), and mark it in the game (APDownpour, down

@@ -89,6 +89,18 @@ class TestEveryFillerATrap(BotwTestBase):
                                      "Cucco Swarm", "Downpour", "Yiga Ambush", "Paranoia"})
         self.assertGreaterEqual(len(names), 4)
         self.assertEqual(len(pool), 159)
+        # The elemental traps are at 0 by default: no seed of before them changes.
+        self.assertNotEqual(self.world.fill_slot_data()["client_schema"], 21)
+
+
+class TestElementalTraps(BotwTestBase):
+    options = {"trap_percentage": 100,
+               "trap_weights": {"Freeze": 1, "Lightning Strike": 1, "Fire": 1}}
+
+    def test_only_the_weighted_traps_come_up_and_the_client_must_play_them(self) -> None:
+        traps = {item.name for item in self.multiworld.itempool if item.trap}
+        self.assertEqual(traps, {"Freeze", "Lightning Strike", "Fire"})
+        self.assertEqual(self.world.fill_slot_data()["client_schema"], 21)
 
 
 class TestFiller(BotwTestBase):

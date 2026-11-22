@@ -123,8 +123,8 @@ Breath of the Wild:
   extra_filler: false
   # Share of the filler (arrows, elixirs, weapons, gems, rupees) that becomes traps, 0 to 100, and how likely each is
   # compared with the others (a trap left out never comes up): Weapon Shatter, Blood Moon,
-  # Rupoor, Hearts Down, Strip Down, Cucco Swarm, Yiga Ambush, Paranoia, Downpour. The cuccos, the Yiga
-  # and the storm's lightning can kill Link.
+  # Rupoor, Hearts Down, Strip Down, Cucco Swarm, Yiga Ambush, Paranoia, Downpour, Freeze, Lightning Strike, Fire.
+  # The cuccos, the Yiga, the storm's lightning and the elements can kill Link.
   trap_percentage: 0
   trap_weights:
     Weapon Shatter: 1
@@ -136,4 +136,7 @@ Breath of the Wild:
     Yiga Ambush: 1
     Paranoia: 1
     Downpour: 1
+    Freeze: 0
+    Lightning Strike: 0
+    Fire: 0
   start_inventory_from_pool: {}

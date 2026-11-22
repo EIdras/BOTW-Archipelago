@@ -349,6 +349,9 @@ Archipelago affiche les noms anglais du jeu. Voici leurs équivalents dans le je
 | Downpour | Averse (piège) |
 | Yiga Ambush | Embuscade yiga (piège) |
 | Paranoia | Paranoïa (piège) |
+| Freeze | Gel (piège) |
+| Lightning Strike | Foudre (piège) |
+| Fire | Feu (piège) |
 | Red Rupee | Rubis rouge |
 | 10 Arrows | 10 flèches en bois |
 | 10 Fire Arrows | 10 flèches de feu |

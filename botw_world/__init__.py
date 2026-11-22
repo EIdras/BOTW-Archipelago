@@ -17,7 +17,7 @@ from .catalog import (BOSSES, CHESTS, EXTRA_FILLER, FILLER, GAME, GENTLE_REGIONS
                       NEIGHBOURS,
                       OFFERINGS, OPEN_BORDERS, ORBS_PER_TRADE, QUESTS, SIDE_QUEST_ITEMS, TRAPS, TRAVEL_SHRINES, TRAVEL_TERMINALS, WEAPON_LEVELS, WORLD_VERSION, categories,
                       map_keys, requirements)
-from .options import OPTION_GROUPS, PRESETS, BotwOptions, ChestSanity, EarlyMap, SpiritOrbs, TowerMaps, WeaponOrder
+from .options import ELEMENTAL_TRAPS, OPTION_GROUPS, PRESETS, BotwOptions, ChestSanity, EarlyMap, SpiritOrbs, TowerMaps, WeaponOrder
 from .tracker import TRACKER_WORLD, BotwSettings
 from .slot_file import BotwSlotFile
 
@@ -598,13 +598,16 @@ class BotwWorld(World):
         #     does not see made.
         # 17: boss_sanity, the field bosses as locations, which one of 16 does not see defeated.
         # 18: progressive_horse, the Progressive Horse, which one of 17 cannot give.
+        # 19: bonus_items; 20: extra_filler; 21: the elemental traps, which one of 20 cannot play.
         # World schema 7: the Koroks among the locations; 8: then the quests; 9: then the offerings;
         # 10: then the bosses.
         # stall_locations: the stalls drawn by the seed, for Universal Tracker.
         # korok_locations: with korok_sanity, the Koroks drawn by the seed, for Universal Tracker.
         # region_borders: with region_lock, the borders the seed's logic crosses.
         # travel_shrines: with map_travel_points, the shrine each map opens and its terminal's flag.
-        client = 20 if self.options.extra_filler else 19 if self.options.bonus_items \
+        elemental = self.options.trap_percentage.value and any(
+            self.options.trap_weights.value.get(name, 0) for name in ELEMENTAL_TRAPS)
+        client = 21 if elemental else 20 if self.options.extra_filler else 19 if self.options.bonus_items \
             else 18 if self.options.progressive_horse \
             else 17 if self.bosses else 16 if self.offerings \
             else 15 if self.quests else 14 if self.options.korok_sanity else 13 if self.options.chest_sanity \

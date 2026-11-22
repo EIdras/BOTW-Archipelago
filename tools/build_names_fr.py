@@ -31,6 +31,7 @@ STALLS = {"General Stall": "magasin", "Fruit Stall": "étal de fruits", "Arrow S
 # Archipelago's own items, which the game does not name.
 OWN_ITEMS = {"Weapon Shatter": "Arme brisée (piège)", "Rupoor": "Rubis maudit (piège)",
              "Hearts Down": "Cœurs en moins (piège)", "Strip Down": "Déshabillage (piège)",
+             "Freeze": "Gel (piège)", "Fire": "Feu (piège)", "Lightning Strike": "Foudre (piège)",
              "Weapon Pouch Upgrade": "Emplacement d'arme en plus (Noïa)",
              "Bow Pouch Upgrade": "Emplacement d'arc en plus (Noïa)",
              "Shield Pouch Upgrade": "Emplacement de bouclier en plus (Noïa)"}

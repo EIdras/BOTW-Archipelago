@@ -76,6 +76,9 @@
     {"name":"Downpour","delivery":{"kind":"native_trap","effect":"downpour","text":"Dark clouds gather over Hyrule."},"display_actor":"Item_AP"},
     {"name":"Yiga Ambush","delivery":{"kind":"native_trap","effect":"yiga_ambush","text":"The Yiga Clan strikes!"},"display_actor":"Item_AP"},
     {"name":"Paranoia","delivery":{"kind":"native_trap","effect":"paranoia","text":"Something is watching you."},"display_actor":"Item_AP"},
+    {"name":"Freeze","delivery":{"kind":"native_trap","effect":"freeze","text":"A chill seizes Link!"},"display_actor":"Item_AP"},
+    {"name":"Lightning Strike","delivery":{"kind":"native_trap","effect":"lightning","text":"Lightning strikes Link!"},"display_actor":"Item_AP"},
+    {"name":"Fire","delivery":{"kind":"native_trap","effect":"fire","text":"Link bursts into flames!"},"display_actor":"Item_AP"},
 
     {"name":"Red Rupee","former_names":["Rupee Bundle"],"generated_filler":true,"delivery":{"kind":"getdemo_actor","actor":"PutRupee_Red"},"display_actor":"PutRupee_Red"},
 

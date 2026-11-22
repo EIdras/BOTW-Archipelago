@@ -355,6 +355,7 @@ The arrows, elixirs, weapons, gems and rupees come a little less often.
 
 `trap_percentage` turns that share of the filler (arrows, elixirs, weapons, gems and rupees) into traps, drawn by
 `trap_weights` (a trap of weight 0 or left out never comes up). A trap strikes when it is received, at a safe moment.
+Freeze, Lightning Strike and Fire are at 0 unless `trap_weights` gives them a weight.
 
 | Trap | What it does |
 |---|---|
@@ -367,6 +368,9 @@ The arrows, elixirs, weapons, gems and rupees come a little less often.
 | Yiga Ambush | Two Yiga Footsoldiers and a Yiga archer appear around Link and attack. |
 | Paranoia | A Guardian takes aim at Link from behind, beeping, and vanishes just before it fires. |
 | Downpour | Rain for 2 minutes (the walls get slippery), or a thunderstorm for 90 s (its lightning strikes metal). Nothing in a shrine; a death or a reload ends it. |
+| Freeze | Link is frozen where he stands, and loses half a heart. |
+| Lightning Strike | Calamity Ganon's lightning: a sign on the ground under Link, then the strike a second later. Three hearts and a shock if he is still there; he can run from it. |
+| Fire | Link bursts into flames: a heart and a half, then more until he moves or reaches water. |
 
 A trap given back after loading an older save is spent without effect: a trap is not suffered twice.
 

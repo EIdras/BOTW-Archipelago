@@ -13,6 +13,7 @@ from .game import BotwGame, GameNotReady, game_starting
 from .locations import (BOSS_NAMES, CHEST_NUMBERS, CHESTS_SENT_WITH, KOROK_NAMES, OFFERING_NAMES, QUEST_NAMES, SCHEMA_LOCATION_COUNTS,
                         load_targets, tower_activation_flag)
 from .paths import DATA
+from .elemental_strike import NAMES as ELEMENTS
 from .pouch_watch import StrayShopItems
 from .protocol import ArchipelagoClient, DeathLinkEvent, LocationInfo
 from .session import session_token
@@ -66,7 +67,7 @@ DEATHLINK_HOLD_FRAMES = 10
 DEATHLINK_HOLD_SECONDS = 0.5
 DEATHLINK_ECHO_SECONDS = 5.0
 DEATHLINK_EXPIRY_SECONDS = 120.0
-# A Yiga Ambush committed while Link was leaving the world (a menu opened in
+# A Yiga Ambush or an elemental trap committed while Link was leaving the world (a menu opened in
 # between) waits for him; after this long, it is given up.
 NATIVE_TRAP_PATIENCE_SECONDS = 120.0
 # A travel point opened, the next waits for the game to show the shrine's name;
@@ -87,8 +88,9 @@ CLIENT_SCHEMA = 2
 # 11 the Downpour, Yiga Ambush and Paranoia traps, 12 the travel points a map opens,
 # 13 the chests as locations, their AP items taken out of the pouch, 14 the Koroks as locations,
 # 15 the quests as locations, 16 the Goddess Statues' offerings as locations, 17 the field
-# bosses as locations, 18 the Progressive Horse, 19 the bonus items, 20 the extra filler.
-BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)
+# bosses as locations, 18 the Progressive Horse, 19 the bonus items, 20 the extra filler,
+# 21 the elemental traps.
+BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21)
 # The mutations that present the item themselves: no AP window before them.
 VANILLA_WINDOWS = ("get_demo_actor", "champion_actor", "rune_download", "rune_power_up", "trap",
                    "native_trap",
@@ -353,7 +355,7 @@ class BotwClientRuntime:
         self._death_struck = False
         self._death_disarmed = False
         self._death_request_tick = None
-        # Native traps (botw_client/cucco_swarm.py, yiga_ambush.py, downpour.py):
+        # Native traps (botw_client/cucco_swarm.py, yiga_ambush.py, downpour.py, elemental_strike.py):
         # the committed ones waiting to be played, since when the first one
         # waits for Link, and the swarm playing.
         self._native_traps: list[str] = []
@@ -2033,8 +2035,13 @@ class BotwClientRuntime:
             self._native_trap_task = asyncio.create_task(
                 asyncio.to_thread(play, self._swarm_should_stop, self._native_trap_strike.set),
                 name="Paranoia")
-        elif effect == "yiga_ambush":
-            play = getattr(backend, "yiga_ambush", None)
+        elif effect == "yiga_ambush" or effect in ELEMENTS:
+            # Played in one turn of the invoker, once Link is free.
+            if effect == "yiga_ambush":
+                name, play = "Yiga Ambush", getattr(backend, "yiga_ambush", None)
+            else:
+                name, strike = ELEMENTS[effect], getattr(backend, "elemental_strike", None)
+                play = (lambda: strike(effect)) if strike is not None else None
             result = await asyncio.to_thread(play) if play is not None else None
             if isinstance(result, str):
                 # Link out of the world, an entry running, the invoker busy:
@@ -2043,9 +2050,9 @@ class BotwClientRuntime:
                     self._native_trap_since = time.monotonic()
                 if time.monotonic() - self._native_trap_since < NATIVE_TRAP_PATIENCE_SECONDS:
                     return
-                self.log(f"Yiga Ambush given up: {result}")
+                self.log(f"{name} given up: {result}")
             elif result is not None:
-                self.log(f"Yiga Ambush played: {result}")
+                self.log(f"{name} played: {result}")
             self._native_traps.pop(0)
             self._native_trap_since = None
             self._native_trap_struck(self._native_trap_notes.pop(0) if self._native_trap_notes else [])
