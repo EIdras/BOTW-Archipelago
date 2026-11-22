@@ -2,6 +2,8 @@
 -- locations checked, from the multiworld server.
 
 local current_index = -1
+-- The copies of each item of ITEM_COPIES received so far.
+local copies_received = {}
 local GOAL_STATUS = 30
 
 local function set_goal(reached)
@@ -31,6 +33,7 @@ end
 local function on_clear(slot_data)
     SLOT_DATA = slot_data or {}
     current_index = -1
+    copies_received = {}
     for _, code in pairs(ITEM_CODES) do
         local item = Tracker:FindObjectForCode(code)
         if item then
@@ -75,6 +78,14 @@ local function on_item(index, item_id, item_name, player_number)
     end
     current_index = index
     local code = ITEM_CODES[item_id]
+    local stage = nil
+    local copies = ITEM_COPIES[item_id]
+    if copies then
+        -- Each copy its own button and stage (the Progressive Horse); past the last, the last.
+        copies_received[item_id] = (copies_received[item_id] or 0) + 1
+        local copy = copies[math.min(copies_received[item_id], #copies)]
+        code, stage = copy[1], copy[2]
+    end
     if not code then
         return
     end
@@ -83,6 +94,11 @@ local function on_item(index, item_id, item_name, player_number)
         return
     end
     if item.Type == "toggle" then
+        item.Active = true
+    elseif item.Type == "progressive" and stage then
+        if not item.Active or item.CurrentStage < stage - 1 then
+            item.CurrentStage = stage - 1
+        end
         item.Active = true
     elseif item.Type == "progressive" then
         if item.Active then

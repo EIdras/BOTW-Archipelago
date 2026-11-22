@@ -1,9 +1,10 @@
 """The names a stable gives the horses AP delivers, in every language of the game.
 
-A stable registers Epona under her name in the game's language, the one of her
-actor (ActorType/Horse.msbt, GameRomHorseEpona_Name: "Épona" in French). The
-client writes it itself (botw_client/horse_stable.py), in the language Cemu's
-console runs the game in: the delivery catalog carries every language's.
+A stable registers a horse AP delivers (Epona, or progressive_horse's) under its
+name in the game's language, the one of its actor (ActorType/Horse.msbt,
+GameRomHorseEpona_Name: "Épona" in French). The client writes it itself
+(botw_client/horse_stable.py), in the language Cemu's console runs the game in:
+the delivery catalog carries every language's.
 """
 from __future__ import annotations
 
@@ -13,7 +14,10 @@ from botw_client import regions
 from botw_patch.resources import digest, unpack
 from botw_patch.shop_items import read_labels
 
-HORSES = ("GameRomHorseEpona",)
+# Epona, and progressive_horse's others: the Giant Horse and the Royal White Stallion
+# ("White Horse" at a stable). Not the Lord of the Mountain, whom no stable registers:
+# written in a slot, he is listed, but taking him out crashes the game.
+HORSES = ("GameRomHorseEpona", "GameRomHorse00L", "GameRomHorseZelda")
 MESSAGES = "ActorType/Horse.msbt"
 
 

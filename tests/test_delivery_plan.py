@@ -1,9 +1,13 @@
+import json
+from pathlib import Path
 import unittest
 
 from botw_client.backend import DeliveryCommand
 from botw_client.delivery_plan import (
     MutationKind, compile_all_delivery_plans, compile_delivery_plan)
 from botw_client.items import load_item_map
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class DeliveryPlanTests(unittest.TestCase):
@@ -81,6 +85,24 @@ class DeliveryPlanTests(unittest.TestCase):
              ("Horse_Link_Mane", "GameRomHorseSaddle_06", "GameRomHorseReins_06")),
             (MutationKind.SET_BOOL, "Horse_Is_Registration", True)])
         self.assertIsNone(step.capacity_actor)
+
+    def test_the_progressive_horse_gives_three_horses_then_the_master_cycle_zero(self):
+        # Each horse as Epona: written at the stables, then flagged registered.
+        horses = [("GameRomHorse00L", "Horse_Link_Mane_00L", "GameRomHorseSaddle_00L", "GameRomHorseReins_00L"),
+                  ("GameRomHorseZelda", "Horse_Link_Mane", "GameRomHorseSaddle_02", "GameRomHorseReins_02"),
+                  ("GameRomHorseEpona", "Horse_Link_Mane", "GameRomHorseSaddle_06", "GameRomHorseReins_06")]
+        for received_before, (actor, *gear) in enumerate(horses):
+            (step,) = compile_delivery_plan("Progressive Horse", received_before).steps
+            self.assertEqual([(m.kind, m.target, m.value) for m in step.mutations], [
+                (MutationKind.REGISTER_HORSE, actor, tuple(gear)),
+                (MutationKind.SET_BOOL, "Horse_Is_Registration", True)])
+        for received_before in (3, 4):
+            self.assertEqual(compile_delivery_plan("Progressive Horse", received_before).steps,
+                             compile_delivery_plan("Master Cycle Zero").steps)
+        # As many copies in the world as stages.
+        world = json.loads((ROOT / "botw_world/data/items.json").read_text(encoding="utf-8"))
+        self.assertEqual(next(row["count"] for row in world if row["name"] == "Progressive Horse"),
+                         len(load_item_map()["Progressive Horse"]["delivery"]["stages"]))
 
     def test_heart_uses_vanilla_getdemo_actor(self):
         mutation = compile_delivery_plan(

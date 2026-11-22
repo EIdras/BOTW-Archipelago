@@ -314,6 +314,7 @@ Archipelago affiche les noms anglais du jeu. Voici leurs équivalents dans le je
 | Ancient Bridle | Filet archéonique |
 | Ancient Saddle | Selle archéonique |
 | Epona | Épona |
+| Progressive Horse | Cheval géant → Cheval blanc → Épona → Destrier de légende 0.1 (progressif) |
 | Hebra Map | Carte (Tour d'Hébra) |
 | Tabantha Map | Carte (Tour de Tabanta) |
 | Gerudo Map | Carte (Tour Gerudo) |

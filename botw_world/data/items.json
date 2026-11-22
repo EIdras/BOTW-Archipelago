@@ -1402,5 +1402,14 @@
     "name": "Paranoia",
     "trap": true,
     "id": 176
+  },
+  {
+    "name": "Progressive Horse",
+    "category": [
+      "Travel"
+    ],
+    "useful": true,
+    "count": 4,
+    "id": 177
   }
 ]

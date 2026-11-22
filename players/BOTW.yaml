@@ -43,6 +43,9 @@ Breath of the Wild:
   # With the maps as items: a map received also opens the travel point of a shrine near where its region begins,
   # once Link has the Paraglider
   map_travel_points: false
+  # Epona and the Master Cycle Zero become four Progressive Horses, given in order: the Giant Horse, the Royal White
+  # Stallion, Epona, then the Master Cycle Zero
+  progressive_horse: false
   # The Master Cycle Zero (Champions' Ballad DLC) in the Gerudo Desert and on Death Mountain, and through the
   # invisible walls that stop horses; indoors still refuse it
   bike_anywhere: false

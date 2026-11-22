@@ -196,7 +196,11 @@ def write_png(path, w, h, rgba):
 
 
 def read_png(path):
-    d = pathlib.Path(path).read_bytes()
+    return decode_png(pathlib.Path(path).read_bytes(), path)
+
+
+def decode_png(d, path="the image"):
+    """(width, height, RGBA8 bytes) of an 8-bit RGBA PNG."""
     if d[:8] != b"\x89PNG\r\n\x1a\n":
         raise SystemExit(f"{path} is not a PNG")
     idat, w = b"", None

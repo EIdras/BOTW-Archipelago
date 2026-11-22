@@ -87,8 +87,8 @@ CLIENT_SCHEMA = 2
 # 11 the Downpour, Yiga Ambush and Paranoia traps, 12 the travel points a map opens,
 # 13 the chests as locations, their AP items taken out of the pouch, 14 the Koroks as locations,
 # 15 the quests as locations, 16 the Goddess Statues' offerings as locations, 17 the field
-# bosses as locations.
-BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17)
+# bosses as locations, 18 the Progressive Horse.
+BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18)
 # The mutations that present the item themselves: no AP window before them.
 VANILLA_WINDOWS = ("get_demo_actor", "champion_actor", "rune_download", "rune_power_up", "trap",
                    "native_trap",
@@ -1206,7 +1206,7 @@ class BotwClientRuntime:
             f"{result.detail}")
 
     async def _register_horse(self, mutation: dict, name: str, restored: bool) -> str | None:
-        """A delivered horse (Epona) in the first free stable slot, under the
+        """A delivered horse (Epona, a Progressive Horse's) in the first free stable slot, under the
         name a stable gives it in the game's language (the pack's catalog):
         'registered' or 'already' (its entry commits next), 'full' (its drop
         twin commits; created by Link unless given back), None to ask again."""
@@ -1216,11 +1216,13 @@ class BotwClientRuntime:
         names = getattr(getattr(backend, "catalog", None), "data", {}).get("horses", {}).get(actor, {})
         english = next((text for language, text in names.items() if language.endswith("en")), None)
         horse_name = names.get(self.game_language) or english or name
+        # The journal names the horse in English, as the AP items: a Progressive Horse's own.
+        shown = english or name
         outcome = await asyncio.to_thread(backend.register_horse, actor, horse_name, mane, saddle, reins)
         if outcome == "registered":
             self.log(f"{name} registered at the stables as {horse_name}")
             if not restored:
-                self._journal_note(f"{{1}}{name}{{/}} waits for you at the stables")
+                self._journal_note(f"{{1}}{shown}{{/}} waits for you at the stables")
             return outcome
         if outcome == "already":
             return outcome
@@ -1232,7 +1234,7 @@ class BotwClientRuntime:
             created = await asyncio.to_thread(backend.drop_item, actor, ahead=4.0, up=1.0, mode=2)
             if created == "ok":
                 self.log(f"{name}: the stables are full, created by Link")
-                self._journal_note(f"Stables full: {{1}}{name}{{/}} waits for you here")
+                self._journal_note(f"Stables full: {{1}}{shown}{{/}} waits for you here")
                 return outcome
             outcome = f"not created by Link: {created}"
         self.log(f"{name} not registered yet ({outcome})")

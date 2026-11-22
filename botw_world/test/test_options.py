@@ -1,3 +1,5 @@
+from collections import Counter
+
 from BaseClasses import ItemClassification, LocationProgressType
 from Fill import distribute_items_restrictive
 from Options import OptionError
@@ -534,3 +536,44 @@ class TestBossProgression(BotwTestBase):
     def test_boss_progression_needs_boss_sanity(self) -> None:
         with self.assertRaises(OptionError):
             generate({"boss_progression": True})
+
+
+class TestProgressiveHorseOffByDefault(BotwTestBase):
+    def test_epona_and_the_master_cycle_zero_alone(self) -> None:
+        names = [item.name for item in self.multiworld.itempool]
+        self.assertEqual([names.count(name) for name in ("Epona", "Master Cycle Zero", "Progressive Horse")],
+                         [1, 1, 0])
+        self.assertEqual(self.world.fill_slot_data()["progressive_horse"], 0)
+
+
+class TestProgressiveHorse(BotwTestBase):
+    options = {"progressive_horse": True}
+
+    def test_four_horses_for_epona_and_the_master_cycle_zero(self) -> None:
+        names = [item.name for item in self.multiworld.itempool]
+        self.assertEqual([names.count(name) for name in ("Epona", "Master Cycle Zero", "Progressive Horse")],
+                         [0, 0, 4])
+        without = generate({})
+        self.assertEqual(len(self.multiworld.itempool), len(without.itempool))
+        # Besides the filler and the traps, drawn by each seed: the horses for Epona and the bike.
+        drawn = {name for _, family in FILLER.values() for name in family} | set(TRAPS)
+        kept = [Counter(item.name for item in multiworld.itempool if item.name not in drawn)
+                for multiworld in (self.multiworld, without)]
+        self.assertEqual(kept[0], kept[1] - Counter(["Epona", "Master Cycle Zero"])
+                         + Counter({"Progressive Horse": 4}))
+        slot_data = self.world.fill_slot_data()
+        self.assertEqual((slot_data["progressive_horse"], slot_data["client_schema"], slot_data["world_schema"]),
+                         (1, 18, 10))
+
+
+class TestProgressiveHorseEverySanity(BotwTestBase):
+    options = {"progressive_horse": True, "chest_sanity": "ap_items", "korok_sanity": True,
+               "side_quest_sanity": True, "shrine_quest_sanity": True, "boss_sanity": True}
+
+    def test_the_horses_find_room_outside_the_excluded_locations(self) -> None:
+        distribute_items_restrictive(self.multiworld)
+        horses = [loc for loc in self.multiworld.get_locations(self.player)
+                  if loc.item is not None and loc.item.name == "Progressive Horse"]
+        self.assertEqual(len(horses), 4)
+        self.assertFalse(any(loc.progress_type == LocationProgressType.EXCLUDED for loc in horses))
+        self.assertTrue(self.multiworld.can_beat_game())

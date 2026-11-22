@@ -385,6 +385,14 @@ class BossProgression(Toggle):
     display_name = "Boss Progression"
 
 
+class ProgressiveHorse(Toggle):
+    """Epona and the Master Cycle Zero are replaced by four Progressive Horses, given
+    in this order: the Giant Horse, the Royal White Stallion (with the royal saddle and
+    bridle), Epona, then the Master Cycle Zero. Each horse waits at the stables, as
+    Epona does; with every stable full, it appears by Link."""
+    display_name = "Progressive Horse"
+
+
 @dataclass
 class BotwOptions(PerGameCommonOptions):
     start_inventory_from_pool: StartInventoryPool
@@ -419,6 +427,7 @@ class BotwOptions(PerGameCommonOptions):
     quest_progression: QuestProgression
     boss_sanity: BossSanity
     boss_progression: BossProgression
+    progressive_horse: ProgressiveHorse
     trap_percentage: TrapPercentage
     trap_weights: TrapWeights
 
@@ -430,6 +439,7 @@ OPTION_GROUPS = [
     OptionGroup("Shops", [BeedleShopItems, StallItems]),
     OptionGroup("Weapons", [WeaponOrder]),
     OptionGroup("Maps", [TowerMaps, EarlyMap, TowersNeedMaps, RegionLock, MapTravelPoints]),
+    OptionGroup("Horses", [ProgressiveHorse]),
     OptionGroup("Master Cycle Zero", [BikeAnywhere]),
     OptionGroup("Cutscenes", [CutsceneSkip]),
     OptionGroup("Spirit Orbs", [SpiritOrbs, StatueOfferings]),

@@ -117,7 +117,7 @@ class BotwWorld(World):
                     "sanctum_master_sword", "sanctum_runes", "beedle_shop_items", "stall_items", "tower_maps",
                     "towers_need_maps", "region_lock", "map_travel_points", "bike_anywhere",
                     "cutscene_skip", "spirit_orbs", "statue_offerings", "chest_sanity", "shrine_chest_items", "korok_sanity", "korok_count",
-                    "side_quest_sanity", "shrine_quest_sanity", "boss_sanity")
+                    "side_quest_sanity", "shrine_quest_sanity", "boss_sanity", "progressive_horse")
     # The region each map opens: {item: region}.
     MAP_REGIONS = {item: region for region, item in MAPS.items()}
     # Whether Universal Tracker regenerates the world from the slot data (generate_early). It never
@@ -407,6 +407,9 @@ class BotwWorld(World):
             self.get_location(row["name"]).place_locked_item(self.create_item(self.get_filler_item_name()))
         counts = {row["name"]: int(row.get("count", 1)) for row in ITEMS
                   if not row.get("trap") and row["name"] not in MAPS.values()}
+        # progressive_horse: four Progressive Horses, the last two Epona and the Master Cycle Zero.
+        for name in (("Epona", "Master Cycle Zero") if self.options.progressive_horse else ("Progressive Horse",)):
+            del counts[name]
         if self.options.spirit_orbs == SpiritOrbs.option_vanilla_statues:
             # The statues give the hearts and the stamina, for the orbs in their place.
             counts["Spirit Orb"] += ORBS_PER_TRADE * (counts.pop("Heart Container") + counts.pop("Stamina Vessel"))
@@ -569,14 +572,16 @@ class BotwWorld(World):
         # 16: spirit_orbs on statue_checks, the statues' offerings as locations, which one of 15
         #     does not see made.
         # 17: boss_sanity, the field bosses as locations, which one of 16 does not see defeated.
+        # 18: progressive_horse, the Progressive Horse, which one of 17 cannot give.
         # World schema 7: the Koroks among the locations; 8: then the quests; 9: then the offerings;
         # 10: then the bosses.
         # stall_locations: the stalls drawn by the seed, for Universal Tracker.
         # korok_locations: with korok_sanity, the Koroks drawn by the seed, for Universal Tracker.
         # region_borders: with region_lock, the borders the seed's logic crosses.
         # travel_shrines: with map_travel_points, the shrine each map opens and its terminal's flag.
-        client = 17 if self.bosses else 16 if self.offerings else 15 if self.quests \
-            else 14 if self.options.korok_sanity else 13 if self.options.chest_sanity else 12
+        client = 18 if self.options.progressive_horse else 17 if self.bosses else 16 if self.offerings \
+            else 15 if self.quests else 14 if self.options.korok_sanity else 13 if self.options.chest_sanity \
+            else 12
         return {"client_schema": client, "world_schema": 10,
                 "world_version": WORLD_VERSION,
                 "death_link": bool(self.options.death_link.value),

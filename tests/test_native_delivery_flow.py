@@ -20,7 +20,7 @@ SOURCE = ROOT / ".build/ledger-validation/4e60affc56def09f/content"
 class NativeDeliveryCompilationTests(unittest.TestCase):
     def test_catalog_covers_verified_action_families_only(self):
         entries, unsupported = compile_native_entries()
-        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 206)
+        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 210)    # the Progressive Horse's four stages
         self.assertEqual(set(unsupported), set())
         self.assertEqual(len({entry.entry_name for entry in entries}), len(entries))
         self.assertTrue(all(entry.plan.mutations for entry in entries))
@@ -189,7 +189,7 @@ class NativeDeliveryGraphTests(unittest.TestCase):
         # With the twins, the steps that open no window of their own.
         self.assertEqual({s.item_name for s in self.specs
                           if host_of(s) == QUIET_FLOW and not s.quiet and not s.drop}, {
-            "Ancient Bridle", "Ancient Saddle", "Epona",
+            "Ancient Bridle", "Ancient Saddle", "Epona", "Progressive Horse",
             *(trap.item for trap in TRAPS if trap.host == QUIET_FLOW), "Cucco Swarm", "Downpour",
             "Yiga Ambush", "Paranoia"})
         # The traps' own entries come first, then the delivery entries.
@@ -235,7 +235,7 @@ class NativeDeliveryGraphTests(unittest.TestCase):
         drops = [s for s in self.specs if s.drop]
         self.assertEqual({s.item_name for s in drops}, {
             "Hylian Shield", "Star Fragment", "Diamond", "Ruby", "Sapphire", "Topaz", "Opal", "Amber",
-            "Epona", *weapons})
+            "Epona", "Progressive Horse", *weapons})
         (drop,) = [s for s in drops if s.item_name == "Hylian Shield"]
         main = self.spec("Hylian Shield")
         self.assertEqual((drop.entry_name, drop.cursor_delta, host_of(drop)),

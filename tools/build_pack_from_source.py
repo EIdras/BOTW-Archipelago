@@ -139,7 +139,7 @@ def _verified_seed(report_path: Path, slot: int, archive: Path | None = None) ->
             or manifest.get("slot_name") != report["audit"]["slots"][str(slot)]
             or manifest.get("slot_data", {}).get("world_schema") not in (2, 3, 4, 5, 6, 7, 8, 9, 10)
             or manifest.get("slot_data", {}).get("client_schema") not in (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
-                                                                          17)
+                                                                          17, 18)
             or manifest.get("data_package_checksum", identity["data_package_checksum"])
             != identity["data_package_checksum"]):
         raise ValueError("AP slot manifest identity/schema mismatch")

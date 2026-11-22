@@ -104,7 +104,7 @@ class RuntimeTests(unittest.TestCase):
                 aside.rename(copy)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         counts = result.stdout.strip().splitlines()[-1].split()
-        self.assertEqual(counts[:2], ["176", "2739"])     # with the chests, the Koroks, the quests, the offerings and the bosses
+        self.assertEqual(counts[:2], ["177", "2739"])     # with the chests, the Koroks, the quests, the offerings and the bosses
         self.assertIn("botw.apworld", counts[2])
 
     def test_a_host_generates_with_the_apworld_and_each_player_prepares_from_their_slot_file(self):

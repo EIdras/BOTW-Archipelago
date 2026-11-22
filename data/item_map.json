@@ -40,6 +40,7 @@
     {"name":"Ancient Bridle","delivery":{"kind":"actors","actors":["GameRomHorseReins_10"]},"display_actor":"GameRomHorseReins_10"},
     {"name":"Ancient Saddle","delivery":{"kind":"actors","actors":["GameRomHorseSaddle_10"]},"display_actor":"GameRomHorseSaddle_10"},
     {"name":"Epona","delivery":{"kind":"horse","actor":"GameRomHorseEpona","mane":"Horse_Link_Mane","saddle":"GameRomHorseSaddle_06","reins":"GameRomHorseReins_06"},"display_actor":"GameRomHorseEpona"},
+    {"name":"Progressive Horse","delivery":{"kind":"staged","stages":[{"kind":"horse","actor":"GameRomHorse00L","mane":"Horse_Link_Mane_00L","saddle":"GameRomHorseSaddle_00L","reins":"GameRomHorseReins_00L"},{"kind":"horse","actor":"GameRomHorseZelda","mane":"Horse_Link_Mane","saddle":"GameRomHorseSaddle_02","reins":"GameRomHorseReins_02"},{"kind":"horse","actor":"GameRomHorseEpona","mane":"Horse_Link_Mane","saddle":"GameRomHorseSaddle_06","reins":"GameRomHorseReins_06"},{"kind":"rune","flag":"IsGet_Obj_Motorcycle","download_type":5,"select_if_none":6}]},"display_actor":"GameRomHorse00L"},
     {"name":"Hebra Map","delivery":{"kind":"map","flag":"MapTower_01"},"display_actor":"Item_AP"},
     {"name":"Tabantha Map","delivery":{"kind":"map","flag":"MapTower_02"},"display_actor":"Item_AP"},
     {"name":"Gerudo Map","delivery":{"kind":"map","flag":"MapTower_03"},"display_actor":"Item_AP"},

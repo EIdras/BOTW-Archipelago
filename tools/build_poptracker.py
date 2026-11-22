@@ -96,6 +96,17 @@ ROWS = [
      ("Weapon Pouch Upgrade", "WPN", LIFE), ("Bow Pouch Upgrade", "BOW", LIFE),
      ("Shield Pouch Upgrade", "SHLD", LIFE)],
 ]
+# Epona's button shows the horse received, each in its coat and mane (coat):
+# progressive_horse's Giant Horse black with an orange mane, its White Horse white with
+# a platinum blond one, then Epona, brown with a white one.
+HORSES = (("Giant Horse", "GNT", (62, 62, 70), (236, 128, 40)),
+          ("White Horse", "WHT", (238, 238, 232), (232, 212, 150)),
+          ("Epona", "EPO", (150, 86, 44), (244, 244, 240)))
+# The items whose copies light buttons of their own, in order, each (button, stage from 1)
+# (scripts/data.lua ITEM_COPIES): progressive_horse's three horses on Epona's, its fourth
+# the Master Cycle Zero; Epona alone, her own stage.
+COPIES = {"Progressive Horse": [("Epona", 1), ("Epona", 2), ("Epona", 3), ("Master Cycle Zero", 1)],
+          "Epona": [("Epona", 3)]}
 # The most Spirit Orbs a seed holds: the game's, one a shrine.
 SPIRIT_ORBS = 120
 # The regions panel (tools/poptracker_regions.py): a tile a region of the tower
@@ -412,6 +423,62 @@ def trimmed(image: np.ndarray) -> np.ndarray:
     return square
 
 
+def areas(mask: np.ndarray) -> list[np.ndarray]:
+    """The masks of the 4-connected areas of `mask`, the largest first."""
+    seen = np.zeros(mask.shape, bool)
+    found = []
+    for y, x in zip(*np.nonzero(mask)):
+        if seen[y, x]:
+            continue
+        area = np.zeros(mask.shape, bool)
+        stack = [(y, x)]
+        seen[y, x] = True
+        while stack:
+            cy, cx = stack.pop()
+            area[cy, cx] = True
+            for ny, nx in ((cy + 1, cx), (cy - 1, cx), (cy, cx + 1), (cy, cx - 1)):
+                if 0 <= ny < mask.shape[0] and 0 <= nx < mask.shape[1] and mask[ny, nx] and not seen[ny, nx]:
+                    seen[ny, nx] = True
+                    stack.append((ny, nx))
+        found.append(area)
+    return sorted(found, key=lambda area: -int(area.sum()))
+
+
+def coat(image: np.ndarray, colour, mane=None) -> np.ndarray:
+    """A horse's icon in another coat: its dark outline kept, the rest in `colour`,
+    shaded as it was (the icon pack's brown Epona, the game's white head); the mane,
+    the light area the outline cuts off behind the head, in `mane`."""
+    out = image.copy()
+    light = image[..., :3].astype(float).mean(-1)
+    body = (image[..., 3] > 0) & (light >= 48)
+    if not body.any():
+        return out
+    shade = light / light[body].max()
+    parts = areas(body)
+    column = np.arange(image.shape[1])
+    behind = [area for area in parts[1:]
+              if np.nonzero(area)[1].mean() > column[np.nonzero(parts[0])[1]].mean()]
+    for area, tint in ((body, colour), *(((behind[0], mane),) if mane and behind else ())):
+        out[..., :3][area] = np.clip(np.array(tint, float) * (0.55 + 0.45 * shade[area])[:, None],
+                                     0, 255).astype(np.uint8)
+    return out
+
+
+def horse_coats(found: dict) -> dict[str, np.ndarray]:
+    """{epona_1..3: Epona's icon in each horse's coat} (HORSES), from the icon found for her."""
+    from tools.bitemico import decode_png
+    base = found.get("epona")
+    if isinstance(base, bytes):
+        try:
+            width, height, raw = decode_png(base)
+        except SystemExit:
+            return {}
+        base = np.frombuffer(raw, np.uint8).reshape(height, width, 4)
+    if base is None:
+        return {}
+    return {f"epona_{stage}": coat(base, colour, mane) for stage, (_, _, colour, mane) in enumerate(HORSES, 1)}
+
+
 def numbered(image: np.ndarray, digit: str) -> np.ndarray:
     """The icon with a piece's number (or a "+") in its lower right corner."""
     image = image.copy()
@@ -474,6 +541,16 @@ def items(cat, icons: dict[str, bytes] | None = None) -> tuple[list, dict, dict]
         ids[item["id"]] = item_code
         path = f"images/items/{item_code}.png"
         count = int(item.get("count", 1))
+        if name == "Epona":
+            # The horses received, each its stage (ITEM_COPIES).
+            stages = []
+            for stage, (horse, badge, _, _) in enumerate(HORSES, 1):
+                stage_path = f"images/items/{item_code}_{stage}.png"
+                image(stage_path, f"{item_code}_{stage}", badge, colour)
+                stages.append({"name": horse, "img": stage_path, "codes": item_code, "inherit_codes": True})
+            entries.append({"name": name, "type": "progressive", "allow_disabled": True,
+                            "loop": False, "stages": stages})
+            continue
         if name.startswith("Progressive ") or name in UPGRADED:
             stages = []
             for stage in range(1, count + 1):
@@ -1042,6 +1119,12 @@ def lua_value(value) -> str:
     return "{" + ", ".join(lua_value(v) for v in value) + "}"
 
 
+def item_copies(cat) -> dict[int, list]:
+    """{item id: the (code, stage) each copy lights, in order} (COPIES)."""
+    ids = {row["name"]: row["id"] for row in cat.ITEMS}
+    return {ids[name]: [(code(each), stage) for each, stage in copies] for name, copies in COPIES.items()}
+
+
 def data_lua(cat, item_ids: dict, sections: dict, requirements: dict, maps: dict | None = None,
              regions: dict | None = None) -> str:
     def groups(value):
@@ -1056,6 +1139,7 @@ def data_lua(cat, item_ids: dict, sections: dict, requirements: dict, maps: dict
               if "Tower" in cat.categories(row) and row["region"] in cat.MAPS}
     lines = ["-- Generated by tools/build_poptracker.py from the world (botw_world): do not edit.",
              f"ITEM_CODES = {lua_value(item_ids)}",
+             f"ITEM_COPIES = {lua_value(item_copies(cat))}",
              f"LOCATION_SECTIONS = {lua_value(sections)}",
              "REQUIREMENTS = {"]
     lines += [f"  [{location_id}] = {lua_value(groups(value))},"
@@ -1280,6 +1364,7 @@ def build(content: Path | None, output: Path, icons: Path = ICONS_FOLDER) -> tup
         files[path.relative_to(STATIC).as_posix()] = path.read_bytes()
     update = update_content()
     found = {**ui_icons(update), **stock_icons(update), **game_icons(icons)}
+    found.update(horse_coats(found))
     item_entries, images, item_ids = items(cat, found)
     left, top, right, bottom = crop_box({**positions, **{name: at for name, _kind, _rows, at
                                                          in small_marks(cat, positions)}})

@@ -62,6 +62,32 @@ class PackTests(unittest.TestCase):
                       self.pack.read("scripts/logic.lua").decode())
         self.assertIn('Tracker:AddLocations("locations/regions.json")', self.pack.read("scripts/init.lua").decode())
 
+    def test_the_progressive_horse_shows_its_horses_on_epona_then_lights_the_master_cycle_zero(self):
+        data = self.pack.read("scripts/data.lua").decode()
+        self.assertIn('ITEM_COPIES = {[177] = {{"epona", 1}, {"epona", 2}, {"epona", 3}, '
+                      '{"master_cycle_zero", 1}}, [159] = {{"epona", 3}}}', data)
+        script = self.pack.read("scripts/autotracking/archipelago.lua").decode()
+        self.assertIn("code, stage = copy[1], copy[2]", script)
+        self.assertIn("item.CurrentStage = stage - 1", script)
+        epona = next(entry for entry in self.json("items/items.json") if entry["name"] == "Epona")
+        self.assertEqual((epona["type"], [stage["name"] for stage in epona["stages"]]),
+                         ("progressive", ["Giant Horse", "White Horse", "Epona"]))
+        # Each coat over the outline of the icon found for Epona.
+        head = np.zeros((4, 4, 4), np.uint8)
+        head[..., 3] = 255
+        head[1:3, 1:3, :3] = 255
+        black = poptracker.coat(head, (62, 62, 70))
+        self.assertEqual((tuple(black[0, 0, :3]), tuple(black[1, 1, :3])), ((0, 0, 0), (62, 62, 70)))
+        # Its mane, the light area the outline cuts off behind the head, in its own colour.
+        horse = np.zeros((4, 7, 4), np.uint8)
+        horse[..., 3] = 255
+        horse[1:3, 1:4, :3] = 255
+        horse[1:3, 5, :3] = 255
+        maned = poptracker.coat(horse, (62, 62, 70), (236, 128, 40))
+        self.assertEqual((tuple(maned[1, 1, :3]), tuple(maned[1, 5, :3]), tuple(maned[1, 4, :3])),
+                         ((62, 62, 70), (236, 128, 40), (0, 0, 0)))
+        self.assertIn("copies_received = {}", script.split("local function on_clear")[1])
+
     def test_the_autotracker_knows_every_ap_location_and_item(self):
         data = self.pack.read("scripts/data.lua").decode()
         sections = dict(re.findall(r'\[(\d+)\] = "(@[^"]+)"', data.split("REQUIREMENTS")[0]))

@@ -82,7 +82,8 @@ then asks for the boss's region and, on Death Mountain's burning slopes, the hea
   and Radiant sets.
 - Pouch upgrades: 4 for weapons, 3 for bows, 4 for shields. Each one is one of Hestu's, who offers one fewer.
 - The Master Cycle Zero (The Champions' Ballad), the Travel Medallion and the Korok Mask (The Master Trials).
-- Epona, registered at the stables.
+- Epona, registered at the stables. With [`progressive_horse`](#progressive-horse), four Progressive Horses take her
+  place and the Master Cycle Zero's.
 - Spirit Orbs, Ancient Cores, Star Fragments and Fairies. The Koroks still give their seeds, as in the game, even
   when they are locations.
 
@@ -147,6 +148,7 @@ stamina vessels help without being required.
 | | [`towers_need_maps`](#towers-need-maps) | false | A tower needs its region's map too |
 | | [`region_lock`](#region-lock) | false | Regions open from the Great Plateau outward |
 | | [`map_travel_points`](#map-travel-points) | false | A map received opens a travel point |
+| Horses | [`progressive_horse`](#progressive-horse) | false | Four horses in turn, for Epona and the Master Cycle Zero |
 | Master Cycle Zero | [`bike_anywhere`](#master-cycle-zero-anywhere) | false | The bike in the desert and on Death Mountain |
 | Cutscenes | [`cutscene_skip`](#skip-cutscenes) | false | + alone skips a cutscene, from a first game on |
 | Spirit Orbs | [`spirit_orbs`](#spirit-orbs) | `containers` | Hearts and stamina as items, or from the statues |
@@ -255,6 +257,13 @@ where its region begins, once Link has the Paraglider, so that he can warp there
 a location, cleared as ever. With `region_lock`, a region is then in the logic once its map and the Paraglider are
 received, whether or not it borders a region in the logic (its tower still needs it), and `early_map` draws as without
 `region_lock`.
+
+### Progressive Horse
+
+With `progressive_horse`, Epona and the Master Cycle Zero leave the items for four Progressive Horses, given in
+this order: the Giant Horse, the Royal White Stallion with the royal saddle and bridle, Epona, then the Master
+Cycle Zero. Each horse waits at the stables, as Epona does; with every stable full, it appears by Link. None is
+needed to finish a game.
 
 ### Master Cycle Zero anywhere
 
