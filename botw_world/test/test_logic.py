@@ -170,7 +170,7 @@ class TestStatueChecks(LogicTestBase):
         self.assertTrue(all(item.advancement for item in self.get_items_by_name("Spirit Orb")))
         slot_data = self.world.fill_slot_data()
         self.assertEqual((slot_data["spirit_orbs"], slot_data["statue_offerings"], slot_data["client_schema"],
-                          slot_data["world_schema"]), (2, 5, 16, 9))
+                          slot_data["world_schema"]), (2, 5, 16, 10))
 
     def test_offering_k_needs_4k_orbs_and_a_shrine_cleared(self) -> None:
         orbs = self.get_items_by_name("Spirit Orb")

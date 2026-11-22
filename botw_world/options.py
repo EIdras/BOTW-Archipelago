@@ -369,6 +369,22 @@ class QuestProgression(Toggle):
     display_name = "Quest Progression"
 
 
+class BossSanity(Toggle):
+    """Whether the field bosses are locations: the first defeat of each of the 86
+    Hinoxes, Stalnoxes, Stone Taluses and Moldugas whose defeat the game saves sends
+    its location's item. A Blood Moon brings the
+    boss back; its location stays sent. They hold nothing needed to finish a game,
+    unless boss_progression says otherwise."""
+    display_name = "Boss Sanity"
+
+
+class BossProgression(Toggle):
+    """With boss_sanity, whether bosses may hold items needed to finish a game. The
+    logic asks for the boss's region and, on Death Mountain's burning slopes, the
+    heat's protection; never a weapon: the fight is the player's."""
+    display_name = "Boss Progression"
+
+
 @dataclass
 class BotwOptions(PerGameCommonOptions):
     start_inventory_from_pool: StartInventoryPool
@@ -401,6 +417,8 @@ class BotwOptions(PerGameCommonOptions):
     side_quest_sanity: SideQuestSanity
     shrine_quest_sanity: ShrineQuestSanity
     quest_progression: QuestProgression
+    boss_sanity: BossSanity
+    boss_progression: BossProgression
     trap_percentage: TrapPercentage
     trap_weights: TrapWeights
 
@@ -418,6 +436,7 @@ OPTION_GROUPS = [
     OptionGroup("Chests", [ChestSanity, ChestProgression, ShrineChestItems]),
     OptionGroup("Koroks", [KorokSanity, KorokCount, KorokLocalFiller, KorokProgression]),
     OptionGroup("Quests", [SideQuestSanity, ShrineQuestSanity, QuestProgression]),
+    OptionGroup("Bosses", [BossSanity, BossProgression]),
     OptionGroup("Traps", [TrapPercentage, TrapWeights]),
 ]
 

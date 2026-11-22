@@ -59,12 +59,12 @@ PLAY_SEEDS = DATA / "play-seeds"
 PACKS = DATA / "packs-from-source"
 ORPHAN_AGE = 600        # seconds: see orphan_packs
 SCOPE = "generated_ap_seed"
-CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)    # 4: the Gerudo Set; 5: the goal and the sanctum; 6: the
+CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17)    # 4: the Gerudo Set; 5: the goal and the sanctum; 6: the
 #                                                          new filler; 7: the weapons; 8: the travel items; 9: Epona;
 #                                                          10: maps; 11: the Downpour, Yiga Ambush and
 #                                                          Paranoia traps; 12: the travel points;
 #                                                          13: the chests; 14: the Koroks; 15: the quests;
-#                                                          16: the Goddess Statues' offerings
+#                                                          16: the Goddess Statues' offerings; 17: the bosses
 GAME = "Breath of the Wild"
 _ROWS = json.loads((ROOT / "botw_world/data/locations.json").read_text(encoding="utf-8"))
 # Every location but the goal, shops apart: they depend on beedle_shop_items
@@ -74,6 +74,8 @@ PLACEMENTS = sum(1 for row in _ROWS if row["category"] not in ("Goal", "Shop", "
 _CHESTS = json.loads((ROOT / "botw_world/data/chests.json").read_text(encoding="utf-8"))
 # The side and shrine quests (botw_world/data/quests.json), by their kind.
 _QUEST_KINDS = [row["kind"] for row in json.loads((ROOT / "botw_world/data/quests.json").read_text(encoding="utf-8"))]
+# boss_sanity: every field boss (botw_world/data/bosses.json).
+_BOSSES = json.loads((ROOT / "botw_world/data/bosses.json").read_text(encoding="utf-8"))
 
 
 def expected_placements(slot_data: dict) -> int:
@@ -87,8 +89,9 @@ def expected_placements(slot_data: dict) -> int:
     quests = sum(1 for kind in _QUEST_KINDS if slot_data.get(f"{kind.lower()}_quest_sanity"))
     # spirit_orbs on statue_checks (2): the statues' offerings.
     offerings = int(slot_data.get("statue_offerings", 0)) if slot_data.get("spirit_orbs") == 2 else 0
+    bosses = len(_BOSSES) if slot_data.get("boss_sanity") else 0
     return (PLACEMENTS + len(shop_catalog.MERCHANTS) * int(slot_data.get("beedle_shop_items", 0)) + stalls
-            + chests + koroks + quests + offerings)
+            + chests + koroks + quests + offerings + bosses)
 
 
 def sha(path: Path) -> str:

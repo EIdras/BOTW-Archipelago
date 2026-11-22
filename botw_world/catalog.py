@@ -39,6 +39,11 @@ OFFERING_ID_BASE = 40000
 ORBS_PER_TRADE = 4
 OFFERINGS = [{"name": f"Goddess Statue - Offering {k}", "id": OFFERING_ID_BASE + k, "number": k,
               "region": "Great Plateau", "category": "Offering"} for k in range(1, 31)]
+# The field bosses whose defeat the game saves, with boss_sanity (data/bosses.json, from
+# tools/boss_locations.py): a location's id is BOSS_ID_BASE plus the boss's number.
+BOSS_ID_BASE = 50000
+BOSSES = [{**row, "id": BOSS_ID_BASE + row["number"], "category": "Boss"} for row in json.loads(
+    files(__package__).joinpath("data/bosses.json").read_text(encoding="utf-8"))]
 RUNES = ("Magnesis", "Progressive Remote Bomb", "Progressive Stasis", "Cryonis")
 TRAPS = tuple(row["name"] for row in ITEMS if row.get("trap"))
 # What reaching each location takes in the game (data/logic.csv, one row each):
@@ -173,10 +178,10 @@ def requirements(row: dict) -> tuple[tuple[tuple[str, ...], int], ...]:
     only promises what it can rely on. A chest's are in its row of data/chests.json:
     the heat of its place and the runes the map says it takes; a chest inside a
     shrine or a Divine Beast has that location's row, with every rune (which one a
-    side chest takes, no data tells). A Korok's and a side quest's are in its row
-    of data/koroks.json or data/quests.json, as a chest's of the surface (a quest's may
+    side chest takes, no data tells). A Korok's, a side quest's and a boss's are in its
+    row of data/koroks.json, data/quests.json or data/bosses.json, as a chest's of the surface (a quest's may
     name events: a Divine Beast freed, a shrine cleared); a shrine quest has its
-    shrine's row."""
+    shrine's row, and a boss a Champion's Ballad trial creates its song's."""
     groups = [] if row["region"] == "Great Plateau" else [(("Paraglider",), 1)]
     if surface(row):
         groups += [(names, 1) for names in CLIMATES["heat" if row["heat"] else "none"]]
@@ -185,7 +190,8 @@ def requirements(row: dict) -> tuple[tuple[tuple[str, ...], int], ...]:
                                for shrine in shrines]
                      + [((name,), 1) for name in row["requires"] if name != ALL_SHRINES])
     logic = {**LOGIC[row["dungeon"]], "runes": "all"} if row["category"] == "Chest" \
-        else LOGIC[row["shrine"]] if row["category"] == "Quest" else LOGIC[row["name"]]
+        else LOGIC[row["shrine"]] if row["category"] == "Quest" \
+        else LOGIC[row["ballad"]] if row["category"] == "Boss" else LOGIC[row["name"]]
     groups += [(names, 1) for names in CLIMATES[logic["climate"]]]
     runes = logic["runes"]
     groups += [(tuple(group.split("/")), 1) for group in
@@ -206,15 +212,17 @@ def map_keys(row: dict, towers: bool = False) -> tuple[str, ...]:
         else (MAPS[row["region"]],)
     if surface(row):
         return own + tuple(name for name in row.get("maps", ()) if name not in own)
-    extra = tuple(name for name in LOGIC[row.get("dungeon") or row.get("shrine") or row["name"]]["extra"].split("|")
+    extra = tuple(name for name in LOGIC[row.get("dungeon") or row.get("shrine") or row.get("ballad")
+                                         or row["name"]]["extra"].split("|")
                   if name in MAPS.values())
     return own + tuple(name for name in extra if name not in own)
 
 
 def surface(row: dict) -> bool:
     """Whether a location's logic is read at its place (a chest of the surface, a
-    Korok, a side quest), not in a location's row of data/logic.csv."""
-    return row["category"] in ("Chest", "Korok", "Quest") and not row.get("dungeon") and not row.get("shrine")
+    Korok, a side quest, a boss but a Ballad trial's), not in a location's row of data/logic.csv."""
+    return row["category"] in ("Chest", "Korok", "Quest", "Boss") and not row.get("dungeon") \
+        and not row.get("shrine") and not row.get("ballad")
 
 
 def required_items(row: dict) -> set[str]:
@@ -318,8 +326,26 @@ def _check_quests() -> None:
             raise ValueError(f"{row['name']}: unknown region, kind, shrine or requirement")
 
 
+def _check_bosses() -> None:
+    """Boss rows: unique names, of no other location, ids above the offerings', known regions, and
+    a Ballad trial's boss in its song's region."""
+    names, ids = {row["name"] for row in BOSSES}, {row["id"] for row in BOSSES}
+    if len(names) != len(BOSSES) or len(ids) != len(BOSSES) \
+            or names & {row["name"] for row in [*LOCATIONS, *CHESTS, *KOROKS, *QUESTS, *OFFERINGS]}:
+        raise ValueError("Boss names or ids are not unique")
+    if min(ids) <= max(row["id"] for row in OFFERINGS):
+        raise ValueError("Boss ids overlap the offerings'")
+    regions = {row["region"] for row in LOCATIONS}
+    songs = {row["name"]: row["region"] for row in LOCATIONS if "Champions' Ballad" in categories(row)}
+    for row in BOSSES:
+        if row["region"] not in regions or row["requires"] \
+                or "ballad" in row and songs.get(row["ballad"]) != row["region"]:
+            raise ValueError(f"{row['name']}: unknown region or song, or a requirement")
+
+
 _check_logic()
 _check_weapons()
 _check_chests()
 _check_koroks()
 _check_quests()
+_check_bosses()

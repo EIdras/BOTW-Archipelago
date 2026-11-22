@@ -81,14 +81,15 @@ Divine Beast share one square beside it. With `side_quest_sanity` or `shrine_que
 squares where they are given, those of one village or stable together, beside its other squares. With
 `spirit_orbs` on `statue_checks`, the offerings share one square at the Temple of Time's Goddess Statue:
 any Goddess Statue takes them, and the square stands at the one the logic counts on, which asks for a shrine
-cleared first. They appear once the tracker is connected to the room. The buttons of "Shown on
+cleared first. With `boss_sanity`, the bosses are red diamonds, a little larger than the Koroks'. They appear
+once the tracker is connected to the room. The buttons of "Shown on
 the map", on the left, hide or show each kind: shrines, towers, shops and stalls, the others (the offerings with
-them), Koroks, chests, chests of the shrines and Divine Beasts, quests, and
+them), Koroks, chests, chests of the shrines and Divine Beasts, quests, bosses, and
 the regions' diamonds. Once your slot has reached its goal and is
 released, every location is checked and the whole map turns grey.
 
 While you play from the BOTW Archipelago window, two more buttons follow Link. **Link** shows where he is: a blue
-diamond with a white glow, on the 100 m square he stands in (in a shrine, where he went in). **Follow** frames each
+diamond with a white glow, on the 100 m square he stands in (in a shrine, where he went in). **Follow region** frames each
 region he enters on the map (PopTracker 0.34 or later); the map stays where it is while he walks inside a region.
 
 ### The items panel

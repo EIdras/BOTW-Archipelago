@@ -10,7 +10,7 @@ from pathlib import Path
 
 from botw_client import gamedata_table
 from botw_client.items import load_item_map, validate_item_map
-from botw_client.locations import (CHEST_NUMBERS, EXPECTED_LOCATION_COUNT, KOROK_NAMES, OFFERING_NAMES, QUEST_NAMES,
+from botw_client.locations import (BOSS_NAMES, CHEST_NUMBERS, EXPECTED_LOCATION_COUNT, KOROK_NAMES, OFFERING_NAMES, QUEST_NAMES,
                                    LocationTarget,
                                    LocationTracker, load_targets)
 from botw_client.protocol import (ArchipelagoClient, LocationInfo, NetworkItem,
@@ -54,10 +54,10 @@ class ClientDataTests(unittest.TestCase):
     @NEEDS_TABLE
     def test_locations_are_complete_unique_and_match_gamedata(self):
         targets = load_targets()
-        # The catalogue's rows, then the chests, the Koroks, the quests and the offerings, these
-        # on one counter.
+        # The catalogue's rows, then the chests, the Koroks, the quests, the offerings (these on one
+        # counter) and the bosses.
         count = (EXPECTED_LOCATION_COUNT + len(CHEST_NUMBERS) + len(KOROK_NAMES) + len(QUEST_NAMES)
-                 + len(OFFERING_NAMES))
+                 + len(OFFERING_NAMES) + len(BOSS_NAMES))
         self.assertEqual(len(targets), count)
         self.assertEqual(len({target.name for target in targets}), count)
         self.assertEqual(len({target.hash_u32 for target in targets}), count - len(OFFERING_NAMES) + 1)
@@ -106,8 +106,12 @@ class ClientDataTests(unittest.TestCase):
         self.assertEqual([(row["name"], row["flag"]) for row in quests],
                          [(target.name, target.flag)
                           for target in load_targets(world_schema=8)][len(world) + len(chests) + len(koroks):])
-        self.assertEqual([target.name for target in load_targets()][len(world) + len(chests) + len(koroks)
-                                                                    + len(quests):], list(OFFERING_NAMES))
+        self.assertEqual([target.name for target in load_targets(world_schema=9)][len(world) + len(chests) + len(koroks)
+                                                                                + len(quests):], list(OFFERING_NAMES))
+        bosses = json.loads((ROOT / "botw_world" / "data" / "bosses.json").read_text(encoding="utf-8"))
+        self.assertEqual([(row["name"], row["flag"]) for row in bosses],
+                         [(target.name, target.flag) for target in load_targets()][len(world) + len(chests) + len(koroks)
+                                                                                    + len(quests) + len(OFFERING_NAMES):])
         hearts = {entry["name"]: entry["gamedata_flag"] for entry in world
                   if entry["category"] == "Divine Beast Heart"}
         self.assertEqual(hearts, {

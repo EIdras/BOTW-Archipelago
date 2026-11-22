@@ -108,6 +108,9 @@ slot file alone, without reaching any server.
   seed's pack makes the statue's gift a wait (`botw_patch/statue_checks.py`), and draws the two containers with the
   Archipelago model. Their scene's animation moves only the model whose name its AS carries
   (`Demo034_0-C05-Item_HeartUtuwa-A-0`): both play a copy named after the model, listed in `EventInfo`.
+- **Bosses**: with `boss_sanity`, a field boss's location is the saved flag the game raises at its defeat,
+  `MainField_IsDefeat_<actor>_<HashId>` (`botw_world/data/bosses.json`, made from the game's GameData and maps by
+  `tools/boss_locations.py`). A Blood Moon brings the boss back, not the flag: nothing in the pack changes.
 - **DeathLink**: Link's death (`CurrentHart` at 0) is sent to the room; a received death is announced in the journal,
   then requests the pack's entry `OperationGuide<APDeathLink>`, the game's own damage action with a lethal value
   ([death_link.md](reference/death_link.md)).

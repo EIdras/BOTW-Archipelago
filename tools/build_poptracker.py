@@ -566,13 +566,13 @@ DOT = {"Shrine": "#3a8fd6", "Tower": "#e08a2c", "Divine Beast": "#c94a4a", "Shop
        "Stall": "#2fa36b", "Great Fairy": "#d65fb5", "Master Sword": "#e6d23a",
        "Rune Terminal": "#3ac0c9", "Rune Upgrade": "#3ac0c9", "Champions' Ballad": "#c94a4a",
        "Goal": "#ffffff", "Korok": "#8fc73e", "Chest": "#c8a050", "Dungeon Chest": "#9b7be0",
-       "Quest": "#ff8a65", "Offering": "#8fe8ff"}
-# The small marks of korok_sanity, chest_sanity and the quests' sanities, up to 2 404
-# of them, a check's square 30: a Korok a diamond, a chest a square; a shrine's or a
-# Divine Beast's chests one square together, beside it (DUNGEON_OFFSET pixels); the
-# quests given at one place one square together.
+       "Quest": "#ff8a65", "Offering": "#8fe8ff", "Boss": "#ff5252"}
+# The small marks of korok_sanity, chest_sanity, the quests' sanities and boss_sanity, up to
+# 2 490 of them, a check's square 30: a Korok a diamond, a chest a square, a boss a larger
+# diamond; a shrine's or a Divine Beast's chests one square together, beside it
+# (DUNGEON_OFFSET pixels); the quests given at one place one square together.
 SMALL = {"Korok": ("diamond", 18), "Chest": ("rect", 12), "Dungeon Chest": ("rect", 14), "Quest": ("rect", 18),
-         "Offering": ("rect", 18)}
+         "Offering": ("rect", 18), "Boss": ("diamond", 22)}
 # spirit_orbs on statue_checks: the Goddess Statues' offerings, one mark together at
 # the Temple of Time's statue (TwnObj_GoddesStatue_A_01 at (-822.6, 229.6, 2027.4)),
 # the one the Great Plateau's logic counts on; any statue takes them. [x, z], 40 units
@@ -592,7 +592,7 @@ CATEGORIES = {"Shrines": ("Shrine", "Rune Terminal"), "Towers": ("Tower",), "Sho
               "Others": ("Divine Beast", "Great Fairy", "Master Sword", "Rune Upgrade", "Champions' Ballad",
                          "Goal", "Offering"),
               "Koroks": ("Korok",), "Chests": ("Chest",), "Dungeon Chests": ("Dungeon Chest",),
-              "Quests": ("Quest",)}
+              "Quests": ("Quest",), "Bosses": ("Boss",)}
 SHOW_REGIONS = "show_regions"
 # Link on the map, told by the client through UAT (botw_client/uat.py, scripts/uat.lua): his
 # mark in the cell of LINK_CELL world units he stands in (link_marks), and with the "Follow"
@@ -626,12 +626,12 @@ BUTTON_SIZE = 64                  # pixels of a button's image (PopTracker shows
 GOLD = "#d4af37"                  # the regions' markers' ring (regions_on_map)
 # A category's icon on its button, from the player's update: an interface texture
 # (white masks, the map's own, large), a cell of the map's stamps (the star, the
-# chest, the quests' mark), or an inventory icon (the Korok seed, in colour). The dungeons' chests:
+# chest, the quests' mark, the skull), or an inventory icon (the Korok seed, in colour). The dungeons' chests:
 # the chest with a shrine's icon in its corner (button_icons).
 BUTTON_ICONS = {"Shrines": "Nt_MapDungeonNewL_00^t", "Towers": "Nt_MapTowerNewL_00^t",
                 "Shops": "Nt_RupeeIconNew_00^l", "Koroks": "Obj_KorokNuts",
                 "Others": ("Nt_MapStampIconMarge_00^f", 4), "Chests": ("Nt_MapStampIconMarge_00^f", 5),
-                "Quests": "Nt_ChallengeMarkL_00^t"}
+                "Quests": "Nt_ChallengeMarkL_00^t", "Bosses": "Nt_StampIconDokuroL_00^s"}
 
 
 def button_icons(content: Path | None) -> dict[str, np.ndarray]:
@@ -827,7 +827,8 @@ def map_toggles(icons: dict[str, np.ndarray]) -> tuple[list, dict]:
     for (name, (glyph, colour)), item in zip(looks.items(), toggle_codes()):
         path = f"images/buttons/{item}.png"
         images[path] = button(glyph, colour, name[:3].upper())
-        entries.append({"name": f"Show {name}", "type": "toggle", "img": path, "codes": item,
+        entries.append({"name": "Follow region" if item == FOLLOW_REGION else f"Show {name}",
+                        "type": "toggle", "img": path, "codes": item,
                         "initial_active_state": True})
     return entries, images
 
@@ -974,7 +975,7 @@ def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[l
     # A place is shown with its category (map_toggles).
     for key, place in places.items():
         place["visibility_rules"] = [[shown(kind_of[key]), *rule] for rule in place.get("visibility_rules", [[]])]
-    # korok_sanity's Koroks, chest_sanity's chests and the quests, a small mark each (SMALL),
+    # korok_sanity's Koroks, chest_sanity's chests, the quests and the bosses, a small mark each (SMALL),
     # shown once connected to a seed that has it (botw_seed_has): none before, nor
     # in a seed without them. A chest of a shrine or a Divine Beast, whose position
     # is inside it, is in its dungeon's mark, beside the dungeon's square.
@@ -997,8 +998,8 @@ def locations(cat, positions: dict, origin: tuple[int, int] = (0, 0)) -> tuple[l
 
 def small_marks(cat, positions: dict) -> list[tuple[str, str, list, list]]:
     """The small marks: (name, kind of SMALL, locations, [x, z] as positions'),
-    a Korok's, a chest's of the surface, a dungeon's chests together, and the
-    quests given at one place together ("<place> Quests"), a quest alone by its name."""
+    a Korok's, a chest's of the surface, a dungeon's chests together, a boss's, and
+    the quests given at one place together ("<place> Quests"), a quest alone by its name."""
     dungeons: dict[str, list] = {}
     for row in cat.CHESTS:
         if row.get("dungeon"):
@@ -1006,6 +1007,7 @@ def small_marks(cat, positions: dict) -> list[tuple[str, str, list, list]]:
     marks = [(row["name"], "Korok" if row["category"] == "Korok" else "Chest", [row],
               [row["position"][0], row["position"][2]])
              for row in cat.KOROKS + cat.CHESTS if not row.get("dungeon")]
+    marks += [(row["name"], "Boss", [row], [row["position"][0], row["position"][2]]) for row in cat.BOSSES]
     marks += [(f"{dungeon} Chests", "Dungeon Chest", rows,
                [value + DUNGEON_OFFSET / SCALE for value in positions[dungeon]])
               for dungeon, rows in dungeons.items()]
@@ -1102,7 +1104,7 @@ def layouts(cat, drawn: poptracker_regions.Drawn | None = None) -> dict:
         "item_grid": {"type": "itemgrid", "item_margin": "3,3", "item_size": "40,40",
                       "h_alignment": "center", "rows": grid},
         "map_toggles": {"type": "itemgrid", "item_margin": "3,3", "item_size": "32,32", "h_alignment": "center",
-                        "rows": [toggle_codes()[:4], toggle_codes()[4:8], toggle_codes()[8:]]},
+                        "rows": [toggle_codes()[:6], toggle_codes()[6:]]},
         "region_tiles": {"type": "itemgrid", "item_margin": "3,3", "item_size": f"{width},{height}",
                          "h_alignment": "center", "rows": tiles},
         "tracker_default": {"type": "container", "background": "#00000000", "content": {
@@ -1347,7 +1349,8 @@ def stamp(content: Path | None) -> str:
     digest = hashlib.sha256()
     for name in (*SOURCE_FILES, "botw_world/catalog.py", "botw_world/data/items.json",
                  "botw_world/data/locations.json", "botw_world/data/logic.csv", "botw_world/data/koroks.json",
-                 "botw_world/data/chests.json", "botw_world/data/quests.json", "botw_world/archipelago.json"):
+                 "botw_world/data/chests.json", "botw_world/data/quests.json", "botw_world/data/bosses.json",
+                 "botw_world/archipelago.json"):
         digest.update((ROOT / name).read_bytes())
     digest.update(str(content).encode() + str(update_content()).encode())
     for key, data in sorted(game_icons(ICONS_FOLDER).items()):

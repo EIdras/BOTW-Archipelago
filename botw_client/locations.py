@@ -25,10 +25,11 @@ MASTER_CSV = ROOT / "data" / "locations_master.csv"
 # chests of chest_sanity (botw_world/data/chests.json, CHEST_SCHEMA); 7: then
 # the Koroks of korok_sanity (botw_world/data/koroks.json, KOROK_SCHEMA); 8: then
 # the side and shrine quests (botw_world/data/quests.json, QUEST_SCHEMA); 9: then
-# the Goddess Statues' offerings (OFFERING_SCHEMA).
+# the Goddess Statues' offerings (OFFERING_SCHEMA); 10: then the field bosses of
+# boss_sanity (botw_world/data/bosses.json, BOSS_SCHEMA).
 # botw_world declares its schema in slot_data["world_schema"].
-SCHEMA_LOCATION_COUNTS = {1: 149, 2: 153, 3: 185, 4: 213, 5: 220, 6: 220, 7: 220, 8: 220, 9: 220}
-WORLD_SCHEMA = 9
+SCHEMA_LOCATION_COUNTS = {1: 149, 2: 153, 3: 185, 4: 213, 5: 220, 6: 220, 7: 220, 8: 220, 9: 220, 10: 220}
+WORLD_SCHEMA = 10
 # The first schema whose locations include the chests, by the vanilla flag each
 # keeps once its contents are taken (tools/chest_locations.py).
 CHEST_SCHEMA = 6
@@ -48,6 +49,10 @@ QUESTS_JSON = ROOT / "botw_world" / "data" / "quests.json"
 OFFERING_SCHEMA = 9
 OFFERING_FLAG = "Npc_Goddess_UtuwaSum"
 ORBS_PER_TRADE = 4
+# The first schema whose locations include the field bosses, by the vanilla flag each
+# keeps once defeated (tools/boss_locations.py).
+BOSS_SCHEMA = 10
+BOSSES_JSON = ROOT / "botw_world" / "data" / "bosses.json"
 OFFERING_NAMES = tuple(f"Goddess Statue - Offering {k}" for k in range(1, 31))
 CHEST_ITEM_PREFIX = "AP_Chest_"
 # The Great Plateau's tower reveals its own map: its map is no item.
@@ -73,6 +78,8 @@ _KOROK_ROWS = json.loads(KOROKS_JSON.read_text(encoding="utf-8"))
 KOROK_NAMES = frozenset(row["name"] for row in _KOROK_ROWS)
 _QUEST_ROWS = json.loads(QUESTS_JSON.read_text(encoding="utf-8"))
 QUEST_NAMES = frozenset(row["name"] for row in _QUEST_ROWS)
+_BOSS_ROWS = json.loads(BOSSES_JSON.read_text(encoding="utf-8"))
+BOSS_NAMES = frozenset(row["name"] for row in _BOSS_ROWS)
 
 
 def chest_number(item_name: str) -> int | None:
@@ -148,6 +155,9 @@ def load_targets(path: Path = MASTER_CSV,
     if world_schema >= OFFERING_SCHEMA:
         targets += [LocationTarget(name, OFFERING_FLAG, zlib.crc32(OFFERING_FLAG.encode()), "s32",
                                    minimum=ORBS_PER_TRADE * k) for k, name in enumerate(OFFERING_NAMES, 1)]
+    if world_schema >= BOSS_SCHEMA:
+        targets += [LocationTarget(row["name"], row["flag"], zlib.crc32(row["flag"].encode()))
+                    for row in _BOSS_ROWS]
     if len({target.name for target in targets}) != len(targets):
         raise ValueError("duplicate location names")
     if len({(target.hash_u32, target.minimum) for target in targets}) != len(targets):

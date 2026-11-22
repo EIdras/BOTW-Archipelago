@@ -36,6 +36,7 @@ template with "Generate Template Options". Every option is explained [below](#op
 | Side quests (option `side_quest_sanity`) | 0 or 73 |
 | Shrine quests (option `shrine_quest_sanity`) | 0 or 42 |
 | Goddess Statue offerings (option [`spirit_orbs`](#spirit-orbs)) | 0, or 1 to 30 |
+| Field bosses (option `boss_sanity`) | 0 or 86 |
 
 The Koroks are many: by default, 95 % of those that are locations hold filler of your own world
 (`korok_local_filler`), so that they don't flood the other players with filler. With
@@ -52,6 +53,11 @@ the Ground Up and the two Tarrey Town quests that follow it (long), Hunt for the
 Stallion (two stamina wheels to tame the horse, or an Enduring elixir) still hold nothing needed. Left out of the side quests: Slated for
 Upgrades (Purah's upgrades are locations already), A Gift from the Monks, The Statue's Bargain, and the
 EX quests of The Master Trials.
+
+A boss is checked at its first defeat: the 86 Hinoxes, Stalnoxes, Stone Taluses and Moldugas of Hyrule whose defeat
+the game saves, named after the nearest place on the map ("Hickaly Woods - Stalnox"). A Blood Moon brings the boss
+back; its location stays sent. The bosses hold nothing needed to finish a game, unless `boss_progression`: the logic
+then asks for the boss's region and, on Death Mountain's burning slopes, the heat's protection, never a weapon.
 
 ## Items
 

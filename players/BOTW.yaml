@@ -105,6 +105,13 @@ Breath of the Wild:
   # the Ground Up and the two Tarrey Town quests after it, Hunt for the Giant Horse and The Royal White Stallion (two
   # stamina wheels to tame the horse) still hold nothing needed
   quest_progression: false
+  # Whether the 86 field bosses whose defeat the game saves (Hinoxes, Stalnoxes, Stone Taluses, Moldugas) are
+  # locations: the first defeat of each sends its item; a Blood Moon brings the boss back, its location stays sent.
+  # Unless boss_progression, they hold nothing needed to finish a game
+  boss_sanity: false
+  # With boss_sanity, bosses may hold items needed to finish a game: the logic asks for the boss's region and, on
+  # Death Mountain's burning slopes, the heat's protection; never a weapon
+  boss_progression: false
   # Share of the filler (arrows, elixirs, weapons, gems, rupees) that becomes traps, 0 to 100, and how likely each is
   # compared with the others (a trap left out never comes up): Weapon Shatter, Blood Moon,
   # Rupoor, Hearts Down, Strip Down, Cucco Swarm, Yiga Ambush, Paranoia, Downpour. The cuccos, the Yiga

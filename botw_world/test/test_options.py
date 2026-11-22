@@ -6,7 +6,7 @@ from worlds.AutoWorld import call_all
 from . import BotwTestBase
 from .. import BotwWorld
 from .test_tracker import generate
-from ..catalog import (ALL_SHRINES, CHEST_ID_BASE, CHESTS, FILLER, KOROK_ID_BASE, KOROKS, LOCATIONS, MAPS,
+from ..catalog import (ALL_SHRINES, BOSS_ID_BASE, BOSSES, CHEST_ID_BASE, CHESTS, FILLER, KOROK_ID_BASE, KOROKS, LOCATIONS, MAPS,
                        QUEST_ID_BASE, QUESTS, RUNES, TRAPS, WEAPONS, map_keys, requirements)
 
 # The filler of the default options: 159 locations, 119 declared items, 14 maps.
@@ -298,7 +298,7 @@ class TestKorokSanity(BotwTestBase):
         self.assertEqual({loc.progress_type for loc in koroks}, {LocationProgressType.EXCLUDED})
         slot_data = self.world.fill_slot_data()
         self.assertEqual((slot_data["korok_count"], slot_data["client_schema"], slot_data["world_schema"]),
-                         (40, 14, 9))
+                         (40, 14, 10))
         self.assertEqual(slot_data["korok_locations"], sorted(loc.address for loc in koroks))
         self.assertTrue(all(KOROK_ID_BASE < loc.address <= KOROK_ID_BASE + len(KOROKS) for loc in koroks))
 
@@ -382,7 +382,7 @@ class TestSideQuestSanity(BotwTestBase):
         self.assertTrue(all(QUEST_ID_BASE < loc.address <= QUEST_ID_BASE + 155 for loc in quests))
         slot_data = self.world.fill_slot_data()
         self.assertEqual((slot_data["side_quest_sanity"], slot_data["shrine_quest_sanity"],
-                          slot_data["client_schema"], slot_data["world_schema"]), (1, 0, 15, 9))
+                          slot_data["client_schema"], slot_data["world_schema"]), (1, 0, 15, 10))
 
     def test_they_bring_no_more_traps(self) -> None:
         with_quests = generate(self.options)
@@ -472,3 +472,65 @@ class TestCutsceneRemoved(BotwTestBase):
 
     def test_the_slot_data_tells_the_pack_builder(self) -> None:
         self.assertEqual(self.world.fill_slot_data()["cutscene_skip"], 2)
+
+
+class TestBossSanityOffByDefault(BotwTestBase):
+    def test_no_boss_location(self) -> None:
+        locations = {loc.name for loc in self.multiworld.get_locations(self.player)}
+        self.assertFalse(locations & self.world.location_name_groups["Bosses"])
+        self.assertEqual(self.world.fill_slot_data()["boss_sanity"], 0)
+
+
+class TestBossSanity(BotwTestBase):
+    options = {"boss_sanity": True, "trap_percentage": 100}
+
+    def test_the_86_bosses_are_excluded_locations(self) -> None:
+        bosses = [loc for loc in self.multiworld.get_locations(self.player)
+                  if loc.name in self.world.location_name_groups["Bosses"]]
+        self.assertEqual(len(bosses), 86)
+        self.assertEqual({loc.progress_type for loc in bosses}, {LocationProgressType.EXCLUDED})
+        self.assertTrue(all(BOSS_ID_BASE < loc.address <= BOSS_ID_BASE + len(BOSSES) for loc in bosses))
+        slot_data = self.world.fill_slot_data()
+        self.assertEqual((slot_data["boss_sanity"], slot_data["client_schema"], slot_data["world_schema"]),
+                         (1, 17, 10))
+
+    def test_they_bring_no_more_traps(self) -> None:
+        without = generate({"trap_percentage": 100})
+        self.assertEqual(sum(item.name in TRAPS for item in self.multiworld.itempool),
+                         sum(item.name in TRAPS for item in without.itempool))
+        self.assertEqual(len(self.multiworld.itempool), len(without.itempool) + 86)
+
+    def test_a_boss_asks_for_its_region_and_the_heat_or_its_ballad_trial(self) -> None:
+        plateau = next(row for row in BOSSES if row["region"] == "Great Plateau")
+        self.assertEqual(requirements(plateau), ())
+        burning = next(row for row in BOSSES if row["heat"] and "ballad" not in row)
+        self.assertIn((("Paraglider",), 1), requirements(burning))
+        self.assertGreater(len(requirements(burning)), 1)
+        # The Igneo Talus Titan and the Molduking come with Daruk's and Urbosa's trials.
+        song = {row["name"]: row["ballad"] for row in BOSSES if "ballad" in row}
+        self.assertEqual(sorted(song.values()), ["Daruk's Song", "Urbosa's Song"])
+        for name, ballad in song.items():
+            row = next(row for row in BOSSES if row["name"] == name)
+            trial = next(loc for loc in LOCATIONS if loc["name"] == ballad)
+            self.assertEqual((requirements(row), map_keys(row)), (requirements(trial), map_keys(trial)))
+
+    def test_universal_tracker_finds_the_seeds_bosses(self) -> None:
+        passed = BotwWorld.interpret_slot_data(self.world.fill_slot_data())
+        again = generate({}, passthrough=passed, seed=7)
+        names = {loc.name for loc in again.get_locations(1) if loc.name in self.world.location_name_groups["Bosses"]}
+        self.assertEqual(names, {row["name"] for row in BOSSES})
+
+
+class TestBossProgression(BotwTestBase):
+    options = {"boss_sanity": True, "boss_progression": True}
+
+    def test_the_bosses_may_hold_progression(self) -> None:
+        bosses = [self.multiworld.get_location(row["name"], self.player) for row in BOSSES]
+        self.assertFalse(any(loc.progress_type == LocationProgressType.EXCLUDED for loc in bosses))
+        distribute_items_restrictive(self.multiworld)
+        self.assertTrue(any(loc.item.advancement for loc in bosses))
+        self.assertTrue(self.multiworld.can_beat_game())
+
+    def test_boss_progression_needs_boss_sanity(self) -> None:
+        with self.assertRaises(OptionError):
+            generate({"boss_progression": True})
