@@ -20,7 +20,8 @@ SOURCE = ROOT / ".build/ledger-validation/4e60affc56def09f/content"
 class NativeDeliveryCompilationTests(unittest.TestCase):
     def test_catalog_covers_verified_action_families_only(self):
         entries, unsupported = compile_native_entries()
-        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 210)    # the Progressive Horse's four stages
+        # The Progressive Horse's four stages, the bonus items' 60 pieces.
+        self.assertEqual(len([e for e in entries if not e.quiet and not e.drop]), 270)
         self.assertEqual(set(unsupported), set())
         self.assertEqual(len({entry.entry_name for entry in entries}), len(entries))
         self.assertTrue(all(entry.plan.mutations for entry in entries))
@@ -190,6 +191,8 @@ class NativeDeliveryGraphTests(unittest.TestCase):
         self.assertEqual({s.item_name for s in self.specs
                           if host_of(s) == QUIET_FLOW and not s.quiet and not s.drop}, {
             "Ancient Bridle", "Ancient Saddle", "Epona", "Progressive Horse",
+            "Traveler's Saddle", "Traveler's Bridle", "Knight's Saddle", "Knight's Bridle", "Royal Saddle",
+            "Royal Bridle", "Monster Saddle", "Monster Bridle", "Extravagant Saddle", "Extravagant Bridle",
             *(trap.item for trap in TRAPS if trap.host == QUIET_FLOW), "Cucco Swarm", "Downpour",
             "Yiga Ambush", "Paranoia"})
         # The traps' own entries come first, then the delivery entries.

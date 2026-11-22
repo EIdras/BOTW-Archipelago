@@ -461,3 +461,41 @@ Archipelago affiche les noms anglais du jeu. Voici leurs équivalents dans le je
 | Wooden Mop | Balai-brosse |
 | Tree Branch | Branche d'arbre |
 | Pot Lid | Couvercle de marmite |
+| Sand Boots | Bottes des sables |
+| Snow Boots | Bottes de neige |
+| Thunder Helm | Masque du tonnerre |
+| Ruby Circlet | Diadème rubis |
+| Sapphire Circlet | Diadème saphir |
+| Diamond Circlet | Diadème diamant |
+| Topaz Earrings | Boucles de topaze |
+| Opal Earrings | Boucles d'opales |
+| Amber Earrings | Boucles d'ambre |
+| Hylian Set | Capuche hylienne, Tunique hylienne, Pantalon hylien |
+| Soldier's Set | Casque de soldat, Armure de soldat, Jambières de soldat |
+| Bokoblin Mask | Masque de Bokoblin |
+| Moblin Mask | Masque de Moblin |
+| Lizalfos Mask | Masque de Lézalfos |
+| Lynel Mask | Masque de Lynel |
+| Traveler's Saddle | Selle de voyage |
+| Traveler's Bridle | Filet de voyage |
+| Knight's Saddle | Selle martiale |
+| Knight's Bridle | Filet martial |
+| Royal Saddle | Selle royale |
+| Royal Bridle | Filet royal |
+| Monster Saddle | Selle monstrueuse |
+| Monster Bridle | Filet monstrueux |
+| Extravagant Saddle | Selle d'apparat |
+| Extravagant Bridle | Filet d'apparat |
+| Phantom Set | Casque de Spectre, Armure de Spectre, Jambières de Spectre |
+| Tingle's Set | Cagoule de Tingle, Combinaison de Tingle, Chausses de Tingle |
+| Fierce Deity Set | Masque du Dieu démon, Armure du Dieu démon, Bottes du Dieu démon |
+| Hero of Time Set | Coiffe du temps, Tunique du temps, Chausses du temps |
+| Hero of the Wild Set | Coiffe des landes, Tunique des landes, Culotte des landes |
+| Hero of the Sky Set | Coiffe du ciel, Tunique du ciel, Pantalon du ciel |
+| Hero of Twilight Set | Coiffe du Crépuscule, Tunique du Crépuscule, Chausses du Crépuscule |
+| Hero of the Wind Set | Coiffe du vent, Tunique du vent, Chausses du vent |
+| Majora's Mask | Masque de Majora |
+| Midna's Helmet | Couronne de Midona |
+| Zant's Helmet | Casque de Xanto |
+| Ravio's Hood | Capuche de Lavio |
+| Royal Guard Set | Béret de garde royal, Uniforme de garde royal, Bottes de garde royal |

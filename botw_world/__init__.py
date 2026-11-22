@@ -406,7 +406,7 @@ class BotwWorld(World):
         for row in local:
             self.get_location(row["name"]).place_locked_item(self.create_item(self.get_filler_item_name()))
         counts = {row["name"]: int(row.get("count", 1)) for row in ITEMS
-                  if not row.get("trap") and row["name"] not in MAPS.values()}
+                  if not row.get("trap") and not row.get("bonus") and row["name"] not in MAPS.values()}
         # progressive_horse: four Progressive Horses, the last two Epona and the Master Cycle Zero.
         for name in (("Epona", "Master Cycle Zero") if self.options.progressive_horse else ("Progressive Horse",)):
             del counts[name]
@@ -420,10 +420,11 @@ class BotwWorld(World):
         pool += [self.create_item(name) for name in self.maps()]
         # Main.py applies start_inventory_from_pool centrally after create_items.
         capacity = len(self.multiworld.get_unfilled_locations(self.player))
+        # The locations that hold neither progression nor useful items: a Korok, a chest, a quest.
+        excluded = sum(1 for loc in self.multiworld.get_unfilled_locations(self.player)
+                       if loc.progress_type == LocationProgressType.EXCLUDED)
         if self.options.spirit_orbs == SpiritOrbs.option_statue_checks and not self.regenerated:
-            # Every orb is progression, which no excluded location (a Korok, a chest, a quest) holds.
-            excluded = sum(1 for loc in self.multiworld.get_unfilled_locations(self.player)
-                           if loc.progress_type == LocationProgressType.EXCLUDED)
+            # Every orb is progression, which no excluded location holds.
             short = max(len(pool) - capacity,
                         sum(1 for item in pool if item.advancement or item.useful) - (capacity - excluded))
             if short > 0:
@@ -445,8 +446,24 @@ class BotwWorld(World):
         # hundreds more.
         extra = (len(CHESTS) if self.options.chest_sanity else 0) + len(self.koroks) - len(local) \
             + len(self.quests) + len(self.bosses)
-        pool.extend(self.create_item(name) for name in self.trap_names(max(0, capacity - len(pool) - extra)))
-        pool.extend(self.create_item(self.get_filler_item_name()) for _ in range(capacity - len(pool)))
+        filler = capacity - len(pool)
+        pool.extend(self.create_item(name) for name in self.trap_names(max(0, filler - extra)))
+        drawn = [self.create_item(self.get_filler_item_name()) for _ in range(capacity - len(pool))]
+        # bonus_items: that share of the filler becomes bonus items, in the place of drawn filler that
+        # is not useful (traps keep their count), and no more than the locations left that may hold a
+        # useful item.
+        plain = [item for item in drawn if not (item.advancement or item.useful)]
+        # The player's exclude_locations hold none either: Archipelago marks them after create_items.
+        chosen = sum(1 for loc in self.multiworld.get_unfilled_locations(self.player)
+                     if loc.progress_type != LocationProgressType.EXCLUDED
+                     and loc.name in self.options.exclude_locations.value)
+        room = capacity - excluded - chosen - sum(1 for item in pool + drawn if item.advancement or item.useful)
+        bonus = [row["name"] for row in ITEMS if row.get("bonus")]
+        count = min(len(bonus), filler * self.options.bonus_items.value // 100, len(plain), room)
+        if count > 0:
+            drawn = [item for item in drawn if item.advancement or item.useful] + plain[count:] \
+                + [self.create_item(name) for name in self.random.sample(bonus, count)]
+        pool.extend(drawn)
         self.multiworld.itempool.extend(pool)
 
     @classmethod
@@ -579,7 +596,8 @@ class BotwWorld(World):
         # korok_locations: with korok_sanity, the Koroks drawn by the seed, for Universal Tracker.
         # region_borders: with region_lock, the borders the seed's logic crosses.
         # travel_shrines: with map_travel_points, the shrine each map opens and its terminal's flag.
-        client = 18 if self.options.progressive_horse else 17 if self.bosses else 16 if self.offerings \
+        client = 19 if self.options.bonus_items else 18 if self.options.progressive_horse \
+            else 17 if self.bosses else 16 if self.offerings \
             else 15 if self.quests else 14 if self.options.korok_sanity else 13 if self.options.chest_sanity \
             else 12
         return {"client_schema": client, "world_schema": 10,

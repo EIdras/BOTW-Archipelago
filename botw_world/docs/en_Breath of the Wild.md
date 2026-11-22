@@ -84,6 +84,7 @@ then asks for the boss's region and, on Death Mountain's burning slopes, the hea
 - The Master Cycle Zero (The Champions' Ballad), the Travel Medallion and the Korok Mask (The Master Trials).
 - Epona, registered at the stables. With [`progressive_horse`](#progressive-horse), four Progressive Horses take her
   place and the Master Cycle Zero's.
+- With [`bonus_items`](#bonus-items), up to 38 bonus items: armor and, as filler, saddles and bridles.
 - Spirit Orbs, Ancient Cores, Star Fragments and Fairies. The Koroks still give their seeds, as in the game, even
   when they are locations.
 
@@ -152,6 +153,7 @@ stamina vessels help without being required.
 | Master Cycle Zero | [`bike_anywhere`](#master-cycle-zero-anywhere) | false | The bike in the desert and on Death Mountain |
 | Cutscenes | [`cutscene_skip`](#skip-cutscenes) | false | + alone skips a cutscene, from a first game on |
 | Spirit Orbs | [`spirit_orbs`](#spirit-orbs) | `containers` | Hearts and stamina as items, or from the statues |
+| Bonus Items | [`bonus_items`](#bonus-items) | 0 | Share of the filler turned into armor, saddles and bridles |
 | Traps | [`trap_percentage`, `trap_weights`](#traps) | 0 | Share of the filler turned into traps |
 | | `death_link` | false | [DeathLink](#deathlink) |
 
@@ -317,6 +319,22 @@ With `death_link`, Link's death kills the other DeathLink players of the room, w
 by a Bokoblin", "Player froze to death"...), and their deaths kill Link, as a lethal blow would: the death animation,
 the Game Over screen and the reload of the last save. Mipha's Grace and fairies still save him; the received death is
 then spent. It waits for a safe moment: not during a cutscene, a menu or a loading screen.
+
+### Bonus Items
+
+`bonus_items` turns that share of the filler (arrows, elixirs, weapons, gems and rupees) into bonus items, 38 at
+most, none needed to finish a game:
+
+- armor: the Sand and Snow Boots, the Thunder Helm, the Ruby, Sapphire and Diamond Circlets, the Topaz, Opal
+  and Amber Earrings, the Bokoblin, Moblin, Lizalfos and Lynel Masks, the Hylian and Soldier's sets;
+- the amiibo's sets: the Hero of Time, of the Wild, of the Sky, of Twilight and of the Wind;
+- the DLC's armor: the Phantom, Tingle's, Fierce Deity and Royal Guard sets, Majora's Mask, Midna's and
+  Zant's Helmets, Ravio's Hood;
+- the Traveler's, Knight's, Royal, Monster and Extravagant saddles and bridles, for looks only: filler. A tamed
+  horse wears them; Epona and the Giant Horse keep their own.
+
+Traps keep their count: the bonus items take what they leave of the filler. The armor is useful, so it never
+goes where nothing useful may: the chests, Koroks, quests and bosses whose `*_progression` option is off.
 
 ### Traps
 

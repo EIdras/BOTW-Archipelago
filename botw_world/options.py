@@ -393,6 +393,19 @@ class ProgressiveHorse(Toggle):
     display_name = "Progressive Horse"
 
 
+class BonusItems(Range):
+    """Share of the filler (arrows, elixirs, weapons, gems and rupees) that becomes
+    bonus items: armor (boots, circlets, earrings, monster masks, the Hylian and Soldier's
+    sets, the amiibo's and the DLC's sets), saddles and bridles. 38 at most, none needed
+    to finish a game; traps keep their count. The armor is useful: it never goes where
+    nothing useful may (a chest, Korok, quest or boss whose progression option is off).
+    The saddles and bridles, for looks only, are filler. 0: none."""
+    display_name = "Bonus Items"
+    range_start = 0
+    range_end = 100
+    default = 0
+
+
 @dataclass
 class BotwOptions(PerGameCommonOptions):
     start_inventory_from_pool: StartInventoryPool
@@ -428,6 +441,7 @@ class BotwOptions(PerGameCommonOptions):
     boss_sanity: BossSanity
     boss_progression: BossProgression
     progressive_horse: ProgressiveHorse
+    bonus_items: BonusItems
     trap_percentage: TrapPercentage
     trap_weights: TrapWeights
 
@@ -447,6 +461,7 @@ OPTION_GROUPS = [
     OptionGroup("Koroks", [KorokSanity, KorokCount, KorokLocalFiller, KorokProgression]),
     OptionGroup("Quests", [SideQuestSanity, ShrineQuestSanity, QuestProgression]),
     OptionGroup("Bosses", [BossSanity, BossProgression]),
+    OptionGroup("Bonus Items", [BonusItems]),
     OptionGroup("Traps", [TrapPercentage, TrapWeights]),
 ]
 

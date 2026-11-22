@@ -1411,5 +1411,307 @@
     "useful": true,
     "count": 4,
     "id": 177
+  },
+  {
+    "name": "Sand Boots",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 178,
+    "bonus": true
+  },
+  {
+    "name": "Snow Boots",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 179,
+    "bonus": true
+  },
+  {
+    "name": "Thunder Helm",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 180,
+    "bonus": true
+  },
+  {
+    "name": "Ruby Circlet",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 181,
+    "bonus": true
+  },
+  {
+    "name": "Sapphire Circlet",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 182,
+    "bonus": true
+  },
+  {
+    "name": "Diamond Circlet",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 183,
+    "bonus": true
+  },
+  {
+    "name": "Topaz Earrings",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 184,
+    "bonus": true
+  },
+  {
+    "name": "Opal Earrings",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 185,
+    "bonus": true
+  },
+  {
+    "name": "Amber Earrings",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 186,
+    "bonus": true
+  },
+  {
+    "name": "Hylian Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 187,
+    "bonus": true
+  },
+  {
+    "name": "Soldier's Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 188,
+    "bonus": true
+  },
+  {
+    "name": "Bokoblin Mask",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 189,
+    "bonus": true
+  },
+  {
+    "name": "Moblin Mask",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 190,
+    "bonus": true
+  },
+  {
+    "name": "Lizalfos Mask",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 191,
+    "bonus": true
+  },
+  {
+    "name": "Lynel Mask",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 192,
+    "bonus": true
+  },
+  {
+    "name": "Traveler's Saddle",
+    "id": 193,
+    "bonus": true
+  },
+  {
+    "name": "Traveler's Bridle",
+    "id": 194,
+    "bonus": true
+  },
+  {
+    "name": "Knight's Saddle",
+    "id": 195,
+    "bonus": true
+  },
+  {
+    "name": "Knight's Bridle",
+    "id": 196,
+    "bonus": true
+  },
+  {
+    "name": "Royal Saddle",
+    "id": 197,
+    "bonus": true
+  },
+  {
+    "name": "Royal Bridle",
+    "id": 198,
+    "bonus": true
+  },
+  {
+    "name": "Monster Saddle",
+    "id": 199,
+    "bonus": true
+  },
+  {
+    "name": "Monster Bridle",
+    "id": 200,
+    "bonus": true
+  },
+  {
+    "name": "Extravagant Saddle",
+    "id": 201,
+    "bonus": true
+  },
+  {
+    "name": "Extravagant Bridle",
+    "id": 202,
+    "bonus": true
+  },
+  {
+    "name": "Phantom Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 203,
+    "bonus": true
+  },
+  {
+    "name": "Tingle's Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 204,
+    "bonus": true
+  },
+  {
+    "name": "Fierce Deity Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 205,
+    "bonus": true
+  },
+  {
+    "name": "Hero of Time Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 206,
+    "bonus": true
+  },
+  {
+    "name": "Hero of the Wild Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 207,
+    "bonus": true
+  },
+  {
+    "name": "Hero of the Sky Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 208,
+    "bonus": true
+  },
+  {
+    "name": "Hero of Twilight Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 209,
+    "bonus": true
+  },
+  {
+    "name": "Hero of the Wind Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 210,
+    "bonus": true
+  },
+  {
+    "name": "Majora's Mask",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 211,
+    "bonus": true
+  },
+  {
+    "name": "Midna's Helmet",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 212,
+    "bonus": true
+  },
+  {
+    "name": "Zant's Helmet",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 213,
+    "bonus": true
+  },
+  {
+    "name": "Ravio's Hood",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 214,
+    "bonus": true
+  },
+  {
+    "name": "Royal Guard Set",
+    "category": [
+      "Armour"
+    ],
+    "useful": true,
+    "id": 215,
+    "bonus": true
   }
 ]

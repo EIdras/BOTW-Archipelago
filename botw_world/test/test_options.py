@@ -8,8 +8,8 @@ from worlds.AutoWorld import call_all
 from . import BotwTestBase
 from .. import BotwWorld
 from .test_tracker import generate
-from ..catalog import (ALL_SHRINES, BOSS_ID_BASE, BOSSES, CHEST_ID_BASE, CHESTS, FILLER, KOROK_ID_BASE, KOROKS, LOCATIONS, MAPS,
-                       QUEST_ID_BASE, QUESTS, RUNES, TRAPS, WEAPONS, map_keys, requirements)
+from ..catalog import (ALL_SHRINES, BOSS_ID_BASE, BOSSES, CHEST_ID_BASE, CHESTS, FILLER, ITEMS, KOROK_ID_BASE, KOROKS,
+                       LOCATIONS, MAPS, QUEST_ID_BASE, QUESTS, RUNES, TRAPS, WEAPONS, map_keys, requirements)
 
 # The filler of the default options: 159 locations, 119 declared items, 14 maps.
 FILLER_SLOTS = 26
@@ -576,4 +576,91 @@ class TestProgressiveHorseEverySanity(BotwTestBase):
                   if loc.item is not None and loc.item.name == "Progressive Horse"]
         self.assertEqual(len(horses), 4)
         self.assertFalse(any(loc.progress_type == LocationProgressType.EXCLUDED for loc in horses))
+        self.assertTrue(self.multiworld.can_beat_game())
+
+
+BONUS = {row["name"] for row in ITEMS if row.get("bonus")}
+
+
+def room(world) -> int:
+    """The places left that may hold a useful item, once the pool is made."""
+    free = [loc for loc in world.multiworld.get_unfilled_locations(world.player)
+            if loc.progress_type != LocationProgressType.EXCLUDED]
+    return len(free) - sum(1 for item in world.multiworld.itempool
+                           if item.player == world.player and (item.advancement or item.useful)
+                           and item.name not in BONUS)
+
+
+class TestBonusItemsOffByDefault(BotwTestBase):
+    def test_no_bonus_item(self) -> None:
+        self.assertEqual(len(BONUS), 38)
+        self.assertFalse(BONUS & {item.name for item in self.multiworld.itempool})
+        self.assertLess(self.world.fill_slot_data()["client_schema"], 19)
+
+
+class TestBonusItems(BotwTestBase):
+    options = {"bonus_items": 50}
+
+    def test_that_share_of_the_filler_becomes_bonus_items(self) -> None:
+        bonus = [item for item in self.multiworld.itempool if item.name in BONUS]
+        filler = {name for _, family in FILLER.values() for name in family}
+        left = sum(item.name in filler for item in self.multiworld.itempool)
+        self.assertEqual(len(bonus), min(38, (len(bonus) + left) // 2, room(self.world)))
+        self.assertGreater(len(bonus), 0)
+        self.assertEqual(len({item.name for item in bonus}), len(bonus))
+        # The armor is useful; the saddles and bridles, for looks only, are filler.
+        self.assertEqual({item.name for item in bonus if item.classification != ItemClassification.useful},
+                         {item.name for item in bonus if item.name.endswith((" Saddle", " Bridle"))})
+        self.assertTrue(all(item.classification in (ItemClassification.useful, ItemClassification.filler)
+                            for item in bonus))
+        without = generate({})
+        self.assertEqual(len(self.multiworld.itempool), len(without.itempool))
+        drawn = {name for _, family in FILLER.values() for name in family} | set(TRAPS) | BONUS
+        kept = [Counter(item.name for item in multiworld.itempool if item.name not in drawn)
+                for multiworld in (self.multiworld, without)]
+        self.assertEqual(kept[0], kept[1])
+        self.assertEqual(self.world.fill_slot_data()["client_schema"], 19)
+
+
+class TestBonusItemsWithTraps(BotwTestBase):
+    options = {"bonus_items": 100, "trap_percentage": 50}
+
+    def test_the_traps_keep_their_count(self) -> None:
+        # The traps drawn first; the bonus items take what is left of the filler's places.
+        without = generate({"trap_percentage": 50})
+        self.assertEqual(sum(item.name in TRAPS for item in self.multiworld.itempool),
+                         sum(item.name in TRAPS for item in without.itempool))
+        self.assertGreater(sum(item.name in BONUS for item in self.multiworld.itempool), 0)
+        self.assertEqual(len(self.multiworld.itempool), len(without.itempool))
+
+
+class TestBonusItemsExcludedLocations(BotwTestBase):
+    # The player's exclude_locations, which Archipelago marks after create_items, keep their filler.
+    options = {"bonus_items": 100, "exclude_locations": {
+        *sorted(row["name"] for row in LOCATIONS if row["category"] == "Shrine")[:50]}}
+
+    def test_every_excluded_location_has_an_item_that_is_not_useful(self) -> None:
+        excluded = {loc.name for loc in self.multiworld.get_unfilled_locations(self.player)
+                    if loc.progress_type == LocationProgressType.EXCLUDED}
+        excluded |= self.options["exclude_locations"] & {loc.name for loc in
+                                                          self.multiworld.get_unfilled_locations(self.player)}
+        plain = sum(1 for item in self.multiworld.itempool if not (item.advancement or item.useful))
+        self.assertEqual(len(excluded), 50)
+        self.assertGreaterEqual(plain, len(excluded))
+        self.assertTrue(any(item.name in BONUS for item in self.multiworld.itempool))
+
+
+class TestBonusItemsEverySanity(BotwTestBase):
+    # The excluded chests, Koroks, quests and bosses take no bonus item: as many as the others hold.
+    options = {"bonus_items": 100, "chest_sanity": "ap_items", "korok_sanity": True,
+               "side_quest_sanity": True, "shrine_quest_sanity": True, "boss_sanity": True}
+
+    def test_the_bonus_items_find_room_outside_the_excluded_locations(self) -> None:
+        count = min(38, room(self.world))
+        distribute_items_restrictive(self.multiworld)
+        placed = [loc for loc in self.multiworld.get_locations(self.player)
+                  if loc.item is not None and loc.item.name in BONUS]
+        self.assertEqual(len(placed), count)
+        self.assertFalse(any(loc.progress_type == LocationProgressType.EXCLUDED for loc in placed
+                             if loc.item.useful))
         self.assertTrue(self.multiworld.can_beat_game())
