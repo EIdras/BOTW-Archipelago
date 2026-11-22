@@ -122,7 +122,7 @@ class DeliveryTests(unittest.TestCase):
         backend = CemuNativeDeliveryBackend(
             self.game, "seed", 2, 123, catalog=self.catalog, request=request,
             lock_factory=None, safe=lambda: True, commit_timeout=0.1, poll_seconds=0,
-            in_world=lambda: True)
+            in_world=lambda: True, event_free=lambda: True)
         return backend.deliver(DeliveryCommand("seed", 2, 1, name, 0, 1, 0))
 
     def test_a_rune_upgrade_refreshes_the_icon_of_its_rune(self):

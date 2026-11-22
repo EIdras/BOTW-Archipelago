@@ -71,6 +71,29 @@ def manager_diagnostic(process, base):
     return result
 
 
+# manager+0x175b0 holds the running event (slot 0): non-zero during a fast
+# travel's Demo005_0 and Demo005_1, a shrine lift's Demo008_1/2, the end of our
+# own entries; zero in free play (measured, test 51). An entry accepted while an
+# event runs goes to slot 1, and both slots are emptied at that event's end:
+# never run.
+EVENT_RUNNING = 0x175b0
+
+
+def event_running(process, base) -> bool:
+    """Whether the game's event manager runs an event (manager+0x175b0 set).
+    Raises when the manager or the word cannot be read."""
+    found = inspect(process, base)
+    if not found['manager_available']:
+        raise RuntimeError('event manager unavailable')
+    address = found['manager'] + EVENT_RUNNING
+    if not in_guest(address) or address + 4 > MEM2_MAX_END:
+        raise ValueError('event manager word outside guest range')
+    data = process.read(base + address, 4)
+    if data is None or len(data) != 4:
+        raise RuntimeError('short event manager read')
+    return int.from_bytes(data, 'big') != 0
+
+
 def request(process, cave, number, checkpoint, custom_text=False, *,
             flow="Demo007_1", entry="APDisplayStandalone"):
     for label, value in (("flow", flow), ("entry", entry)):

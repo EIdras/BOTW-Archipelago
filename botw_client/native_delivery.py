@@ -45,6 +45,9 @@ DROP_WAIT_SECONDS = 15.0
 DROP_SETTLE_SECONDS = 0.5
 # A wait for a commit says in the client's log, this often, what holds it.
 WAIT_REPORT_SECONDS = 60.0
+# The longest wait for the event manager to be free, Link in the world: the
+# longest event measured so, a shrine lift, ran 15.8 s.
+EVENT_WAIT_SECONDS = 60.0
 # The game's pickup notification (the list on the right), as a real pickup asks
 # for it: 0x03073C2C(SafeString* actor name) opens the PickUpWin screen and adds
 # the line, with the game's duration.
@@ -193,7 +196,7 @@ class CemuNativeDeliveryBackend:
     def __init__(self, game, seed: str, slot: int, token: int, *,
                  catalog=DEFAULT_CATALOG, request=None, lock_factory=None,
                  commit_timeout: float = 30.0, poll_seconds: float = 0.05,
-                 safe=None, in_world=None, report=None):
+                 safe=None, in_world=None, event_free=None, report=None):
         if not seed or not isinstance(slot, int) or not 0 < token <= 0x7FFFFFFF:
             raise ValueError("invalid native AP identity")
         self.game = game
@@ -208,6 +211,8 @@ class CemuNativeDeliveryBackend:
         self.poll_seconds = poll_seconds
         self._safe = safe
         self._in_world = in_world
+        self._event_free = event_free
+        self._event_busy_since, self._event_busy_reported = None, False
         self._report = report
         self._committed_at = None
         # Frames the event that committed last needs to close (SETTLE_FRAMES).
@@ -322,6 +327,37 @@ class CemuNativeDeliveryBackend:
     # (safe_for_delivery) sees neither the fade nor the loading; this does, from
     # the fade on, ~46 frames before those frames.
     NOT_IN_WORLD = "Link not in the world (a menu, a dialogue, a fade or a loading)"
+    EVENT_RUNNING = "an event running (a fast travel, a shrine lift...)"
+
+    def _no_event_running(self) -> bool:
+        """Every event request waits, too, for the game's event manager to run
+        no event, asked inside the invoker's lock. Link is in the world during
+        a fast travel's departure (Demo005_0) and a shrine lift; an entry
+        accepted then is dropped at that event's end, never run, and the client
+        waited COMMIT_TIMEOUT to ask again (measured). Unreadable: not now.
+        Busy EVENT_WAIT_SECONDS on end with Link in the world, an event that
+        never ends (never measured): the request goes ahead, logged."""
+        try:
+            if self._event_free is not None:
+                free = bool(self._event_free())
+            else:
+                from tools.cemu.autonomous_eventflow import event_running
+                free = not event_running(self.game.process, self.game.cave.base)
+        except Exception:  # noqa: BLE001 - unreadable: not now
+            return False
+        now = time.monotonic()
+        if free:
+            self._event_busy_since = None
+            return True
+        if self._event_busy_since is None:
+            self._event_busy_since, self._event_busy_reported = now, False
+        if now - self._event_busy_since < EVENT_WAIT_SECONDS:
+            return False
+        if self._report and not self._event_busy_reported:
+            self._event_busy_reported = True
+            self._report(f"event manager busy for {now - self._event_busy_since:.0f} s "
+                         "with Link in the world: requesting anyway")
+        return True
 
     def _wait_reason(self, guard) -> str:
         """What holds a wait for a commit, for the client's log."""
@@ -384,6 +420,8 @@ class CemuNativeDeliveryBackend:
             with lock:
                 if not self._link_in_world():
                     return DeliveryResult(DeliveryStatus.DEFERRED, cursor, "waiting for Link in the world")
+                if not self._no_event_running():
+                    return DeliveryResult(DeliveryStatus.DEFERRED, cursor, self.EVENT_RUNNING)
                 try:
                     result = request(
                         self.game.process, self.game.cave, 0,
@@ -836,7 +874,7 @@ class CemuNativeDeliveryBackend:
         request, lock_factory = self._dependencies()
         pid = int(self.game.process.pid)
         with (lock_factory(pid) if lock_factory else nullcontext()):
-            if not self._link_in_world():
+            if not self._link_in_world() or not self._no_event_running():
                 return False
             try:
                 result = request(self.game.process, self.game.cave, 0, lambda _value: None,
@@ -873,6 +911,8 @@ class CemuNativeDeliveryBackend:
                                   getattr(self.game, "delivery_block_reason", "game busy"))
         if not self._link_in_world():
             return DeliveryResult(DeliveryStatus.DEFERRED, cursor, self.NOT_IN_WORLD)
+        if not self._no_event_running():
+            return DeliveryResult(DeliveryStatus.DEFERRED, cursor, self.EVENT_RUNNING)
         since = self._frames_since_commit()
         if since is not None and since < self._settle:
             return DeliveryResult(DeliveryStatus.DEFERRED, cursor,
@@ -908,6 +948,8 @@ class CemuNativeDeliveryBackend:
             with lock:
                 if not self._link_in_world():
                     return DeliveryResult(DeliveryStatus.DEFERRED, command.cursor, self.NOT_IN_WORLD)
+                if not self._no_event_running():
+                    return DeliveryResult(DeliveryStatus.DEFERRED, command.cursor, self.EVENT_RUNNING)
                 try:
                     # Silent twins and steps without a window live in their
                     # own flowchart, registered not to pause the game

@@ -84,7 +84,7 @@ class NativeDeliveryBackendTests(unittest.TestCase):
         return CemuNativeDeliveryBackend(
             self.game, "seed", 2, 123, catalog=self.path, request=request,
             lock_factory=lambda _pid: _NullLock(), safe=lambda: True,
-            commit_timeout=0.01, poll_seconds=0, **{"in_world": lambda: True, **kwargs})
+            commit_timeout=0.01, poll_seconds=0, **{"in_world": lambda: True, "event_free": lambda: True, **kwargs})
 
     def add_binding(self, token=123):
         data = json.loads(self.path.read_text(encoding="utf-8"))
@@ -448,6 +448,82 @@ class NativeDeliveryBackendTests(unittest.TestCase):
         self.assertEqual((result.status, result.detail),
                          (DeliveryStatus.DEFERRED, "waiting for Link in the world"))
         self.assertFalse(calls)
+
+    def test_no_request_while_an_event_runs(self):
+        # Measured: Link is in the world during a fast travel's departure
+        # (Demo005_0) and a shrine lift; an entry accepted then went to the
+        # event manager's second slot, emptied at that event's end: never run,
+        # and the client waited 30 s to ask again.
+        calls = []
+        backend = self.backend(lambda *_args, **_kwargs: calls.append(1), event_free=lambda: False)
+        result = backend.deliver(DeliveryCommand("seed", 2, 7, "Core"))
+        self.assertEqual((result.status, result.detail),
+                         (DeliveryStatus.DEFERRED, backend.EVENT_RUNNING))
+        self.assertFalse(calls)
+
+    def test_an_unreadable_event_manager_defers_the_request(self):
+        # The fake game has no cave to read: the real reader fails, not now.
+        calls = []
+        for event_free in (None, lambda: 1 / 0):
+            backend = self.backend(lambda *_args, **_kwargs: calls.append(1), event_free=event_free)
+            result = backend.deliver(DeliveryCommand("seed", 2, 7, "Core"))
+            self.assertEqual((result.status, result.detail),
+                             (DeliveryStatus.DEFERRED, backend.EVENT_RUNNING))
+        self.assertFalse(calls)
+
+    def test_an_event_starting_before_the_request_defers_it(self):
+        # Asked again inside the invoker's lock, just before each request.
+        data = json.loads(self.path.read_text(encoding="utf-8"))
+        data["quest"] = {"start": "APQuestStart", "finish": "APQuestFinish"}
+        self.path.write_text(json.dumps(data), encoding="utf-8")
+        self.add_binding()
+        free, calls = [True], []
+        backend = self.backend(lambda *_args, **_kwargs: calls.append(1) or {"native_return": 1},
+                               event_free=lambda: free[0])
+        backend._lock_factory = lambda _pid: _LeavingLock(free)
+        result = backend.deliver(DeliveryCommand("seed", 2, 7, "Core"))
+        self.assertEqual((result.status, result.detail),
+                         (DeliveryStatus.DEFERRED, backend.EVENT_RUNNING))
+        free[0] = True
+        self.assertFalse(backend.request_quest())             # not placed: asked again
+        self.values[flag("APSeedToken")] = 0
+        self.values[flag("APReceivedCursor")] = 0
+        free[0] = True
+        self.assertEqual(backend.bind_session().detail, backend.EVENT_RUNNING)
+        self.assertFalse(calls)
+
+    def test_an_event_that_never_ends_lets_the_request_go_once_logged(self):
+        # Never measured: an event the manager runs for good, Link in the world.
+        # After EVENT_WAIT_SECONDS the request goes ahead, as before the check.
+        import time
+        import botw_client.native_delivery as module
+        data = json.loads(self.path.read_text(encoding="utf-8"))
+        data["quest"] = {"start": "APQuestStart", "finish": "APQuestFinish"}
+        self.path.write_text(json.dumps(data), encoding="utf-8")
+        calls, reports = [], []
+        backend = self.backend(lambda *_args, **_kwargs: calls.append(1) or {"native_return": 1},
+                               event_free=lambda: False, report=reports.append)
+        with mock.patch.object(module, "EVENT_WAIT_SECONDS", 0.05):
+            self.assertFalse(backend.request_quest())
+            time.sleep(0.06)
+            self.assertTrue(backend.request_quest())
+            self.assertTrue(backend.request_quest())
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(len(reports), 1)
+        self.assertIn("event manager busy", reports[0])
+
+    def test_the_event_manager_word(self):
+        from tools.cemu import autonomous_eventflow as evf
+        manager = 0x30000000
+        memory = {evf.HELPER: evf.SIGNATURE, evf.MANAGER_PTR: manager.to_bytes(4, "big"),
+                  manager + evf.EVENT_RUNNING: bytes(4)}
+        process = SimpleNamespace(read=lambda address, size: memory.get(address, bytes(size)))
+        self.assertFalse(evf.event_running(process, 0))
+        memory[manager + evf.EVENT_RUNNING] = (0x31234560).to_bytes(4, "big")
+        self.assertTrue(evf.event_running(process, 0))
+        memory[evf.MANAGER_PTR] = bytes(4)                     # no manager yet
+        with self.assertRaises(RuntimeError):
+            evf.event_running(process, 0)
 
     def test_an_accepted_entry_that_never_started_is_asked_again(self):
         # Seen in play: a Fairy requested 38 frames after a Heart Container's commit
