@@ -91,4 +91,8 @@ weaker first. `smoothed` (the default) follows the levels; `loosely_smoothed` mo
 random, so a weapon may come a level earlier or later, never a treasure among the first; `anywhere` keeps the fill's
 placement. The jokes stay where the fill put them. No rule names a weapon, so the spheres do not change; a location's
 own rules still decide what it takes. In a solo game the first sphere after the Great Plateau holds most of Hyrule:
-there the weapons are mixed, the weakest on the Plateau, the strongest behind the last items.
+there the weapons are mixed, the weakest on the Plateau, the strongest behind the last items. Unless `anywhere`, an
+item rule set before the fill (`BotwWorld.set_rules`) also keeps the world's Master Sword off every location of its own
+Great Plateau: no other rule keeps it from the first items, since only Ganon's sanctum and My Hero ask for it. Another
+player's plateau, even a Breath of the Wild one, may still take it: ruling those out too fails about one fill in fifty
+with several Breath of the Wild players.

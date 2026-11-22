@@ -9,6 +9,7 @@ from typing import Any, ClassVar
 
 from BaseClasses import Item, ItemClassification, Location, LocationProgressType, MultiWorld, Region, Tutorial
 from worlds.AutoWorld import WebWorld, World
+from worlds.generic.Rules import forbid_item
 from Options import OptionError
 from rule_builder.rules import And, CanReachRegion, Has, HasAll, HasAny, HasFromList, Or, Rule, True_
 
@@ -338,6 +339,12 @@ class BotwWorld(World):
         if options.sanctum_shrines.value:
             parts.append(HasFromList(*shrines, count=options.sanctum_shrines.value))
         self.set_rule(ganon, And(*parts) if len(parts) > 1 else parts[0])
+        if options.weapon_order != WeaponOrder.option_anywhere:
+            # The strongest weapon is never among the first: no location of this world's Great Plateau
+            # takes this world's Master Sword, which the fill and the moves after it respect. Another
+            # player's plateau may: ruling it out too fails a fill with several of them now and then.
+            for location in self.get_region("Great Plateau").locations:
+                forbid_item(location, "Master Sword", player)
         # What finishes the game.
         if options.goal == options.goal.option_divine_beasts:
             done = HasAll(*beasts)

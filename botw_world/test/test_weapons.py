@@ -86,3 +86,41 @@ class TestTwoWorldsSmoothed(unittest.TestCase):
         self.assertEqual(Counter((location.item.player, location.item.name) for location in placed), before)
         self.assertTrue(all(location.item.location is location for location in placed))
         self.assertEqual(len({id(location.item) for location in placed}), len(placed))
+        # No Master Sword on its owner's Great Plateau.
+        self.assertFalse([location.name for location in placed if location.item.name == "Master Sword"
+                          and location.parent_region.name == "Great Plateau"
+                          and location.player == location.item.player])
+
+
+class TestMasterSwordOffThePlateau(unittest.TestCase):
+    """Unless weapon_order is anywhere, no location of a player's Great Plateau
+    takes that player's Master Sword."""
+
+    def test_the_plateau_refuses_it_but_anywhere(self) -> None:
+        for order, taken in (("smoothed", False), ("loosely_smoothed", False), ("anywhere", True)):
+            with self.subTest(order):
+                multiworld = setup_multiworld(BotwWorld, options={"weapon_order": order})
+                world = multiworld.worlds[1]
+                sword = world.create_item("Master Sword")
+                plateau = world.get_region("Great Plateau").locations
+                self.assertEqual({location.item_rule(sword) for location in plateau}, {taken})
+                # Another item still goes there.
+                self.assertTrue(all(location.item_rule(world.create_item("Paraglider")) for location in plateau))
+
+    def test_another_players_sword_goes_there(self) -> None:
+        # Ruling it out too, with both swords refused on both plateaus, fails some fills.
+        multiworld = setup_multiworld([BotwWorld, BotwWorld])
+        swords = {player: multiworld.worlds[player].create_item("Master Sword") for player in (1, 2)}
+        for player, other in ((1, 2), (2, 1)):
+            with self.subTest(plateau=player):
+                plateau = multiworld.worlds[player].get_region("Great Plateau").locations
+                self.assertFalse(any(location.item_rule(swords[player]) for location in plateau))
+                self.assertTrue(all(location.item_rule(swords[other]) for location in plateau))
+
+    def test_the_fill_puts_it_elsewhere(self) -> None:
+        # Seed 3 put it on the Stasis Terminal before the rule.
+        multiworld = setup_multiworld(BotwWorld, seed=3)
+        fill(multiworld)
+        sword = next(location for location in multiworld.get_filled_locations() if location.item.name == "Master Sword")
+        self.assertNotEqual(sword.parent_region.name, "Great Plateau")
+        self.assertTrue(multiworld.can_beat_game(multiworld.state))

@@ -85,10 +85,12 @@ class WeaponOrder(Choice):
     """How the weapons of the filler are spread over the game, wherever they land
     in the multiworld (the jokes, a Soup Ladle or a Pot Lid, always come anywhere).
     smoothed: the weaker first, the stronger as the game goes on, the amiibo's
-    treasures last.
+    treasures last; the Master Sword never on this player's Great Plateau.
     loosely_smoothed: the same order, with some chance: a weapon may come a level
-    earlier or later, never a treasure among the first.
-    anywhere: wherever the fill put them, a treasure on the Great Plateau too."""
+    earlier or later, never a treasure among the first; the Master Sword never on
+    this player's Great Plateau either.
+    anywhere: wherever the fill put them, a treasure or the Master Sword on the
+    Great Plateau too."""
     display_name = "Weapon Order"
     option_anywhere = 0
     option_loosely_smoothed = 1

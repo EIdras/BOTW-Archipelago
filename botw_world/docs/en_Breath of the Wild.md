@@ -187,9 +187,10 @@ Buying one checks its location ([what you see](ingame_en.md#shops-and-stalls)).
 - `smoothed` (default): the weaker first, the stronger as the game goes on, the amiibo's treasures last;
 - `loosely_smoothed`: the same order, with some chance: a weapon may come a level earlier or later, never a treasure
   among the first;
-- `anywhere`: wherever the fill put them, a treasure on the Great Plateau too.
+- `anywhere`: wherever the fill put them, a treasure or the Master Sword on the Great Plateau too.
 
-The jokes come anywhere. With the region maps as keys, each map opens a sphere of its own, and the weapons grow region
+With `smoothed` and `loosely_smoothed`, your Master Sword is never on your Great Plateau (another player's early
+locations may still hold it). The jokes come anywhere. With the region maps as keys, each map opens a sphere of its own, and the weapons grow region
 after region.
 
 ### Region maps
