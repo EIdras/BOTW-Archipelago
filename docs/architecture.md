@@ -87,7 +87,8 @@ slot file alone, without reaching any server.
   performs the game's own presentation (item window, rune download screen), then advances `APReceivedCursor`, saved in
   the game's save, under `SaveProhibition`: an item is given exactly once per save, and reloading an older save gives
   back, quietly, what it lost. A delivery is requested only when the game is in a safe state (no menu, event, cutscene
-  or loading).
+  or loading), checked again just before the request: a fast travel is an event, then a fade, then a change of scene
+  that waits for the event manager to be free, and an entry accepted in between kept the game on its loading screen.
 - **Presentation**: the Archipelago journal (`tip_channel.py`) shows server messages in the game's tip frame; an
   Archipelago window (`presentation_session.py`) summarizes items given back after a reload; the HUD logo shows the
   connection status (`hud_indicator.py`).

@@ -48,7 +48,7 @@ class BackendTests(unittest.TestCase):
         game = SimpleNamespace(process=SimpleNamespace(pid=1), cave=None,
                                frame_tick=lambda: 100, safe_for_delivery=lambda: True)
         backend = CemuNativeDeliveryBackend(game, "seed", 1, 7, catalog=NativeDeliveryCatalog(path),
-                                            request=request, lock_factory=None)
+                                            request=request, lock_factory=None, in_world=lambda: True)
         backend._state = lambda: (7, 0, 0)
         return backend, calls
 

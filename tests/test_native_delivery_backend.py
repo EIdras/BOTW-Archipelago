@@ -399,6 +399,56 @@ class NativeDeliveryBackendTests(unittest.TestCase):
         self.assertEqual(DeliveryCoordinator(backend).deliver(command).status,
                          DeliveryStatus.DEFERRED)
 
+    def test_no_request_while_link_is_out_of_the_world(self):
+        # Measured: a delivery accepted between a fast travel's departure event
+        # (Demo005_0) and its change of scene held the event manager, and the
+        # game stayed on the loading screen. The fade is up before: no request.
+        calls = []
+        backend = self.backend(lambda *_args, **_kwargs: calls.append(1), in_world=lambda: False)
+        result = backend.deliver(DeliveryCommand("seed", 2, 7, "Core"))
+        self.assertEqual((result.status, result.detail),
+                         (DeliveryStatus.DEFERRED, backend.NOT_IN_WORLD))
+        self.assertFalse(calls)
+
+    def test_link_leaving_the_world_before_the_request_defers_it(self):
+        # Asked again inside the invoker's lock, just before the request: a fade
+        # begun after the first checks still keeps the request back.
+        playing, calls = [True], []
+        backend = self.backend(lambda *_args, **_kwargs: calls.append(1),
+                               in_world=lambda: playing[0])
+        backend._lock_factory = lambda _pid: _LeavingLock(playing)
+        result = backend.deliver(DeliveryCommand("seed", 2, 7, "Core"))
+        self.assertEqual((result.status, result.detail),
+                         (DeliveryStatus.DEFERRED, backend.NOT_IN_WORLD))
+        self.assertFalse(calls)
+
+    def test_the_other_entries_wait_for_link_in_the_world_inside_the_lock(self):
+        data = json.loads(self.path.read_text(encoding="utf-8"))
+        data["quest"] = {"start": "APQuestStart", "finish": "APQuestFinish"}
+        self.path.write_text(json.dumps(data), encoding="utf-8")
+        playing, calls = [True], []
+        backend = self.backend(lambda *_args, **_kwargs: calls.append(1) or {"native_return": 1},
+                               in_world=lambda: playing[0])
+        backend._lock_factory = lambda _pid: _LeavingLock(playing)
+        self.assertFalse(backend.request_quest())             # not placed: asked again
+        self.assertFalse(calls)
+        playing[0] = True
+        backend._lock_factory = lambda _pid: _NullLock()
+        self.assertTrue(backend.request_quest())
+        self.assertEqual(len(calls), 1)
+
+    def test_the_binding_waits_for_link_in_the_world_inside_the_lock(self):
+        self.add_binding()
+        self.values[flag("APSeedToken")] = 0
+        self.values[flag("APReceivedCursor")] = 0
+        playing, calls = [True], []
+        backend = self.backend(lambda *_args, **_kwargs: calls.append(1), in_world=lambda: playing[0])
+        backend._lock_factory = lambda _pid: _LeavingLock(playing)
+        result = backend.bind_session()
+        self.assertEqual((result.status, result.detail),
+                         (DeliveryStatus.DEFERRED, "waiting for Link in the world"))
+        self.assertFalse(calls)
+
     def test_an_accepted_entry_that_never_started_is_asked_again(self):
         # Seen in play: a Fairy requested 38 frames after a Heart Container's commit
         # was accepted and never ran: its guard never rose, nothing changed.
@@ -499,7 +549,7 @@ class NativeDeliveryBackendTests(unittest.TestCase):
                     opened.append(time.monotonic())
                     self.values[flag("SaveProhibition")] = busy == "guard"
                     return {"native_return": 1}
-                backend = self.backend(request, in_world=lambda: busy != "window" or closed())
+                backend = self.backend(request, in_world=lambda: busy != "window" or not opened or closed())
                 guard = backend._guard
                 backend._guard = lambda: closed() and False or guard()
                 backend.commit_timeout, backend.poll_seconds = 0.05, 0.005
@@ -656,6 +706,19 @@ class NativeDeliveryBackendTests(unittest.TestCase):
         with self.assertRaises(BackendContractError):
             DeliveryCoordinator(self.backend(request)).deliver(
                 DeliveryCommand("seed", 2, 7, "Set", step_count=2))
+
+
+class _LeavingLock:
+    """The invoker's lock, taken as Link leaves the world (a fade begins)."""
+    def __init__(self, playing):
+        self.playing = playing
+
+    def __enter__(self):
+        self.playing[0] = False
+        return self
+
+    def __exit__(self, *_args):
+        return False
 
 
 class _NullLock:

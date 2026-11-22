@@ -313,6 +313,16 @@ class CemuNativeDeliveryBackend:
         except Exception:  # noqa: BLE001 - unreadable: not yet
             return False
 
+    # Every event request waits for Link in the world, asked again inside the
+    # invoker's lock, just before the request. A fast travel is an event
+    # (Demo005_0), then a fade, then the change of scene, which waits for the
+    # event manager to be free: an entry accepted in the frames between the
+    # event's end and that change held the manager, the scene never changed,
+    # and the game stayed on the loading screen (measured). The delivery gate
+    # (safe_for_delivery) sees neither the fade nor the loading; this does, from
+    # the fade on, ~46 frames before those frames.
+    NOT_IN_WORLD = "Link not in the world (a menu, a dialogue, a fade or a loading)"
+
     def _wait_reason(self, guard) -> str:
         """What holds a wait for a commit, for the client's log."""
         if guard is None:
@@ -372,6 +382,8 @@ class CemuNativeDeliveryBackend:
             pid = int(self.game.process.pid)
             lock = lock_factory(pid) if lock_factory else nullcontext()
             with lock:
+                if not self._link_in_world():
+                    return DeliveryResult(DeliveryStatus.DEFERRED, cursor, "waiting for Link in the world")
                 try:
                     result = request(
                         self.game.process, self.game.cave, 0,
@@ -824,6 +836,8 @@ class CemuNativeDeliveryBackend:
         request, lock_factory = self._dependencies()
         pid = int(self.game.process.pid)
         with (lock_factory(pid) if lock_factory else nullcontext()):
+            if not self._link_in_world():
+                return False
             try:
                 result = request(self.game.process, self.game.cave, 0, lambda _value: None,
                                  custom_text=False, flow=flow, entry=entry)
@@ -857,6 +871,8 @@ class CemuNativeDeliveryBackend:
         if not self._ready():
             return DeliveryResult(DeliveryStatus.DEFERRED, cursor,
                                   getattr(self.game, "delivery_block_reason", "game busy"))
+        if not self._link_in_world():
+            return DeliveryResult(DeliveryStatus.DEFERRED, cursor, self.NOT_IN_WORLD)
         since = self._frames_since_commit()
         if since is not None and since < self._settle:
             return DeliveryResult(DeliveryStatus.DEFERRED, cursor,
@@ -890,6 +906,8 @@ class CemuNativeDeliveryBackend:
             pid = int(self.game.process.pid)
             lock = lock_factory(pid) if lock_factory else nullcontext()
             with lock:
+                if not self._link_in_world():
+                    return DeliveryResult(DeliveryStatus.DEFERRED, command.cursor, self.NOT_IN_WORLD)
                 try:
                     # Silent twins and steps without a window live in their
                     # own flowchart, registered not to pause the game
