@@ -59,16 +59,6 @@ PLAY_SEEDS = DATA / "play-seeds"
 PACKS = DATA / "packs-from-source"
 ORPHAN_AGE = 600        # seconds: see orphan_packs
 SCOPE = "generated_ap_seed"
-CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22)    # 4: the Gerudo Set; 5: the goal and the sanctum; 6: the
-#                                                          new filler; 7: the weapons; 8: the travel items; 9: Epona;
-#                                                          10: maps; 11: the Downpour, Yiga Ambush and
-#                                                          Paranoia traps; 12: the travel points;
-#                                                          13: the chests; 14: the Koroks; 15: the quests;
-#                                                          16: the Goddess Statues' offerings; 17: the bosses;
-#                                                          18: the Progressive Horse;
-#                                                          19: the bonus items; 20: the extra filler;
-#                                                          21: the elemental traps;
-#                                                          22: the Master Mode chests
 GAME = "Breath of the Wild"
 _ROWS = json.loads((ROOT / "botw_world/data/locations.json").read_text(encoding="utf-8"))
 # Every location but the goal, shops apart: they depend on beedle_shop_items
@@ -123,11 +113,13 @@ def check_compatible(slot_data: dict) -> None:
     """This version can play a seed of its own world schema, whatever the world's
     version that generated it; otherwise the player needs that version. An
     earlier schema is not played: its pack would take Purah's upgrades and the
-    Champions' Ballad's powers away, without their locations."""
-    from botw_client.locations import WORLD_SCHEMA
+    Champions' Ballad's powers away, without their locations. What this version
+    plays is stated in botw_client/compatibility.py, for other versions too."""
+    from botw_client import compatibility
     from botw_client.version import VERSION
-    if (slot_data.get("world_schema") != WORLD_SCHEMA
-            or slot_data.get("client_schema") not in CLIENT_SCHEMAS):
+    if (not compatibility.plays(compatibility.statement(), slot_data.get("world_schema"),
+                                slot_data.get("client_schema"))
+            or "client_schema" not in slot_data):
         made = slot_data.get("world_version", "an earlier version")
         raise ValueError(f"this seed was generated with the Breath of the Wild world {made}, which this "
                          f"version ({VERSION}) cannot play: use the BOTW Archipelago release of the seed's version")
@@ -206,6 +198,7 @@ def read_seed(path: Path, slot_name: str | None = None) -> tuple[dict, dict]:
     identity["token"] = session_token((manifest["seed"], team, slot, checksum))
     audit = {"seed": manifest["seed"], "slots": {str(slot): name}, "placements": placements,
              "world_schema": manifest["slot_data"].get("world_schema"),
+             "client_schema": manifest["slot_data"].get("client_schema"),
              "world_version": manifest["slot_data"].get("world_version"), "players": players,
              "hostable": whole}
     return audit, identity
