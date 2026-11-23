@@ -66,7 +66,7 @@ class PlayerPacksTest(unittest.TestCase):
         self.cemu.entry("other_game")
         self.cemu.pack("outdated", version="2")
         self.cemu.entry("outdated")
-        self.assertEqual([pack.folder.name for pack in self.cemu.enabled()], ["by_default", "listed"])
+        self.assertEqual(sorted(pack.folder.name for pack in self.cemu.enabled()), ["by_default", "listed"])
 
     def test_walk_order_and_nested_packs(self):
         self.cemu.pack("b_pack")
