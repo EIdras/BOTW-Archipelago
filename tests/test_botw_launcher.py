@@ -148,12 +148,28 @@ class VersionsTests(unittest.TestCase):
     def test_a_version_opens_its_console_launcher_isolated_on_this_data_folder(self):
         folder = self.install("0.2.6")
         # It asks which seed to play: only a file to add is passed on.
-        self.assertEqual(versions.command(folder, ["--seed", "1"])[1:], ["-I", str(folder / versions.ENTRY)])
+        self.assertEqual(versions.command(folder, ["--seed", "1"])[1:],
+                         ["-I", "-c", versions.PAUSED, str(folder / versions.ENTRY)])
         self.assertEqual(versions.command(folder, ["AP_1.zip"])[-1], "AP_1.zip")
         with mock.patch.object(versions.subprocess, "Popen") as popen:
             versions.start(folder, [], data=self.folder / "data")
         environment = popen.call_args.kwargs["env"]
         self.assertEqual(environment[paths.DATA_VARIABLE], str(self.folder / "data"))
+
+    def test_a_console_launcher_s_window_stays_open_on_its_last_words(self):
+        folder = self.install("0.3.4")
+        (folder / versions.ENTRY).write_text(
+            "import sys\nprint('args', sys.argv[1:])\nif sys.argv[1:] == ['boom']:\n    raise RuntimeError('broken')\n"
+            "if __name__ == '__main__':\n    sys.exit(3)\n", encoding="utf-8")
+        for arguments, code, said in ((["AP_1.zip"], 3, "args ['AP_1.zip']"), (["boom"], 1, "RuntimeError: broken")):
+            with self.subTest(arguments):
+                done = subprocess.run(versions.command(folder, arguments), input="\n", stdout=subprocess.PIPE,
+                                      stderr=subprocess.STDOUT, text=True, timeout=60)
+                self.assertEqual(done.returncode, code)
+                shown = done.stdout
+                self.assertIn(said, shown)
+                # The prompt comes after what the launcher said, an error included.
+                self.assertLess(shown.index(said), shown.index("Press Enter to close this window."))
 
 
 class SeedTests(Data):

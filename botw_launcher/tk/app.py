@@ -10,7 +10,6 @@ import sys
 import tkinter as tk
 from tkinter import messagebox, ttk
 import traceback
-import webbrowser
 from typing import Callable
 
 from botw_client.paths import ROOT
@@ -24,6 +23,7 @@ from . import dialogs, events, theme
 from .context import TITLE, Context, Records
 from .events import background
 from .pages import Page
+from .widgets import open_link
 from .pages.help import HelpPage
 from .pages.hints import HintsPage
 from .pages.logs import LogsPage
@@ -233,7 +233,7 @@ class MainWindow:
         def skip() -> None:
             settings.skipped_version = newer.version
             self.context.save_settings()
-        actions = [("Release notes", lambda: webbrowser.open(newer.page or updates.RELEASES_PAGE)),
+        actions = [("Release notes", lambda: open_link(newer.page or updates.RELEASES_PAGE)),
                    ("Not this one", skip)]
         if updates.installed_apworld() is not None:
             actions.insert(0, ("Install", lambda: self.context.releases.update(newer)))

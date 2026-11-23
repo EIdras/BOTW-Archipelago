@@ -189,6 +189,12 @@ class PlayPageTests(Window):
         view.offered = []
         self.assertIn("Looking for the version", view._unplayable(older))
         self.checks.assert_called()      # the releases are read to find it
+        # When that read fails (offline), it says so, and does not read again on its own.
+        self.checks.reset_mock()
+        view.context.releases.status = "The releases could not be read: offline"
+        self.assertIn("could not be read: offline. Settings > Check now", view._unplayable(older))
+        self.checks.assert_not_called()
+        view.context.releases.status = ""
         view.context.releases.found = [mock.Mock()]
         for known, seed, expected in (({}, newer, "update BOTW Archipelago"),
                                       ({"0.4.1": None}, older, "could not be read"),
@@ -304,7 +310,7 @@ class OtherPagesTests(Window):
         self.assertGreaterEqual(len(page.entries), 7)
         page.follow("ingame_en.md#the-archipelago-journal")
         self.assertEqual(page.current_guide.name, "ingame_en.md")
-        with mock.patch.object(help_page.webbrowser, "open") as browser:
+        with mock.patch.object(help_page, "open_link") as browser:
             page.follow("https://archipelago.gg")
         browser.assert_called_once_with("https://archipelago.gg")
         page.back()

@@ -141,3 +141,34 @@ class RecordsTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class OpenerTests(unittest.TestCase):
+    """Off Windows, folders and pages open with xdg-open, without the library
+    path of Archipelago's AppImage, which would break the system's programs."""
+
+    def test_a_folder_or_a_page_opens_without_the_appimage_s_libraries(self):
+        from unittest import mock
+        from botw_launcher.tk import widgets
+        with mock.patch.object(widgets.sys, "platform", "linux"), \
+                mock.patch.dict(widgets.os.environ, {"LD_LIBRARY_PATH": "/tmp/.mount_AP/lib"}), \
+                mock.patch.object(widgets.subprocess, "Popen") as popen, \
+                mock.patch.object(widgets.webbrowser, "open") as browser:
+            widgets.open_folder(Path("/home/player/data"))
+            widgets.open_link("https://archipelago.gg")
+        self.assertEqual([call.args[0] for call in popen.call_args_list],
+                         [["xdg-open", str(Path("/home/player/data"))], ["xdg-open", "https://archipelago.gg"]])
+        for call in popen.call_args_list:
+            self.assertNotIn("LD_LIBRARY_PATH", call.kwargs["env"])
+        browser.assert_not_called()
+
+    def test_without_xdg_open_a_page_still_opens_and_a_folder_is_logged(self):
+        from unittest import mock
+        from botw_launcher.tk import widgets
+        with mock.patch.object(widgets.sys, "platform", "linux"), \
+                mock.patch.object(widgets.subprocess, "Popen", side_effect=FileNotFoundError("xdg-open")), \
+                mock.patch.object(widgets.webbrowser, "open") as browser, \
+                self.assertLogs(widgets.logger, logging.WARNING):
+            widgets.open_folder(Path("/home/player/data"))
+            widgets.open_link("https://archipelago.gg")
+        browser.assert_called_once_with("https://archipelago.gg")

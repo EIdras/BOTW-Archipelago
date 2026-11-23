@@ -6,7 +6,6 @@ from collections import deque
 import logging
 from pathlib import Path
 from typing import Callable
-import webbrowser
 
 from botw_client.paths import DATA
 
@@ -15,6 +14,7 @@ from ..core import updates, worlds
 from ..options import Options
 from .events import Signal, background, later
 from .job_runner import JobRunner
+from .widgets import open_link
 
 logger = logging.getLogger(__name__)
 TITLE = "BOTW Archipelago"
@@ -93,8 +93,8 @@ class Releases:
         if updates.installed_apworld() is None:
             self.context.notice.emit(
                 f"Download botw.apworld {version} from the releases page, then install it with the Archipelago "
-                "Launcher's Install APWorld.", [("Release page", lambda: webbrowser.open(release.page
-                                                                                         or updates.RELEASES_PAGE))])
+                "Launcher's Install APWorld.", [("Release page", lambda: open_link(release.page
+                                                                                   or updates.RELEASES_PAGE))])
             return
         if self.context.jobs.busy:
             self.context.notice.emit(f"Wait for the current task to end, then install version {version}.", [])

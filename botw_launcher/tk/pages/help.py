@@ -6,13 +6,12 @@ from __future__ import annotations
 from pathlib import Path
 import tkinter as tk
 from urllib.parse import unquote, urlsplit
-import webbrowser
 
 from ...core import guides
 from .. import theme
 from ..context import Context
 from ..markdown_view import MarkdownView
-from ..widgets import Button, open_folder
+from ..widgets import Button, open_folder, open_link
 from . import Page
 
 
@@ -69,7 +68,7 @@ class HelpPage(Page):
     def follow(self, url: str) -> None:
         parts = urlsplit(url)
         if parts.scheme in guides.WEB:
-            webbrowser.open(url)
+            open_link(url)
             return
         path = unquote(parts.path)
         target = (self.current_guide.parent / path).resolve() if path else self.current_guide

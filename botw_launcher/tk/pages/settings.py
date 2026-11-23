@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 import tkinter as tk
 from tkinter import ttk
-import webbrowser
 
 from botw_client.paths import RELEASE_MARKER, ROOT
 from botw_client.version import VERSION
@@ -13,7 +12,7 @@ from botw_client.version import VERSION
 from ...core import profile, updates
 from .. import theme
 from ..context import Context
-from ..widgets import Button, label, open_folder
+from ..widgets import Button, label, open_folder, open_link
 from . import ScrollingPage
 
 
@@ -56,7 +55,7 @@ class SettingsPage(ScrollingPage):
         self.update_status.pack(fill="x", pady=theme.px(2, 0))
         self.check_button, _notes, self.install_button = self._buttons(
             card, ("Check now", self.context.releases.check),
-            ("Release notes", lambda: webbrowser.open(updates.RELEASES_PAGE)),
+            ("Release notes", lambda: open_link(updates.RELEASES_PAGE)),
             ("Install", self._install))
         for text, name in (("Look for updates when the launcher starts", "check_updates"),
                            ("Offer pre-releases too", "prereleases")):

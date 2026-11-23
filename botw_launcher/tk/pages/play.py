@@ -374,6 +374,9 @@ class SeedsView(Page):
         made = f"version {seed.world_version}" if seed.world_version else "an unrecorded version"
         releases = self.context.releases
         if not self.offered and not releases.found:
+            if releases.status:     # the last read failed: tried again from Settings, not in a loop
+                return (f"{this} cannot play this seed, generated with {made}. {releases.status}. "
+                        "Settings > Check now tries again.")
             if not releases.checking:
                 releases.check()
             return f"{this} cannot play this seed, generated with {made}. Looking for the version that plays it..."

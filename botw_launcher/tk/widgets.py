@@ -3,14 +3,18 @@ steps of a session, a scrolling area. Colours come from theme.py."""
 from __future__ import annotations
 
 from datetime import datetime
+import logging
 import os
 from pathlib import Path
 import subprocess
 import sys
 import tkinter as tk
 from tkinter import font as tkfont, ttk
+import webbrowser
 
 from . import theme
+
+logger = logging.getLogger(__name__)
 
 # A button's colours by kind: (background, hovered, text).
 KINDS = {"primary": (theme.ACCENT, theme.ACCENT_HOVER, theme.TEXT),
@@ -31,13 +35,37 @@ def human_day(moment: datetime | None) -> str:
     return moment.astimezone().strftime("%d %b %Y") if moment else "never"
 
 
+def system_environment() -> dict[str, str]:
+    """This process's variables, for a program of the system's: without the
+    library path Archipelago's Linux AppImage sets for its own libraries, which
+    that program would load in place of the system's (as Archipelago does)."""
+    environment = dict(os.environ)
+    environment.pop("LD_LIBRARY_PATH", None)
+    return environment
+
+
+def _xdg_open(target: str) -> bool:
+    try:
+        subprocess.Popen(["xdg-open", target], env=system_environment())
+    except OSError as exc:
+        logger.warning("%s could not be opened: %s", target, exc)
+        return False
+    return True
+
+
 def open_folder(path: Path | None) -> None:
     if path is None:
         return
     if sys.platform == "win32":
         os.startfile(path)  # noqa: S606 - a folder of the player's, opened in the explorer
     else:
-        subprocess.Popen(["xdg-open", str(path)])
+        _xdg_open(str(path))
+
+
+def open_link(url: str) -> None:
+    """A web page, in the player's browser."""
+    if sys.platform == "win32" or not _xdg_open(url):
+        webbrowser.open(url)
 
 
 def background_of(widget: tk.Misc) -> str:

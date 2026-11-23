@@ -83,10 +83,33 @@ def python(folder: Path) -> Path:
     return own
 
 
+# Runs a console launcher, then keeps its window open until Enter, as the
+# release's own "BOTW Archipelago.cmd" did with pause: its last words, an error
+# above all, stay on screen. Its exit code is kept.
+PAUSED = """import runpy, sys, traceback
+sys.argv[:] = sys.argv[1:]
+code = 0
+try:
+    runpy.run_path(sys.argv[0], run_name="__main__")
+except SystemExit as exc:
+    code = exc.code
+except KeyboardInterrupt:
+    code = 1
+except BaseException:
+    traceback.print_exc()
+    code = 1
+try:
+    input("\\nPress Enter to close this window.")
+except (EOFError, KeyboardInterrupt):
+    pass
+sys.exit(code)
+"""
+
+
 def command(folder: Path, arguments: list[str] = ()) -> list[str]:
     """Start the launcher of a release folder. -I: no PYTHON* variable or user
     package of this computer reaches it."""
-    return [str(python(folder)), "-I", str(folder / ENTRY), *_console(arguments)]
+    return [str(python(folder)), "-I", "-c", PAUSED, str(folder / ENTRY), *_console(arguments)]
 
 
 def _console(arguments: list[str]) -> list[str]:
