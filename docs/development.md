@@ -6,6 +6,8 @@
 |---|---|
 | `botw_world/` | The Archipelago world (packaged as `botw.apworld`), its data, player docs and tests |
 | `botw_client/` | The client: Archipelago connection, location tracking, item delivery, journal, HUD indicator |
+| `botw_launcher/` | The launcher's window (tkinter) and its long tasks, which the apworld opens ([architecture](architecture.md)) |
+| `botw_world/client/` | What starts the launcher inside Archipelago: the pinned libraries and their download |
 | `botw_patch/` | Game resource editing: EventFlow, GameData, shops and stalls, HUD layout, size table |
 | `tools/` | Command-line tools (seed, pack, play session, packaging) and the builders of the game pack |
 | `tools/cemu/` | Access to Cemu's memory, the code cave mailbox and the native requests; RPX reading |

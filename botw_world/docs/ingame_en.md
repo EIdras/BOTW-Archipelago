@@ -13,7 +13,8 @@ download screens for a rune or the Sheikah Sensor.
 <!-- ![A rune downloaded to the Sheikah Slate](../../docs/images/rune-download.jpg) -->
 
 - With a full pouch, a weapon falls at Link's feet.
-- Epona is registered at the stables: take her out at any of them.
+- Epona is registered at the stables: take her out at any of them. With `progressive_horse`, each horse received
+  waits there in turn (see [Progressive Horse](en_Breath%20of%20the%20Wild.md#progressive-horse)).
 - A region's map opens with the game's own animation (see [region maps](en_Breath%20of%20the%20Wild.md#region-maps)).
 - Each item is given exactly once per save, even across reloads and disconnections.
 
@@ -26,8 +27,25 @@ single Archipelago window.
 
 ## Sending checks
 
-Clear a shrine, climb a tower, free a Divine Beast: the check is sent at once. The locations are the game's own saved
-flags, so a check done offline is sent at the next connection.
+Clear a shrine, climb a tower, free a Divine Beast: the check is sent at once. With the location options, opening a
+chest, finding a Korok, finishing a side or shrine quest, making an offering at a Goddess Statue and defeating a field
+boss for the first time are checks too (see [Locations](en_Breath%20of%20the%20Wild.md#locations)). The locations are
+the game's own saved flags, so a check done offline is sent at the next connection.
+
+Where the game still gives its own reward (a Korok's seed, a quest's reward, a chest's contents with `chest_sanity` on
+`check_only`), an Archipelago window says what was found and for whom. On `ap_items`, the chest holds the item it
+sends, under its name.
+
+<!-- ![A chest holding an Archipelago item](../../docs/images/chest-item.jpg) -->
+
+<!-- ![A Korok found](../../docs/images/korok.jpg) -->
+
+With `spirit_orbs` on `statue_checks`, a Goddess Statue's scene shows the Archipelago item where the heart container
+or stamina vessel would come out, and so do the Divine Beasts' heart containers.
+
+<!-- ![A Goddess Statue's offering](../../docs/images/statue-offering.jpg) -->
+
+With `master_mode`, play the seed in a Master Mode save: in a Normal mode one, the client stops before giving anything.
 
 ## The Archipelago journal
 
@@ -84,10 +102,19 @@ slain by a Bokoblin").
 
 ## Traps
 
-A trap strikes when it is received, at a safe moment, and the journal says what it did. The cuccos, the Yiga and the
-storm's lightning can kill. The nine traps are described on the [game page](en_Breath%20of%20the%20Wild.md#traps).
+A trap strikes when it is received, at a safe moment, and the journal says what it did. The cuccos, the Yiga, the
+storm's lightning, the Lightning Strike and the Fire can kill. The twelve traps are described on the
+[game page](en_Breath%20of%20the%20Wild.md#traps).
 
 <!-- ![A Cucco Swarm trap](../../docs/images/trap.jpg) -->
+
+## Cutscenes
+
+With `cutscene_skip` on `fast`, the + prompt shows as soon as a cutscene can be skipped, and + alone skips it, from a
+first game on. On `removed`, those cutscenes are skipped at once. The mode can be changed in Cemu before the game
+starts: see [Skip cutscenes](en_Breath%20of%20the%20Wild.md#skip-cutscenes).
+
+<!-- ![The prompt to skip a cutscene](../../docs/images/cutscene-skip.jpg) -->
 
 ---
 

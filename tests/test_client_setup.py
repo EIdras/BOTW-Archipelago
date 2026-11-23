@@ -199,7 +199,7 @@ class SetupWindowTests(unittest.TestCase):
             size = sum(entry["wheels"][key]["cp313"]["size"] for entry in PINS["libraries"].values())
             with mock.patch.object(client, "python_tag", return_value="cp313"), \
                     mock.patch.object(client.sysconfig, "get_platform", return_value=build):
-                self.assertIn(f"(about {round(size / 2 ** 20)} MB)", window.getting())
+                self.assertIn(f"(about {round(size / 10 ** 6)} MB)", window.getting())
         with mock.patch.object(client.sysconfig, "get_platform", return_value="macosx-11.0-arm64"):
             self.assertEqual(window.getting(), "Getting the libraries the game files need, once.")
 

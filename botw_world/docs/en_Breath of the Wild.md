@@ -32,12 +32,25 @@ In the player's YAML file. The Archipelago Launcher writes a template with "Gene
 | Songs of the Champions' Ballad | 4 |
 | Beedle's shops (option) | 0 to 32 |
 | Village stalls (option) | 0 to 28 |
+| Chests: 1,180 on the surface, 174 in the shrines, 35 in the Divine Beasts (option `chest_sanity`) | 0 or 1,389 |
 | Koroks (option `korok_sanity`) | 0 to 900 |
 | Side quests (option `side_quest_sanity`) | 0 or 73 |
 | Shrine quests (option `shrine_quest_sanity`) | 0 or 42 |
 | Goddess Statue offerings (option [`spirit_orbs`](#spirit-orbs)) | 0, or 1 to 30 |
 | Field bosses (option `boss_sanity`) | 0 or 86 |
 | Master Mode chests (option `master_mode`, with `chest_sanity`) | 0 or 118 |
+
+With `chest_sanity`, opening a chest sends its location's item. On `check_only`, the chest keeps its own contents,
+and a window says what was found and for whom. On `ap_items`, a chest of the surface or of a Divine Beast holds the
+item it sends, under its name, in place of its contents. A shrine's chest keeps its own unless `shrine_chest_items`:
+a shrine's chest only changes with its whole shrine, so these shrines are built once from your own copy of the game,
+then shared by every seed. That takes about 1 GB more, and the base game installed as a folder (not a `.wua` or
+`.wud` file); without one, the shrines' chests keep their contents. A Divine Beast cannot be entered again once
+freed: the chests left inside are sent then. The chests hold nothing needed to finish a game, unless
+`chest_progression`: the logic then asks what opening each one takes (runes, bombs, Death Mountain's heat, a Divine
+Beast freed, the Gerudo Set in Gerudo Town, and every rune inside a shrine or a Divine Beast). A chest frozen in ice,
+under a boulder, after a Lynel's fight or made by a side quest still holds nothing needed, and a buried one nothing
+needed in the first half of the game.
 
 The Koroks are many: by default, 95 % of those that are locations hold filler of your own world
 (`korok_local_filler`), so that they don't flood the other players with filler. With
@@ -145,8 +158,8 @@ stamina vessels help without being required.
 | Group | Option | Default | In short |
 |---|---|---|---|
 | Goal | [`goal`, `goal_shrines`](#goal) | `ganon`, 60 | What finishes your game |
-| Sanctum | [`sanctum_divine_beasts`](#the-sealed-sanctum) | 2 | Divine Beasts freed before Ganon |
-| | [`sanctum_shrines`](#the-sealed-sanctum) | 0 | Shrines cleared before Ganon |
+| Sanctum | [`sanctum_divine_beasts`](#the-sealed-sanctum) | 2 | Divine Beasts freed before Ganon (0 to 4) |
+| | [`sanctum_shrines`](#the-sealed-sanctum) | 0 | Shrines cleared before Ganon (0 to 120) |
 | | [`sanctum_master_sword`](#the-sealed-sanctum) | true | The Master Sword before Ganon |
 | | [`sanctum_runes`](#the-sealed-sanctum) | true | The four runes before Ganon |
 | Shops | [`beedle_shop_items`](#shops-and-stalls) | 0 | Archipelago items at each of Beedle's 16 shops (0 to 2) |
@@ -159,11 +172,25 @@ stamina vessels help without being required.
 | | [`map_travel_points`](#map-travel-points) | false | A map received opens a travel point |
 | Horses | [`progressive_horse`](#progressive-horse) | false | Four horses in turn, for Epona and the Master Cycle Zero |
 | Master Cycle Zero | [`bike_anywhere`](#master-cycle-zero-anywhere) | false | The bike in the desert and on Death Mountain |
-| Cutscenes | [`cutscene_skip`](#skip-cutscenes) | false | + alone skips a cutscene, from a first game on |
+| Cutscenes | [`cutscene_skip`](#skip-cutscenes) | `off` | `fast`: + alone skips a cutscene, from a first game on; `removed`: skipped at once |
 | Spirit Orbs | [`spirit_orbs`](#spirit-orbs) | `containers` | Hearts and stamina as items, or from the statues |
+| | [`statue_offerings`](#spirit-orbs) | 5 | With `statue_checks`, the statues' offerings that are locations (1 to 30) |
+| Chests | [`chest_sanity`](#locations) | `off` | Chests as locations: `check_only`, or `ap_items` that the chests hold |
+| | [`chest_progression`](#locations) | false | Chests may hold items needed to finish a game |
+| | [`shrine_chest_items`](#locations) | false | With `ap_items`, the shrines' chests hold them too (about 1 GB more) |
+| | [`master_mode`](#locations) | false | The 118 chests of Master Mode too, played in a Master Mode save |
+| Koroks | [`korok_sanity`](#locations) | false | Koroks as locations |
+| | [`korok_count`](#locations) | 100 | How many of the 900 (1 to 900) |
+| | [`korok_local_filler`](#locations) | 95 | Share, in percent, holding filler of your own world (0 to 100) |
+| | [`korok_progression`](#locations) | false | Koroks may hold items needed to finish a game |
+| Quests | [`side_quest_sanity`](#locations) | false | The 73 side quests as locations |
+| | [`shrine_quest_sanity`](#locations) | false | The 42 shrine quests as locations |
+| | [`quest_progression`](#locations) | false | Quests may hold items needed to finish a game |
+| Bosses | [`boss_sanity`](#locations) | false | The 86 field bosses as locations, at their first defeat |
+| | [`boss_progression`](#locations) | false | Bosses may hold items needed to finish a game |
 | Bonus Items | [`bonus_items`](#bonus-items) | 0 | Share of the filler turned into armor, saddles and bridles |
 | Filler | [`extra_filler`](#extra-filler) | false | Armor upgrade materials, food and 20 Bomb Arrows too |
-| Traps | [`trap_percentage`, `trap_weights`](#traps) | 0 | Share of the filler turned into traps |
+| Traps | [`trap_percentage`, `trap_weights`](#traps) | 0 | Share of the filler turned into traps (0 to 100) |
 | | `death_link` | false | [DeathLink](#deathlink) |
 
 ### The sealed sanctum

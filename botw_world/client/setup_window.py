@@ -30,7 +30,7 @@ def getting() -> str:
         size = sum(wheel["size"] for wheel in _pins(json.loads(_resource(PINS))))
     except Exception:  # noqa: BLE001 - the work itself says what is wrong
         return "Getting the libraries the game files need, once."
-    return f"Getting the libraries the game files need, once (about {max(1, round(size / 2 ** 20))} MB)."
+    return f"Getting the libraries the game files need, once (about {max(1, round(size / 10 ** 6))} MB)."
 
 
 def run_setup(work: Callable) -> object | None:

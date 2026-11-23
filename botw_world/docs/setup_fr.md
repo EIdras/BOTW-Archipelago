@@ -35,8 +35,8 @@ dont il a besoin (environ 14 Mo, depuis internet), puis sa fenêtre s'ouvre.
 1. **Cemu** : la première fois, **Choose Cemu...** demande où est `Cemu.exe`, puis **Create the profile** copie
    Cemu et vos sauvegardes dans un profil à lui (environ 5 Go). Votre installation de Cemu n'est jamais modifiée.
 2. **La seed** : **Add from a room link...**, puis coller le lien de la page de la salle
-   (`https://archipelago.gg/room/...`) : le lanceur y télécharge votre fichier de slot. Ou bien **Add a seed...**,
-   déposer le fichier de slot sur la fenêtre, ou l'ouvrir avec **Open Patch** dans l'Archipelago Launcher. Son pack
+   (`https://archipelago.gg/room/...`) : le lanceur y télécharge votre fichier de slot. Ou bien **Add a seed...**
+   (Ctrl+O) et choisir le fichier de slot, ou l'ouvrir avec **Open Patch** dans l'Archipelago Launcher. Son pack
    de jeu se construit en une minute environ.
 3. **La salle** : son adresse (`archipelago.gg:38281`) est déjà remplie quand le fichier de slot vient de sa page.
    Taper le mot de passe de la salle s'il y en a un, puis **Play**.
@@ -47,7 +47,7 @@ salle et en demande pendant une session. **Commencez une nouvelle partie** pour 
 reste liée à sa seed. Fermer Cemu termine la session ; **Play again** la relance.
 
 Le lanceur propose lui-même les nouvelles versions : **Install** remplace votre `botw.apworld`, puis il faut
-fermer et rouvrir Archipelago. Une seed d'avant la version 0.4.0 s'ouvre avec **Play with version...**, qui
+fermer et rouvrir Archipelago. Une seed d'avant la version 0.4.0 s'ouvre avec **Play with version X**, qui
 télécharge sa version. En venant de la version 0.3 ou plus ancienne, le lanceur retrouve votre profil, vos seeds et
 vos sauvegardes : le dossier de l'ancienne release peut être supprimé. Le guide complet, en anglais :
 [Setup guide](setup_en.md). Les guides sont aussi dans le lanceur : **Help**, en bas de sa barre latérale.

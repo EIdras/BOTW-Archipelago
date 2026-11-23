@@ -34,6 +34,7 @@ Run "Generate" in the Archipelago Launcher. The seed's zip, in Archipelago's `ou
 |---|---|
 | [archipelago.gg](https://archipelago.gg) | Upload the seed's zip on its "Host Game" page. The room's page gives its address, `archipelago.gg:<port>`, and each player's slot file to download. |
 | Your own computer | Open the zip with "Archipelago Server" in the Archipelago Launcher. You connect to `localhost:38281`, the other players to your computer's address, port 38281 (over the Internet, that port must be forwarded to your computer). |
+| Your own computer, while you play | Add the seed's zip in BOTW Archipelago (**Add a seed...**), then choose **Host the seed on this computer** in its panel: the room runs during your sessions, its progress kept next to the seed. **Let the other players of the seed join over my network** opens it to them, at your computer's address, port 38281. |
 
 Each Breath of the Wild player then follows the [setup guide](setup_en.md) with their slot file.
 

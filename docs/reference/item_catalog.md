@@ -8,7 +8,7 @@ classification; [`data/item_map.json`](../../data/item_map.json) defines what ea
 
 133 items are declared, the 14 maps among them (`tower_maps`: none on `vanilla`), completed with drawn filler up to
 the number of locations: 159 locations without the shop options (26 filler items with the default options, 40 with
-`tower_maps` on `vanilla`), up to 219 with two items in every shop and all 28 stall items (86). `Defeat Calamity Ganon` is the victory location and holds no item.
+`tower_maps` on `vanilla`), up to 219 with two items in every shop and all 28 stall items (86). `Defeat Calamity Ganon` is the victory location and holds no item. The location options (chests, Koroks, quests, Goddess Statue offerings, field bosses) add their locations, up to 2,857 in all, filled the same way; with `spirit_orbs` on `vanilla_statues` or `statue_checks`, and with `progressive_horse`, the declared items change as their sections say.
 
 ## Progression and equipment
 
@@ -30,6 +30,7 @@ the number of locations: 159 locations without the shop options (26 filler items
 | Ancient Bridle, Ancient Saddle | 1 each | the horse gear |
 | Master Cycle Zero | 1 | the motorcycle (DLC 2), as a rune: the Sheikah Slate's download screen (type 5, as `Demo645_0` gives it, without equipping it), then its flag; the rune in hand stays selected, and with none, the client has the game select the motorcycle as the inventory does (owned but unselected, the Slate had no module to use); its tank is full |
 | Epona | 1 | registered at the stables in the first free slot, under her name in the game's language (her actor's, for Cemu's console language), with her saddle and bridle, as a stable registers her, through the game's own GameData setters ([`botw_client/horse_stable.py`](../../botw_client/horse_stable.py)); the entry then sets `Horse_Is_Registration`. Stables full: created by Link as the amiibo creates her, the first time only |
+| Progressive Horse | 4 (`progressive_horse`) | in place of Epona and the Master Cycle Zero, given in this order: the Giant Horse, the Royal White Stallion with the royal saddle and bridle, Epona, then the Master Cycle Zero; each horse is registered at the stables as Epona is |
 | Travel Medallion, Korok Mask | 1 each | the medallion and the mask (DLC 1), with their get window |
 | Hebra, Tabantha, Gerudo, Wasteland, Woodland, Central, Dueling Peaks, Lake, Eldin, Akkala, Lanayru, Hateno, Faron, Ridgeland Map | 1 each (`tower_maps`) | the tower's flag `MapTower_NN`, which the game's map reads to show its area, then the map's opening as after a tower ([ap_messages.md](ap_messages.md)); its silent twin sets the flag only. With `map_travel_points`, once the Paraglider is held (`IsGet_PlayerStole2`), the client opens the travel point of the region's shrine as its terminal does, through the game's own GameData setters: the terminal's flag, `Location_DungeonNNN` (the shrine's name on screen), then `Open_DungeonNNN` ([`botw_client/travel_points.py`](../../botw_client/travel_points.py)). The towers of such a seed save their own flag, `APTower_NN`, instead ([`botw_patch/tower_maps.py`](../../botw_patch/tower_maps.py)): activating one counts as its location and opens its travel point, without revealing its map; the map's tower icons read that flag too (a native patch, [`tools/build_tower_maps_native.py`](../../tools/build_tower_maps_native.py)), the Great Plateau's excepted. Progression with `region_keys` |
 | Barbarian, Ancient, Radiant Set | 1 each | the three pieces of the set |
@@ -56,7 +57,9 @@ taken by traps instead, drawn by `trap_weights` (0 by default: no trap). What ea
 | Hasty, Electro, Tough, Hearty, Fireproof, Chilly, Spicy, Mighty, Sneaky, Energizing, Enduring Elixir, Fairy Tonic | drawn | the elixir, cooked by the game from its ingredients (`Demo_SetCookItem`, the Champions' Ballad's recipes or two critters and a Bokoblin Horn), then the cooking pot's own window (`GetDemo<ShowGetDemoCookResult>`), every time |
 | Blue Rupee (5), Red Rupee (20, `Rupee Bundle` in seeds generated before), Purple Rupee (50), Silver Rupee (100), Gold Rupee (300) | drawn | the rupees |
 | 83 weapons, bows and shields (below) | drawn | the weapon, with the game's get window every time; the pouch full, it falls at Link's feet |
-| Weapon Shatter, Blood Moon, Rupoor, Hearts Down, Strip Down, Cucco Swarm, Yiga Ambush, Paranoia, Downpour | none fixed | traps, see below |
+| Armor, saddles and bridles | 0 to 38 (`bonus_items`) | in the filler's place: the pieces and sets listed on the [game page](../../botw_world/docs/en_Breath%20of%20the%20Wild.md#bonus-items), with their get window |
+| Armor upgrade materials, hearty and mighty food, 20 Bomb Arrows | drawn (`extra_filler`) | the material or the food, with its get window |
+| Weapon Shatter, Blood Moon, Rupoor, Hearts Down, Strip Down, Cucco Swarm, Yiga Ambush, Paranoia, Downpour, Freeze, Lightning Strike, Fire | none fixed | traps, see below |
 
 A received item is delivered by the game itself: its get window when it has one, the download screen for a rune,
 otherwise straight into the inventory. Given back after the reload of an older save, it returns quietly, then an

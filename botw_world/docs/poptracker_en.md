@@ -28,6 +28,8 @@ PopTracker yourself.
 3. **Install the pack**: open PopTracker and drag `botw_archipelago.zip` onto its window. (You can also copy it into
    PopTracker's `packs` folder.)
 
+<!-- ![The PopTracker pack in the launcher's Settings](../../docs/images/launcher-settings.png) -->
+
 You do this once. Each session then checks the pack before Cemu starts, and builds it again when what it is made
 of changed (an update of BOTW Archipelago, your icons, your game); its log says where the pack stands:
 
@@ -75,7 +77,7 @@ them), Koroks, chests, chests of the shrines and Divine Beasts, quests, bosses, 
 the regions' diamonds. Once your slot has reached its goal and is
 released, every location is checked and the whole map turns grey.
 
-While you play from the BOTW Archipelago window, two more buttons follow Link. **Link** shows where he is: a blue
+While you play from the BOTW Archipelago window, two more buttons follow Link. **Show Link** shows where he is: a blue
 diamond with a white glow, on the 100 m square he stands in (in a shrine, where he went in). **Follow region** frames each
 region he enters on the map (PopTracker 0.34 or later); the map stays where it is while he walks inside a region.
 

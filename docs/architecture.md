@@ -227,9 +227,9 @@ newer world is offered that update; a seed of an older apworld that this one can
 What a version plays is its own statement (`botw_client/compatibility.py`, the world and client schemas
 `tools/play_seed.py` accepts), in its `release.json`. The releases before 0.4.0 were a zip with its own Python, and
 state nothing: a frozen table stands in for them (`core/worlds.py`). For a seed of theirs, that release is installed
-on demand as `versions/<version>/` in the data folder and opened on the same data folder (`BOTW_AP_DATA`), the oldest
-in their console launcher (`tools/launcher.py`); `handoff.py` is what such a release runs at start to hand over to the
-newest one installed. A seed's pack is built again when another version than its builder plays it.
+on demand as `versions/<version>/` in the data folder and opened on the same data folder (`BOTW_AP_DATA`), in
+its console launcher (`tools/launcher.py` of its own folder). A seed's pack is built again when another
+version than its builder plays it.
 
 ## The play session (`tools/play_session.py`)
 

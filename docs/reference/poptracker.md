@@ -13,12 +13,11 @@ game, so that no file of the game is in the repository.
   the same pack up to date (the launcher's Settings shows it). The player installs it in PopTracker by hand (dragging
   the zip onto its window): finding PopTracker's packs folder depends on too much (a portable PopTracker, Documents
   moved to OneDrive...).
-- Before each session the launcher says in one line where the pack stands (`ensure_pack`): up to date, rebuilt
-  because what it is made of changed (the stamp, `<data>/poptracker/stamp.txt`), not built as the player answered,
-  or not built and why. When the folder has no pack yet, it asks first (not everyone uses PopTracker); a no is
-  remembered in `<data>/poptracker/declined.txt` until the stamp changes. A failure never blocks the game.
-- By hand: `venv\Scripts\python tools\build_poptracker.py` (`--content <base game content>`, `--output <folder>`),
-  the launcher's **Settings** in a release.
+- The first pack is built when the player asks, in the launcher's **Settings** (not everyone uses PopTracker).
+  Then, before each session, the launcher says in one line where it stands (`ensure_pack`): up to date, rebuilt
+  because what it is made of changed (the stamp, `<data>/poptracker/stamp.txt`), or not built and why. A failure
+  never blocks the game.
+- By hand: `venv\Scripts\python tools\build_poptracker.py` (`--content <base game content>`, `--output <folder>`).
 
 ## What it is made of
 

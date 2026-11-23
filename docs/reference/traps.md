@@ -1,12 +1,13 @@
 # Traps
 
-Nine Archipelago items that hurt: how each one acts in the game, how a received trap is delivered, and how to add
-one. Five are the game's own EventFlow actions and queries, in one entry of the resident `OperationGuide`, or of
+Twelve Archipelago items that hurt: how each one acts in the game, how a received trap is delivered, and how to
+add one. Five are the game's own EventFlow actions and queries, in one entry of the resident `OperationGuide`, or of
 `Demo007_1` for the Blood Moon ([`botw_patch/traps.py`](../../botw_patch/traps.py)); nothing in the executable is
-touched. All five were seen working in the game. The other four are played by the client through the game's own
+touched. All five were seen working in the game. The other seven are played by the client through the game's own
 functions, as no EventFlow action can do them: Cucco Swarm ([below](#cucco-swarm)), Yiga Ambush
-([below](#yiga-ambush)), Paranoia ([below](#paranoia)), and Downpour, whose weather the pack holds
-([below](#downpour)).
+([below](#yiga-ambush)), Paranoia ([below](#paranoia)), Downpour, whose weather the pack holds
+([below](#downpour)), and Freeze, Lightning Strike and Fire
+([below](#freeze-fire-and-lightning-strike)).
 
 ## The traps
 
@@ -166,7 +167,7 @@ nothing on a new game (seen in play: bare hands, light blows, an archer warping 
 Yiga Blademaster (`Enemy_Assassin_Middle`) comes alone instead. Each one has a block of memory of its own: without a
 handle, nothing says when the creator is done with its name and its place, so no block is ever reused.
 
-Measured (lab probes 19 and 21): they come with the Yiga's appearing effect, fight with their weapons, flips and warps,
+Measured: they come with the Yiga's appearing effect, fight with their weapons, flips and warps,
 the archer shoots, they drop their loot (bananas, rupees) when defeated, and vanish if Link runs far away. Two keys of
 the game's own creation of an enemy near Link (`0x0214ae5c`) must not be added: with `IsNearCreate` (bool, type 3) the
 squad came and went at once, unseen; with `@I` = 6 (int, type 0) nothing came.
@@ -247,7 +248,7 @@ The client marks the downpour with a volatile GameData flag, `APDownpour` (decla
 and keeps its value across a fast travel, which loads none. While a downpour lasts, the client gives the game its
 weather back (0 frames) when Link dies, or when the flag is down.
 
-Measured with the setter called 30 times a second (lab probe 19, 09/10): the rain sets in within 5 to 10 s and the
+Measured with the setter called 30 times a second: the rain sets in within 5 to 10 s and the
 walls get slippery; in the desert at night, the thunderstorm first looked like a sandstorm, then brought lightning and
 rain; it held across a fast travel; the climate's weather came back within a few seconds. Inside a shrine, nothing
 shows.
@@ -256,7 +257,7 @@ shows.
 
 Each is one actor of the game created where Link stands, with only a place (`@P`), as the Yiga Ambush creates its
 squad ([`botw_client/elemental_strike.py`](../../botw_client/elemental_strike.py)), once the trap's event has closed.
-Measured in lab probe 56 (22/11), outside, at normal speed:
+Measured outside, at normal speed:
 
 - `ExpandIceField` and `ExpandFireField`, the chemical fields the game leaves where ice or fire bursts (no model),
   0.5 m above Link's feet. Ice: Link frozen, 2 quarters of a heart (death cause 2). Fire: Link on fire at once,

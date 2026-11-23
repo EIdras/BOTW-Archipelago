@@ -5,7 +5,8 @@ played in the [Cemu](https://cemu.info/) emulator.
 
 <!-- ![An Archipelago item, received in Breath of the Wild](docs/images/item-received.jpg) -->
 
-Shrines, towers, Great Fairies and Divine Beasts become checks of the multiworld. The Paraglider, the runes, the
+Shrines, towers, Great Fairies and Divine Beasts become checks of the multiworld, and, as you choose, chests,
+Koroks, quests and field bosses too. The Paraglider, the runes, the
 champions' abilities, armor and heart containers are shuffled across every game, and arrive in yours while you play,
 presented by the game itself.
 
@@ -13,15 +14,18 @@ presented by the game itself.
 
 ## Highlights
 
-- **219 locations**: the 120 shrines, the 15 towers, the Great Fairies, the Divine Beasts, the Master Sword, Purah's
-  rune upgrades, the Champions' Ballad and, optionally, Beedle's shops and the village stalls.
-- **Delivered by the game**: the item window, the Sheikah Slate's rune download, the champions' ability windows.
-  Each item is given once per save, through reloads and disconnections.
+- **Up to 2,857 locations**: the 120 shrines, the 15 towers, the Great Fairies, the Divine Beasts, the Master Sword,
+  Purah's rune upgrades, the Champions' Ballad and, optionally, Beedle's shops, the village stalls, the chests (Master
+  Mode's too), the Koroks, the side and shrine quests, the Goddess Statues' offerings and the field bosses.
+- **Delivered by the game**: the item window, the Sheikah Slate's rune download, the champions' ability windows, the
+  chests themselves. Each item is given once per save, through reloads and disconnections.
 - **An Archipelago journal in the game**: items sent and received, hints, all in the game's own tip frame.
 - **Region maps as keys**, and optionally a world that opens region by region from the Great Plateau.
 - **A sealed sanctum**: Ganon waits until the seed's requirements are met.
-- **DeathLink and nine traps**, from a Blood Moon to a Yiga ambush.
-- **Trackers**: a PopTracker map pack built from your game, and Universal Tracker.
+- **DeathLink and twelve traps**, from a Blood Moon to a Yiga ambush or a lightning strike.
+- **Cutscenes skipped with + alone**, horses given in turn, armor and materials among the items, as you choose.
+- **Trackers**: a PopTracker map pack built from your game, with the Koroks, chests and quests, and Universal
+  Tracker; both show Link on the map.
 - **Your mods keep working**: FPS++, graphics packs, UKMM mods.
 
 ## What you need
