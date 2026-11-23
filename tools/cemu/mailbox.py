@@ -1128,8 +1128,8 @@ class Cave:
         return be(self.p.read(self.map_magic, 4)) == self.MAP_MAGIC
 
     def set_map_tower(self, index):
-        """The tower index (0..14) the next map opening without a tower near its
-        actor takes, spent by the game; -1: none. False on a patch without it."""
+        """The tower index (0..14) the next map opening takes, even near another
+        tower, spent by the game; -1: none. False on a patch without it."""
         if not self.map_ready():
             return False
         return bool(self.p.write(self.map_tower, (int(index) & 0xFFFFFFFF).to_bytes(4, "big")))

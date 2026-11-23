@@ -127,6 +127,9 @@ class BotwGame:
                 f"invalid pointer resolver: {passages} passes, tick={tick}; "
                 "CLOSE AND REOPEN CEMU")
         progress(f"pointer resolver: {passages} passes")
+        # A map opening armed by a client stopped mid-delivery would show on
+        # the next tower's own event (tools/build_tower_maps_native.py).
+        cave.set_map_tower(-1)
         channels = cave.channels()
         if not self.native_presentation_mode:
             for name, (pointer, ready) in channels.items():
@@ -376,12 +379,18 @@ class BotwGame:
         raise KeyError(f"unknown GameData flag: {name}")
 
     def prepare_map_opening(self, map_flag: str) -> bool:
-        """The tower (MapTower_NN) the next map opening without a tower near
-        its actor shows (tools/build_tower_maps_native.py). False on a patch
+        """The tower (MapTower_NN) the next map opening shows, even near
+        another tower (tools/build_tower_maps_native.py). False on a patch
         without it: the map is then revealed without its opening."""
         if not self.process or not self.cave:
             return False
         return bool(self.cave.set_map_tower(int(map_flag.rsplit("_", 1)[1]) - 1))
+
+    def clear_map_opening(self) -> bool:
+        """No map opening armed: a tower's own event shows its own tower."""
+        if not self.process or not self.cave:
+            return False
+        return bool(self.cave.set_map_tower(-1))
 
     def slate_has_map(self) -> bool:
         """The Sheikah Slate has a map: the Great Plateau's tower, the first, gave

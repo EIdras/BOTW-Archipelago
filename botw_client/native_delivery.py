@@ -907,6 +907,16 @@ class CemuNativeDeliveryBackend:
         self._settle = SETTLE_FRAMES
         return True if result.get("native_return") == 1 else None
 
+    def _disarm_map_opening(self) -> None:
+        """No map opening armed: a tower's own event shows its tower."""
+        clear = getattr(self.game, "clear_map_opening", None)
+        if clear is None:
+            return
+        try:
+            clear()
+        except Exception:  # noqa: BLE001 - Cemu gone: the word goes with it
+            pass
+
     def deliver(self, command: DeliveryCommand) -> DeliveryResult:
         token, cursor, rejected = self._state()
         binding = self.catalog.binding()
@@ -936,6 +946,7 @@ class CemuNativeDeliveryBackend:
         if since is not None and since < self._settle:
             return DeliveryResult(DeliveryStatus.DEFERRED, cursor,
                                   f"previous event closing ({since}/{self._settle} frames of 1/30 s)")
+        map_target = None
         if not (command.quiet and step.get("quiet_entry")) and any(
                 m.get("kind") in ("rune_download", "rune_power_up", "map_open",
                                   "sensor_download", "sensor_power_up")
@@ -953,12 +964,12 @@ class CemuNativeDeliveryBackend:
                                       f"pause menu not ready: {reason}")
             opening = next((m for m in step.get("mutations", ()) if m.get("kind") == "map_open"), None)
             if opening is not None:
-                # The map's opening has no tower near its actor: it takes the
-                # tower the client names (tools/build_tower_maps_native.py).
-                prepare = getattr(self.game, "prepare_map_opening", None)
-                if prepare is not None:
-                    prepare(opening["target"])
+                map_target = opening["target"]
 
+        # The map's opening shows the tower the client names, even near another
+        # tower (tools/build_tower_maps_native.py): armed just before the
+        # request, disarmed on the way out, or a tower's own event would take it.
+        arm_map = getattr(self.game, "prepare_map_opening", None) if map_target else None
         request, lock_factory = self._dependencies()
         evidence = {}
         try:
@@ -969,6 +980,8 @@ class CemuNativeDeliveryBackend:
                     return DeliveryResult(DeliveryStatus.DEFERRED, command.cursor, self.NOT_IN_WORLD)
                 if not self._no_event_running():
                     return DeliveryResult(DeliveryStatus.DEFERRED, command.cursor, self.EVENT_RUNNING)
+                if arm_map is not None:
+                    arm_map(map_target)
                 try:
                     # Silent twins and steps without a window live in their
                     # own flowchart, registered not to pause the game
@@ -1067,6 +1080,9 @@ class CemuNativeDeliveryBackend:
             raise
         except Exception:
             raise
+        finally:
+            if arm_map is not None:
+                self._disarm_map_opening()
         self._settle = SETTLE_FRAMES
         if not ran:
             self._committed_at = self._frame()

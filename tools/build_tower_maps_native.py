@@ -8,9 +8,11 @@ Only ``patch_apInject.asm`` changes; each anchor must match once.
   prepares the map screen on that tower and opens the menu. A tower's event plays
   it with the tower as its actor (Demo004_0, Starter). A map item's delivery entry
   plays it with EventSystemActor, near no tower: the action did nothing
-  (measured). Patched, the action takes, when no tower is near, the tower index
-  the client wrote in ``apMapTower`` just before the delivery, and spends it
-  (back to -1). A tower's own event never reaches the fallback. In every pack.
+  (measured). Patched, the action takes the tower index the client wrote in
+  ``apMapTower`` just before the delivery, even near a tower (a map received at
+  a tower showed the tower's region), and spends it (back to -1). A tower's own
+  event finds -1 there: the client arms the word only around its request
+  (botw_client/native_delivery.py). In every pack.
 * The tower icons, only in a pack whose maps are items. A tower icon of the map
   (0x02E94C4C) reads the flag "MapTower_" + its number to show the tower
   activated, which offers its travel point (measured: Lanayru's icon, made to read
@@ -50,29 +52,24 @@ apTowerName:
 .align 4
 """
 OPEN_ROUTINE = f"""
-apMapOpenCheck:                  ; 0x{OPEN_CHECK:08x}, after 0x0307e020: a tower near the actor?
-    cmpwi r3, 0                  ; original
-    beq   apMapOpenFallback
-    blr                          ; a tower near the actor: as the game
-apMapOpenFallback:
-    ; No tower near the actor (a map item's delivery): the tower index the
-    ; client wrote, spent at once. The out word of 0x0307e020 is 0x8(r1): the
-    ; game reads the index there and calls 0x03077aa0 with it.
+apMapOpenCheck:                  ; 0x{OPEN_CHECK:08x}, after 0x0307e020: r3, a tower near the actor?
+    ; A tower index the client wrote (a map item's delivery) wins, even with a
+    ; tower near the actor: received at a tower, the map shows its own region.
+    ; Spent at once. The out word of 0x0307e020 is 0x8(r1): the game reads the
+    ; index there and calls 0x03077aa0 with it. Only r12 and r3, as before.
     lis   r12, apMapTower@ha
-    lwz   r3, apMapTower@l(r12)
-    cmpwi r3, 0
-    blt   apMapOpenNone
-    cmpwi r3, 15
-    bge   apMapOpenNone
-    stw   r3, 0x8(r1)
+    lwz   r12, apMapTower@l(r12)
+    cmpwi r12, 0
+    blt   apMapOpenGame
+    cmpwi r12, 15
+    bge   apMapOpenGame
+    stw   r12, 0x8(r1)
     li    r3, -1
+    lis   r12, apMapTower@ha
     stw   r3, apMapTower@l(r12)
     li    r3, 1
-    cmpwi r3, 0                  ; not equal: on to the opening
-    blr
-apMapOpenNone:
-    li    r3, 0
-    cmpwi r3, 0                  ; equal: nothing, as the game
+apMapOpenGame:
+    cmpwi r3, 0                  ; original: equal, nothing; else on to the opening
     blr
 
 0x{OPEN_CHECK:08x} = bla apMapOpenCheck

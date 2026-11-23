@@ -306,6 +306,37 @@ class NativeDeliveryBackendTests(unittest.TestCase):
                          DeliveryStatus.APPLIED)
         self.assertEqual(calls, ["APD_CORE_00Q", "APD_CORE_00"])
 
+    def test_a_map_opening_is_armed_only_around_its_request(self):
+        # The armed tower wins even near another tower
+        # (tools/build_tower_maps_native.py): left armed, it would show on the
+        # next tower's own event.
+        data = json.loads(self.path.read_text(encoding="utf-8"))
+        data["items"]["Core"]["variants"]["default"][0].update(
+            capacity_actor=None, mutations=[{"kind": "map_open", "target": "MapTower_01"}])
+        self.path.write_text(json.dumps(data), encoding="utf-8")
+        self.game.pause_menu_ready = lambda: (True, "")
+        log = []
+        self.game.prepare_map_opening = lambda target: log.append(target)
+        self.game.clear_map_opening = lambda: log.append("clear")
+
+        backend = self.backend(lambda *_args, **_kwargs: log.append("request"), event_free=lambda: False)
+        self.assertEqual(backend.deliver(DeliveryCommand("seed", 2, 7, "Core")).detail,
+                         backend.EVENT_RUNNING)
+        self.assertNotIn("MapTower_01", log)                 # never armed for a deferral
+
+        log.clear()
+
+        def request(_process, _cave, _number, checkpoint, **_kwargs):
+            log.append("request")
+            checkpoint({"status": "prepared"})
+            self.values[flag("APReceivedCursor")] += 256
+            return {"native_return": 1}
+
+        backend = self.backend(request)
+        self.assertEqual(backend.deliver(DeliveryCommand("seed", 2, 7, "Core")).status,
+                         DeliveryStatus.APPLIED)
+        self.assertEqual(log, ["MapTower_01", "request", "clear"])
+
     def test_status_item_is_asked_by_its_entry_without_cursor(self):
         data = json.loads(self.path.read_text(encoding="utf-8"))
         data["status_item"] = {"entry": "APStatusItem", "actor": "Obj_AP_Status"}
