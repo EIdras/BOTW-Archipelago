@@ -16,9 +16,9 @@ class DataFolderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             (root / paths.RELEASE_MARKER).write_text("{}")
-            self.assertEqual(paths.data_folder(root, {"LOCALAPPDATA": "C:/Local"}),
+            self.assertEqual(paths.data_folder(root, {"LOCALAPPDATA": "C:/Local"}, "win32"),
                              Path("C:/Local/BOTW Archipelago"))
-            self.assertEqual(paths.data_folder(root, {}),
+            self.assertEqual(paths.data_folder(root, {}, "win32"),
                              Path.home() / "AppData/Local/BOTW Archipelago")
 
     def test_off_windows_a_release_writes_in_the_shared_data_folder(self):
@@ -33,10 +33,12 @@ class DataFolderTests(unittest.TestCase):
             root.mkdir()
             (root / paths.RELEASE_MARKER).write_text("{}")
             pointer = local / paths.RELEASE_FOLDER / paths.LOCATION_FILE
-            pointer.write_text('{"data": "D:/Games/BOTW AP"}')
-            self.assertEqual(paths.data_folder(root, {"LOCALAPPDATA": str(local)}), Path("D:/Games/BOTW AP"))
-            pointer.write_text("not json")      # unreadable: the default, never an error at start
-            self.assertEqual(paths.data_folder(root, {"LOCALAPPDATA": str(local)}), local / paths.RELEASE_FOLDER)
+            for platform, variable in (("win32", "LOCALAPPDATA"), ("linux", "XDG_DATA_HOME")):
+                pointer.write_text('{"data": "D:/Games/BOTW AP"}')
+                self.assertEqual(paths.data_folder(root, {variable: str(local)}, platform), Path("D:/Games/BOTW AP"))
+                pointer.write_text("not json")      # unreadable: the default, never an error at start
+                self.assertEqual(paths.data_folder(root, {variable: str(local)}, platform),
+                                 local / paths.RELEASE_FOLDER)
 
     def test_the_variable_names_another_folder(self):
         with tempfile.TemporaryDirectory() as temp:

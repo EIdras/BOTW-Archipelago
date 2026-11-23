@@ -53,11 +53,11 @@ def chosen_data_folder(default: Path) -> Path | None:
     return Path(chosen) if isinstance(chosen, str) and chosen else None
 
 
-def data_folder(root: Path = ROOT, environ=os.environ) -> Path:
+def data_folder(root: Path = ROOT, environ=os.environ, platform: str = sys.platform) -> Path:
     if environ.get(DATA_VARIABLE):
         return Path(environ[DATA_VARIABLE])
     if (root / RELEASE_MARKER).is_file():
-        default = default_data_folder(environ)
+        default = default_data_folder(environ, platform)
         return chosen_data_folder(default) or default
     return root / ".build"
 
