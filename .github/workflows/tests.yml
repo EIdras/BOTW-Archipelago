@@ -1,0 +1,45 @@
+# The fast tests on every push, on Linux and on Windows.
+#
+# The release (release.yml) runs them on Windows when a tag is pushed; this
+# workflow runs them on both systems for every push, pull request and tag, so a
+# change that breaks one of them shows before a release. On Linux the client
+# reads Cemu's memory through /proc (tools/cemu/linuxmem.py). Tests that need
+# the game, Cemu or the Archipelago runtime are skipped on both.
+name: Tests
+
+on:
+  push:
+    branches: [master]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            python: venv/bin/python
+          - os: windows-latest
+            python: venv\Scripts\python
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: |
+          python -m venv venv
+          ${{ matrix.python }} -m pip install --upgrade pip
+          ${{ matrix.python }} -m pip install -r requirements-player.txt
+
+      - name: Test
+        run: ${{ matrix.python }} -m unittest discover -s tests
