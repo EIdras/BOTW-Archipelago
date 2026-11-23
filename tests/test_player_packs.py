@@ -85,7 +85,9 @@ class PlayerPacksTest(unittest.TestCase):
         self.cemu.entry("mods", presets=[("Resolution", "2K")])
         self.cemu.pack("plain")
         self.cemu.entry("plain")
-        mods, plain = self.cemu.enabled()
+        # Cemu's walk follows the file system's order (by name on NTFS only).
+        packs = {pack.path: pack for pack in self.cemu.enabled()}
+        mods, plain = packs["mods"], packs["plain"]
         self.assertEqual((mods.priority, plain.priority), (9999, pp.DEFAULT_PRIORITY))
         self.assertEqual(mods.presets, (("Resolution", "2K"),))
         self.assertEqual((mods.content, mods.aoc), (("Pack/Bootup.pack",), ("0010/Map/A.smubin",)))
@@ -126,7 +128,7 @@ class PlayerPacksTest(unittest.TestCase):
         packs = self.cemu.enabled()
         kept, left = pp.carried(packs, frozenset({0x031FA97C}))
         # Game files are no reason: the seed pack is built on top of them.
-        self.assertEqual([pack.path for pack in kept], ["graphics", "mods"])
+        self.assertEqual(sorted(pack.path for pack in kept), ["graphics", "mods"])
         self.assertEqual(left, {"graphicPacks/exe/rules.txt": "it replaces the game's executable",
                                 "graphicPacks/fps/rules.txt": "it patches code the Archipelago pack needs"})
         self.assertIn("The Archipelago game runs 2 of them.", pp.report(packs, None, left))
