@@ -1,4 +1,6 @@
 import os
+import subprocess
+import sys
 import unittest
 from unittest.mock import Mock
 
@@ -253,6 +255,20 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(result, 'uncertain')
         self.assertTrue(self.backend.stopped)
 
+    @unittest.skipUnless(sys.platform.startswith('linux'), '/proc is Linux only')
+    def test_linux_start_time_and_closed_handle(self):
+        from tools.cemu.linuxmem import Process
+        child = subprocess.Popen([sys.executable, '-c', 'import sys; sys.stdin.read()'], stdin=subprocess.PIPE)
+        self.addCleanup(child.wait)
+        self.addCleanup(child.kill)
+        process = Process(child.pid)
+        with process:
+            first = process_incarnation(process)
+            self.assertEqual(first, process_incarnation(process))
+            self.assertTrue(first.startswith(f'{child.pid}:'))
+        with self.assertRaises(RuntimeError): process_incarnation(process)
+
+    @unittest.skipUnless(sys.platform == 'win32', 'kernel32 is Windows only')
     def test_windows_creation_time_and_closed_handle(self):
         from tools.cemu.winmem import Process
         process = Process(os.getpid())

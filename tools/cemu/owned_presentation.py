@@ -1,5 +1,8 @@
 """Experimental owner protocol; no grant, ledger, queue replay or forced UI close."""
+import os
 import struct
+import sys
+import tempfile
 import time
 import ctypes
 from ctypes import wintypes
@@ -8,6 +11,30 @@ from tools.build_owned_presentation import SITES, owner_source
 
 PHASES = ("idle", "staged", "submitting", "accepted", "bound", "action_complete",
           "released", "refused", "uncertain", "finished")
+BUSY = "Another presentation publisher is active or the mutex is unavailable"
+
+
+@contextmanager
+def _file_lock(pid):
+    """The Linux publisher lock: flock on a file of this user's runtime folder.
+
+    The kernel drops the lock with its holder, as Windows abandons a mutex.
+    """
+    import fcntl
+    folder = os.environ.get("XDG_RUNTIME_DIR") or tempfile.gettempdir()
+    descriptor = os.open(os.path.join(folder, f"botw-ap-owner-{pid}.lock"),
+                         os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    try:
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise RuntimeError(BUSY) from None
+        try:
+            yield
+        finally:
+            fcntl.flock(descriptor, fcntl.LOCK_UN)
+    finally:
+        os.close(descriptor)
 
 
 @contextmanager
@@ -19,6 +46,10 @@ def publisher_lock(pid):
     """
     if type(pid) is not int or pid <= 0:
         raise ValueError("publisher requires an explicit emulator PID")
+    if sys.platform != "win32":
+        with _file_lock(pid):
+            yield
+        return
     kernel = ctypes.WinDLL("kernel32", use_last_error=True)
     kernel.CreateMutexW.argtypes = (ctypes.c_void_p, wintypes.BOOL, wintypes.LPCWSTR)
     kernel.CreateMutexW.restype = wintypes.HANDLE

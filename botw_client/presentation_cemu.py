@@ -5,6 +5,7 @@ adapter to another process or reuse it after an uncertain outcome.
 """
 import ctypes
 from ctypes import wintypes
+import sys
 import time
 import uuid
 
@@ -29,6 +30,9 @@ def refusal_has_no_action(state, join, text, generation):
 def process_incarnation(process):
     if not process.h:
         raise RuntimeError('Cemu handle closed')
+    if sys.platform != 'win32':
+        from tools.cemu.linuxmem import incarnation
+        return incarnation(process.pid)
     kernel = ctypes.WinDLL('kernel32', use_last_error=True)
     kernel.GetProcessTimes.argtypes = [wintypes.HANDLE] + [ctypes.POINTER(wintypes.FILETIME)] * 4
     kernel.GetProcessTimes.restype = wintypes.BOOL

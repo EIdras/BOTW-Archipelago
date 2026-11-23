@@ -207,6 +207,9 @@ def check_isolated() -> None:
 
 def cemu_running() -> bool:
     """A Cemu runs, whichever installation it comes from."""
+    if sys.platform != "win32":
+        from tools.cemu.linuxmem import cemu_pids
+        return bool(cemu_pids())
     running = subprocess.run(["powershell", "-NoProfile", "-Command",
                               "Get-Process Cemu -ErrorAction SilentlyContinue "
                               "| Select-Object -ExpandProperty Id"],

@@ -43,6 +43,10 @@ def cemu_pid():
         if not selected.isdigit() or int(selected) <= 0:
             raise ValueError("BOTW_CEMU_PID must be a positive process ID")
         return int(selected)
+    if sys.platform != "win32":
+        from linuxmem import cemu_pids     # loaded by procmem on Linux
+        found = cemu_pids()
+        return found[0] if found else None
     import subprocess
     out = subprocess.run(
         ["powershell", "-NoProfile", "-Command",

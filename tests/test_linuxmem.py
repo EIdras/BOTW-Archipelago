@@ -1,11 +1,18 @@
-"""Cemu's memory on Linux (tools/cemu/linuxmem.py) and the backend each platform gets."""
+"""Cemu's process on Linux (tools/cemu/linuxmem.py) and the backend each platform gets."""
 import os
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
+import time
+import types
 import unittest
+from unittest import mock
 
+from tools import cemu_profile
 from tools.cemu import linuxmem, mailbox
+
+LINUX = sys.platform.startswith("linux")
 
 MAPS = b"""\
 00400000-00452000 r-xp 00000000 08:02 173521      /usr/bin/Cemu
@@ -99,6 +106,110 @@ class LinuxProcessTest(unittest.TestCase):
         with self.assertRaises(PermissionError) as raised:
             linuxmem.Process(1)
         self.assertIn("ptrace_scope", str(raised.exception))
+
+
+def stat_line(name: bytes, state: bytes, start: int) -> bytes:
+    """A /proc/<pid>/stat line: fields 4 to 21 numbered, field 22 the start time."""
+    middle = b" ".join(str(n).encode() for n in range(4, 22))
+    return b"4242 (" + name + b") " + state + b" " + middle + b" %d 0 0\n" % start
+
+
+class ParseStatTest(unittest.TestCase):
+    def test_state_and_start_time(self):
+        self.assertEqual(linuxmem.parse_stat(stat_line(b"Cemu", b"S", 987654)), ("S", 987654))
+
+    def test_a_name_with_spaces_and_parentheses(self):
+        self.assertEqual(linuxmem.parse_stat(stat_line(b"a) (b) Z c", b"R", 5)), ("R", 5))
+
+
+class CemuPidsTest(unittest.TestCase):
+    def setUp(self):
+        self.proc = Path(tempfile.mkdtemp())
+        self.addCleanup(__import__("shutil").rmtree, self.proc, True)
+
+    def process(self, pid, comm=None, cmdline=b""):
+        folder = self.proc / str(pid)
+        folder.mkdir()
+        if comm is not None:
+            (folder / "comm").write_bytes(comm + b"\n")
+        (folder / "cmdline").write_bytes(cmdline)
+        return folder
+
+    def test_the_process_name_not_the_command_line(self):
+        self.process(300, b"cemu")
+        self.process(100, b"Cemu")
+        self.process(200, b"python3", b"python3\0launcher.py\0--cemu\0/home/player/Cemu.AppImage\0")
+        self.process(250, b"tail", b"tail\0/home/player/.local/share/Cemu/log.txt\0")
+        self.process(50, b"Cemu-2.6-x86_64")
+        self.process(400)                       # gone while listed
+        (self.proc / "self").mkdir()
+        self.assertEqual(linuxmem.cemu_pids(str(self.proc)), [100, 300])
+
+    def test_no_proc(self):
+        self.assertEqual(linuxmem.cemu_pids(str(self.proc / "missing")), [])
+
+    @unittest.skipUnless(LINUX, "symbolic links of /proc/<pid>/exe")
+    def test_an_appimage_by_the_binary_it_runs(self):
+        os.symlink("/tmp/.mount_CemuAb/usr/bin/Cemu", self.process(500, b"AppRun") / "exe")
+        os.symlink("/home/player/Cemu-2.6-x86_64.AppImage", self.process(600, b"Cemu-2.6-x86_6") / "exe")
+        self.assertEqual(linuxmem.cemu_pids(str(self.proc)), [500])
+
+
+class PlatformBranchTest(unittest.TestCase):
+    """The Linux branches, chosen on any system by the platform name."""
+
+    def test_cemu_running(self):
+        with mock.patch.object(cemu_profile.sys, "platform", "linux"):
+            with mock.patch.object(linuxmem, "cemu_pids", return_value=[42]):
+                self.assertTrue(cemu_profile.cemu_running())
+            with mock.patch.object(linuxmem, "cemu_pids", return_value=[]):
+                self.assertFalse(cemu_profile.cemu_running())
+
+    def test_cemu_pid(self):
+        environ = {k: v for k, v in os.environ.items() if k != "BOTW_CEMU_PID"}
+        with mock.patch.object(mailbox.sys, "platform", "linux"), mock.patch.dict(os.environ, environ, clear=True):
+            for found, pid in (([7, 9], 7), ([], None)):
+                flat = types.SimpleNamespace(cemu_pids=lambda found=found: found)
+                with mock.patch.dict(sys.modules, {"linuxmem": flat}):
+                    self.assertEqual(mailbox.cemu_pid(), pid)
+
+
+@unittest.skipUnless(LINUX, "/proc/<pid>/stat and flock are Linux only")
+class LinuxIdentityAndLockTest(unittest.TestCase):
+    def test_a_process_that_exited_has_no_incarnation(self):
+        child = subprocess.Popen([sys.executable, "-c", "import sys; sys.stdin.read()"], stdin=subprocess.PIPE)
+        self.addCleanup(child.wait)
+        self.addCleanup(child.kill)
+        first = linuxmem.incarnation(child.pid)
+        self.assertEqual(first, linuxmem.incarnation(child.pid))
+        self.assertTrue(first.startswith(f"{child.pid}:"))
+        child.stdin.close()
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:          # exited, not reaped yet: a zombie
+            state, _ = linuxmem.parse_stat(Path(f"/proc/{child.pid}/stat").read_bytes())
+            if state == "Z":
+                break
+            time.sleep(0.01)
+        self.assertEqual(state, "Z")
+        with self.assertRaises(RuntimeError):
+            linuxmem.incarnation(child.pid)
+        child.wait()
+        with self.assertRaises(RuntimeError):
+            linuxmem.incarnation(child.pid)
+
+    def test_one_publisher_per_emulator(self):
+        from tools.cemu.owned_presentation import publisher_lock
+        folder = tempfile.mkdtemp()
+        self.addCleanup(__import__("shutil").rmtree, folder, True)
+        with mock.patch.dict(os.environ, {"XDG_RUNTIME_DIR": folder}):
+            with publisher_lock(4242):
+                with self.assertRaises(RuntimeError):
+                    with publisher_lock(4242):
+                        pass
+                with publisher_lock(4243):
+                    pass
+            with publisher_lock(4242):
+                pass
 
 
 if __name__ == "__main__":
