@@ -22,7 +22,9 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
+import posixpath
 import shutil
 import subprocess
 import sys
@@ -62,6 +64,45 @@ def check_reachable(executable: Path, platform: str = sys.platform) -> None:
     if platform != "win32" and any(part in Path(executable).resolve().as_posix() for part in SANDBOXES):
         raise ValueError(f"this Cemu runs in a Flatpak or Snap sandbox, which the client cannot reach: "
                          f"use Cemu's AppImage or its Linux zip instead ({executable})")
+
+
+# What an AppImage's runtime gives the programs it starts, and so the ones they start.
+APPIMAGE_VARIABLES = ("APPIMAGE", "APPDIR", "ARGV0", "OWD")
+
+
+def _inside(entry: str, root: str) -> bool:
+    entry, root = posixpath.normpath(entry), posixpath.normpath(root)
+    return entry == root or entry.startswith(root.rstrip("/") + "/")
+
+
+def cemu_environment(environ=os.environ, platform: str = sys.platform,
+                     frozen_executable: str | None = None) -> dict[str, str] | None:
+    """The environment to start Cemu with, or None for this process's own.
+
+    Run from Archipelago's AppImage, Cemu would inherit Archipelago's libraries
+    (its AppRun adds them to LD_LIBRARY_PATH; Archipelago clears that itself
+    before it starts a program) and $APPIMAGE, next to which Cemu looks for its
+    portable folder: a Cemu from the Linux zip would leave the profile for the
+    player's own Cemu folders. The player's own LD_LIBRARY_PATH entries stay.
+    """
+    if platform == "win32":
+        return None
+    if frozen_executable is None and getattr(sys, "frozen", False):
+        frozen_executable = sys.executable
+    roots = [root for root in (environ.get("APPDIR"),
+                               frozen_executable and posixpath.dirname(frozen_executable)) if root]
+    paths = environ.get("LD_LIBRARY_PATH")
+    kept = paths
+    if paths is not None and roots:
+        kept = ":".join(entry for entry in paths.split(":")
+                        if entry and not any(_inside(entry, root) for root in roots))
+    if kept == paths and not any(name in environ for name in APPIMAGE_VARIABLES):
+        return None
+    clean = {name: value for name, value in environ.items()
+             if name not in APPIMAGE_VARIABLES and name != "LD_LIBRARY_PATH"}
+    if kept:
+        clean["LD_LIBRARY_PATH"] = kept
+    return clean
 
 
 def cemu_executable() -> Path:

@@ -326,6 +326,25 @@ class ProfileTests(unittest.TestCase):
         cemu_profile.check_reachable(Path("/home/player/Apps/Cemu-2.6-x86_64.AppImage"), "linux")
         cemu_profile.check_reachable(Path("C:/snap/Cemu/Cemu.exe"), "win32")
 
+    def test_cemu_starts_without_what_archipelagos_appimage_adds(self):
+        appimage = {"PATH": "/usr/bin", "HOME": "/home/player", "APPIMAGE": "/home/player/Apps/Archipelago.AppImage",
+                    "APPDIR": "/tmp/.mount_ArchiX1", "ARGV0": "Archipelago.AppImage", "OWD": "/home/player",
+                    "LD_LIBRARY_PATH": "/opt/vulkan/lib:/tmp/.mount_ArchiX1/opt/Archipelago/lib"}
+        self.assertEqual(cemu_profile.cemu_environment(appimage, "linux"),
+                         {"PATH": "/usr/bin", "HOME": "/home/player", "LD_LIBRARY_PATH": "/opt/vulkan/lib"})
+        only_archipelago = dict(appimage, LD_LIBRARY_PATH="/tmp/.mount_ArchiX1/opt/Archipelago/lib")
+        self.assertEqual(cemu_profile.cemu_environment(only_archipelago, "linux"),
+                         {"PATH": "/usr/bin", "HOME": "/home/player"})
+        # Its AppRun run from an extracted folder: no APPDIR, the frozen Python's folder tells.
+        extracted = {"PATH": "/usr/bin", "LD_LIBRARY_PATH": "/opt/Archipelago/lib"}
+        self.assertEqual(cemu_profile.cemu_environment(extracted, "linux", "/opt/Archipelago/ArchipelagoLauncher"),
+                         {"PATH": "/usr/bin"})
+        # A terminal, a source checkout, Windows: Cemu gets this process's own environment.
+        terminal = {"PATH": "/usr/bin", "LD_LIBRARY_PATH": "/opt/vulkan/lib"}
+        self.assertIsNone(cemu_profile.cemu_environment(terminal, "linux"))
+        self.assertIsNone(cemu_profile.cemu_environment({"PATH": "/usr/bin"}, "linux"))
+        self.assertIsNone(cemu_profile.cemu_environment(appimage, "win32"))
+
     def test_a_cemu_without_a_controller_for_player_1_is_said(self):
         import contextlib
         import io

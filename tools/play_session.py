@@ -450,7 +450,7 @@ def run(seed: str | None, *, pack: Path | None = None, prepare_only: bool = Fals
           "save whenever you like; close Cemu to end the session. "
           "Do not close this window before Cemu.", flush=True)
     process = subprocess.Popen([str(profile.cemu_executable()), "-m", str(portable / "mlc01"),
-                                "-g", str(game)], cwd=profile.PROFILE)
+                                "-g", str(game)], cwd=profile.PROFILE, env=profile.cemu_environment())
     os.environ["BOTW_CEMU_PID"] = str(process.pid)
     os.environ["BOTW_CEMU_LOG"] = str(portable / "log.txt")
     os.environ["BOTW_PRESENTATION_EVIDENCE"] = str(session / "presentation-evidence")
