@@ -1,15 +1,14 @@
 @echo off
-rem Breath of the Wild Archipelago. Drop a slot file (.apbotw.json) or a seed's zip on it, or start it.
+rem Breath of the Wild Archipelago from a source checkout. Players open it from the
+rem Archipelago Launcher (botw.apworld). Drop a slot file (.apbotw) or a seed's zip on it, or start it.
 cd /d "%~dp0"
-set "PYTHON=%~dp0python\python.exe"
-if not exist "%PYTHON%" set "PYTHON=%~dp0venv\Scripts\python.exe"
+rem pythonw: the launcher is a window, no console stays open behind it.
+set "PYTHON=%~dp0venv\Scripts\pythonw.exe"
 if not exist "%PYTHON%" (
-    echo Python is missing next to this file: %~dp0python\python.exe
-    echo Unzip the whole release first ^(right-click the zip, Extract All^), then start
-    echo BOTW Archipelago.cmd from the unzipped folder, not from inside the zip.
+    echo The checkout's Python is missing: %PYTHON%
+    echo Create it first: python -m venv venv, then venv\Scripts\python -m pip install -r requirements.txt
     pause
     exit /b 1
 )
 rem -I: no PYTHON* variable or user package of this computer reaches the tools.
-"%PYTHON%" -I "%~dp0tools\launcher.py" %*
-pause
+start "" "%PYTHON%" -I -X utf8 "%~dp0botw_launcher\__main__.py" %*

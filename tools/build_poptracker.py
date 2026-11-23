@@ -12,10 +12,10 @@ player's own base game (UI/MapTex, tools/maptex.py), so that no file of the
 game enters the repository; without it (a .wud/.wua game) the map is a plain
 grid. Everything else comes from the world: items, locations, logic
 (botw_world), positions (data/location_positions.json). The static parts are
-in tools/poptracker/. Written to PACK_FOLDER: a release's own "PopTracker"
-folder, where the player finds it and installs it in PopTracker by hand (the
-launcher asks before building the first one: not everyone uses PopTracker);
-<data>/poptracker in a source checkout.
+in tools/poptracker/. Written to PACK_FOLDER, <data>/poptracker, where the
+player finds it (the launcher's Settings) and installs it in PopTracker by
+hand; in the data folder, every installed version keeps the same pack up to
+date. Not everyone uses PopTracker: the first one is built on request.
 
 Docs: doc/PACKS.md and doc/AUTOTRACKING.md of the PopTracker repository.
 """
@@ -37,14 +37,14 @@ if str(ROOT) not in sys.path:
 
 import numpy as np  # noqa: E402
 
-from botw_client.paths import DATA, RELEASE_MARKER  # noqa: E402
+from botw_client.paths import DATA  # noqa: E402
 from tools import maptex, poptracker_regions  # noqa: E402
 from tools.bitemico import write_png  # noqa: E402
 
 STATIC = ROOT / "tools/poptracker"
 POSITIONS = ROOT / "data/location_positions.json"
 PACK_NAME = "botw_archipelago"
-PACK_FOLDER = ROOT / "PopTracker" if (ROOT / RELEASE_MARKER).is_file() else DATA / "poptracker"
+PACK_FOLDER = DATA / "poptracker"
 MAP = "Hyrule"
 SCALE = 0.2                       # map pixels per world unit (MapTex2: 200 px a section)
 # The map is cut to the locations, this many pixels around them: the sea and

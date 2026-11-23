@@ -6,9 +6,14 @@ Does what Archipelago's "Build APWorlds" launcher component does: the world
 folder under the name "botw", and its archipelago.json completed with the
 APContainer version fields (worlds/Files.py, container version 7). The
 project's LICENSE goes with it: a copy of the world carries its license (GPL).
+
+A release's apworld also carries the client's payload (client/payload.zip):
+the project's code the BOTW Archipelago window unpacks and runs inside
+Archipelago (botw_world/client). client_payload() builds it, reproducibly.
 """
 from pathlib import Path
 import argparse
+import io
 import json
 import zipfile
 
@@ -17,7 +22,10 @@ SOURCE = ROOT / "botw_world"
 LICENSE = ROOT / "LICENSE"
 NAME = "botw"
 CONTAINER_VERSION = 7          # worlds/Files.py container_version (AP 0.6.x)
-SUFFIXES = {".py", ".json", ".md", ".csv"}
+SUFFIXES = {".py", ".json", ".md", ".csv", ".png"}
+PAYLOAD = "client/payload.zip"
+MARKER = "release.json"          # botw_client/paths.py RELEASE_MARKER
+FIXED_TIME = (1980, 1, 1, 0, 0, 0)
 
 
 def manifest() -> bytes:
@@ -29,22 +37,49 @@ def manifest() -> bytes:
     return (json.dumps(data, indent=2) + "\n").encode("utf-8")
 
 
-def contents():
+def client_payload(files: dict[str, bytes]) -> bytes:
+    """The client's payload: `files` by their path in the project, in a zip
+    whose bytes depend on nothing else."""
+    stream = io.BytesIO()
+    with zipfile.ZipFile(stream, "w", zipfile.ZIP_DEFLATED) as archive:
+        for name in sorted(files):
+            entry = zipfile.ZipInfo(name, date_time=FIXED_TIME)
+            entry.compress_type = zipfile.ZIP_DEFLATED
+            entry.external_attr = 0o644 << 16
+            archive.writestr(entry, files[name])
+    return stream.getvalue()
+
+
+def contents(payload: bytes | None = None):
     for path in sorted(SOURCE.rglob("*")):
         if not path.is_file() or path.suffix not in SUFFIXES or "__pycache__" in path.parts:
             continue
         relative = path.relative_to(SOURCE).as_posix()
         yield relative, manifest() if relative == "archipelago.json" else path.read_bytes()
     yield "LICENSE", LICENSE.read_bytes()
+    if payload is not None:
+        yield PAYLOAD, payload
 
 
-def package(output: Path) -> Path:
+def statement(payload: bytes | None) -> bytes | None:
+    """The payload's release.json: what the release is and the seeds it plays."""
+    if payload is None:
+        return None
+    with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+        return archive.read(MARKER) if MARKER in archive.namelist() else None
+
+
+def package(output: Path, payload: bytes | None = None) -> Path:
+    """The apworld; with a payload, its release.json comes first, uncompressed: an
+    older window reads what a release plays from its first bytes, without
+    downloading it (botw_launcher/core/updates.py read_statement)."""
     output.parent.mkdir(parents=True, exist_ok=True)
     temp = output.with_suffix(output.suffix + ".tmp")
+    stated = statement(payload)
     with zipfile.ZipFile(temp, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        for relative, data in contents():
+        for relative, data in ([(MARKER, stated)] if stated is not None else []) + list(contents(payload)):
             entry = zipfile.ZipInfo(f"{NAME}/{relative}", date_time=(1980, 1, 1, 0, 0, 0))
-            entry.compress_type = zipfile.ZIP_DEFLATED
+            entry.compress_type = zipfile.ZIP_STORED if relative == MARKER else zipfile.ZIP_DEFLATED
             entry.external_attr = 0o644 << 16
             archive.writestr(entry, data)
     with zipfile.ZipFile(temp) as archive:

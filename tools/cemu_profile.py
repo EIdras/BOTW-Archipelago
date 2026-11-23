@@ -241,7 +241,9 @@ def cemu_running() -> bool:
     running = subprocess.run(["powershell", "-NoProfile", "-Command",
                               "Get-Process Cemu -ErrorAction SilentlyContinue "
                               "| Select-Object -ExpandProperty Id"],
-                             capture_output=True, text=True, check=False)
+                             capture_output=True, text=True, check=False,
+                             # No console flashing up when a window asks (the launcher's).
+                             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     return bool(running.stdout.strip())
 
 

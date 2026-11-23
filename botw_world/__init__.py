@@ -20,6 +20,24 @@ from .catalog import (BOSSES, CHESTS, EXTRA_FILLER, FILLER, GAME, GENTLE_REGIONS
 from .options import ELEMENTAL_TRAPS, OPTION_GROUPS, PRESETS, BotwOptions, ChestSanity, EarlyMap, SpiritOrbs, TowerMaps, WeaponOrder
 from .tracker import TRACKER_WORLD, BotwSettings
 from .slot_file import BotwSlotFile
+from worlds.LauncherComponents import Component, SuffixIdentifier, Type, components, icon_paths, launch
+
+
+def run_client(*arguments: str) -> None:
+    from .client import main
+    main(*arguments)
+
+
+def launch_client(*arguments: str) -> None:
+    """The BOTW Archipelago window (botw_world/client): from the Launcher's list,
+    or with a seed's slot file opened there (Open Patch)."""
+    launch(run_client, "BOTW Archipelago", arguments)
+
+
+icon_paths["botw"] = f"ap:{__name__}/client/icon.png"
+components.append(Component("BOTW Archipelago", func=launch_client, component_type=Type.CLIENT, icon="botw",
+                            file_identifier=SuffixIdentifier(BotwSlotFile.patch_file_ending),
+                            description="Prepare your seeds and play Breath of the Wild in Cemu."))
 
 
 # The most heart containers a location asks for: the Master Sword's.

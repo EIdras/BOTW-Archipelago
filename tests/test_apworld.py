@@ -86,7 +86,12 @@ class RuntimeTests(unittest.TestCase):
             "sys.path.insert(0, sys.argv[1])\n"
             "import worlds\n"
             "from worlds.botw import BotwWorld\n"
-            "print(len(BotwWorld.item_name_to_id), len(BotwWorld.location_name_to_id), BotwWorld.__file__)\n")
+            "print(len(BotwWorld.item_name_to_id), len(BotwWorld.location_name_to_id), BotwWorld.__file__)\n"
+            "import pkgutil\n"
+            "from worlds.LauncherComponents import components\n"
+            "client = [entry for entry in components if entry.display_name == 'BOTW Archipelago']\n"
+            "print(len(client), client[0].handles_file('C:/seeds/AP_1_P1_Link.apbotw'),\n"
+            "      'botw_launcher' in sys.modules, len(pkgutil.get_data('worlds.botw.client', 'icon.png')) > 0)\n")
         with tempfile.TemporaryDirectory() as folder:
             archive = package(Path(folder) / "botw.apworld")
             # The runtime's own copy steps aside: the world must come from the zip.
@@ -103,7 +108,10 @@ class RuntimeTests(unittest.TestCase):
             finally:
                 aside.rename(copy)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        counts = result.stdout.strip().splitlines()[-1].split()
+        # The window's entry in the Archipelago Launcher, opening slot files; the
+        # client itself is only loaded once it runs.
+        self.assertEqual(result.stdout.strip().splitlines()[-1].split(), ["1", "True", "False", "True"])
+        counts = result.stdout.strip().splitlines()[-2].split()
         self.assertEqual(counts[:2], ["246", "2857"])     # with the chests, the Koroks, the quests, the offerings, the bosses and the Master Mode chests
         self.assertIn("botw.apworld", counts[2])
 

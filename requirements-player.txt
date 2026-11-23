@@ -1,7 +1,8 @@
-# What the player's tools need, at the exact versions a release ships
-# (tools/build_release.py checks this environment against it).
+# What the player's tools need in a source checkout's Python. Inside Archipelago,
+# the client downloads oead, numpy, evfl and rstb at these same versions
+# (botw_world/client/wheels.json, tools/pin_client_wheels.py; tests/test_release.py).
 # Game pack build: BOTW resource formats
-oead==1.2.9.post4
+oead==1.3.0
 evfl==1.2.0
 rstb==1.2.2
 # Client

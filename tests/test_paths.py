@@ -21,6 +21,23 @@ class DataFolderTests(unittest.TestCase):
             self.assertEqual(paths.data_folder(root, {}),
                              Path.home() / "AppData/Local/BOTW Archipelago")
 
+    def test_off_windows_a_release_writes_in_the_shared_data_folder(self):
+        self.assertEqual(paths.default_data_folder({"XDG_DATA_HOME": "/data"}, "linux"),
+                         Path("/data/BOTW Archipelago"))
+        self.assertEqual(paths.default_data_folder({}, "linux"), Path.home() / ".local/share/BOTW Archipelago")
+
+    def test_a_release_follows_the_folder_the_player_moved_the_data_to(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root, local = Path(temp) / "release", Path(temp) / "local"
+            (local / paths.RELEASE_FOLDER).mkdir(parents=True)
+            root.mkdir()
+            (root / paths.RELEASE_MARKER).write_text("{}")
+            pointer = local / paths.RELEASE_FOLDER / paths.LOCATION_FILE
+            pointer.write_text('{"data": "D:/Games/BOTW AP"}')
+            self.assertEqual(paths.data_folder(root, {"LOCALAPPDATA": str(local)}), Path("D:/Games/BOTW AP"))
+            pointer.write_text("not json")      # unreadable: the default, never an error at start
+            self.assertEqual(paths.data_folder(root, {"LOCALAPPDATA": str(local)}), local / paths.RELEASE_FOLDER)
+
     def test_the_variable_names_another_folder(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

@@ -1,0 +1,73 @@
+{
+  "platform": "win_amd64",
+  "libraries": {
+    "oead": {
+      "version": "1.3.0",
+      "wheels": {
+        "cp313": {
+          "file": "oead-1.3.0-cp313-cp313-win_amd64.whl",
+          "url": "https://files.pythonhosted.org/packages/0f/35/271871f80dd3ea3577a9df77b54a077ae549793cd345981fd8a55d1d0c79/oead-1.3.0-cp313-cp313-win_amd64.whl",
+          "size": 1307365,
+          "sha256": "f67427978de8e02d69991d3afc843f1a40ec173c2ceea8250b1e42b1b75a91bb"
+        },
+        "cp314": {
+          "file": "oead-1.3.0-cp314-cp314-win_amd64.whl",
+          "url": "https://files.pythonhosted.org/packages/7a/ee/54c1b86a2b79d1951a4dc621a4849e462328d21421ae75f6094e488581a1/oead-1.3.0-cp314-cp314-win_amd64.whl",
+          "size": 1342845,
+          "sha256": "e78a22059b94aa1aececc8fc294ad9428f831d8a6e59869ad1bdff2a0be6fd78"
+        }
+      }
+    },
+    "numpy": {
+      "version": "2.5.2",
+      "wheels": {
+        "cp313": {
+          "file": "numpy-2.5.2-cp313-cp313-win_amd64.whl",
+          "url": "https://files.pythonhosted.org/packages/15/20/f3489f86d81ea460b2bcdceaed094142ca6579f6be0ec527b781d39afe68/numpy-2.5.2-cp313-cp313-win_amd64.whl",
+          "size": 12460532,
+          "sha256": "85aaccb24182c25df891ad0ec333585967e115269d5f1b17f2c9ae005bc96657"
+        },
+        "cp314": {
+          "file": "numpy-2.5.2-cp314-cp314-win_amd64.whl",
+          "url": "https://files.pythonhosted.org/packages/15/5c/7bcbd5b11f94199073320410cddcbb80cee62415bfeb540874b265c2d922/numpy-2.5.2-cp314-cp314-win_amd64.whl",
+          "size": 12597627,
+          "sha256": "7587f53dfbd5edc0f7b87c6217b4c6d2d1f2ef9c3da70bc1315e7db5f8d7ec9d"
+        }
+      }
+    },
+    "evfl": {
+      "version": "1.2.0",
+      "wheels": {
+        "cp313": {
+          "file": "evfl-1.2.0-py3-none-any.whl",
+          "url": "https://files.pythonhosted.org/packages/b5/3c/49415ce6123f36ad2352610baf07170b695a599739da91cf13f3bf11d343/evfl-1.2.0-py3-none-any.whl",
+          "size": 28812,
+          "sha256": "dbfb7c68a99ccbc2942636a7153fe9bae7d869ada31c0cdf441145cc71a4ffde"
+        },
+        "cp314": {
+          "file": "evfl-1.2.0-py3-none-any.whl",
+          "url": "https://files.pythonhosted.org/packages/b5/3c/49415ce6123f36ad2352610baf07170b695a599739da91cf13f3bf11d343/evfl-1.2.0-py3-none-any.whl",
+          "size": 28812,
+          "sha256": "dbfb7c68a99ccbc2942636a7153fe9bae7d869ada31c0cdf441145cc71a4ffde"
+        }
+      }
+    },
+    "rstb": {
+      "version": "1.2.2",
+      "wheels": {
+        "cp313": {
+          "file": "rstb-1.2.2-py3-none-any.whl",
+          "url": "https://files.pythonhosted.org/packages/0c/9d/09a3e82d35ff036f00980577d4e586bcc92a719d7a97f5f89dfd5eed882f/rstb-1.2.2-py3-none-any.whl",
+          "size": 15733,
+          "sha256": "5f3b6a66172d5cd22c0d351bdb4d750d08953c4cab9502eded3ff4043fc83592"
+        },
+        "cp314": {
+          "file": "rstb-1.2.2-py3-none-any.whl",
+          "url": "https://files.pythonhosted.org/packages/0c/9d/09a3e82d35ff036f00980577d4e586bcc92a719d7a97f5f89dfd5eed882f/rstb-1.2.2-py3-none-any.whl",
+          "size": 15733,
+          "sha256": "5f3b6a66172d5cd22c0d351bdb4d750d08953c4cab9502eded3ff4043fc83592"
+        }
+      }
+    }
+  }
+}
