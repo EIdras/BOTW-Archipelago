@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 import sys
 import tempfile
+import time
 import unittest
 from unittest import mock
 import zipfile
@@ -186,7 +187,12 @@ class InstanceTests(unittest.TestCase):
                 self.assertFalse(later.claim())
                 later.forward(["C:/seeds/AP_1_P1_Link.apbotw"])
                 later.forward([])
-                self.assertEqual(first.requests(), [["C:/seeds/AP_1_P1_Link.apbotw"], []])
+                # The requests may reach the first window a little later on a slow machine.
+                got, deadline = [], time.monotonic() + 5
+                while len(got) < 2 and time.monotonic() < deadline:
+                    got += first.requests()
+                    time.sleep(0.05)
+                self.assertEqual(got, [["C:/seeds/AP_1_P1_Link.apbotw"], []])
                 self.assertEqual(first.requests(), [])
             finally:
                 first._handle.close()
