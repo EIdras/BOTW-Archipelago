@@ -56,21 +56,16 @@ vos sauvegardes : le dossier de l'ancienne release peut être supprimé. Le guid
 
 ## Sous Linux
 
-Même `botw.apworld`, même fenêtre, dans la version Linux d'Archipelago :
+Le même `botw.apworld` tourne dans la version Linux d'Archipelago, sur un PC 64 bits (x86-64) avec une distribution
+assez récente pour l'AppImage d'Archipelago. Deux différences avec Windows :
 
-- **Archipelago** : l'`AppImage` de sa dernière release, rendue exécutable (`chmod +x Archipelago_*.AppImage`).
-  **Install APWorld** copie `botw.apworld` dans `~/.local/share/Archipelago/worlds`.
+- **Archipelago** est une AppImage : la télécharger dans sa dernière release, la rendre exécutable
+  (`chmod +x Archipelago_*.AppImage`) et l'ouvrir.
 - **Cemu** : son AppImage officielle, ou le `Cemu` de son zip Linux. Pas le Cemu Flatpak ni Snap : leur bac à sable
   cache Cemu au client, et le lanceur les refuse.
-- **Pilote graphique** : Cemu a besoin de Vulkan ; `vulkaninfo --summary` doit montrer votre carte graphique, pas
-  seulement `llvmpipe` (le processeur, bien trop lent).
-- **Mémoire de Cemu** : le client lit la mémoire du Cemu qu'il lance, ce que Linux permet par défaut
-  (`kernel.yama.ptrace_scope` à 0 ou 1). À 2 ou 3, `sudo sysctl kernel.yama.ptrace_scope=1` le rétablit jusqu'au
-  prochain redémarrage.
-- **Dossiers** : les données dans `~/.local/share/BOTW Archipelago`, les bibliothèques dans
-  `~/.cache/Archipelago/botw`.
 
-Le détail, en anglais : [On Linux](setup_en.md#on-linux).
+Rien d'autre à régler. Cemu très lent, ou une session qui ne l'atteint pas :
+[Troubleshooting](troubleshooting_en.md#common-problems).
 
 ## Pour aller plus loin
 

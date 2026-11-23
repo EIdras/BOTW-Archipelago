@@ -131,20 +131,17 @@ unzipped the old release can then be deleted.
 
 ## On Linux
 
-BOTW Archipelago runs in Archipelago's Linux build, the same way as on Windows, with the same `botw.apworld`.
+The same `botw.apworld` runs in Archipelago's Linux build, on a 64-bit PC (x86-64) with a distribution recent enough
+for Archipelago's AppImage. Two differences from Windows:
 
-- **Archipelago**: download the `Archipelago_<version>_linux-x86_64.AppImage` of its
+- **Archipelago** comes as an AppImage: download `Archipelago_<version>_linux-x86_64.AppImage` from its
   [latest release](https://github.com/ArchipelagoMW/Archipelago/releases), make it executable
-  (`chmod +x Archipelago_*.AppImage`) and open it. **Install APWorld** copies `botw.apworld` to
-  `~/.local/share/Archipelago/worlds`.
+  (`chmod +x Archipelago_*.AppImage`) and open it.
 - **Cemu**: its official AppImage, or the `Cemu` of its Linux zip, from [cemu.info](https://cemu.info/). Not a
-  Flatpak or Snap Cemu: its sandbox hides Cemu from the client, so the launcher refuses it. Cemu keeps its settings
-  in `~/.config/Cemu` and its game data (`mlc01`, where the update and the DLC go) in `~/.local/share/Cemu`.
-- **Your graphics driver**: Cemu needs Vulkan. `vulkaninfo --summary` (package `vulkan-tools`) should list your
-  graphics card, not only `llvmpipe`, which runs on the processor and is far too slow.
-- **Reading Cemu's memory**: the client reads the memory of the Cemu it starts, which Linux allows by default
-  (`kernel.yama.ptrace_scope` 0 or 1). With 2 or 3, the client says it cannot reach Cemu:
-  `sudo sysctl kernel.yama.ptrace_scope=1` allows it again until the next restart.
+  Flatpak or Snap Cemu: its sandbox hides Cemu from the client, so the launcher refuses it.
+
+Nothing else to set up. Cemu very slow, or a session that cannot reach it: see
+[Troubleshooting](troubleshooting_en.md#common-problems).
 
 ## Where things are
 
