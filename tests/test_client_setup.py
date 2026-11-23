@@ -58,6 +58,7 @@ class PinTests(unittest.TestCase):
             self.assertEqual(set(entry["wheels"]), {"win_amd64", "linux_x86_64"}, name)
             for system, pythons in entry["wheels"].items():
                 self.assertIn("cp313", pythons, name)       # Archipelago 0.6.7
+                self.assertIn("cp312", pythons, name)       # Archipelago 0.6.8's Linux AppImage
                 for python, wheel_pin in pythons.items():
                     self.assertTrue(wheel_pin["url"].startswith("https://files.pythonhosted.org/"), wheel_pin)
                     self.assertTrue(wheel_pin["url"].endswith("/" + wheel_pin["file"]), wheel_pin)

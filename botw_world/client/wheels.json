@@ -4,6 +4,12 @@
       "version": "1.3.0",
       "wheels": {
         "win_amd64": {
+          "cp312": {
+            "file": "oead-1.3.0-cp312-cp312-win_amd64.whl",
+            "url": "https://files.pythonhosted.org/packages/7b/13/1dd11eae3e952cdd59d3eda8b049d674403b2eeccb267efc1b5c47bb4da4/oead-1.3.0-cp312-cp312-win_amd64.whl",
+            "size": 1307438,
+            "sha256": "818f15bf6eb814d4faa535593952ae98580ed89da1529c1d2dda913b7bf31578"
+          },
           "cp313": {
             "file": "oead-1.3.0-cp313-cp313-win_amd64.whl",
             "url": "https://files.pythonhosted.org/packages/0f/35/271871f80dd3ea3577a9df77b54a077ae549793cd345981fd8a55d1d0c79/oead-1.3.0-cp313-cp313-win_amd64.whl",
@@ -18,6 +24,12 @@
           }
         },
         "linux_x86_64": {
+          "cp312": {
+            "file": "oead-1.3.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+            "url": "https://files.pythonhosted.org/packages/a0/6d/491eedcacb94164270256ef81533c3094e4f3bfa82c5a618b84e482edd7f/oead-1.3.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+            "size": 1711486,
+            "sha256": "71dfb3119827ebdda067ff197c7af3229095a3670ff313bb58fab54b5685fed6"
+          },
           "cp313": {
             "file": "oead-1.3.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
             "url": "https://files.pythonhosted.org/packages/7e/00/042694422cf11d2c8482fba97190c9c04f302c8202ca482b075b4511fdb8/oead-1.3.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
@@ -37,6 +49,12 @@
       "version": "2.5.2",
       "wheels": {
         "win_amd64": {
+          "cp312": {
+            "file": "numpy-2.5.2-cp312-cp312-win_amd64.whl",
+            "url": "https://files.pythonhosted.org/packages/7f/b9/87fea2769fe1c47c1b5b01d8310772c9d1a85d485de7cf386ef7a3332b02/numpy-2.5.2-cp312-cp312-win_amd64.whl",
+            "size": 12464674,
+            "sha256": "28ac63476ec7651484215ee7fa15a1f78b57c14621f01e392afe17b9a1390ce4"
+          },
           "cp313": {
             "file": "numpy-2.5.2-cp313-cp313-win_amd64.whl",
             "url": "https://files.pythonhosted.org/packages/15/20/f3489f86d81ea460b2bcdceaed094142ca6579f6be0ec527b781d39afe68/numpy-2.5.2-cp313-cp313-win_amd64.whl",
@@ -51,6 +69,12 @@
           }
         },
         "linux_x86_64": {
+          "cp312": {
+            "file": "numpy-2.5.2-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+            "url": "https://files.pythonhosted.org/packages/3a/5f/62d28cf019460c7f1394105b4d49d9911a9c444cb77ab0bd95a204c5a6de/numpy-2.5.2-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+            "size": 16722264,
+            "sha256": "3cdec01fa790a186d430433fdd4d4ffb70eed6f0eeb4bf05c8dbe2dce0a9bcb8"
+          },
           "cp313": {
             "file": "numpy-2.5.2-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
             "url": "https://files.pythonhosted.org/packages/7b/44/59a1eb68e773c4098d107ef34a0dbdeca501d72ffcfbff9a7707343921ce/numpy-2.5.2-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
@@ -70,6 +94,12 @@
       "version": "1.2.0",
       "wheels": {
         "win_amd64": {
+          "cp312": {
+            "file": "evfl-1.2.0-py3-none-any.whl",
+            "url": "https://files.pythonhosted.org/packages/b5/3c/49415ce6123f36ad2352610baf07170b695a599739da91cf13f3bf11d343/evfl-1.2.0-py3-none-any.whl",
+            "size": 28812,
+            "sha256": "dbfb7c68a99ccbc2942636a7153fe9bae7d869ada31c0cdf441145cc71a4ffde"
+          },
           "cp313": {
             "file": "evfl-1.2.0-py3-none-any.whl",
             "url": "https://files.pythonhosted.org/packages/b5/3c/49415ce6123f36ad2352610baf07170b695a599739da91cf13f3bf11d343/evfl-1.2.0-py3-none-any.whl",
@@ -84,6 +114,12 @@
           }
         },
         "linux_x86_64": {
+          "cp312": {
+            "file": "evfl-1.2.0-py3-none-any.whl",
+            "url": "https://files.pythonhosted.org/packages/b5/3c/49415ce6123f36ad2352610baf07170b695a599739da91cf13f3bf11d343/evfl-1.2.0-py3-none-any.whl",
+            "size": 28812,
+            "sha256": "dbfb7c68a99ccbc2942636a7153fe9bae7d869ada31c0cdf441145cc71a4ffde"
+          },
           "cp313": {
             "file": "evfl-1.2.0-py3-none-any.whl",
             "url": "https://files.pythonhosted.org/packages/b5/3c/49415ce6123f36ad2352610baf07170b695a599739da91cf13f3bf11d343/evfl-1.2.0-py3-none-any.whl",
@@ -103,6 +139,12 @@
       "version": "1.2.2",
       "wheels": {
         "win_amd64": {
+          "cp312": {
+            "file": "rstb-1.2.2-py3-none-any.whl",
+            "url": "https://files.pythonhosted.org/packages/0c/9d/09a3e82d35ff036f00980577d4e586bcc92a719d7a97f5f89dfd5eed882f/rstb-1.2.2-py3-none-any.whl",
+            "size": 15733,
+            "sha256": "5f3b6a66172d5cd22c0d351bdb4d750d08953c4cab9502eded3ff4043fc83592"
+          },
           "cp313": {
             "file": "rstb-1.2.2-py3-none-any.whl",
             "url": "https://files.pythonhosted.org/packages/0c/9d/09a3e82d35ff036f00980577d4e586bcc92a719d7a97f5f89dfd5eed882f/rstb-1.2.2-py3-none-any.whl",
@@ -117,6 +159,12 @@
           }
         },
         "linux_x86_64": {
+          "cp312": {
+            "file": "rstb-1.2.2-py3-none-any.whl",
+            "url": "https://files.pythonhosted.org/packages/0c/9d/09a3e82d35ff036f00980577d4e586bcc92a719d7a97f5f89dfd5eed882f/rstb-1.2.2-py3-none-any.whl",
+            "size": 15733,
+            "sha256": "5f3b6a66172d5cd22c0d351bdb4d750d08953c4cab9502eded3ff4043fc83592"
+          },
           "cp313": {
             "file": "rstb-1.2.2-py3-none-any.whl",
             "url": "https://files.pythonhosted.org/packages/0c/9d/09a3e82d35ff036f00980577d4e586bcc92a719d7a97f5f89dfd5eed882f/rstb-1.2.2-py3-none-any.whl",

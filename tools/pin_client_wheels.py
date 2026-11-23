@@ -20,7 +20,7 @@ import urllib.request
 
 ROOT = Path(__file__).resolve().parent.parent
 PINS = ROOT / "botw_world/client/wheels.json"
-PYTHONS = ("cp313", "cp314")
+PYTHONS = ("cp312", "cp313", "cp314")        # cp312: Archipelago 0.6.8's Linux AppImage (Python 3.12.14)
 PLATFORMS = ("win_amd64", "linux_x86_64")       # the client's platform_key()
 GLIBC = (2, 35)         # Archipelago's Linux build (Ubuntu 22.04): no wheel may ask for more
 HOSTS = ("https://files.pythonhosted.org/",)
