@@ -21,6 +21,8 @@ MAGIC = b"APMBOX01\x00"
 VERSION = 0x0BADF00E
 HOOK_GUEST = 0x031FA9B4          # guest address where our bla must be
 DEFAULT_LOG = pathlib.Path.home() / "AppData/Roaming/Cemu/log.txt"
+if sys.platform != "win32":     # the data folder of a Linux Cemu that is not portable
+    DEFAULT_LOG = pathlib.Path(os.environ.get("XDG_DATA_HOME") or pathlib.Path.home() / ".local/share") / "Cemu/log.txt"
 LOG = None   # explicit override; otherwise BOTW_CEMU_LOG, read at call time
 
 

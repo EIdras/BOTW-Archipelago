@@ -40,6 +40,7 @@ import xml.etree.ElementTree as ET
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools.cemu import guest  # noqa: E402
+from tools.cemu_install import data_of  # noqa: E402
 
 FOLDER = "graphicPacks"
 DEFAULT_PRIORITY = 100          # GraphicPack2::m_fs_priority
@@ -261,7 +262,7 @@ def enabled(user_data: Path, title: str) -> list[PlayerPack]:
 def installed(user_data: Path, title: str) -> list[PlayerPack]:
     """Every graphic pack Cemu loads for `title`, enabled or not, in the order
     it walks them."""
-    root = user_data / FOLDER
+    root = data_of(user_data) / FOLDER
     title_id = int("00050000" + title, 16)
     entries = settings_entries(user_data / "settings.xml")
     packs = []

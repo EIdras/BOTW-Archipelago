@@ -5,7 +5,12 @@
 Cemu keeps its settings (settings.xml) and the list of the games it found
 (title_list_cache.xml: path, format and version of every title) in its user
 folder: the "portable" folder next to Cemu.exe when there is one, else
-%APPDATA%\\Cemu. The update and the DLC are titles installed in its mlc01
+%APPDATA%\\Cemu. On Linux the portable folder is next to the binary or the
+AppImage, and a Cemu that is not portable splits its user folder in two: its
+settings in $XDG_CONFIG_HOME/Cemu, its data (mlc01, graphicPacks, the game
+list, log.txt) in $XDG_DATA_HOME/Cemu. user_data is always the folder holding
+settings.xml, data_of() the one holding the data. The update and the DLC are
+titles installed in its mlc01
 folder (settings.xml can move it); the base game is wherever its game paths
 found it, as a folder, a .wud/.wux/.wua file or a NUS folder (title.tmd).
 
@@ -64,25 +69,44 @@ class CemuInstall:
         return self.update / "code" / "U-King.rpx"
 
 
-def user_data_of(executable: Path | None = None, environ=os.environ) -> Path:
-    """Cemu's user folder: portable next to Cemu.exe, else %APPDATA%\\Cemu."""
+def _xdg(environ, variable: str, default: str) -> Path:
+    """An XDG base folder of Cemu: the variable when set, else its default under home."""
+    return Path(environ.get(variable) or Path.home() / default) / "Cemu"
+
+
+def user_data_of(executable: Path | None = None, environ=os.environ, platform: str = sys.platform) -> Path:
+    """Cemu's user folder: portable next to Cemu.exe, else %APPDATA%\\Cemu
+    ($XDG_CONFIG_HOME/Cemu on Linux)."""
     if executable is not None:
         folder = Path(executable).parent
         if (folder / "portable").is_dir():
             return folder / "portable"
         if (folder / "settings.xml").is_file():     # Cemu 1.x kept it next to the executable
             return folder
+    if platform != "win32":
+        return _xdg(environ, "XDG_CONFIG_HOME", ".config")
     appdata = environ.get("APPDATA")
     return (Path(appdata) if appdata else Path.home() / "AppData" / "Roaming") / "Cemu"
 
 
-def mlc_of(user_data: Path) -> Path:
+def data_of(user_data: Path, environ=os.environ, platform: str = sys.platform) -> Path:
+    """The folder of Cemu's data for its user folder: the same one, but for the
+    configuration folder of a Linux Cemu that is not portable."""
+    user_data = Path(user_data)
+    if platform != "win32" and user_data.expanduser().resolve() == _xdg(
+            environ, "XDG_CONFIG_HOME", ".config").resolve():
+        return _xdg(environ, "XDG_DATA_HOME", ".local/share")
+    return user_data
+
+
+def mlc_of(user_data: Path, environ=os.environ, platform: str = sys.platform) -> Path:
     settings = user_data / "settings.xml"
     if not settings.is_file():
         raise CemuInstallError(f"Cemu's settings are not in {user_data}: start Cemu once, "
                                "or name its user folder (the one holding settings.xml)")
     configured = ET.parse(settings).getroot().findtext("mlc_path")
-    return Path(configured) if configured and configured.strip() else user_data / "mlc01"
+    return (Path(configured) if configured and configured.strip()
+            else data_of(user_data, environ, platform) / "mlc01")
 
 
 def _meta_version(folder: Path) -> int | None:
@@ -93,7 +117,7 @@ def _meta_version(folder: Path) -> int | None:
         return None
 
 
-def titles(user_data: Path, mlc: Path) -> dict[str, Title]:
+def titles(user_data: Path, mlc: Path, environ=os.environ, platform: str = sys.platform) -> dict[str, Title]:
     """Every title Cemu knows, by lowercase title id: installed in mlc01 first
     (their meta.xml is current), then from its game list."""
     found: dict[str, Title] = {}
@@ -103,7 +127,7 @@ def titles(user_data: Path, mlc: Path) -> dict[str, Title]:
             version = _meta_version(folder)
             if version is not None:
                 found[kind + folder.name.lower()] = Title(folder, FOLDER, version)
-    cache = user_data / "title_list_cache.xml"
+    cache = data_of(user_data, environ, platform) / "title_list_cache.xml"
     if cache.is_file():
         for entry in ET.parse(cache).getroot().iter("title"):
             try:
@@ -157,12 +181,13 @@ def _base(known: dict[str, Title], region: regions.Region) -> Path:
 
 
 def detect(executable: Path | None = None, user_data: Path | None = None,
-           environ=os.environ, region: regions.Region | None = None) -> CemuInstall:
+           environ=os.environ, region: regions.Region | None = None,
+           platform: str = sys.platform) -> CemuInstall:
     """The Breath of the Wild of a Cemu installation (`region`, else the first
     supported version it has), checked."""
-    user_data = Path(user_data) if user_data is not None else user_data_of(executable, environ)
-    mlc = mlc_of(user_data)
-    known = titles(user_data, mlc)
+    user_data = Path(user_data) if user_data is not None else user_data_of(executable, environ, platform)
+    mlc = mlc_of(user_data, environ, platform)
+    known = titles(user_data, mlc, environ, platform)
     region = _region(known, region)
     game = _base(known, region)
     update = known.get(UPDATE + region.title)

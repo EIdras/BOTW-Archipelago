@@ -10,13 +10,18 @@ from __future__ import annotations
 
 from functools import lru_cache
 import json
+import os
 from pathlib import Path
+import sys
 
 from .paths import DATA
 
 TABLE = DATA / "gamedata.json"
 DEFAULT_CONTENT = (Path.home() / "AppData/Roaming/Cemu/mlc01/usr/title"
                    / "0005000e/101c9500/content")
+if sys.platform != "win32":     # the data folder of a Linux Cemu that is not portable
+    DEFAULT_CONTENT = (Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local/share")
+                       / "Cemu/mlc01/usr/title/0005000e/101c9500/content")
 BOOTUP = "Pack/Bootup.pack"
 GAMEDATA = "GameData/gamedata.ssarc"
 

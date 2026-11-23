@@ -131,14 +131,47 @@ class UserFolderTests(unittest.TestCase):
             root = Path(temp)
             exe = root / "Cemu" / "Cemu.exe"
             exe.parent.mkdir()
-            self.assertEqual(ci.user_data_of(exe, {"APPDATA": "C:/Roaming"}), Path("C:/Roaming/Cemu"))
+            self.assertEqual(ci.user_data_of(exe, {"APPDATA": "C:/Roaming"}, "win32"), Path("C:/Roaming/Cemu"))
+            self.assertEqual(ci.data_of(Path("C:/Roaming/Cemu"), {"APPDATA": "C:/Roaming"}, "win32"),
+                             Path("C:/Roaming/Cemu"))
             (exe.parent / "settings.xml").write_text("<content/>")
             self.assertEqual(ci.user_data_of(exe, {}), exe.parent)
             (exe.parent / "portable").mkdir()
             self.assertEqual(ci.user_data_of(exe, {}), exe.parent / "portable")
+            self.assertEqual(ci.data_of(exe.parent / "portable"), exe.parent / "portable")
+
+    def test_linux_splits_settings_and_data_unless_portable(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            environ = {"XDG_CONFIG_HOME": str(root / "config"), "XDG_DATA_HOME": str(root / "data")}
+            appimage = root / "Apps" / "Cemu-2.6-x86_64.AppImage"
+            appimage.parent.mkdir()
+            self.assertEqual(ci.user_data_of(appimage, environ, "linux"), root / "config" / "Cemu")
+            self.assertEqual(ci.data_of(root / "config" / "Cemu", environ, "linux"), root / "data" / "Cemu")
+            self.assertEqual(ci.user_data_of(None, {}, "linux"), Path.home() / ".config" / "Cemu")
+            self.assertEqual(ci.data_of(Path.home() / ".config" / "Cemu", {}, "linux"),
+                             Path.home() / ".local" / "share" / "Cemu")
+            (appimage.parent / "portable").mkdir()          # next to the AppImage: one folder
+            self.assertEqual(ci.user_data_of(appimage, environ, "linux"), appimage.parent / "portable")
+            self.assertEqual(ci.data_of(appimage.parent / "portable", environ, "linux"), appimage.parent / "portable")
 
 
 class DetectionTests(unittest.TestCase):
+    def test_a_linux_cemu_with_its_settings_apart_from_its_data(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "data").mkdir()
+            install = Install(root / "data")                # mlc01 and the game list: the data folder
+            config = root / "config" / "Cemu"
+            config.mkdir(parents=True)
+            (install.user / "settings.xml").replace(config / "settings.xml")
+            environ = {"XDG_CONFIG_HOME": str(root / "config"), "XDG_DATA_HOME": str(root / "data")}
+            with mock.patch("tools.build_native_from_source.RPX_SHA256", hashlib.sha256(RPX).hexdigest()):
+                found = ci.detect(environ=environ, platform="linux")
+            self.assertEqual(found.user_data, config)
+            self.assertEqual((found.mlc, found.update, found.dlc), (install.mlc, install.update, install.dlc))
+            self.assertEqual(found.game, install.base / "code/U-King.rpx")
+
     def test_the_three_titles_wherever_cemu_has_them(self):
         with tempfile.TemporaryDirectory() as temp:
             install = Install(Path(temp), mlc=Path(temp) / "elsewhere" / "mlc01")
