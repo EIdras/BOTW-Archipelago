@@ -272,5 +272,71 @@ class BulkTests(unittest.TestCase):
         self.assertFalse(r._bulk_line(other))
 
 
+class RoomRecordTests(unittest.TestCase):
+    """A new client state (another PC, a deleted data folder) in a room where
+    another state already gave items: they come back as after a reload."""
+
+    def fresh(self, room):
+        r, backend = runtime()
+        r.state.update(delivered_high=0, presentation_completed=[], shown=[],
+                       display_queue=[0, 1, 2], location_display_queue=[154])
+        r.ap.slot = 1
+        r.ap.received_items = dict(r.ap.received_items)
+        r.ap.received_items[0] = NetworkItem(1, 154, 1, 0)    # found in this world
+        r.ap.room_delivered_high = room
+        r.logs = []
+        r.log = r.logs.append
+        stored = []
+
+        async def store(value):
+            stored.append(value)
+            r.ap.room_delivered_high = value
+        r.ap.store_delivered_high = store
+        r.game = type("G", (), {"delivery_block_reason": ""})()
+        return r, backend, stored
+
+    def test_items_another_state_gave_come_back_quietly_without_their_windows(self):
+        r, backend, stored = self.fresh(2)
+        asyncio.run(r._sync_room_delivery_record())
+        self.assertEqual(r.state["delivered_high"], 2)
+        self.assertEqual(r.state["display_queue"], [2])      # no AP window for 0 and 1
+        self.assertEqual((r.state["shown"], r.state["presentation_completed"]), ([0, 1], [0, 1]))
+        # Its location was shown with it: checked again in the new save, no window.
+        self.assertEqual((r.state["location_shown"], r.state["location_display_queue"]), ([154], []))
+        for _ in range(2):
+            asyncio.run(r._apply_one_received_native())
+            r.state["apply_queue"].pop(0)
+            r._flush_replay_summary()
+        self.assertEqual([c.quiet for c in backend.commands], [True, True])
+        self.assertEqual(r.state["summary_queue"], [{
+            "key": "summary/1", "title": "Items restored", "lines": ["Zora Set"]}])
+        asyncio.run(r._apply_one_received_native())          # index 2: its window first
+        self.assertEqual(len(backend.commands), 2)
+        self.assertEqual(stored, [])
+
+    def test_nothing_is_given_before_the_room_record_is_read(self):
+        r, backend, _stored = self.fresh(None)
+        self.assertFalse(r._room_record_read())
+        asyncio.run(r._sync_room_delivery_record())
+        asyncio.run(r._apply_one_received_native())
+        self.assertEqual(backend.commands, [])
+        self.assertIn("room's record", r.game.delivery_block_reason)
+        self.assertEqual(r.state["display_queue"], [0, 1, 2])
+
+    def test_a_state_ahead_of_the_room_raises_its_record(self):
+        r, _backend, stored = self.fresh(1)
+        r.state["delivered_high"] = 3
+        asyncio.run(r._sync_room_delivery_record())
+        self.assertEqual(stored, [3])
+        self.assertEqual(r.state["display_queue"], [0, 1, 2])  # its own projection untouched
+        asyncio.run(r._sync_room_delivery_record())
+        self.assertEqual(stored, [3])                         # once, until it moves again
+        r.state["delivered_high"] = 4
+        asyncio.run(r._sync_room_delivery_record())
+        self.assertEqual(stored, [3, 4])
+        # Told once a connection: the test's proof that the room got it.
+        self.assertEqual(r.logs, ["room's record of the items given raised to #3"])
+
+
 if __name__ == "__main__":
     unittest.main()

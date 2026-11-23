@@ -186,6 +186,12 @@ Loading an older save moves the delivery cursor back. The client keeps the highe
 A former reload's window still waiting when another reload is given back is dropped, as long as the game was
 never asked for it (`PresentationQueue.withdraw`): the new one names what comes back again.
 
+The room keeps `delivered_high` too, in its data storage (`botw_delivered_<team>_<slot>`, raised with `max`): the
+client reads it at each connection and pushes its own when it is ahead. A new client state (another PC, a deleted data
+folder, a seed added from a room link) learns there what another one gave, and gives it back the same way, its AP
+windows taken as seen (`BotwClientRuntime._sync_room_delivery_record`). Nothing is given nor announced before the
+room's value is read. A trap given back has no effect and no line.
+
 The items a **release or a collect** sends at once come the same way, named by one window **"Items received"**,
 without their journal lines. Archipelago marks no item as released: the server's notice tells it (PrintJSON `Release`
 with the released slot, `Collect` with this slot), and the items it sends arrive within seconds of it

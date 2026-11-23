@@ -247,7 +247,8 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(client.sender(NetworkItem(1, 2, 1, 0)),
                          ("Player", "Breath of the Wild"))
         self.assertEqual(sent[0]["cmd"], "GetDataPackage")
-        self.assertEqual(sent[1], {"cmd": "ConnectUpdate",
+        self.assertEqual(sent[1], {"cmd": "Get", "keys": ["botw_delivered_0_1"]})
+        self.assertEqual(sent[2], {"cmd": "ConnectUpdate",
                                    "tags": ["AP", "DeathLink"]})
 
     async def test_scouts_messages_and_deathlink_are_structured(self):
@@ -328,7 +329,8 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
                               "checked_locations": [], "slot_data": {}})
         await client._packet({"cmd": "DataPackage", "data": {"games": {
             "Breath of the Wild": {"item_name_to_id": {}, "location_name_to_id": {}}}}})
-        self.assertEqual([command["cmd"] for command in sent], ["GetDataPackage"])
+        # The room's record of the items given only: no hints.
+        self.assertEqual(sent[1:], [{"cmd": "Get", "keys": ["botw_delivered_0_1"]}])
         await client._packet({"cmd": "Retrieved", "keys": {"_read_hints_0_1": []}})
 
     async def test_index_zero_replaces_the_full_received_inventory(self):
@@ -405,7 +407,7 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
                              (f"ws://127.0.0.1:{port}", [f"ws://127.0.0.1:{port}"]))
             await asyncio.wait_for(client.data_package_event.wait(), 2)
             self.assertEqual([packet["cmd"] for packet in received],
-                             ["Connect", "GetDataPackage"])
+                             ["Connect", "GetDataPackage", "Get"])
             self.assertEqual(client.item_name_by_id, {1: "Paraglider"})
             self.assertIn("permessage-deflate", extensions[0])
             self.assertTrue(client.websocket.compress)

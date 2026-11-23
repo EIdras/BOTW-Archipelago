@@ -1111,6 +1111,9 @@ class BotwClientRuntime:
                 or not self.state["apply_queue"]
                 or time.monotonic() < self._native_delivery_retry_after):
             return
+        if not self._room_record_read():
+            self.game.delivery_block_reason = "reading the room's record of the items already given"
+            return
         checkpoint = await asyncio.to_thread(self.deliveries.backend.checkpoint)
         index, step = checkpoint.cursor >> 8, checkpoint.cursor & 0xFF
         if int(self.state["apply_queue"][0]) != index:
@@ -2602,6 +2605,57 @@ class BotwClientRuntime:
                      f"type={fields['type'] or '(empty)'} flags={fields['flags']:#x} "
                      f"-> {after.replace('request_', '')}")
 
+    def _room_record_read(self) -> bool:
+        """The room's record of the items given (protocol.DELIVERED_KEY) was
+        read on this connection; nothing is given nor announced before."""
+        return getattr(self.ap, "room_delivered_high", 0) is not None
+
+    async def _sync_room_delivery_record(self):
+        """The room keeps delivered_high too: a new client state (another PC, a
+        deleted data folder, a seed added from a room link) learns there what
+        another one gave. Those items come back as after a reload: quietly,
+        their windows already seen, named in one summary, a trap without
+        effect. This state's own is pushed up whenever it is ahead."""
+        if not hasattr(self.ap, "room_delivered_high") or not self.state:
+            return
+        remote = self.ap.room_delivered_high
+        if remote is None:
+            self._room_record_told = False      # a new connection: told again once
+            return
+        local = int(self.state.get("delivered_high", 0))
+        if remote > local:
+            given = sorted(index for index in self.ap.received_items if local <= index < remote)
+            for field in ("shown", "presentation_completed"):
+                known = {int(value) for value in self.state[field]}
+                self.state[field].extend(index for index in given if index not in known)
+                self.state[field].sort()
+            self.state["display_queue"] = [value for value in self.state["display_queue"]
+                                           if not local <= int(value) < remote]
+            # Found in this world: its location was shown with it (a check made
+            # again in the new save opens no window, nor waits for one).
+            places = {self.ap.received_items[index].location for index in given
+                      if self.ap.received_items[index].player == getattr(self.ap, "slot", None)}
+            for field in ("location_shown", "location_presentation_completed"):
+                values = self.state.setdefault(field, [])
+                known = {int(value) for value in values}
+                values.extend(sorted(places - known))
+                values.sort()
+            self.state["location_display_queue"] = [
+                value for value in self.state.get("location_display_queue", [])
+                if int(value) not in places]
+            self.state["delivered_high"] = remote
+            self.state_store.save()
+            self.log(f"items #{local} to #{remote - 1} given by another client of this slot "
+                     "(the room's record): given back quietly")
+        elif local > remote:
+            try:
+                await self.ap.store_delivered_high(local)
+            except OSError:
+                return                          # disconnected: pushed again once connected
+            if not getattr(self, "_room_record_told", False):
+                self._room_record_told = True
+                self.log(f"room's record of the items given raised to #{local}")
+
     def _flush_replay_summary(self):
         """Once the items a reloaded save lost are given back, one AP window
         names them (in the presentation session's FIFO)."""
@@ -2724,7 +2778,8 @@ class BotwClientRuntime:
         self._flush_replay_summary()
         from .presentation_session import snapshot_ap
         ready = (self._ap_session_ready and self.ap.connected
-                 and getattr(self.ap, 'items_synchronized', False))
+                 and getattr(self.ap, 'items_synchronized', False)
+                 and self._room_record_read())
         source = snapshot_ap(self.ap) if ready else None
         session = self.presentations
         recovery = self._presentation_recovery_request
@@ -2809,6 +2864,7 @@ class BotwClientRuntime:
                     await self._poll_shops()
                     await self._poll_pouch()
                     self._discover_received()
+                    await self._sync_room_delivery_record()
                     self._collect_messages()
                     self._mark_bulk()
                     # A reload back to an unbound save unbinds the session.

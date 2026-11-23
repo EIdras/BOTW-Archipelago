@@ -73,3 +73,24 @@ class MultiworldProtocolTests(unittest.IsolatedAsyncioTestCase):
         await c._packet({"cmd": "ReceivedItems", "index": 0, "items": [[3, 3, 1, 0]]})
         self.assertTrue(c.items_synchronized)
         self.assertEqual(c.received_items, {0: NetworkItem(3, 3, 1, 0)})
+
+    async def test_the_room_record_of_given_items_is_read_without_an_observer(self):
+        c = self.client()
+        self.assertIsNone(c.room_delivered_high)
+        await c._packet({"cmd": "Connected", "team": 0, "slot": 1, "players": [], "slot_info": {}})
+        self.assertIn({"cmd": "Get", "keys": ["botw_delivered_0_1"]}, c.commands)
+        await c._packet({"cmd": "Retrieved", "keys": {"botw_delivered_0_1": None}})
+        self.assertEqual(c.room_delivered_high, 0)          # never recorded: nothing given
+        await c._packet({"cmd": "Retrieved", "keys": {"botw_delivered_0_1": 9}})
+        self.assertEqual(c.room_delivered_high, 9)
+        await c._packet({"cmd": "Retrieved", "keys": {"other": 4}})
+        self.assertEqual(c.room_delivered_high, 9)
+
+    async def test_the_room_record_is_only_raised(self):
+        c = self.client()
+        c.team, c.room_delivered_high = 0, 3
+        await c.store_delivered_high(7)
+        self.assertEqual(c.commands, [{"cmd": "Set", "key": "botw_delivered_0_1", "default": 0,
+                                       "want_reply": False,
+                                       "operations": [{"operation": "max", "value": 7}]}])
+        self.assertEqual(c.room_delivered_high, 7)

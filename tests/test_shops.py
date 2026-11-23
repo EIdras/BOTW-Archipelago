@@ -181,7 +181,7 @@ class SeedLocationTests(unittest.TestCase):
         from botw_client.protocol import ArchipelagoClient
         client = ArchipelagoClient("localhost:1", "Player", None, log=lambda *_: None)
 
-        async def send(_packet):
+        async def send(*_packets):
             pass
 
         client.send = send

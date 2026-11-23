@@ -12,6 +12,11 @@ from urllib.parse import urlparse
 
 from . import GAME_NAME
 
+# The room's data storage keeps, per slot, how many of its received items were
+# given in a game (the client state's delivered_high): a new client state (another
+# PC, a deleted data folder) gives back quietly what another one already gave.
+DELIVERED_KEY = "botw_delivered_{team}_{slot}"
+
 
 @dataclass(frozen=True)
 class NetworkItem:
@@ -116,6 +121,9 @@ class ArchipelagoClient:
         self.location_names_by_game: dict[str, dict[int, str]] = {}
         self.items_synchronized = False
         self._initial_received_items_seen = False
+        # The room's record of the items this slot was given (DELIVERED_KEY),
+        # read at each connection: None until the server answered.
+        self.room_delivered_high: int | None = None
         self.location_id_by_name: dict[str, int] = {}
         self.location_name_by_id: dict[int, str] = {}
         self.checked_locations: set[int] = set()
@@ -159,6 +167,7 @@ class ArchipelagoClient:
         self.scouted_locations.clear()
         self.items_synchronized = False
         self._initial_received_items_seen = False
+        self.room_delivered_high = None
         self.checked_locations.clear()
         self.missing_locations = None
         self.connected_event.clear()
@@ -282,7 +291,9 @@ class ArchipelagoClient:
                 game = info.get("game") if isinstance(info, dict) else info[1]
                 if game:
                     games.add(game)
-            commands = [{"cmd": "GetDataPackage", "games": sorted(games)}]
+            # Answered after the data package, in order.
+            commands = [{"cmd": "GetDataPackage", "games": sorted(games)},
+                        {"cmd": "Get", "keys": [self._delivered_key()]}]
             if self.death_link_enabled:
                 commands.append({"cmd": "ConnectUpdate", "tags": ["AP", "DeathLink"]})
             await self.send(*commands)
@@ -364,7 +375,14 @@ class ArchipelagoClient:
                 self.bulk_notices.append((time.monotonic(), slot))
             elif kind == "Collect" and slot is not None and slot == self.slot:
                 self.bulk_notices.append((time.monotonic(), None))
-        elif command in ("Retrieved", "SetReply") and self.observer is not None:
+        elif command in ("Retrieved", "SetReply"):
+            keys = packet.get("keys") or {}
+            if command == "Retrieved" and self.team is not None and self._delivered_key() in keys:
+                value = keys[self._delivered_key()]
+                # None: no client of this slot recorded anything yet.
+                self.room_delivered_high = value if type(value) is int and value > 0 else 0
+            if self.observer is None:
+                return
             key = self._hints_key()
             hints = ((packet.get("keys") or {}).get(key) if command == "Retrieved"
                      else packet.get("value") if packet.get("key") == key else None)
@@ -469,6 +487,17 @@ class ArchipelagoClient:
 
     def _hints_key(self) -> str:
         return f"_read_hints_{self.team}_{self.slot}"     # the server's own (MultiServer.py)
+
+    def _delivered_key(self) -> str:
+        return DELIVERED_KEY.format(team=self.team, slot=self.slot)
+
+    async def store_delivered_high(self, value: int):
+        """Raise the room's record of the items given to this slot (max: never
+        lowered, whichever client of the slot wrote it)."""
+        await self.send({"cmd": "Set", "key": self._delivered_key(), "default": 0,
+                         "want_reply": False,
+                         "operations": [{"operation": "max", "value": int(value)}]})
+        self.room_delivered_high = max(self.room_delivered_high or 0, int(value))
 
     def _observe(self, event: dict) -> None:
         try:
