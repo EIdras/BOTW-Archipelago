@@ -99,7 +99,7 @@ import sys
 import time
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from winmem import Process
+from procmem import Process
 from mailbox import Cave, be, cemu_pid, diagnose, find_cave, guest_base
 from say import colorize
 

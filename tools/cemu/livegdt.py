@@ -42,7 +42,7 @@ import time
 import zlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from winmem import Process
+from procmem import Process
 from mailbox import be, cemu_pid, find_cave, guest_base
 from gdt_index import load_flags
 from guest import in_heap

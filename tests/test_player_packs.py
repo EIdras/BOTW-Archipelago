@@ -1,4 +1,5 @@
 """The graphic packs of the player's own Cemu (tools/player_packs.py)."""
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -73,8 +74,10 @@ class PlayerPacksTest(unittest.TestCase):
         self.cemu.pack("a_folder/inner/deeper")     # inside a pack: never loaded
         for path in ("b_pack", "a_folder/inner", "a_folder/inner/deeper"):
             self.cemu.entry(path)
-        self.assertEqual([pack.entry for pack in self.cemu.enabled()],
-                         ["graphicPacks/a_folder/inner/rules.txt", "graphicPacks/b_pack/rules.txt"])
+        # Cemu walks in the file system's order: by name on NTFS, not on ext4.
+        entries = {"a_folder": "graphicPacks/a_folder/inner/rules.txt", "b_pack": "graphicPacks/b_pack/rules.txt"}
+        listed = [entry.name for entry in os.scandir(self.cemu.user / "graphicPacks")]
+        self.assertEqual([pack.entry for pack in self.cemu.enabled()], [entries[name] for name in listed])
 
     def test_priority_presets_and_files(self):
         self.cemu.pack("mods", extra='fsPriority = 9999 # wins\ndescription = "a # in quotes"',

@@ -84,7 +84,7 @@ import tempfile
 import time
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from winmem import Process
+from procmem import Process
 from mailbox import Cave, cemu_pid, find_cave, guest_base
 from findtext import read_utf16, scan
 
