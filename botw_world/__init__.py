@@ -13,7 +13,7 @@ from worlds.generic.Rules import forbid_item
 from Options import OptionError
 from rule_builder.rules import And, CanReachRegion, Has, HasAll, HasAny, HasFromList, Or, Rule, True_
 
-from .catalog import (BOSSES, CHESTS, EXTRA_FILLER, FILLER, GAME, GENTLE_REGIONS, GOAL_LOCATION, INNER_REGIONS, ITEMS, KOROKS, LOCATIONS, MAPS,
+from .catalog import (BOSSES, CHESTS, EXTRA_FILLER, FILLER, GAME, GENTLE_REGIONS, GOAL_LOCATION, INNER_REGIONS, ITEMS, KOROKS, LOCATIONS, MAPS, MASTER_CHESTS,
                       NEIGHBOURS,
                       OFFERINGS, OPEN_BORDERS, ORBS_PER_TRADE, QUESTS, SIDE_QUEST_ITEMS, TRAPS, TRAVEL_SHRINES, TRAVEL_TERMINALS, WEAPON_LEVELS, WORLD_VERSION, categories,
                       map_keys, requirements)
@@ -62,6 +62,7 @@ class BotwWorld(World):
     item_name_to_id = {row["name"]: row["id"] for row in ITEMS}
     location_name_to_id = {**{row["name"]: row["id"] for row in LOCATIONS if row["name"] != GOAL_LOCATION},
                            **{row["name"]: row["id"] for row in CHESTS},
+                           **{row["name"]: row["id"] for row in MASTER_CHESTS},
                            **{row["name"]: row["id"] for row in KOROKS},
                            **{row["name"]: row["id"] for row in QUESTS},
                            **{row["name"]: row["id"] for row in OFFERINGS},
@@ -88,6 +89,7 @@ class BotwWorld(World):
         "Rune Upgrades": {r["name"] for r in LOCATIONS if "Rune Upgrade" in categories(r)},
         "Champions' Ballad": {r["name"] for r in LOCATIONS if "Champions' Ballad" in categories(r)},
         "Chests": {r["name"] for r in CHESTS},
+        "Master Mode Chests": {r["name"] for r in MASTER_CHESTS},
         **{f"{kind} Chests": {r["name"] for r in CHESTS if r.get("dungeon") in
                               {loc["name"] for loc in LOCATIONS if kind in categories(loc)}}
            for kind in ("Shrine", "Divine Beast")},
@@ -118,7 +120,8 @@ class BotwWorld(World):
                     "sanctum_master_sword", "sanctum_runes", "beedle_shop_items", "stall_items", "tower_maps",
                     "towers_need_maps", "region_lock", "map_travel_points", "bike_anywhere",
                     "cutscene_skip", "spirit_orbs", "statue_offerings", "chest_sanity", "shrine_chest_items", "korok_sanity", "korok_count",
-                    "side_quest_sanity", "shrine_quest_sanity", "boss_sanity", "progressive_horse")
+                    "side_quest_sanity", "shrine_quest_sanity", "boss_sanity", "progressive_horse",
+                    "master_mode")
     # The region each map opens: {item: region}.
     MAP_REGIONS = {item: region for region, item in MAPS.items()}
     # Whether Universal Tracker regenerates the world from the slot data (generate_early). It never
@@ -137,6 +140,8 @@ class BotwWorld(World):
     offerings: list[dict]
     # boss_sanity: the boss rows that are locations (create_regions).
     bosses: list[dict]
+    # master_mode: the Master Mode chests that are locations (create_regions).
+    master_chests: list[dict]
 
     @staticmethod
     def interpret_slot_data(slot_data: dict[str, Any]) -> dict[str, Any]:
@@ -158,6 +163,8 @@ class BotwWorld(World):
                               "or shrine_quest_sanity")
         if self.options.boss_progression and not self.options.boss_sanity:
             raise OptionError(f"{self.player_name}: boss_progression needs boss_sanity")
+        if self.options.master_mode and not self.options.chest_sanity:
+            raise OptionError(f"{self.player_name}: master_mode needs chest_sanity")
         if self.options.shrine_chest_items and self.options.chest_sanity != ChestSanity.option_ap_items:
             raise OptionError(f"{self.player_name}: shrine_chest_items needs chest_sanity on ap_items")
         if self.options.map_travel_points and self.options.tower_maps == TowerMaps.option_vanilla:
@@ -216,9 +223,11 @@ class BotwWorld(World):
                 event.place_locked_item(BotwItem(event.name, ItemClassification.progression, None, self.player))
                 self.set_rule(event, self.location_rule(row))
                 region.locations.append(event)
+        # master_mode: the Master Mode chests too, which only a Master Mode save has.
+        self.master_chests = MASTER_CHESTS if self.options.chest_sanity and self.options.master_mode else []
         if self.options.chest_sanity:
             # Excluded, but with chest_progression those whose opening the map says.
-            for row in CHESTS:
+            for row in [*CHESTS, *self.master_chests]:
                 loc = BotwLocation(self.player, row["name"], row["id"], regions[row["region"]])
                 if not self.options.chest_progression or row["no_progression"]:
                     loc.progress_type = LocationProgressType.EXCLUDED
@@ -452,7 +461,8 @@ class BotwWorld(World):
                 item.classification = ItemClassification.filler
         # Traps as many as without the chests, the Koroks, the quests and the bosses, which would bring
         # hundreds more.
-        extra = (len(CHESTS) if self.options.chest_sanity else 0) + len(self.koroks) - len(local) \
+        extra = (len(CHESTS) if self.options.chest_sanity else 0) + len(self.master_chests) \
+            + len(self.koroks) - len(local) \
             + len(self.quests) + len(self.bosses)
         filler = capacity - len(pool)
         pool.extend(self.create_item(name) for name in self.trap_names(max(0, filler - extra)))
@@ -599,20 +609,22 @@ class BotwWorld(World):
         # 17: boss_sanity, the field bosses as locations, which one of 16 does not see defeated.
         # 18: progressive_horse, the Progressive Horse, which one of 17 cannot give.
         # 19: bonus_items; 20: extra_filler; 21: the elemental traps, which one of 20 cannot play.
+        # 22: master_mode, the Master Mode chests as locations, which one of 21 neither sees opened
+        #     nor refuses in a Normal mode save.
         # World schema 7: the Koroks among the locations; 8: then the quests; 9: then the offerings;
-        # 10: then the bosses.
+        # 10: then the bosses; 11: then the Master Mode chests.
         # stall_locations: the stalls drawn by the seed, for Universal Tracker.
         # korok_locations: with korok_sanity, the Koroks drawn by the seed, for Universal Tracker.
         # region_borders: with region_lock, the borders the seed's logic crosses.
         # travel_shrines: with map_travel_points, the shrine each map opens and its terminal's flag.
         elemental = self.options.trap_percentage.value and any(
             self.options.trap_weights.value.get(name, 0) for name in ELEMENTAL_TRAPS)
-        client = 21 if elemental else 20 if self.options.extra_filler else 19 if self.options.bonus_items \
+        client = 22 if self.master_chests else 21 if elemental else 20 if self.options.extra_filler else 19 if self.options.bonus_items \
             else 18 if self.options.progressive_horse \
             else 17 if self.bosses else 16 if self.offerings \
             else 15 if self.quests else 14 if self.options.korok_sanity else 13 if self.options.chest_sanity \
             else 12
-        return {"client_schema": client, "world_schema": 10,
+        return {"client_schema": client, "world_schema": 11,
                 "world_version": WORLD_VERSION,
                 "death_link": bool(self.options.death_link.value),
                 **self.options.as_dict(*self.SLOT_OPTIONS),
@@ -642,7 +654,7 @@ class BotwWorld(World):
     def generate_output(self, output_directory: str) -> None:
         """The slot file the game pack is built from (slot_file.py): placements and shop prices."""
         placements = []
-        for row in [*LOCATIONS, *(CHESTS if self.options.chest_sanity else ())]:
+        for row in [*LOCATIONS, *(CHESTS if self.options.chest_sanity else ()), *self.master_chests]:
             if categories(row) & {"Shop", "Stall"} and row["id"] not in self.shop_prices:
                 continue
             loc = self.multiworld.get_location(row["name"], self.player)

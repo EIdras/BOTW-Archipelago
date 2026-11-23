@@ -37,6 +37,7 @@ template with "Generate Template Options". Every option is explained [below](#op
 | Shrine quests (option `shrine_quest_sanity`) | 0 or 42 |
 | Goddess Statue offerings (option [`spirit_orbs`](#spirit-orbs)) | 0, or 1 to 30 |
 | Field bosses (option `boss_sanity`) | 0 or 86 |
+| Master Mode chests (option `master_mode`, with `chest_sanity`) | 0 or 118 |
 
 The Koroks are many: by default, 95 % of those that are locations hold filler of your own world
 (`korok_local_filler`), so that they don't flood the other players with filler. With
@@ -58,6 +59,12 @@ A boss is checked at its first defeat: the 86 Hinoxes, Stalnoxes, Stone Taluses 
 the game saves, named after the nearest place on the map ("Hickaly Woods - Stalnox"). A Blood Moon brings the boss
 back; its location stays sent. The bosses hold nothing needed to finish a game, unless `boss_progression`: the logic
 then asks for the boss's region and, on Death Mountain's burning slopes, the heat's protection, never a weapon.
+
+With `master_mode` and `chest_sanity`, the 118 chests only Master Mode has (The Master Trials, DLC 1), each on the
+platform of an Octorok balloon, are locations too ("Great Plateau - Master Mode Wooden Chest"), as `chest_sanity`
+says. The seed is then played in a Master Mode save: in a Normal mode one, which has none of these chests, the client
+stops before giving anything. Without the option, a seed plays in either mode; in Master Mode, these chests keep their
+contents.
 
 ## Items
 

@@ -369,15 +369,16 @@ def _generate(game: GameFiles, binding_token: int, shops: list | None, status: d
         # map units the towers and stalls already changed.
         # With shrine_chest_items, the shrines' chests too, once the shared shrines can be
         # built from the base game (botw_patch/shrine_chests.py); else they keep their treasure.
-        shrines = shrine_chests_built(status)
-        files, edits = chests.generate(files, game, names=chests.placed_names(status, shrines),
-                                       shrines=shrines)
+        # With master_mode, the Master Mode chests too.
+        shrines, master = shrine_chests_built(status), chests.master_asked(status)
+        files, edits = chests.generate(files, game, names=chests.placed_names(status, shrines, master),
+                                       shrines=shrines, master=master)
         changes.extend(edits)
         # The chests numbered within `held` hold their item: the shrines' keep their treasure,
         # but with `shrines`, which the session then loads (tools/play_session.py).
         catalog["chests"] = {"flow": chests.QUIET_FLOW, "entry_prefix": chests.ENTRY + "_",
                              "id_base": chests.CHEST_ID_BASE,
-                             "held": [list(held) for held in chests.held(shrines)]}
+                             "held": [list(held) for held in chests.held(shrines, master)]}
         if shrines:
             catalog["chests"]["shrines"] = True
     stage()
@@ -471,6 +472,12 @@ def build(content, output: Path, *, binding_token: int, shops: list | None = Non
             chests.AOC_PREFIX + chests.beast_pack(beast): sha for beast, sha in chests.BEAST_PACK_HASHES.items()}}
         manifest["source_hashes"].update({name: digest((ROOT / name).read_bytes())
                                           for name in chests.SOURCE_FILES})
+    if chests.master_asked(status):
+        manifest["master_chests"] = chests.MASTER_CHEST_COUNT
+        manifest["input_hashes"].update({chests.AOC_PREFIX + chests.unit(name): sha
+                                         for name, sha in chests.MASTER_MAP_HASHES.items()})
+        manifest["source_hashes"].update({name: digest((ROOT / name).read_bytes())
+                                          for name in chests.MASTER_SOURCE_FILES})
     if region is not regions.EUR:
         # Only for the other versions, so that the European packs keep their identity.
         manifest["input_hashes"] = regions.inputs(manifest["input_hashes"], game.content)

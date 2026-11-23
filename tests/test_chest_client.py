@@ -28,8 +28,9 @@ class CatalogueTests(unittest.TestCase):
                 self.assertIsNone(chest_number(name))
 
     def test_a_chest_location_names_the_item_the_pack_put_in_its_chest(self):
-        rows = json.loads((Path(__file__).resolve().parents[1] / "botw_world/data/chests.json")
-                          .read_text(encoding="utf-8"))
+        data = Path(__file__).resolve().parents[1] / "botw_world/data"
+        rows = [row for name in ("chests.json", "master_chests.json")
+                for row in json.loads((data / name).read_text(encoding="utf-8"))]
         self.assertEqual(CHEST_NUMBERS, {row["name"]: row["number"] for row in rows})
 
 

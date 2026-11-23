@@ -3,8 +3,8 @@ import unittest
 from pathlib import Path
 
 from botw_client import gamedata_table
-from botw_client.locations import (BOSS_NAMES, CHEST_NUMBERS, KOROK_NAMES, OFFERING_NAMES, QUEST_NAMES, SCHEMA_LOCATION_COUNTS,
-                                   WORLD_SCHEMA, load_targets)
+from botw_client.locations import (BOSS_NAMES, CHEST_NUMBERS, KOROK_NAMES, MASTER_CHEST_NAMES, OFFERING_NAMES, QUEST_NAMES,
+                                   SCHEMA_LOCATION_COUNTS, WORLD_SCHEMA, load_targets)
 from botw_client.runtime import BotwClientRuntime, FatalClientError
 
 HEARTS = ["Vah Ruta Heart Container", "Vah Rudania Heart Container",
@@ -20,14 +20,14 @@ class CatalogueSchemaTests(unittest.TestCase):
         shops, stalls = load_targets(world_schema=3), load_targets(world_schema=4)
         upgrades, chests = load_targets(world_schema=5), load_targets(world_schema=6)
         koroks, quests, offerings = load_targets(world_schema=7), load_targets(world_schema=8), load_targets(world_schema=9)
-        bosses = load_targets()
-        self.assertEqual(WORLD_SCHEMA, 10)
+        bosses, master = load_targets(world_schema=10), load_targets()
+        self.assertEqual(WORLD_SCHEMA, 11)
         self.assertEqual((len(old), len(new), len(shops), len(stalls), len(upgrades)),
                          (SCHEMA_LOCATION_COUNTS[1], SCHEMA_LOCATION_COUNTS[2],
                           SCHEMA_LOCATION_COUNTS[3], SCHEMA_LOCATION_COUNTS[4],
                           SCHEMA_LOCATION_COUNTS[5]))
         self.assertEqual(chests[:len(upgrades)], upgrades)
-        self.assertEqual(len(chests), SCHEMA_LOCATION_COUNTS[6] + len(CHEST_NUMBERS))
+        self.assertEqual(len(chests), SCHEMA_LOCATION_COUNTS[6] + len(CHEST_NUMBERS) - len(MASTER_CHEST_NAMES))
         self.assertEqual(koroks[:len(chests)], chests)
         self.assertEqual(len(koroks), len(chests) + len(KOROK_NAMES))
         self.assertEqual(quests[:len(koroks)], koroks)
@@ -37,6 +37,9 @@ class CatalogueSchemaTests(unittest.TestCase):
         self.assertEqual(bosses[:len(offerings)], offerings)
         self.assertEqual({target.name for target in bosses[len(offerings):]}, set(BOSS_NAMES))
         self.assertEqual(len(bosses), len(offerings) + len(BOSS_NAMES))
+        self.assertEqual(master[:len(bosses)], bosses)
+        self.assertEqual({target.name for target in master[len(bosses):]}, set(MASTER_CHEST_NAMES))
+        self.assertEqual(len(master), len(bosses) + 118)
         self.assertEqual(upgrades[:len(stalls)], stalls)
         # Purah's upgrades: saved bools of the mod's own; the Ballads' ends: the game's.
         self.assertEqual([(t.name.rsplit(" - ", 1)[-1], t.kind, t.optional) for t in upgrades[len(stalls):]], [
@@ -52,7 +55,7 @@ class CatalogueSchemaTests(unittest.TestCase):
         self.assertTrue(all(t.optional and t.kind == "s32" for t in stalls[len(new):]))
         self.assertEqual(stalls[len(shops)].name, "Rito Village - General Stall Item 1")
         with self.assertRaises(ValueError):
-            load_targets(world_schema=11)
+            load_targets(world_schema=12)
 
 
 class RuntimeSchemaTests(unittest.IsolatedAsyncioTestCase):
@@ -80,7 +83,7 @@ class RuntimeSchemaTests(unittest.IsolatedAsyncioTestCase):
                 runtime = self.runtime(directory, "Breath of the Wild", slot_data)
                 self.assertEqual(runtime._world_schema(), expected)
             with self.assertRaises(FatalClientError):
-                self.runtime(directory, "Breath of the Wild", {"world_schema": 11})._world_schema()
+                self.runtime(directory, "Breath of the Wild", {"world_schema": 12})._world_schema()
 
     @NEEDS_TABLE
     def test_manual_schema_comes_from_its_data_package(self):

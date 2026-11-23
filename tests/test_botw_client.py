@@ -110,8 +110,12 @@ class ClientDataTests(unittest.TestCase):
                                                                                 + len(quests):], list(OFFERING_NAMES))
         bosses = json.loads((ROOT / "botw_world" / "data" / "bosses.json").read_text(encoding="utf-8"))
         self.assertEqual([(row["name"], row["flag"]) for row in bosses],
-                         [(target.name, target.flag) for target in load_targets()][len(world) + len(chests) + len(koroks)
-                                                                                    + len(quests) + len(OFFERING_NAMES):])
+                         [(target.name, target.flag) for target in load_targets(world_schema=10)][
+                             len(world) + len(chests) + len(koroks) + len(quests) + len(OFFERING_NAMES):])
+        master = json.loads((ROOT / "botw_world" / "data" / "master_chests.json").read_text(encoding="utf-8"))
+        self.assertEqual([(row["name"], row["flag"]) for row in master],
+                         [(target.name, target.flag) for target in load_targets()][
+                             len(world) + len(chests) + len(koroks) + len(quests) + len(OFFERING_NAMES) + len(bosses):])
         hearts = {entry["name"]: entry["gamedata_flag"] for entry in world
                   if entry["category"] == "Divine Beast Heart"}
         self.assertEqual(hearts, {

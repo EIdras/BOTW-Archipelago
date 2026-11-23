@@ -26,10 +26,11 @@ MASTER_CSV = ROOT / "data" / "locations_master.csv"
 # the Koroks of korok_sanity (botw_world/data/koroks.json, KOROK_SCHEMA); 8: then
 # the side and shrine quests (botw_world/data/quests.json, QUEST_SCHEMA); 9: then
 # the Goddess Statues' offerings (OFFERING_SCHEMA); 10: then the field bosses of
-# boss_sanity (botw_world/data/bosses.json, BOSS_SCHEMA).
+# boss_sanity (botw_world/data/bosses.json, BOSS_SCHEMA); 11: then the Master Mode
+# chests of master_mode (botw_world/data/master_chests.json, MASTER_SCHEMA).
 # botw_world declares its schema in slot_data["world_schema"].
-SCHEMA_LOCATION_COUNTS = {1: 149, 2: 153, 3: 185, 4: 213, 5: 220, 6: 220, 7: 220, 8: 220, 9: 220, 10: 220}
-WORLD_SCHEMA = 10
+SCHEMA_LOCATION_COUNTS = {1: 149, 2: 153, 3: 185, 4: 213, 5: 220, 6: 220, 7: 220, 8: 220, 9: 220, 10: 220, 11: 220}
+WORLD_SCHEMA = 11
 # The first schema whose locations include the chests, by the vanilla flag each
 # keeps once its contents are taken (tools/chest_locations.py).
 CHEST_SCHEMA = 6
@@ -53,6 +54,10 @@ ORBS_PER_TRADE = 4
 # keeps once defeated (tools/boss_locations.py).
 BOSS_SCHEMA = 10
 BOSSES_JSON = ROOT / "botw_world" / "data" / "bosses.json"
+# The first schema whose locations include the Master Mode chests, by the vanilla flag
+# each keeps once opened, as the other chests (tools/chest_locations.py).
+MASTER_SCHEMA = 11
+MASTER_CHESTS_JSON = CHESTS_JSON.with_name("master_chests.json")
 OFFERING_NAMES = tuple(f"Goddess Statue - Offering {k}" for k in range(1, 31))
 CHEST_ITEM_PREFIX = "AP_Chest_"
 # The Great Plateau's tower reveals its own map: its map is no item.
@@ -67,7 +72,9 @@ CUSTOM_BOOL_PREFIXES = ("APPurahUp_",)
 EXPECTED_LOCATION_COUNT = SCHEMA_LOCATION_COUNTS[WORLD_SCHEMA]
 # {location name: chest number} (botw_patch/chests.py numbers the AP item inside).
 _CHEST_ROWS = json.loads(CHESTS_JSON.read_text(encoding="utf-8"))
-CHEST_NUMBERS = {row["name"]: row["number"] for row in _CHEST_ROWS}
+_MASTER_CHEST_ROWS = json.loads(MASTER_CHESTS_JSON.read_text(encoding="utf-8"))
+CHEST_NUMBERS = {row["name"]: row["number"] for row in [*_CHEST_ROWS, *_MASTER_CHEST_ROWS]}
+MASTER_CHEST_NAMES = frozenset(row["name"] for row in _MASTER_CHEST_ROWS)
 # {location: the chests its check also sends}: a Divine Beast's, which cannot be
 # opened once the beast is freed (tools/chest_locations.py, sent_with).
 CHESTS_SENT_WITH: dict[str, list[str]] = {}
@@ -158,6 +165,9 @@ def load_targets(path: Path = MASTER_CSV,
     if world_schema >= BOSS_SCHEMA:
         targets += [LocationTarget(row["name"], row["flag"], zlib.crc32(row["flag"].encode()))
                     for row in _BOSS_ROWS]
+    if world_schema >= MASTER_SCHEMA:
+        targets += [LocationTarget(row["name"], row["flag"], zlib.crc32(row["flag"].encode()))
+                    for row in _MASTER_CHEST_ROWS]
     if len({target.name for target in targets}) != len(targets):
         raise ValueError("duplicate location names")
     if len({(target.hash_u32, target.minimum) for target in targets}) != len(targets):

@@ -79,6 +79,10 @@ Breath of the Wild:
   # from your own base game, which must be installed as a folder (not a .wua or .wud file), then shared by every
   # seed. Without such a folder, the shrines' chests keep their contents
   shrine_chest_items: false
+  # With chest_sanity, whether the 118 chests of Master Mode (The Master Trials, DLC 1), each on the platform of an
+  # Octorok balloon, are locations too. The seed is then played in a Master Mode save: the client stops on a Normal
+  # mode one. Without it, a seed plays in either mode, and these chests keep their contents in Master Mode
+  master_mode: false
   # Whether the Koroks are locations: finding one sends its item, and the Korok still gives its seed (Hestu is
   # unchanged). Unless korok_progression, the Koroks hold nothing needed to finish a game. Traps stay as many as
   # without them

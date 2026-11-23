@@ -96,7 +96,10 @@ slot file alone, without reaching any server.
 - **Chests**: with `chest_sanity`, a chest's location is the flag the game raises once its contents are taken
   (`botw_world/data/chests.json`, made from the game's maps by `tools/chest_locations.py`). With `ap_items`, the
   client requests the item's removal entry once the flag rises, and for any chest item still in the pouch. The
-  chests left inside a Divine Beast are sent once it is freed, as it cannot be entered again.
+  chests left inside a Divine Beast are sent once it is freed, as it cannot be entered again. With `master_mode`,
+  the 118 Master Mode chests (`IsHardModeActor`, `botw_world/data/master_chests.json`, the same tool) too, numbered
+  after the Divine Beasts'; the client binds a save only once its saved `AoC_HardMode_Enabled` reads Master Mode,
+  twice a second apart, and stops on a Normal mode save (`botw_client/master_mode.py`).
 - **Koroks**: with `korok_sanity`, a Korok's location is the flag the game raises once it is found
   (`botw_world/data/koroks.json`, made from the game's maps by `tools/korok_locations.py`). The Korok still
   gives its seed: nothing in the pack changes.

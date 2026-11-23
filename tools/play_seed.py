@@ -59,7 +59,7 @@ PLAY_SEEDS = DATA / "play-seeds"
 PACKS = DATA / "packs-from-source"
 ORPHAN_AGE = 600        # seconds: see orphan_packs
 SCOPE = "generated_ap_seed"
-CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21)    # 4: the Gerudo Set; 5: the goal and the sanctum; 6: the
+CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22)    # 4: the Gerudo Set; 5: the goal and the sanctum; 6: the
 #                                                          new filler; 7: the weapons; 8: the travel items; 9: Epona;
 #                                                          10: maps; 11: the Downpour, Yiga Ambush and
 #                                                          Paranoia traps; 12: the travel points;
@@ -67,7 +67,8 @@ CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 2
 #                                                          16: the Goddess Statues' offerings; 17: the bosses;
 #                                                          18: the Progressive Horse;
 #                                                          19: the bonus items; 20: the extra filler;
-#                                                          21: the elemental traps
+#                                                          21: the elemental traps;
+#                                                          22: the Master Mode chests
 GAME = "Breath of the Wild"
 _ROWS = json.loads((ROOT / "botw_world/data/locations.json").read_text(encoding="utf-8"))
 # Every location but the goal, shops apart: they depend on beedle_shop_items
@@ -75,6 +76,8 @@ _ROWS = json.loads((ROOT / "botw_world/data/locations.json").read_text(encoding=
 PLACEMENTS = sum(1 for row in _ROWS if row["category"] not in ("Goal", "Shop", "Stall"))
 # chest_sanity's chests (botw_world/data/chests.json), one placement each.
 _CHESTS = json.loads((ROOT / "botw_world/data/chests.json").read_text(encoding="utf-8"))
+# master_mode: the Master Mode chests too (botw_world/data/master_chests.json).
+_MASTER_CHESTS = json.loads((ROOT / "botw_world/data/master_chests.json").read_text(encoding="utf-8"))
 # The side and shrine quests (botw_world/data/quests.json), by their kind.
 _QUEST_KINDS = [row["kind"] for row in json.loads((ROOT / "botw_world/data/quests.json").read_text(encoding="utf-8"))]
 # boss_sanity: every field boss (botw_world/data/bosses.json).
@@ -87,7 +90,8 @@ def expected_placements(slot_data: dict) -> int:
     # had stall_shop_items on each stall.
     stalls = (int(slot_data["stall_items"]) if "stall_items" in slot_data
               else len(stall_catalog.MERCHANTS) * int(slot_data.get("stall_shop_items", 0)))
-    chests = len(_CHESTS) if slot_data.get("chest_sanity") else 0
+    chests = (len(_CHESTS) + (len(_MASTER_CHESTS) if slot_data.get("master_mode") else 0)
+              if slot_data.get("chest_sanity") else 0)
     koroks = len(slot_data.get("korok_locations", ())) if slot_data.get("korok_sanity") else 0
     quests = sum(1 for kind in _QUEST_KINDS if slot_data.get(f"{kind.lower()}_quest_sanity"))
     # spirit_orbs on statue_checks (2): the statues' offerings.

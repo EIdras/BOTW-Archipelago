@@ -18,6 +18,10 @@ CHEST_ID_BASE = 10000
 ALL_SHRINES = "All Shrines"
 CHESTS = [{**row, "id": CHEST_ID_BASE + row["number"], "category": "Chest"} for row in json.loads(
     files(__package__).joinpath("data/chests.json").read_text(encoding="utf-8"))]
+# The Master Mode chests, with master_mode on chest_sanity (data/master_chests.json, the
+# same tool): numbered after the others, each on the platform of an Octorok balloon.
+MASTER_CHESTS = [{**row, "id": CHEST_ID_BASE + row["number"], "category": "Chest"} for row in json.loads(
+    files(__package__).joinpath("data/master_chests.json").read_text(encoding="utf-8"))]
 # The Koroks, with korok_sanity (data/koroks.json, from tools/korok_locations.py):
 # a location's id is KOROK_ID_BASE plus the Korok's number.
 KOROK_ID_BASE = 20000
@@ -293,16 +297,17 @@ def _check_weapons() -> None:
 def _check_chests() -> None:
     """Chest rows: unique names and ids above the other locations', known regions,
     shrines and Divine Beasts, and requirements among the items, the Divine Beasts
-    freed and every shrine cleared."""
-    names, ids = {row["name"] for row in CHESTS}, {row["id"] for row in CHESTS}
-    if len(names) != len(CHESTS) or len(ids) != len(CHESTS) or names & {row["name"] for row in LOCATIONS}:
+    freed and every shrine cleared; the Master Mode chests' too."""
+    every = CHESTS + MASTER_CHESTS
+    names, ids = {row["name"] for row in every}, {row["id"] for row in every}
+    if len(names) != len(every) or len(ids) != len(every) or names & {row["name"] for row in LOCATIONS}:
         raise ValueError("chest names or ids are not unique")
     if min(ids) <= max(row["id"] for row in LOCATIONS):
         raise ValueError("chest ids overlap the other locations'")
     regions = {row["region"] for row in LOCATIONS}
     known = {*(row["name"] for row in ITEMS), ALL_SHRINES,
              *(f"Freed - {row['name']}" for row in LOCATIONS if "Divine Beast" in categories(row))}
-    for row in CHESTS:
+    for row in every:
         inside = [row[key] for key in ("dungeon", "sent_with") if row.get(key) is not None]
         if row["region"] not in regions or not set(row["requires"]) <= known or not set(inside) <= set(LOGIC):
             raise ValueError(f"{row['name']}: unknown region, shrine, Divine Beast or requirement")
@@ -313,9 +318,9 @@ def _check_koroks() -> None:
     known regions, and requirements among the items."""
     names, ids = {row["name"] for row in KOROKS}, {row["id"] for row in KOROKS}
     if len(names) != len(KOROKS) or len(ids) != len(KOROKS) \
-            or names & {row["name"] for row in [*LOCATIONS, *CHESTS]}:
+            or names & {row["name"] for row in [*LOCATIONS, *CHESTS, *MASTER_CHESTS]}:
         raise ValueError("Korok names or ids are not unique")
-    if min(ids) <= max(row["id"] for row in CHESTS):
+    if min(ids) <= max(row["id"] for row in CHESTS + MASTER_CHESTS):
         raise ValueError("Korok ids overlap the chests'")
     regions, known = {row["region"] for row in LOCATIONS}, {row["name"] for row in ITEMS}
     for row in KOROKS:
@@ -329,7 +334,7 @@ def _check_quests() -> None:
     maps, and a shrine quest in its shrine's region."""
     names, ids = {row["name"] for row in QUESTS}, {row["id"] for row in QUESTS}
     if len(names) != len(QUESTS) or len(ids) != len(QUESTS) \
-            or names & {row["name"] for row in [*LOCATIONS, *CHESTS, *KOROKS]}:
+            or names & {row["name"] for row in [*LOCATIONS, *CHESTS, *MASTER_CHESTS, *KOROKS]}:
         raise ValueError("Quest names or ids are not unique")
     if min(ids) <= max(row["id"] for row in KOROKS):
         raise ValueError("Quest ids overlap the Koroks'")
@@ -350,7 +355,7 @@ def _check_bosses() -> None:
     a Ballad trial's boss in its song's region."""
     names, ids = {row["name"] for row in BOSSES}, {row["id"] for row in BOSSES}
     if len(names) != len(BOSSES) or len(ids) != len(BOSSES) \
-            or names & {row["name"] for row in [*LOCATIONS, *CHESTS, *KOROKS, *QUESTS, *OFFERINGS]}:
+            or names & {row["name"] for row in [*LOCATIONS, *CHESTS, *MASTER_CHESTS, *KOROKS, *QUESTS, *OFFERINGS]}:
         raise ValueError("Boss names or ids are not unique")
     if min(ids) <= max(row["id"] for row in OFFERINGS):
         raise ValueError("Boss ids overlap the offerings'")

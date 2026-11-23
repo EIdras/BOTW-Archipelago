@@ -1083,7 +1083,7 @@ def small_marks(cat, positions: dict) -> list[tuple[str, str, list, list]]:
             dungeons.setdefault(row["dungeon"], []).append(row)
     marks = [(row["name"], "Korok" if row["category"] == "Korok" else "Chest", [row],
               [row["position"][0], row["position"][2]])
-             for row in cat.KOROKS + cat.CHESTS if not row.get("dungeon")]
+             for row in cat.KOROKS + cat.CHESTS + cat.MASTER_CHESTS if not row.get("dungeon")]
     marks += [(row["name"], "Boss", [row], [row["position"][0], row["position"][2]]) for row in cat.BOSSES]
     marks += [(f"{dungeon} Chests", "Dungeon Chest", rows,
                [value + DUNGEON_OFFSET / SCALE for value in positions[dungeon]])
@@ -1434,7 +1434,8 @@ def stamp(content: Path | None) -> str:
     digest = hashlib.sha256()
     for name in (*SOURCE_FILES, "botw_world/catalog.py", "botw_world/data/items.json",
                  "botw_world/data/locations.json", "botw_world/data/logic.csv", "botw_world/data/koroks.json",
-                 "botw_world/data/chests.json", "botw_world/data/quests.json", "botw_world/data/bosses.json",
+                 "botw_world/data/chests.json", "botw_world/data/master_chests.json", "botw_world/data/quests.json",
+                 "botw_world/data/bosses.json",
                  "botw_world/archipelago.json"):
         digest.update((ROOT / name).read_bytes())
     digest.update(str(content).encode() + str(update_content()).encode())

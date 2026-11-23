@@ -41,7 +41,11 @@ can take away, a Delete link or a negated or exclusive condition in what creates
 them (NEGATING): the Warm Doublet's, there only if the old man did not give it,
 and two of a Lake Saria puzzle's; and the Xenoblade Chronicles 2 collaboration's
 (COLLABORATION), which the Wii U was never seen to show.
---check compares the file with the game's (a test does when the DLC is installed
+
+The Master Mode chests (botw_patch/chests.py is_master_chest: 118, each on the platform
+of an Octorok balloon) go to botw_world/data/master_chests.json (MASTER_OUTPUT), by the
+same rules, as "Master Mode <kind>" chests: the world's master_mode.
+--check compares the files with the game's (a test does when the DLC is installed
 and Cemu launches the base game from a folder).
 """
 from __future__ import annotations
@@ -63,6 +67,8 @@ from botw_patch.resources import unpack  # noqa: E402
 from tools.map_regions import Beco, area_regions, map_towers  # noqa: E402
 
 OUTPUT = ROOT / "botw_world/data/chests.json"
+MASTER_OUTPUT = ROOT / "botw_world/data/master_chests.json"
+MASTER_KIND = "Master Mode "
 FIELD_AREAS = "Ecosystem/FieldMapArea.sbeco"
 AREA_DATA = "Ecosystem/AreaData.sbyml"
 BURNING = ("EldinClimateLv1", "EldinClimateLv2")
@@ -88,6 +94,7 @@ ALL_SHRINES = "All Shrines"
 # for, or why it cannot (no_progression). A flag missing here stops the build.
 CREATING_FLAGS = {
     "HasAoCVer1": (),                                   # the DLC, which every game has
+    "AoC_HardMode_Enabled": (),                         # Master Mode, which master_mode asks for
     "Wind_Relic_": ("Freed - Divine Beast Vah Medoh",),
     "Fire_Relic_": ("Freed - Divine Beast Vah Rudania",),
     "AssassinBoss_": ("Magnesis",),                     # Master Kohga's fight
@@ -384,17 +391,19 @@ def rule(table: dict, name: str, chest: str):
     raise ValueError(f"{chest}: created by {name}, which the logic does not know")
 
 
-def rows(game, base: Path) -> list[dict]:
+def rows(game, base: Path, master: bool = False) -> list[dict]:
     """The chests' rows, from the update's Bootup.pack and the DLC's map units,
     then the shrines' (shrine_rows, `base`: the base game's content/) and the
-    Divine Beasts' (beast_rows)."""
+    Divine Beasts' (beast_rows); with `master`, the Master Mode chests' only."""
     content = game.content
     bootup = oead.Sarc(unpack((content / "Pack/Bootup.pack").read_bytes()))
     heat = burning(bootup)
     towers = map_towers(content)
     named = area_regions(towers)
-    maps = {name: game.read_aoc(chests.unit(name)) for name in chests.MAP_HASHES}
-    items = chests.numbering(maps)
+    maps = {name: game.read_aoc(chests.unit(name))
+            for name in {**chests.MAP_HASHES, **(chests.MASTER_MAP_HASHES if master else {})}}
+    items = chests.master_numbering(maps) if master else chests.numbering(maps)
+    chest_of = chests.is_master_chest if master else chests.is_chest
     objects, into = {}, {}
     for raw in maps.values():
         for obj in oead.byml.from_binary(unpack(raw))["Objs"]:
@@ -405,7 +414,7 @@ def rows(game, base: Path) -> list[dict]:
     breakables = [obj for obj in objects.values() if str(obj["UnitConfigName"]).startswith(BREAKABLE[:2])]
     out = []
     for obj in objects.values():
-        if not chests.is_chest(obj):
+        if not chest_of(obj):
             continue
         flag = chests.flag(obj)
         links = into.get(int(obj["HashId"]), [])
@@ -446,12 +455,15 @@ def rows(game, base: Path) -> list[dict]:
                   "rock" if any(name.startswith("FldObj_PushRock_") for name in below) else None)
         number = int(items[flag].rsplit("_", 1)[1])
         region = named[towers.at(x, z)]
-        out.append({"number": number, "flag": flag, "kind": kind, "region": region,
+        out.append({"number": number, "flag": flag, "kind": (MASTER_KIND if master else "") + kind,
+                    "region": region,
                     "name": None,                       # name_chests
                     "position": [round(x, 1), round(y, 1), round(z, 1)],
                     "heat": heat(x, z),
                     "requires": sorted(requires), "no_progression": reason})
     name_chests(out, places(game, bootup), lambda x, z: named[towers.at(x, z)])
+    if master:
+        return sorted(out, key=lambda row: row["number"])
     return sorted(out + shrine_rows(game, base) + beast_rows(game), key=lambda row: row["number"])
 
 
@@ -467,13 +479,16 @@ def main() -> None:
     from tools.build_resources_from_source import game_files
     game = game_files(cemu_profile.update() / "content")
     with game.active():
-        text = encode(rows(game, base_content()))
+        texts = {OUTPUT: encode(rows(game, base_content())), MASTER_OUTPUT: encode(rows(game, None, master=True))}
     if args.check:
-        same = OUTPUT.read_bytes().decode("utf-8") == text
-        print("chests.json matches the game" if same else "chests.json differs from the game")
-        raise SystemExit(0 if same else 1)
-    OUTPUT.write_bytes(text.encode("utf-8"))
-    print(f"{OUTPUT.relative_to(ROOT)}: {text.count(chr(10)) - 2} chests")
+        same = {output: output.is_file() and output.read_bytes().decode("utf-8") == text
+                for output, text in texts.items()}
+        for output, matches in same.items():
+            print(f"{output.name} " + ("matches the game" if matches else "differs from the game"))
+        raise SystemExit(0 if all(same.values()) else 1)
+    for output, text in texts.items():
+        output.write_bytes(text.encode("utf-8"))
+        print(f"{output.relative_to(ROOT)}: {text.count(chr(10)) - 2} chests")
 
 
 if __name__ == "__main__":

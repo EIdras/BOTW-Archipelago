@@ -309,6 +309,15 @@ class ShrineChestItems(Toggle):
     display_name = "Shrine Chest Items"
 
 
+class MasterMode(Toggle):
+    """With chest_sanity, whether the 118 chests of Master Mode (each on the platform
+    of an Octorok balloon) are locations too, as chest_sanity says. The seed is then
+    played in a Master Mode save (The Master Trials, DLC 1): the client stops on a
+    Normal mode one, which has none of these chests. Without this option, a seed can
+    still be played in Master Mode: these chests then keep their contents."""
+    display_name = "Master Mode"
+
+
 class KorokSanity(Toggle):
     """Whether Koroks are locations: finding one sends its location's item, and a
     window says what was found and for whom. The Korok still gives its seed, so
@@ -447,6 +456,7 @@ class BotwOptions(PerGameCommonOptions):
     chest_sanity: ChestSanity
     chest_progression: ChestProgression
     shrine_chest_items: ShrineChestItems
+    master_mode: MasterMode
     korok_sanity: KorokSanity
     korok_count: KorokCount
     korok_local_filler: KorokLocalFiller
@@ -474,7 +484,7 @@ OPTION_GROUPS = [
     OptionGroup("Master Cycle Zero", [BikeAnywhere]),
     OptionGroup("Cutscenes", [CutsceneSkip]),
     OptionGroup("Spirit Orbs", [SpiritOrbs, StatueOfferings]),
-    OptionGroup("Chests", [ChestSanity, ChestProgression, ShrineChestItems]),
+    OptionGroup("Chests", [ChestSanity, ChestProgression, ShrineChestItems, MasterMode]),
     OptionGroup("Koroks", [KorokSanity, KorokCount, KorokLocalFiller, KorokProgression]),
     OptionGroup("Quests", [SideQuestSanity, ShrineQuestSanity, QuestProgression]),
     OptionGroup("Bosses", [BossSanity, BossProgression]),

@@ -37,7 +37,8 @@ class PackTests(unittest.TestCase):
     def test_every_location_has_one_section_on_the_map(self):
         places = self.json("locations/locations.json")
         names = [section["name"] for place in places for section in place["sections"]]
-        every = self.cat.LOCATIONS + self.cat.KOROKS + self.cat.CHESTS + self.cat.QUESTS + self.cat.OFFERINGS + self.cat.BOSSES
+        every = (self.cat.LOCATIONS + self.cat.KOROKS + self.cat.CHESTS + self.cat.MASTER_CHESTS + self.cat.QUESTS
+                 + self.cat.OFFERINGS + self.cat.BOSSES)
         self.assertEqual(sorted(names), sorted(row["name"] for row in every))
         # The map is cut to the squares, MARGIN pixels around them.
         header = self.pack.read("images/map.png")[16:24]
@@ -91,7 +92,8 @@ class PackTests(unittest.TestCase):
     def test_the_autotracker_knows_every_ap_location_and_item(self):
         data = self.pack.read("scripts/data.lua").decode()
         sections = dict(re.findall(r'\[(\d+)\] = "(@[^"]+)"', data.split("REQUIREMENTS")[0]))
-        every = self.cat.LOCATIONS + self.cat.KOROKS + self.cat.CHESTS + self.cat.QUESTS + self.cat.OFFERINGS + self.cat.BOSSES
+        every = (self.cat.LOCATIONS + self.cat.KOROKS + self.cat.CHESTS + self.cat.MASTER_CHESTS + self.cat.QUESTS
+                 + self.cat.OFFERINGS + self.cat.BOSSES)
         expected = {row["id"] for row in every
                     if row["name"] != self.cat.GOAL_LOCATION}
         self.assertEqual({int(key) for key in sections}, expected)
@@ -335,7 +337,8 @@ class PackTests(unittest.TestCase):
         self.assertEqual(regions[str(goal)], '{"Hyrule Castle"}')
         self.assertIn('INNER_REGIONS = {["Hyrule Castle"] = "Central"}', data)
         # The Great Plateau is always reached: its locations have no bracket.
-        every = self.cat.LOCATIONS + self.cat.KOROKS + self.cat.CHESTS + self.cat.QUESTS + self.cat.OFFERINGS + self.cat.BOSSES
+        every = (self.cat.LOCATIONS + self.cat.KOROKS + self.cat.CHESTS + self.cat.MASTER_CHESTS + self.cat.QUESTS
+                 + self.cat.OFFERINGS + self.cat.BOSSES)
         plateau = {str(row["id"]) for row in every if row["region"] == "Great Plateau"}
         self.assertFalse(plateau & set(regions))
         self.assertEqual(len(regions), len(every) - len(plateau))

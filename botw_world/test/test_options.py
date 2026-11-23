@@ -295,6 +295,44 @@ class TestShrineChestItems(BotwTestBase):
                 generate(options)
 
 
+class TestMasterModeOffByDefault(BotwTestBase):
+    options = {"chest_sanity": "ap_items"}
+
+    def test_no_master_mode_chest(self) -> None:
+        locations = {loc.name for loc in self.multiworld.get_locations(self.player)}
+        self.assertFalse(locations & self.world.location_name_groups["Master Mode Chests"])
+        slot_data = self.world.fill_slot_data()
+        self.assertEqual((slot_data["master_mode"], slot_data["client_schema"]), (0, 13))
+
+
+class TestMasterMode(BotwTestBase):
+    options = {"chest_sanity": "ap_items", "master_mode": True, "trap_percentage": 100}
+
+    def test_the_118_chests_are_excluded_locations_after_the_others(self) -> None:
+        master = [loc for loc in self.multiworld.get_locations(self.player)
+                  if loc.name in self.world.location_name_groups["Master Mode Chests"]]
+        self.assertEqual(len(master), 118)
+        self.assertEqual({loc.progress_type for loc in master}, {LocationProgressType.EXCLUDED})
+        self.assertGreater(min(loc.address for loc in master), max(row["id"] for row in CHESTS))
+        slot_data = self.world.fill_slot_data()
+        self.assertEqual((slot_data["master_mode"], slot_data["client_schema"], slot_data["world_schema"]),
+                         (1, 22, 11))
+
+    def test_they_bring_no_more_traps(self) -> None:
+        without = generate({"chest_sanity": "ap_items", "trap_percentage": 100})
+        self.assertEqual(sum(item.name in TRAPS for item in self.multiworld.itempool),
+                         sum(item.name in TRAPS for item in without.itempool))
+        self.assertEqual(len(self.multiworld.itempool), len(without.itempool) + 118)
+
+    def test_check_only_too(self) -> None:
+        world = generate({"chest_sanity": "check_only", "master_mode": True}).worlds[1]
+        self.assertEqual(world.fill_slot_data()["client_schema"], 22)
+
+    def test_master_mode_needs_chest_sanity(self) -> None:
+        with self.assertRaises(OptionError):
+            generate({"master_mode": True})
+
+
 class TestKorokSanityOffByDefault(BotwTestBase):
     def test_no_korok_location(self) -> None:
         locations = {loc.name for loc in self.multiworld.get_locations(self.player)}
@@ -313,7 +351,7 @@ class TestKorokSanity(BotwTestBase):
         self.assertEqual({loc.progress_type for loc in koroks}, {LocationProgressType.EXCLUDED})
         slot_data = self.world.fill_slot_data()
         self.assertEqual((slot_data["korok_count"], slot_data["client_schema"], slot_data["world_schema"]),
-                         (40, 14, 10))
+                         (40, 14, 11))
         self.assertEqual(slot_data["korok_locations"], sorted(loc.address for loc in koroks))
         self.assertTrue(all(KOROK_ID_BASE < loc.address <= KOROK_ID_BASE + len(KOROKS) for loc in koroks))
 
@@ -397,7 +435,7 @@ class TestSideQuestSanity(BotwTestBase):
         self.assertTrue(all(QUEST_ID_BASE < loc.address <= QUEST_ID_BASE + 155 for loc in quests))
         slot_data = self.world.fill_slot_data()
         self.assertEqual((slot_data["side_quest_sanity"], slot_data["shrine_quest_sanity"],
-                          slot_data["client_schema"], slot_data["world_schema"]), (1, 0, 15, 10))
+                          slot_data["client_schema"], slot_data["world_schema"]), (1, 0, 15, 11))
 
     def test_they_bring_no_more_traps(self) -> None:
         with_quests = generate(self.options)
@@ -507,7 +545,7 @@ class TestBossSanity(BotwTestBase):
         self.assertTrue(all(BOSS_ID_BASE < loc.address <= BOSS_ID_BASE + len(BOSSES) for loc in bosses))
         slot_data = self.world.fill_slot_data()
         self.assertEqual((slot_data["boss_sanity"], slot_data["client_schema"], slot_data["world_schema"]),
-                         (1, 17, 10))
+                         (1, 17, 11))
 
     def test_they_bring_no_more_traps(self) -> None:
         without = generate({"trap_percentage": 100})
@@ -576,7 +614,7 @@ class TestProgressiveHorse(BotwTestBase):
                          + Counter({"Progressive Horse": 4}))
         slot_data = self.world.fill_slot_data()
         self.assertEqual((slot_data["progressive_horse"], slot_data["client_schema"], slot_data["world_schema"]),
-                         (1, 18, 10))
+                         (1, 18, 11))
 
 
 class TestProgressiveHorseEverySanity(BotwTestBase):

@@ -95,12 +95,19 @@ BEAST_PACK_HASHES = {
 # Beasts'; the shrines' between them keep their contents, but with shrine_chest_items.
 HELD = ((1, CHEST_COUNT), (BEAST_FIRST, BEAST_FIRST + BEAST_CHEST_COUNT - 1))
 SHRINES_HELD = (CHEST_COUNT + 1, CHEST_COUNT + SHRINE_CHEST_COUNT)
+# The Master Mode chests (IsHardModeActor: absent from a normal game, each on the
+# platform of an Octorok balloon), with the world's master_mode: numbered after the
+# Divine Beasts', in the field's map units and F-4_Static (MASTER_MAP_HASHES).
+MASTER_CHEST_COUNT = 118
+MASTER_FIRST = BEAST_FIRST + BEAST_CHEST_COUNT
+MASTER_HELD = (MASTER_FIRST, MASTER_FIRST + MASTER_CHEST_COUNT - 1)
 # The world's (botw_world/catalog.py): a chest's location id is this plus its number.
 CHEST_ID_BASE = 10000
 # The world's chest_sanity value (botw_world/options.py) for chests holding their AP items.
 AP_ITEMS = 2
 # The chests that are the world's locations, by number (tools/chest_locations.py).
 LOCATIONS = Path(__file__).resolve().parents[1] / "botw_world/data/chests.json"
+MASTER_LOCATIONS = LOCATIONS.with_name("master_chests.json")
 # (name, description) per language: its own, else its European counterpart's.
 TEXTS = {
     "EUen": ("Archipelago Item", "An item from the Archipelago multiworld. It has been sent to its owner."),
@@ -270,6 +277,10 @@ MAP_HASHES = {
     "J-8/J-8_Static": "ebe20aa32e60cc31d5506abd9e6b02acc31a1b8ba2cde2e9db5a80278340a9e9",
     "J-8/J-8_Dynamic": "dcea0ec111517121cb64df6efd41575fe9bc0c414b3970cc9534afd6faedab08",
 }
+# The unit holding Master Mode chests but no other (European hash).
+MASTER_MAP_HASHES = {"F-4/F-4_Static": "55ab7975b1e7b185d6c322a9fa15d850c73a75beed8968a4b08eb26b8c50dba9"}
+# Read for a seed that has them only, so that the others keep their identity.
+MASTER_SOURCE_FILES = ("botw_world/data/master_chests.json",)
 SOURCE_FILES = ("botw_patch/chests.py", "botw_world/data/chests.json", "botw_patch/shop_items.py",
                 "assets/wiiu/Item_AP_Jewel.sbitemico",
                 *(f"assets/models/ap_item/wiiu/AP_Item{part}.sbfres" for part in MODEL_PARTS))
@@ -287,9 +298,15 @@ def shrines_asked(status: dict | None) -> bool:
     return enabled(status) and bool(status.get("slot_data", {}).get("shrine_chest_items"))
 
 
-def held(shrines: bool = False) -> tuple[tuple[int, int], ...]:
+def master_asked(status: dict | None) -> bool:
+    """The slot's Master Mode chests are locations holding their AP items (the
+    world's master_mode)."""
+    return enabled(status) and bool(status.get("slot_data", {}).get("master_mode"))
+
+
+def held(shrines: bool = False, master: bool = False) -> tuple[tuple[int, int], ...]:
     """The ranges of numbers whose chest holds its item."""
-    return (*HELD, SHRINES_HELD) if shrines else HELD
+    return (*HELD, *((SHRINES_HELD,) if shrines else ()), *((MASTER_HELD,) if master else ()))
 
 
 def unit(name: str) -> str:
@@ -310,6 +327,21 @@ def is_chest(obj) -> bool:
     return not any(name in parameters and bool(parameters[name]) for name in LEFT_PARAMETERS)
 
 
+def is_master_chest(obj) -> bool:
+    """A chest of Master Mode only (IsHardModeActor) that has a flag."""
+    actor = str(obj["UnitConfigName"])
+    if not actor.startswith(CHEST_PREFIX) or actor in LEFT_ACTORS:
+        return False
+    parameters = obj["!Parameters"] if "!Parameters" in obj else {}
+    return "IsHardModeActor" in parameters and bool(parameters["IsHardModeActor"]) \
+        and not ("IsIchigekiActor" in parameters and bool(parameters["IsIchigekiActor"]))
+
+
+def field_chest(obj) -> bool:
+    """A chest of the field, of a normal game or of Master Mode."""
+    return is_chest(obj) or is_master_chest(obj)
+
+
 def actor(number: int) -> str:
     """The item of the chest numbered `number` (from 1)."""
     return f"{ACTOR}_{number:04d}"
@@ -322,13 +354,19 @@ def entry(item_actor: str) -> str:
     return ENTRY + item_actor[len(ACTOR):]
 
 
-def numbering(maps: dict[str, bytes]) -> dict[str, str]:
+def numbering(maps: dict[str, bytes], chest_of=is_chest, first: int = 1) -> dict[str, str]:
     """{chest flag: its item}: the flags of the vanilla units in order, numbered from 1."""
     flags = sorted(flag(obj) for raw in maps.values()
-                   for obj in oead.byml.from_binary(unpack(raw))["Objs"] if is_chest(obj))
+                   for obj in oead.byml.from_binary(unpack(raw))["Objs"] if chest_of(obj))
     if len(set(flags)) != len(flags):
         raise ValueError("two chests share a flag")
-    return {name: actor(number) for number, name in enumerate(flags, 1)}
+    return {name: actor(number) for number, name in enumerate(flags, first)}
+
+
+def master_numbering(maps: dict[str, bytes]) -> dict[str, str]:
+    """{chest flag: its item} of the Master Mode chests (`maps`: the field's units and
+    MASTER_MAP_HASHES'): their flags in order, after the Divine Beasts'."""
+    return numbering(maps, is_master_chest, MASTER_FIRST)
 
 
 def shrine_unit(dungeon: str) -> str:
@@ -341,9 +379,9 @@ def shrine_flag(obj) -> str:
     return f"CDungeon_{obj['UnitConfigName']}_{int(obj['HashId'])}"
 
 
-def holds_item(number: int, shrines: bool = False) -> bool:
+def holds_item(number: int, shrines: bool = False, master: bool = False) -> bool:
     """Whether the chest numbered `number` holds its item (held())."""
-    return any(first <= number <= last for first, last in held(shrines))
+    return any(first <= number <= last for first, last in held(shrines, master))
 
 
 def beast_pack(beast: str) -> str:
@@ -401,15 +439,15 @@ def item(language: str, item_actor: str = ACTOR, text: tuple[str, str] | None = 
                       icon_actor=None if item_actor == ACTOR else ACTOR)
 
 
-def placed_names(status: dict, shrines: bool = False) -> dict[str, tuple[str, str]]:
+def placed_names(status: dict, shrines: bool = False, master: bool = False) -> dict[str, tuple[str, str]]:
     """{item: (name, description)}: what each chest's location sends, as the seed
     placed it, in English as the shops say it (botw_patch/shops.py); the shrines'
-    too with `shrines`."""
+    too with `shrines`, the Master Mode chests' with `master`."""
     from botw_patch.shops import item_texts
     names = {}
     for row in status.get("placements", []):
         number = int(row["location_id"]) - CHEST_ID_BASE
-        if holds_item(number, shrines):
+        if holds_item(number, shrines, master):
             names[actor(number)] = item_texts(
                 row["item_name"], row["recipient_name"], row["recipient_game"], int(row["flags"]),
                 row["recipient"] == status["slot"], row.get("location_name", str(row["location_id"])))
@@ -501,7 +539,7 @@ def add_info(raw: bytes, items: list[str]) -> tuple[bytes, list[str]]:
 
 def generate(files: dict[str, bytes], content, model: dict[str, bytes] | None = None,
              names: dict[str, tuple[str, str]] | None = None,
-             shrines: bool = False) -> tuple[dict[str, bytes], list[dict]]:
+             shrines: bool = False, master: bool = False) -> tuple[dict[str, bytes], list[dict]]:
     """Add the chests' item, maps and removal entry to an overlay being built.
 
     `files` must already hold the size table, Bootup.pack and TitleBG.pack
@@ -510,7 +548,8 @@ def generate(files: dict[str, bytes], content, model: dict[str, bytes] | None = 
     `names`: {item: (name, description)} shown in every language; an item
     left out (or all, without `names`) has the generic texts. With `shrines`, the
     shrines' chests that are locations have their items declared too (their maps
-    are the shared shrines', botw_patch/shrine_chests.py)."""
+    are the shared shrines', botw_patch/shrine_chests.py). With `master`, the Master
+    Mode chests that are locations hold their items too."""
     from botw_patch.game_files import GameFiles
     from botw_patch.shops import (ICON, ICON_TABLE_MARGIN, MODEL_ACTOR, MODEL_FOLDER, MODEL_REFERENCE,
                                   TITLE_SHA256, model_files)
@@ -527,10 +566,14 @@ def generate(files: dict[str, bytes], content, model: dict[str, bytes] | None = 
         raise ValueError(f"unexpected update resource: {TITLE}")
     amber = bytes(oead.Sarc(unpack(source_title)).get_file(f"Actor/Pack/{MODEL_ACTOR}.sbactorpack").data)
     has_model = all(f"Model/{MODEL_FOLDER}{part}.sbfres" in files for part in MODEL_PARTS)
-    vanilla_maps = {name: game.checked_aoc(unit(name), expected) for name, expected in MAP_HASHES.items()}
+    vanilla_maps = {name: game.checked_aoc(unit(name), expected)
+                    for name, expected in {**MAP_HASHES, **(MASTER_MAP_HASHES if master else {})}.items()}
     numbered = numbering(vanilla_maps)
     if len(numbered) != CHEST_COUNT:
         raise ValueError(f"{len(numbered)} chests found, {CHEST_COUNT} expected")
+    master_numbered = master_numbering(vanilla_maps) if master else {}
+    if master and len(master_numbered) != MASTER_CHEST_COUNT:
+        raise ValueError(f"{len(master_numbered)} Master Mode chests found, {MASTER_CHEST_COUNT} expected")
     beast_packs = {beast: unpack(game.checked_aoc(beast_pack(beast), expected))
                    for beast, expected in BEAST_PACK_HASHES.items()}
     beast_archives = {beast: oead.Sarc(raw) for beast, raw in beast_packs.items()}
@@ -545,6 +588,10 @@ def generate(files: dict[str, bytes], content, model: dict[str, bytes] | None = 
                    if int(held.rsplit("_", 1)[1]) in located}
     shrine_items = [actor(number) for number in sorted(located)
                     if shrines and SHRINES_HELD[0] <= number <= SHRINES_HELD[1]]
+    master_located = {row["number"] for row in json.loads(MASTER_LOCATIONS.read_text(encoding="utf-8"))} \
+        if master else set()
+    items.update({name: held for name, held in master_numbered.items()
+                  if int(held.rsplit("_", 1)[1]) in master_located})
     actors = sorted([*items.values(), *beast_items.values(), *shrine_items])
     names = names or {}
     if set(names) - set(actors):
@@ -604,7 +651,7 @@ def generate(files: dict[str, bytes], content, model: dict[str, bytes] | None = 
         count = 0
         for name, vanilla in sorted(vanilla_maps.items()):
             source = files.get(AOC_PREFIX + unit(name), vanilla)
-            new, chests = patch_map(source, items)
+            new, chests = patch_map(source, items, chest_of=field_chest if master else is_chest)
             count += len(chests)
             builder.account(TABLE_PREFIX + unit(name), new, vanilla)
             aoc_files[AOC_PREFIX + unit(name)] = new

@@ -14,6 +14,8 @@ from .locations import (BOSS_NAMES, CHEST_NUMBERS, CHESTS_SENT_WITH, KOROK_NAMES
                         load_targets, tower_activation_flag)
 from .paths import DATA
 from .elemental_strike import NAMES as ELEMENTS
+from . import master_mode
+from .master_mode import SaveMode
 from .pouch_watch import StrayShopItems
 from .protocol import ArchipelagoClient, DeathLinkEvent, LocationInfo
 from .session import session_token
@@ -89,8 +91,8 @@ CLIENT_SCHEMA = 2
 # 13 the chests as locations, their AP items taken out of the pouch, 14 the Koroks as locations,
 # 15 the quests as locations, 16 the Goddess Statues' offerings as locations, 17 the field
 # bosses as locations, 18 the Progressive Horse, 19 the bonus items, 20 the extra filler,
-# 21 the elemental traps.
-BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21)
+# 21 the elemental traps, 22 the Master Mode chests as locations.
+BOTW_CLIENT_SCHEMAS = (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22)
 # The mutations that present the item themselves: no AP window before them.
 VANILLA_WINDOWS = ("get_demo_actor", "champion_actor", "rune_download", "rune_power_up", "trap",
                    "native_trap",
@@ -380,6 +382,10 @@ class BotwClientRuntime:
         self._next_delivery_wait_log = 0.0
         self._native_delivery_retry_after = 0.0
         self._native_session_bound = False
+        # master_mode: the save's mode, read before binding it (botw_client/master_mode.py).
+        self._save_mode = SaveMode()
+        self._master_mode_said = False
+        self._played_until = 0.0
 
     def stop(self):
         self.stop_event.set()
@@ -590,8 +596,11 @@ class BotwClientRuntime:
         if not self.native_delivery or self.deliveries is None:
             return True
         if self._native_session_bound:
+            self._say_master_mode_played()
             return True
         if time.monotonic() < self._native_delivery_retry_after:
+            return False
+        if not self._save_mode_allows_binding():
             return False
         binder = getattr(self.deliveries.backend, "bind_session", None)
         if binder is None:
@@ -603,6 +612,8 @@ class BotwClientRuntime:
             self._native_delivery_retry_after = 0.0
             self.game.delivery_block_reason = 'session bound; waiting for the presentation conditions'
             self.log("BOTW save bound to the AP session")
+            self._played_until = time.monotonic() + master_mode.PLAYED_SECONDS
+            self._say_master_mode_played()
             return True
         if result.status is DeliveryStatus.DEFERRED:
             self.game.delivery_block_reason = (
@@ -612,6 +623,41 @@ class BotwClientRuntime:
             return False
         raise FatalClientError(
             f"native binding refused ({result.status.value}): {result.detail}")
+
+    def _slot_master_mode(self) -> bool:
+        """The seed's Master Mode chests are locations (the world's master_mode)."""
+        slot = getattr(self.ap, "slot_data", None)
+        return isinstance(slot, dict) and bool(slot.get("master_mode"))
+
+    def _say_master_mode_played(self) -> None:
+        """A seed without master_mode in a Master Mode save: said once, the mode read
+        for PLAYED_SECONDS after binding (a load writes it a frame after the rest)."""
+        if self._master_mode_said or time.monotonic() > self._played_until or self._slot_master_mode():
+            return
+        if master_mode.read(self.game):
+            self._master_mode_said = True
+            self.log(master_mode.PLAYED)
+
+    def _save_mode_allows_binding(self) -> bool:
+        """master_mode (botw_client/master_mode.py): a save is bound once its mode,
+        read with Link in the world, stays Master Mode a second; a Normal mode save
+        stops the client. Other seeds bind as before."""
+        if not self._slot_master_mode():
+            return True
+        in_world = getattr(self.deliveries.backend, "_link_in_world", None)
+        if in_world is not None and not in_world():
+            self._save_mode.reset()
+            self.game.delivery_block_reason = "binding deferred; waiting for Link in the world"
+            self._native_delivery_retry_after = time.monotonic() + 0.5
+            return False
+        mode = self._save_mode.settled(master_mode.read(self.game), time.monotonic())
+        if mode is None:
+            self.game.delivery_block_reason = "binding deferred; reading the save's mode"
+            self._native_delivery_retry_after = time.monotonic() + 0.25
+            return False
+        if not mode:
+            raise FatalClientError(master_mode.REFUSAL)
+        return True
 
     async def _lease_loop(self):
         """Renew the selective shrine-reward lease; disarm on every exit."""
