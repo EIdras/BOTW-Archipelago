@@ -1,11 +1,12 @@
 # Breath of the Wild dans Archipelago : démarrage rapide
 
-Ce guide court permet de jouer à Breath of the Wild dans une partie Archipelago, sous Windows, dans l'émulateur Cemu.
-Le reste de la documentation est en anglais : chaque section renvoie à sa page.
+Ce guide court permet de jouer à Breath of the Wild dans une partie Archipelago, sous Windows ou Linux, dans
+l'émulateur Cemu. Le reste de la documentation est en anglais : chaque section renvoie à sa page.
 
 ## Ce qu'il faut
 
-- Windows 10 ou 11 et [Cemu](https://cemu.info/) 2.x.
+- Windows 10 ou 11, ou Linux sur un PC 64 bits (x86-64, voir [Sous Linux](#sous-linux)), et
+  [Cemu](https://cemu.info/) 2.x.
 - Breath of the Wild **Wii U**, version européenne, américaine ou japonaise, depuis votre propre console, avec sa
   **mise à jour v208** et le **DLC** installés dans Cemu (Fichier > Installer un titre, une mise à jour ou un DLC).
   Lancez le jeu une fois dans Cemu. La version Switch n'est pas prise en charge.
@@ -18,7 +19,7 @@ Le reste de la documentation est en anglais : chaque section renvoie à sa page.
 ## Installer
 
 1. Installer [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases) 0.6.7 ou plus récent, si ce
-   n'est pas déjà fait : le programme `Setup` de sa dernière release.
+   n'est pas déjà fait : le programme `Setup` de sa dernière release (sous Linux, son `AppImage`).
 2. Télécharger `botw.apworld` dans les [releases](https://github.com/EIdras/BOTW-Archipelago/releases), parmi les
    **Assets**.
 3. Ouvrir l'**Archipelago Launcher**, cliquer sur **Install APWorld** et choisir `botw.apworld`. Fermer le Launcher
@@ -30,9 +31,10 @@ BOTW Archipelago tourne dans Archipelago : rien d'autre à installer. L'hôte g�
 ## Jouer
 
 Dans l'Archipelago Launcher, cliquer sur **BOTW Archipelago**. La première fois, il télécharge les bibliothèques
-dont il a besoin (environ 14 Mo, depuis internet), puis sa fenêtre s'ouvre.
+dont il a besoin (environ 14 Mo, 18 Mo sous Linux, depuis internet), puis sa fenêtre s'ouvre.
 
-1. **Cemu** : la première fois, **Choose Cemu...** demande où est `Cemu.exe`, puis **Create the profile** copie
+1. **Cemu** : la première fois, **Choose Cemu...** demande où est `Cemu.exe` (sous Linux, l'AppImage de
+   Cemu ou le `Cemu` de son zip Linux), puis **Create the profile** copie
    Cemu et vos sauvegardes dans un profil à lui (environ 5 Go). Votre installation de Cemu n'est jamais modifiée.
 2. **La seed** : **Add from a room link...**, puis coller le lien de la page de la salle
    (`https://archipelago.gg/room/...`) : le lanceur y télécharge votre fichier de slot. Ou bien **Add a seed...**
@@ -51,6 +53,24 @@ fermer et rouvrir Archipelago. Une seed d'avant la version 0.4.0 s'ouvre avec **
 télécharge sa version. En venant de la version 0.3 ou plus ancienne, le lanceur retrouve votre profil, vos seeds et
 vos sauvegardes : le dossier de l'ancienne release peut être supprimé. Le guide complet, en anglais :
 [Setup guide](setup_en.md). Les guides sont aussi dans le lanceur : **Help**, en bas de sa barre latérale.
+
+## Sous Linux
+
+Même `botw.apworld`, même fenêtre, dans la version Linux d'Archipelago :
+
+- **Archipelago** : l'`AppImage` de sa dernière release, rendue exécutable (`chmod +x Archipelago_*.AppImage`).
+  **Install APWorld** copie `botw.apworld` dans `~/.local/share/Archipelago/worlds`.
+- **Cemu** : son AppImage officielle, ou le `Cemu` de son zip Linux. Pas le Cemu Flatpak ni Snap : leur bac à sable
+  cache Cemu au client, et le lanceur les refuse.
+- **Pilote graphique** : Cemu a besoin de Vulkan ; `vulkaninfo --summary` doit montrer votre carte graphique, pas
+  seulement `llvmpipe` (le processeur, bien trop lent).
+- **Mémoire de Cemu** : le client lit la mémoire du Cemu qu'il lance, ce que Linux permet par défaut
+  (`kernel.yama.ptrace_scope` à 0 ou 1). À 2 ou 3, `sudo sysctl kernel.yama.ptrace_scope=1` le rétablit jusqu'au
+  prochain redémarrage.
+- **Dossiers** : les données dans `~/.local/share/BOTW Archipelago`, les bibliothèques dans
+  `~/.cache/Archipelago/botw`.
+
+Le détail, en anglais : [On Linux](setup_en.md#on-linux).
 
 ## Pour aller plus loin
 

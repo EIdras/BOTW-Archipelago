@@ -3,12 +3,12 @@
 **Setup** · [In the game](ingame_en.md) · [Options](en_Breath%20of%20the%20Wild.md) · [Hosting](hosting_en.md) ·
 [Trackers](poptracker_en.md) · [Mods](mods_en.md) · [Troubleshooting](troubleshooting_en.md)
 
-This guide gets you from nothing to playing Breath of the Wild in an Archipelago room, on Windows, in Cemu. Hosting
-the room is on [its own page](hosting_en.md).
+This guide gets you from nothing to playing Breath of the Wild in an Archipelago room, on Windows or Linux, in Cemu.
+Hosting the room is on [its own page](hosting_en.md).
 
 ## What you need
 
-- [ ] Windows 10 or 11.
+- [ ] Windows 10 or 11, or Linux on a 64-bit PC (x86-64): see [On Linux](#on-linux).
 - [ ] [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases) 0.6.7 or newer.
 - [ ] [Cemu](https://cemu.info/) 2.x.
 - [ ] Breath of the Wild for **Wii U**, European (EUR), American (USA) or Japanese (JPN), from your own console, in
@@ -27,7 +27,7 @@ the room is on [its own page](hosting_en.md).
 ## Install
 
 1. Install [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases) if you do not have it: the
-   `Setup` program of its latest release.
+   `Setup` program of its latest release (on Linux, its `AppImage`).
 2. Download `botw.apworld` from the [releases](https://github.com/EIdras/BOTW-Archipelago/releases), in the
    release's **Assets**.
 3. Open the **Archipelago Launcher**, click **Install APWorld** and choose `botw.apworld`. Close the Launcher and open
@@ -40,13 +40,14 @@ That is all: BOTW Archipelago runs inside Archipelago. The host generates the se
 ## Your first session
 
 In the Archipelago Launcher, click **BOTW Archipelago**. The first time, it downloads the libraries it needs (about
-14 MB, from the internet), then its window opens.
+14 MB, 18 MB on Linux, from the internet), then its window opens.
 
 <!-- ![The first download](../../docs/images/setup-window.png) -->
 
 <!-- ![The game found in your Cemu](../../docs/images/launcher-cemu.png) -->
 
-1. **Cemu.** The first time, click **Choose Cemu...** and pick `Cemu.exe`. The launcher shows the game, its update
+1. **Cemu.** The first time, click **Choose Cemu...** and pick `Cemu.exe` (on Linux, Cemu's AppImage
+   or the `Cemu` of its Linux zip). The launcher shows the game, its update
    and the DLC it found, and the room the profile takes. **Create the profile**: it copies Cemu and your saves into a
    profile of its own (about 5 GB). Your Cemu installation is never modified.
 2. **The seed.** Click **Add from a room link...** and paste the link of the room's page
@@ -128,18 +129,35 @@ removed.
 Install as above: the window finds your profile, your seeds and their saves where they are. The folder where you
 unzipped the old release can then be deleted.
 
+## On Linux
+
+BOTW Archipelago runs in Archipelago's Linux build, the same way as on Windows, with the same `botw.apworld`.
+
+- **Archipelago**: download the `Archipelago_<version>_linux-x86_64.AppImage` of its
+  [latest release](https://github.com/ArchipelagoMW/Archipelago/releases), make it executable
+  (`chmod +x Archipelago_*.AppImage`) and open it. **Install APWorld** copies `botw.apworld` to
+  `~/.local/share/Archipelago/worlds`.
+- **Cemu**: its official AppImage, or the `Cemu` of its Linux zip, from [cemu.info](https://cemu.info/). Not a
+  Flatpak or Snap Cemu: its sandbox hides Cemu from the client, so the launcher refuses it. Cemu keeps its settings
+  in `~/.config/Cemu` and its game data (`mlc01`, where the update and the DLC go) in `~/.local/share/Cemu`.
+- **Your graphics driver**: Cemu needs Vulkan. `vulkaninfo --summary` (package `vulkan-tools`) should list your
+  graphics card, not only `llvmpipe`, which runs on the processor and is far too slow.
+- **Reading Cemu's memory**: the client reads the memory of the Cemu it starts, which Linux allows by default
+  (`kernel.yama.ptrace_scope` 0 or 1). With 2 or 3, the client says it cannot reach Cemu:
+  `sudo sysctl kernel.yama.ptrace_scope=1` allows it again until the next restart.
+
 ## Where things are
 
-Your profile, your seeds, their game packs and the older versions installed are in
-`%LOCALAPPDATA%\BOTW Archipelago`, the data folder. **Storage** shows what takes room in it, and moves it to another
-folder or drive. The libraries downloaded the first time are in Archipelago's cache,
-`%LOCALAPPDATA%\Archipelago\Cache\botw`.
+Your profile, your seeds, their game packs and the older versions installed are in the data folder:
+`%LOCALAPPDATA%\BOTW Archipelago` on Windows, `~/.local/share/BOTW Archipelago` on Linux. **Storage** shows what
+takes room in it, and moves it to another folder or drive. The libraries downloaded the first time are in
+Archipelago's cache: `%LOCALAPPDATA%\Archipelago\Cache\botw` on Windows, `~/.cache/Archipelago/botw` on Linux.
 
 ## Uninstalling
 
-Delete `botw.apworld` from Archipelago's `custom_worlds` folder, then the data folder (**Storage** shows where it
-is): the profile, with the saves of your Archipelago games, and the seeds. Archipelago's cache folder named above can
-go too. Your Cemu installation was never modified.
+Delete `botw.apworld` from Archipelago's `custom_worlds` folder (on Linux, `~/.local/share/Archipelago/worlds`),
+then the data folder (**Storage** shows where it is): the profile, with the saves of your Archipelago games, and the
+seeds. Archipelago's cache folder named above can go too. Your Cemu installation was never modified.
 
 ---
 

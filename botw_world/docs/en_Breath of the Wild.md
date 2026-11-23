@@ -410,5 +410,5 @@ A trap given back after loading an older save is spent without effect: a trap is
 
 ## Current limitations
 
-- Only the Wii U version (European, American or Japanese), update v208, in Cemu on Windows.
+- Only the Wii U version (European, American or Japanese), update v208, in Cemu on Windows or Linux (x86-64).
 - A few mods are left out of the Archipelago game: see [Mods](mods_en.md#what-is-left-out).

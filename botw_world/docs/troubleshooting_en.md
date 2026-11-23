@@ -62,6 +62,19 @@ option.
 Its 108 Spirit Orbs need room among the locations: turn on `chest_sanity`, or `korok_sanity` with a lower
 `korok_local_filler` (see [Spirit Orbs](en_Breath%20of%20the%20Wild.md#spirit-orbs)).
 
+**On Linux, the launcher refuses my Cemu: "a Flatpak or Snap sandbox".**
+The client reads the memory of the Cemu it starts, which a Flatpak or Snap sandbox hides. Use Cemu's official
+AppImage, or the `Cemu` of its Linux zip, from [cemu.info](https://cemu.info/), then **Choose Cemu...** again.
+
+**On Linux, the session says it "cannot open /proc/.../mem".**
+Linux keeps the client from reading Cemu's memory: `cat /proc/sys/kernel/yama/ptrace_scope` says 2 or 3, where 0
+or 1 is needed. `sudo sysctl kernel.yama.ptrace_scope=1` allows it until the next restart. Start Cemu with
+**Play**: a Cemu started by hand cannot be read.
+
+**On Linux, Cemu runs at a few frames per second.**
+Cemu renders on the processor: your graphics card has no Vulkan driver. `vulkaninfo --summary` (package
+`vulkan-tools`) lists only `llvmpipe`. Install your card's driver; on a system started with `nomodeset`, remove it.
+
 ## Logs
 
 The launcher's **Logs** page shows what it did, at the level of detail you choose. To
@@ -70,7 +83,8 @@ the zip: it holds the launcher's logs and the last session of the seed you last 
 log and a summary), no password.
 
 Each session's logs are also in its folder, which **Open the session's folder** opens once the session has ended:
-`%LOCALAPPDATA%\BOTW Archipelago\play-seeds\<seed>\sessions\<date>\`.
+`%LOCALAPPDATA%\BOTW Archipelago\play-seeds\<seed>\sessions\<date>\` on Windows,
+`~/.local/share/BOTW Archipelago/play-seeds/<seed>/sessions/<date>/` on Linux.
 
 ## Test commands
 

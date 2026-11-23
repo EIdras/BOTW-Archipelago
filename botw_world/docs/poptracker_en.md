@@ -21,7 +21,7 @@ PopTracker yourself.
 
 1. **Install PopTracker**, version 0.26.2 or later, from its
    [releases page](https://github.com/black-sliver/PopTracker/releases) (on Windows, the `win64` zip: unzip it
-   anywhere).
+   anywhere; on Linux, its `x86_64.AppImage`, made executable with `chmod +x`).
 2. **Build the pack**: in the launcher, **Settings** > **PopTracker pack** > **Build the pack** (a few seconds,
    once the game profile is made). The card then shows where the pack is, `botw_archipelago.zip`, and
    **Open its folder** opens it.
@@ -114,8 +114,9 @@ Without an internet connection, those items show the game's white stand-ins or a
 just as well.
 
 You can also use your own icons: put PNG files named after the items (`Paraglider.png`, `Zora Armor.png`...;
-subfolders are fine) in `%LOCALAPPDATA%\BOTW Archipelago\poptracker\icons` (the data folder's `poptracker\icons`,
-when you moved it in **Storage**). The next session rebuilds the pack with them.
+subfolders are fine) in `%LOCALAPPDATA%\BOTW Archipelago\poptracker\icons` on Windows,
+`~/.local/share/BOTW Archipelago/poptracker/icons` on Linux (the data folder's `poptracker` folder, when you moved it
+in **Storage**). The next session rebuilds the pack with them.
 
 ### Troubleshooting
 
@@ -136,7 +137,8 @@ when you moved it in **Storage**). The next session rebuilds the pack with them.
 [Universal Tracker](https://github.com/FarisTheAncient/Archipelago/releases) lists, in Archipelago's own client, what
 your items let you reach.
 
-1. Install Universal Tracker, and put `botw.apworld` in your Archipelago installation's `custom_worlds` folder.
+1. Install Universal Tracker, and put `botw.apworld` in your Archipelago installation's `custom_worlds` folder
+   (on Linux, `~/.local/share/Archipelago/worlds`).
 2. Connect it to the room with your slot name. It needs no YAML: it reads the seed's options from the room.
 
 `/explain <location>` says what a location still asks for. A location out of logic but possible (a region's map

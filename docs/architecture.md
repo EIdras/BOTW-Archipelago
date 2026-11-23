@@ -78,7 +78,9 @@ slot file alone, without reaching any server.
 ## The client (`botw_client/`)
 
 `BotwClientRuntime` (`botw_client/runtime.py`) connects to the Archipelago server (`protocol.py`) and to Cemu's memory
-(`game.py`, with the memory layer of `tools/cemu/`):
+(`game.py`, with the memory layer of `tools/cemu/`: `procmem.py` picks `winmem.py` on Windows, `ReadProcessMemory`, or
+`linuxmem.py` on Linux, `/proc/<pid>/mem`, which Yama's default `ptrace_scope` opens only to an ancestor of Cemu: the
+play session, which starts it):
 
 - **Checks**: the locations are GameData flags of the game (shrine cleared, tower activated...). They are read from
   the live GameData table at 5 Hz (`locations.py`) and sent to the server. Being saved by the game, a check done while
@@ -136,7 +138,8 @@ slot file alone, without reaching any server.
 
 ## The player's Cemu (`tools/cemu_install.py`, `tools/cemu_profile.py`)
 
-Cemu's user folder (the `portable` folder next to `Cemu.exe`, else `%APPDATA%\Cemu`) holds its settings and the list
+Cemu's user folder (the `portable` folder next to `Cemu.exe` or its AppImage, else `%APPDATA%\Cemu`, or on Linux
+`~/.config/Cemu`, with its data and `mlc01` in `~/.local/share/Cemu`) holds its settings and the list
 of the games it found; the update and the DLC are installed in its `mlc01` folder. `cemu_install` finds the three
 titles of a supported version there (the European one first, then the American and the Japanese ones) and checks them: update v208
 as a folder, its `U-King.rpx` the expected executable, DLC 3.0. `cemu_profile` copies the update, the DLC, the saves
@@ -177,18 +180,19 @@ byte the one it was before.
 
 The one window a player opens, "BOTW Archipelago" in the Archipelago Launcher (`botw_world/__init__.py` registers it
 as a client component, which also opens a `.apbotw` given to "Open Patch"). The first time, it makes the Cemu profile
-from `Cemu.exe`; then it lists the prepared seeds, prepares a new one from a slot file, a seed's zip or the link of
-its room's page, asks for the room, and runs the play session, whose steps and coloured log it shows, with the room's
-hints on a page of their own. It also shows what the data takes on disk, moves it to another folder, keeps the log a
-bug report needs, and installs updates.
+from `Cemu.exe` (on Linux, an AppImage or the zip's `Cemu`; a Flatpak or Snap Cemu is refused); then it lists the
+prepared seeds, prepares a new one from a slot file, a seed's zip or the link of its room's page, asks for the room,
+and runs the play session, whose steps and coloured log it shows, with the room's hints on a page of their own. It
+also shows what the data takes on disk, moves it to another folder, keeps the log a bug report needs, and installs
+updates.
 
 **Inside Archipelago** (`botw_world/client/`). Archipelago runs the world from its zip, on its own frozen Python, with
 none of the libraries the tools need. The first start downloads them, pinned with their hashes in
-`client/wheels.json` (oead, numpy, evfl, rstb, for each Python a release of Archipelago may run;
-`tools/pin_client_wheels.py` writes it), and unpacks the project's code the apworld carries (`client/payload.zip`,
-`tools/build_release.py`) into Archipelago's cache, once per version; a small window shows the progress and, offline,
-what to do. One window runs at a time: a second start, from "Open Patch" for instance, hands its file to the open one
-(`window.lock` and an inbox folder) and leaves. From a source checkout, `BOTW Archipelago.cmd` opens the same window on
+`client/wheels.json` (oead, numpy, evfl, rstb, for Windows and Linux x86-64 and each Python a release of Archipelago
+may run; `tools/pin_client_wheels.py` writes it), and unpacks the project's code the apworld carries
+(`client/payload.zip`, `tools/build_release.py`) into Archipelago's cache, once per version; a small window shows the
+progress and, offline, what to do. One window runs at a time: a second start, from "Open Patch" for instance, hands
+its file to the open one (`window.lock` and an inbox folder) and leaves. From a source checkout, `BOTW Archipelago.cmd` opens the same window on
 the venv (`botw_launcher/__main__.py`).
 
 The window is in three layers, each knowing only the ones before it:

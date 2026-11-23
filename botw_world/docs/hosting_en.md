@@ -14,7 +14,7 @@ and join it.
 ## 1. Install the world
 
 Install `botw.apworld`, from the [releases](https://github.com/EIdras/BOTW-Archipelago/releases): **Install
-APWorld** in the Archipelago Launcher, or put it in Archipelago's `custom_worlds` folder. The players install the
+APWorld** in the Archipelago Launcher, or put it in Archipelago's `custom_worlds` folder (on Linux, `~/.local/share/Archipelago/worlds`). The players install the
 same one: it is also their client.
 
 ## 2. Gather the YAML files
