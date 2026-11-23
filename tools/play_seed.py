@@ -102,7 +102,8 @@ def verified_manifest(manifest: dict) -> dict:
     payload = json.dumps(manifest, ensure_ascii=False, sort_keys=True,
                          separators=(",", ":")).encode("utf-8")
     if hashlib.sha256(payload).hexdigest() != claimed:
-        raise ValueError("wrong slot manifest hash")
+        raise ValueError("this slot file is damaged or was changed (wrong slot manifest hash): download it "
+                         "again from the room's page")
     if manifest.get("game") != GAME:
         raise ValueError("not a Breath of the Wild slot file")
     check_compatible(manifest.get("slot_data", {}))
@@ -116,13 +117,21 @@ def check_compatible(slot_data: dict) -> None:
     Champions' Ballad's powers away, without their locations. What this version
     plays is stated in botw_client/compatibility.py, for other versions too."""
     from botw_client import compatibility
-    from botw_client.version import VERSION
+    from botw_client.version import VERSION, parse
     if (not compatibility.plays(compatibility.statement(), slot_data.get("world_schema"),
                                 slot_data.get("client_schema"))
             or "client_schema" not in slot_data):
-        made = slot_data.get("world_version", "an earlier version")
-        raise ValueError(f"this seed was generated with the Breath of the Wild world {made}, which this "
-                         f"version ({VERSION}) cannot play: use the BOTW Archipelago release of the seed's version")
+        made = slot_data.get("world_version") or ""
+        try:
+            newer = bool(made) and parse(made) > parse(VERSION)
+        except ValueError:
+            newer = False
+        if newer:
+            raise ValueError(f"this seed was generated with version {made} of the Breath of the Wild world, "
+                             f"newer than this one ({VERSION}): update BOTW Archipelago to play it")
+        raise ValueError(f"this seed was generated with {f'version {made}' if made else 'an earlier version'} of "
+                         f"the Breath of the Wild world, which this version ({VERSION}) cannot play: generate it "
+                         "again with this version, or play it with the version that generated it")
 
 
 def newer_world(audit: dict) -> str | None:
@@ -176,7 +185,8 @@ def read_seed(path: Path, slot_name: str | None = None) -> tuple[dict, dict]:
                 next(n for n in archive.namelist() if n.endswith(".archipelago"))))
         connect = multidata["connect_names"].get(name)
         if manifest["seed"] != multidata["seed_name"] or connect is None or connect[1] != slot:
-            raise ValueError("slot manifest inconsistent with the seed")
+            raise ValueError("the slot file inside this seed's zip does not match the seed: download the "
+                             "zip again")
         team, players = int(connect[0]), len(multidata["connect_names"])
         placements = len(multidata["locations"][slot])
         # The DataPackage the server will send, embedded in the seed.
@@ -185,14 +195,16 @@ def read_seed(path: Path, slot_name: str | None = None) -> tuple[dict, dict]:
             GAME, {int(v): k for k, v in package["item_name_to_id"].items()},
             package["location_name_to_id"])
         if checksum is not None and checksum != served:
-            raise ValueError("the slot file and the seed disagree on the game's data")
+            raise ValueError("this seed's zip and its slot file disagree on the game's data: download the "
+                             "zip again")
         checksum = served
     if not checksum:
         raise ValueError("this slot file comes from an older version of the world: "
                          "prepare the seed from its zip")
     expected = expected_placements(manifest["slot_data"])
     if placements != expected:
-        raise ValueError(f"{placements} placements, {expected} expected")
+        raise ValueError(f"this seed places {placements} items in your world where this version expects "
+                         f"{expected}: it was generated with another version of the Breath of the Wild world")
     identity = {"seed": manifest["seed"], "team": team, "slot": slot,
                 "data_package_checksum": checksum}
     identity["token"] = session_token((manifest["seed"], team, slot, checksum))
@@ -229,7 +241,8 @@ def prepare(source: Path, *, content: Path | None = None, rpx: Path | None = Non
     folder.mkdir(parents=True, exist_ok=True)
     if archive.exists():
         if sha(archive) != sha(source):
-            raise ValueError(f"another archive is already there for this seed: {archive}")
+            raise ValueError(f"another file named {source.name} was added for this seed before, and it differs "
+                             "from this one: delete the seed, then add this file again")
     else:
         shutil.copy2(source, archive)
     report = folder / "analysis.json"
@@ -238,10 +251,12 @@ def prepare(source: Path, *, content: Path | None = None, rpx: Path | None = Non
     slot = identity["slot"]
     if report.exists():
         if seed_slot(report) != slot:
-            raise ValueError(f"this seed is already prepared for another slot: {folder}")
+            raise ValueError("this seed is already prepared for another of its players: delete it first to "
+                             "prepare it for this one")
         binding = load_seed(report, slot)
         if binding["seed"] != audit["seed"] or binding["token"] != identity["token"]:
-            raise ValueError("existing analysis differs from the seed")
+            raise ValueError("this seed was prepared from another file than this one: delete the seed, then add "
+                             "this file again")
     else:
         data = {"schema": 1, "status": "passed", "scope": SCOPE, "botw_slot": slot,
                 "archive": str(archive), "archive_sha256": sha(archive),

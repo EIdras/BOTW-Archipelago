@@ -5,6 +5,7 @@ The project's code is not unpacked yet: this window stands alone, in the
 colours of the main one (botw_launcher/tk/theme.py)."""
 from __future__ import annotations
 
+import json
 import queue
 import sys
 import threading
@@ -19,6 +20,17 @@ TITLE = "BOTW Archipelago"
 WINDOW, TEXT, MUTED, ERROR = "#12151c", "#e6e9ef", "#8b94a6", "#e57373"
 ACCENT, ACCENT_HOVER, SECONDARY, SECONDARY_HOVER = "#2f6a91", "#3a7dab", "#272e3c", "#313a4b"
 FAMILY = "Segoe UI" if sys.platform == "win32" else "TkDefaultFont"
+
+
+def getting() -> str:
+    """What the window says it does, with the size of this system's libraries
+    as wheels.json pins them (about 14 MB on Windows, 18 MB on Linux)."""
+    try:
+        from . import PINS, _pins, _resource
+        size = sum(wheel["size"] for wheel in _pins(json.loads(_resource(PINS))))
+    except Exception:  # noqa: BLE001 - the work itself says what is wrong
+        return "Getting the libraries the game files need, once."
+    return f"Getting the libraries the game files need, once (about {max(1, round(size / 2 ** 20))} MB)."
 
 
 def run_setup(work: Callable) -> object | None:
@@ -52,7 +64,7 @@ class SetupWindow:
         frame.pack(fill="both", expand=True)
         tk.Label(frame, text="Setting up BOTW Archipelago", bg=WINDOW, fg=TEXT,
                  font=(FAMILY, 13, "bold"), anchor="w").pack(fill="x")
-        self.detail = tk.Label(frame, text="Getting the libraries the game files need, once (about 14 MB).",
+        self.detail = tk.Label(frame, text=getting(),
                                bg=WINDOW, fg=MUTED, font=(FAMILY, 10), anchor="w", justify="left",
                                wraplength=round(420 * scale))
         self.detail.pack(fill="x", pady=(round(6 * scale), round(12 * scale)))
@@ -80,7 +92,7 @@ class SetupWindow:
 
     def start(self) -> None:
         self.retry.pack_forget()
-        self.detail.configure(text="Getting the libraries the game files need, once (about 14 MB).", fg=MUTED)
+        self.detail.configure(text=getting(), fg=MUTED)
         self.bar.configure(value=0)
         threading.Thread(target=self._run, daemon=True).start()
 

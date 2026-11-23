@@ -214,11 +214,9 @@ async def console(runtime, context, log, slot_name: str) -> None:
     threading.Thread(target=reader, name="console", daemon=True).start()
     server = (f"/send {slot_name} <item>, /hint {slot_name} <item>, /players, /status"
               if context is not None else "/hint <item>, /players, /status (sent to the room as !hint...)")
-    log(f"Console: {server}; "
-        "/ap-tip <text> (in-game journal); /ap-disconnect [s] (simulated AP outage); "
-        "/ap-evt [n|reset] (event requests seen by the game); "
-        "/ap-deathlink [cause] (test: a DeathLink received, sent to nobody); "
-        "any other text goes to the AP chat.")
+    log(f"Commands: {server}; any other text goes to the room's chat. For tests: /ap-tip <text> "
+        "(in-game journal), /ap-disconnect [s] (simulated outage), /ap-evt [n|reset] (event requests "
+        "seen by the game), /ap-deathlink [cause] (a DeathLink received, sent to nobody).")
     try:
         while not runtime.stop_event.is_set():
             line = (await lines.get()).strip()

@@ -18,6 +18,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from tests.tk_support import require_tkinter  # noqa: E402
 from tools import pin_client_wheels  # noqa: E402
 from tools.package_native import PAYLOAD, client_payload, package  # noqa: E402
 
@@ -188,6 +189,19 @@ class InstanceTests(unittest.TestCase):
                 self.assertEqual(first.requests(), [])
             finally:
                 first._handle.close()
+
+
+class SetupWindowTests(unittest.TestCase):
+    def test_the_window_says_the_size_of_this_systems_libraries(self):
+        require_tkinter()
+        window = importlib.import_module(f"{client.__name__}.setup_window")
+        for build, key in client.PLATFORMS.items():
+            size = sum(entry["wheels"][key]["cp313"]["size"] for entry in PINS["libraries"].values())
+            with mock.patch.object(client, "python_tag", return_value="cp313"), \
+                    mock.patch.object(client.sysconfig, "get_platform", return_value=build):
+                self.assertIn(f"(about {round(size / 2 ** 20)} MB)", window.getting())
+        with mock.patch.object(client.sysconfig, "get_platform", return_value="macosx-11.0-arm64"):
+            self.assertEqual(window.getting(), "Getting the libraries the game files need, once.")
 
 
 if __name__ == "__main__":

@@ -244,14 +244,14 @@ class VersionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             path = slot_file(Path(temp), slot_data={"world_schema": 12, "client_schema": 3,
                                                     "world_version": "2.0.0"})
-            with self.assertRaisesRegex(ValueError, "world 2.0.0, which this version .* cannot play"):
+            with self.assertRaisesRegex(ValueError, "version 2.0.0 of the Breath of the Wild world, newer than this one .*: update BOTW Archipelago"):
                 play_seed.read_seed(path)
 
     def test_a_seed_of_an_earlier_world_schema_names_its_version(self):
         with tempfile.TemporaryDirectory() as temp:
             path = slot_file(Path(temp), slot_data={"world_schema": 4, "client_schema": 3,
                                                     "world_version": "0.3.0"})
-            with self.assertRaisesRegex(ValueError, "world 0.3.0, which this version .* cannot play"):
+            with self.assertRaisesRegex(ValueError, "version 0.3.0 of the Breath of the Wild world, which this version .* cannot play: generate it again"):
                 play_seed.read_seed(path)
 
     def test_a_newer_world_of_known_schemas_is_played(self):
