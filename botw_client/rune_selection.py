@@ -32,7 +32,7 @@ EQUIP_FLAG = "PlayerEquipItemType"
 EQUIP_HASH = zlib.crc32(EQUIP_FLAG.encode()) & 0xFFFFFFFF
 # Rune values written by delivery steps (item_map.json): Bombs 0, Magnesis 2,
 # Stasis 3, Cryonis 4; 1 is the cube bomb. The Master Cycle Zero is 6 (a save
-# with it in hand, 07/10), selected only when no rune is (select_if_none).
+# with it in hand), selected only when no rune is (select_if_none).
 MOTORCYCLE = 6
 RUNE_TYPES = frozenset(range(5)) | {MOTORCYCLE}
 

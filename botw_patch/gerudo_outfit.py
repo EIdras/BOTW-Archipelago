@@ -43,7 +43,7 @@ PRICE_LINES = {"EventFlowMsg/Drag_Hero.msbt": {"Npc_SmallOasis008_S1_002": "600"
                                                        "talk11": "200"}}
 # 1,000,000 as each language writes its numbers (the American version's English,
 # French and Spanish write them as the European ones; Japanese without
-# separators, "50000ルピー": measured, 18/10).
+# separators, "50000ルピー": measured).
 SHOWN_PRICE = {"EUde": "1.000.000", "EUen": "1,000,000", "EUes": "1.000.000",
                "EUfr": "1 000 000", "EUit": "1.000.000", "EUnl": "1.000.000",
                "EUru": "1 000 000", "JPja": "1000000"}

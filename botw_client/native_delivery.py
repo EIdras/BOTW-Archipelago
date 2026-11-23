@@ -710,8 +710,8 @@ class CemuNativeDeliveryBackend:
             return reason
         # Not while the trap's event is closing: created a second after its
         # commit, the armed Yiga vanished at once in a warp (seen in play, at
-        # normal speed and in a turbo); created with Link free, they stayed and
-        # fought (lab probe 21). As a delivery waits for the event before it.
+        # normal speed and on a faster pace); created with Link free, they stayed and
+        # fought. As a delivery waits for the event before it.
         since = self._frames_since_commit()
         if since is not None and since < SETTLE_FRAMES:
             return f"the trap's event closing ({since}/{SETTLE_FRAMES} frames of 1/30 s)"

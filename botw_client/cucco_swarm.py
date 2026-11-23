@@ -4,7 +4,7 @@ In the game, a cucco hit often enough gets angry, and its AI (KokkoAngry)
 brings the swarm: for a while, it creates attackers (Kokko_Simple) around its
 target and gives each one that target. The trap plays that part itself, with
 the game's own functions, called from the cave's per-frame invoker (read in
-the Wii U EUR v208 executable, measured in lab probes 14 to 14c):
+the Wii U EUR v208 executable, measured in the game):
 
   * creation: ActorCreator::requestCreateActor (REQUEST_CREATE) with the
     ActorCreator (*CREATOR), the actor heap (*(*HEAP_HOLDER + 0x10)), a

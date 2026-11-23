@@ -270,7 +270,7 @@ class OtherVersionPackTests(unittest.TestCase):
     @unittest.skipUnless(_installed(regions.EUR) and _installed(regions.USA) and REPORT.is_file(),
                          "requires the European and American updates and an audited play seed in Cemu")
     def test_a_european_update_compressed_apart_builds_the_european_pack(self):
-        """As a player's European update held it (24/10): the American files where
+        """As a player's European update held it: the American files where
         they are the same resources, the European language archives compressed apart."""
         import oead
         from tools.build_pack_from_source import build

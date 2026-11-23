@@ -73,7 +73,7 @@ def manager_diagnostic(process, base):
 
 # manager+0x175b0 holds the running event (slot 0): non-zero during a fast
 # travel's Demo005_0 and Demo005_1, a shrine lift's Demo008_1/2, the end of our
-# own entries; zero in free play (measured, test 51). An entry accepted while an
+# own entries; zero in free play (measured). An entry accepted while an
 # event runs goes to slot 1, and both slots are emptied at that event's end:
 # never run.
 EVENT_RUNNING = 0x175b0

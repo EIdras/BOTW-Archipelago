@@ -3,10 +3,10 @@
 The update v208 of the European (EUR), American (USA) and Japanese (JPN)
 versions run the same U-King.rpx, and their update and DLC hold the same
 resources once Yaz0 is undone and archives are opened, their languages apart:
-the message archives (Pack/Bootup_<language>.pack), voices and fonts (measured,
-18/10). Their files were compressed apart, so their bytes differ, and not by
+the message archives (Pack/Bootup_<language>.pack), voices and fonts (measured).
+Their files were compressed apart, so their bytes differ, and not by
 version only: a player's European update held the American files byte for
-byte, and its language archives compressed as the American ones (24/10).
+byte, and its language archives compressed as the American ones.
 
 The build checks every resource it reads against the SHA-256 of the European
 file. data/region_hashes.json (written by tools/measure_region.py from each

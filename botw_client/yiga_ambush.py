@@ -3,7 +3,7 @@
 The game's own actor creation (ActorCreator::requestCreateActor, as the Cucco
 Swarm creates its attackers, botw_client/cucco_swarm.py, and as an item falls at
 Link's feet, botw_client/item_drop.py), with only a place (@P), no handle: the
-Yiga are the game's, with their own AI. Measured in the lab (probe 19, 09/10):
+Yiga are the game's, with their own AI. Measured in the game:
 two Yiga Footsoldiers and a Yiga archer created around Link come with the
 Yiga's appearing effect, fight with their weapons, flips and warps, drop their
 loot (bananas, rupees) when defeated, and vanish if Link runs far away.
@@ -19,7 +19,7 @@ series' first weapon, the level sensor raises it as the game goes on
 One time in BLADEMASTER_CHANCE, a Yiga Blademaster comes alone instead.
 
 Two more keys of the game's own creation of an enemy near Link (0x0214ae5c)
-are left out, measured in lab probe 21 (15/10): with IsNearCreate (a bool of
+are left out, measured in the game: with IsNearCreate (a bool of
 type 3) the squad came and went at once, unseen; with @I = 6 (an int of type 0)
 nothing came. The client creates the squad once the trap's event has closed
 (CemuNativeDeliveryBackend.yiga_ambush).

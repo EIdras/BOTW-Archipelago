@@ -75,7 +75,7 @@ class StrikeTests(unittest.TestCase):
         self.assertEqual(len(turns), 1)
 
     def test_the_bolt_kills_by_lightning_not_by_a_blast(self):
-        # Measured in lab probe 56: cause 9 (a blast), raw 0x20006, LastBossThunder.
+        # Measured in the game: cause 9 (a blast), raw 0x20006, LastBossThunder.
         self.assertEqual(death_cause.death_text("Zelda", 9, 0x20006, "LastBossThunder", {}),
                          "Zelda was struck by lightning")
         self.assertEqual(death_cause.death_text("Zelda", 9, 0x20006, None, {}), "Zelda was blown up")

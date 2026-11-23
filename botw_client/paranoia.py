@@ -3,8 +3,8 @@
 A Decayed Guardian (Enemy_Guardian_A_Fixed_Moss) is created DISTANCE behind Link,
 turned towards him: the game's own Guardian sees him at once, beeps, plays its
 music and points its red laser at him. Before its shot, the client deletes it:
-it vanishes, its music fades out. Measured in the lab (probes 19d to 19f,
-11-12/10): it fires about 7.1 s after its waking; deleted at 7.1 s, it had just
+it vanishes, its music fades out. Measured in the game: it
+fires about 7.1 s after its waking; deleted at 7.1 s, it had just
 begun to fire and the shot never left; here, at LIFETIME.
 
 What the client calls, from the cave's per-frame invoker (read in the Wii U EUR
@@ -58,8 +58,8 @@ from .cucco_swarm import (CREATOR, HEAP_HOLDER, NEW_IN_HEAP, PACK_ADD, PACK_CTOR
                           REQUEST_CREATE, SAFESTRING_VTABLE)
 
 GUARDIAN = "Enemy_Guardian_A_Fixed_Moss"
-# Metres behind Link: at 25 m (lab probes), a Guardian once stood in a wall and never saw him
-# (seen in play, 13/10); nearer, a wall behind him is less likely.
+# Metres behind Link: at 25 m (measured), a Guardian once stood in a wall and never saw him
+# (seen in play); nearer, a wall behind him is less likely.
 DISTANCE = 15.0
 LIFETIME = 6.9                  # seconds of game time from its waking to its deletion (it fires at about 7.1)
 READY_LIMIT = 10.0              # seconds for the game to create it

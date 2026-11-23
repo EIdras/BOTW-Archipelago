@@ -12,7 +12,7 @@ Steps [{Name, MessageName, NextFlag, UpdateStep, AttentionOff}]}; their texts
 Message/Msg_<lang>.product.ssarc > QuestMsg/QL_<Name>.msbt (QL_<Name>_Name and
 one label per MessageName); their place a label of StaticMsg/LocationMarker.msbt;
 their giver an actor, named by <Orderer>_Name in ActorType/<its profile>.msbt.
-Measured (lab probe 22, 15/10): a main quest added there appears in the log,
+Measured: a main quest added there appears in the log,
 with the game's banner ("Main Quest"), once its step's NextFlag is up; once the
 second step's is, the banner says "Quest Complete" and the quest is greyed,
 with its Finish text.
@@ -167,7 +167,7 @@ def add_quest(raw: bytes) -> tuple[bytes, dict]:
     def step(name, message, flag):
         # AttentionOff would leave the attention (the "A" prompt) to the step's own actors
         # only (ksys::qst: Quest::x_6, Step's links), as the game's minigames do: with none,
-        # every terminal refused the Sheikah Slate (seen in play, probes 24 and 25).
+        # every terminal refused the Sheikah Slate (seen in play).
         return oead.byml.Hash({"AttentionOff": False, "MessageName": message, "Name": name,
                                "NextFlag": flag, "UpdateStep": True})
     quests.append(oead.byml.Hash({

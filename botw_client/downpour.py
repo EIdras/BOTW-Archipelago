@@ -13,8 +13,8 @@ which a loaded save resets, and gives the game its weather back when Link
 dies or the flag is down.
 
 Rain wets the walls: Link slides down them. The thunderstorm brings its
-lightning, which strikes Link if he carries metal. Measured in the lab (probe
-19, 09/10): the rain sets in within 5 to 10 s, the storm holds across a fast
+lightning, which strikes Link if he carries metal. Measured in the game: the
+rain sets in within 5 to 10 s, the storm holds across a fast
 travel, and the climate's weather comes back within a few seconds. Inside a
 shrine, nothing shows.
 """

@@ -17,7 +17,7 @@ out. Only in the MainField, once Link's position follows the stage: the engine n
 current map (ksys::StageInfo: type 0x1054f644, name 0x1054f670), in the MainField the
 grid cell of Link's position; after a change of type, the position follows 0.45 to 1.6 s
 later, at once by more than JUMP metres (measured on the type, the name and the
-position, lab/journal/etude_verrou_regions.md, measure 9).
+position).
 
 Link's position: the player actor's matrix (cucco_swarm.py reads it the same way).
 
@@ -129,7 +129,7 @@ def load_areas() -> Areas:
 
 def ramp(distance: float) -> tuple[float, float, float]:
     """The fog at `distance` metres: ratio and near in a straight line, far geometrically
-    (measured as even to the eye, lab/journal/etude_verrou_regions.md)."""
+    (measured as even to the eye)."""
     t = min(1.0, max(0.0, 1.0 - distance / START))
     return (LIGHT[0] + (WALL[0] - LIGHT[0]) * t, LIGHT[1] + (WALL[1] - LIGHT[1]) * t,
             LIGHT[2] * (WALL[2] / LIGHT[2]) ** t)

@@ -3,7 +3,7 @@
 Native, a patch group after the injection's. The game lets a cutscene be skipped
 (X opens the prompt, + confirms) once its skip controller (0x02DCD430, states
 0 idle, 1 skippable, 2 prompt shown, 3 skip asked) sees it skippable. Measured
-in the laboratory (lab/journal/etude_saut_cinematiques.md):
+in the game:
 
 * first game: 0x02DCD6E0 sends the opening (Demo102_0) back to idle while no save
   exists, and an Archipelago game always starts on a fresh Cemu account. The

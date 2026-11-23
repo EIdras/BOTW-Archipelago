@@ -9,7 +9,7 @@ made from Linkle's.
 
 Mods that add to the game take memory, and Archipelago adds its own: with
 mods holding game files, the game may lack memory and never finish loading,
-without any error (measured with the Linkle mods, 24/10). So the Archipelago
+without any error (measured with the Linkle mods). So the Archipelago
 game then runs Extended Memory, of Cemu's community packs, when the player's
 Cemu has it installed; it says so, or how to install it. The seed pack's
 code follows no pointer past the end of the game's main memory: it is built

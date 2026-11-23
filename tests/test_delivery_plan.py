@@ -72,7 +72,7 @@ class DeliveryPlanTests(unittest.TestCase):
         # Demo645_0 (Event63, Event73): the download screen, type 5, then its flag;
         # the rune the player holds stays selected.
         # Selected only when no rune is in hand: owned, but nothing selected, the
-        # Slate had no module to use (measured, 07/10).
+        # Slate had no module to use (measured).
         (step,) = compile_delivery_plan("Master Cycle Zero").steps
         self.assertEqual([(m.kind, m.target, m.value) for m in step.mutations],
                          [(MutationKind.RUNE_DOWNLOAD, "IsGet_Obj_Motorcycle", 5),

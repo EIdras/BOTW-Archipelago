@@ -32,7 +32,7 @@ if the client stops. 0 passes lets it go at once.
 Closed by the game while held (the screen free again although ours was on it at the last
 pass: a window opens, the HUD is hidden), the message is not armed again: the game closes
 it again at the next frame, and each new start plays its sound, six in five frames
-(measured, lab/journal/etude_verrou_regions.md). The hold stops instead (its passes to 0)
+(measured). The hold stops instead (its passes to 0)
 and counts it in ``apCenterClosed``, which the client reads to ask again later.
 """
 from __future__ import annotations

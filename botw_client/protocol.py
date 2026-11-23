@@ -91,7 +91,7 @@ def server_urls(address: str) -> list[str]:
 def tls_context() -> ssl.SSLContext:
     """Windows' trusted roots and certifi's, as Archipelago's own client: a new
     Windows holds few roots, fetching the others only for its own programs, so
-    the room's certificate was refused (measured, Windows Sandbox, 23/10)."""
+    the room's certificate was refused (measured in Windows Sandbox)."""
     import certifi
     context = ssl.create_default_context()
     context.load_verify_locations(cafile=certifi.where())

@@ -11,7 +11,7 @@ as an enemy's loot.
 
 The creation is the game's own (ActorCreator::requestCreateActor, as the
 Cucco Swarm creates its attackers, botw_client/cucco_swarm.py), with only a
-place (@P). Measured in the lab (drop probe, 06/10): a two-handed sword, a
+place (@P). Measured in the game: a two-handed sword, a
 bow, a shield and an arrow bundle fall, stay, and are picked up as usual,
 with their normal durability; with the pouch full, Link cannot pick them up
 and the game says so.

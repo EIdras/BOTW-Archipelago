@@ -10,7 +10,7 @@ way into the pouch, and no reason to stay in it once the purchase's event is
 over: one still there, unrecorded, Link back in the world for HOLD_SECONDS,
 is a purchase the flow missed, and its location is sent.
 
-The pouch, measured in the game (lab/tools/cemu/pouch_probe.py): PorchItem,
+The pouch, measured in the game: PorchItem,
 the string64 array flag of the pouch's 420 names, is a PtrArray inside one of
 TriggerParam's arrays; each element is a flag object holding its hash at
 +0x138 and its text 0x40 bytes before. The names are packed from the first,

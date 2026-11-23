@@ -19,7 +19,7 @@ stops the world, does not shorten the weather. Another caller of the setter in t
 same frame (a weather zone, a Wizzrobe) would keep the timer at 4 and the count
 still: ``apWeatherPasses``, the hook's passes, ends the hold in any case (the
 client gives three times the frames). Measured with the setter called 30 times a
-second (lab probe 19): rain within 5 to 10 s, the walls slippery, a storm with its
+second: rain within 5 to 10 s, the walls slippery, a storm with its
 lightning, held across a fast travel, nothing in a shrine; the climate's weather
 back within a few seconds.
 

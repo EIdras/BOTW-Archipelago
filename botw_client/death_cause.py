@@ -84,7 +84,7 @@ def death_text(slot: str, cause: int | None, raw: int | None, killer: str | None
     """The DeathLink cause sent for Link's death."""
     name = names.get(ALIASES.get(killer, killer)) if killer else None
     if cause == 9 and killer == "LastBossThunder":
-        # The Lightning Strike trap's bolt: a blast to the game (lab probe 56).
+        # The Lightning Strike trap's bolt: a blast to the game (measured).
         return f"{slot} {VERBS[6]}"
     if cause == 9:
         if killer == "RemoteBomb":

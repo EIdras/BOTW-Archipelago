@@ -117,7 +117,7 @@ def guest_base(p, cave_host):
     and checking our hook would then fail the whole resolution although
     the base is right.
     """
-    # 04/10: the log read may be another profile's, and another pack's code
+    # The log read may be another profile's, and another pack's code
     # cave (a test aid) moves ours: Cemu places them from CODECAVE_START, each
     # aligned on 0x100, so every such address is tried after the log's.
     scan = range(CODECAVE_START, CODECAVE_START + CODECAVE_SPAN, 0x100)

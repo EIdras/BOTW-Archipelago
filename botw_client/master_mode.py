@@ -3,7 +3,7 @@ Mode save, the only one that has them.
 
 A save's mode is the saved bool AoC_HardMode_Enabled (kept in each save's
 caption.sav): 1 from a Master Mode game's New Game on, and, when one of its saves
-loads, written one frame after the rest of the save (lab test 58). The client reads
+loads, written one frame after the rest of the save (measured). The client reads
 it before binding a save, with Link in the world: the same value twice,
 SETTLE_SECONDS apart, is the save's. A Normal mode save stops the client before it
 binds the save or gives anything; a seed without master_mode plays in either mode,

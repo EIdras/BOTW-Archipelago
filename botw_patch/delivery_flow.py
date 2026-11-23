@@ -131,7 +131,7 @@ VESSEL_ACTIONS = {"Obj_HeartUtuwa_A_01": "Demo_IncreasePlayerMaxHeart",
 # IsDownloadDemo on (Event545), the map's opening (Event284, Starter<
 # Demo_StartMapOpenDemo>), 240 frames (Event593), the Slate's line "Regional map
 # extracted." (Event672, Text026), the menu closed (Event591), Link puts the
-# Slate away (Demo041_0<SheikPadSetOff>). Measured from the client (09/10): the
+# Slate away (Demo041_0<SheikPadSetOff>). Measured from the client: the
 # opening plays once IsDownloadDemo is set and the map rests, then the map stays
 # open until the menu is closed. Without a tower near its actor (EventSystemActor)
 # the opening takes the tower the client wrote (tools/build_tower_maps_native.py).

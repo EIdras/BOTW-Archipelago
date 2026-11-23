@@ -12,7 +12,7 @@ A lower value removes hearts with no animation and no sound.
 
 The entry strikes only when armed. The game may take it while another event
 runs (a cutscene, a shrine's terminal) and run it as that event ends, where a
-hit empties Link's hearts without starting his death: Link frozen (17/11). So
+hit empties Link's hearts without starting his death: Link frozen. So
 the client arms the volatile flag APDeathLinkArmed before each request, and
 takes it back when the entry has not started soon after (held by the game).
 Armed, the entry takes the arming itself (one strike per arming) and strikes;
@@ -59,7 +59,7 @@ FLOW_NAME = QUIET_FLOW
 LETHAL_DAMAGE = 1000
 # Frames between the damage and the survival check: a hit lands a frame or more
 # after Demo_ApplyDamage finishes, so a check right after it found Link alive
-# and took the flag off before he died (17/11: the flag never read as set).
+# and took the flag off before he died (the flag never read as set).
 SURVIVAL_WAIT_FRAMES = 30
 EVENT_INFO = "Event/EventInfo.product.sbyml"
 GAMEDATA = "GameData/gamedata.ssarc"

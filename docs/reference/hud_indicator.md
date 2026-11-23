@@ -50,8 +50,8 @@ Useful landmarks: the hearts are around (-434, 310), the champions' abilities at
 temperature gauge around (392, -222), the noise meter at (392, -262), the clock at (342, -279). The minimap is not
 in this layout (it is `AppMap_00`, placed by the game's code): its place is found by eye.
 
-**Placing it live**: `lab/tools/cemu/hud_place.py` (laboratory) moves and resizes the logo in a running game and
-prints the values to write here. Measured: the pane keeps its translation at `+0x1c`, its scale at `+0x34`, its flags
+**Placing it live**: the logo was moved and resized in a running game by writing its pane, which gave the values
+written here. Measured: the pane keeps its translation at `+0x1c`, its scale at `+0x34`, its flags
 at `+0x44`, and its global matrix at `+0x48`, which the game recomputes only when bit `0x10` of the flags is up.
 
 **Changing the logo**: both textures are made from `assets/wiiu/Item_AP.sbitemico` (the project's 512 px logo, also

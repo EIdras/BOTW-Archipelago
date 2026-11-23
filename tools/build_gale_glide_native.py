@@ -13,7 +13,7 @@ Gale's own state function passes on the same holder (0x02D164BC). They end in th
 function's common block 0x02D1FC10 (change state to r26, then the epilogue, whose lmw
 restores r26). The gate returns 0 or 1: 0x101E07F0 (落下) + 1 * 0x5D4 = 0x101E0DC4.
 
-Measured 15/11 (lab/journal/etude_rafale_paravoile.md): the Gale still lifts Link;
+Measured: the Gale still lifts Link;
 without the Paraglider, the glide shuts as the player takes control back and does
 not open again. With it, the Gale glides as before.
 """

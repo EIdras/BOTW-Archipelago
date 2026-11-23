@@ -2,7 +2,7 @@
 
 The game's own actor creation (ActorCreator::requestCreateActor), as the Yiga
 Ambush creates its squad (botw_client/yiga_ambush.py), with only a place (@P), no
-handle: one actor where Link stands. Measured in lab probe 56 (22/11), outside, at
+handle: one actor where Link stands. Measured in the game, outside, at
 normal speed:
 
   * Freeze: ExpandIceField, the chemical field the game leaves where ice bursts

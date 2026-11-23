@@ -39,7 +39,7 @@ TEMPLATE = "blyt/PaIconChallenge_00.bflyt"
 PARENT_LAST = "Pa_Time_00"                  # last child of N_All_00
 TEXTURES = {ONLINE: "Nt_APOnline_00^l.bflim", OFFLINE: "Nt_APOffline_00^l.bflim"}
 # Bottom right of the 1280x720 HUD, beside the minimap's lower right corner, where
-# nothing else is drawn: placed by eye in the game (lab/tools/cemu/hud_place.py).
+# nothing else is drawn: placed by eye in the game.
 POSITION = (609.0, -302.0)
 SIZE = 26.4
 # The weather box above the minimap: N_InOut_00 of PaWeather_00, inside the

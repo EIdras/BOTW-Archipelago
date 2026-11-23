@@ -3,7 +3,7 @@
 oead's writer gives identical containers one shared node: the game's
 Quest/QuestProduct.sbquestpack, read and written again unchanged, went from
 883444 to 466736 bytes; the game's own file shares none. Whether the game minds
-is not known (the terminals the quest pack blocked, 16-17/10, were the quest
+is not known (the terminals the quest pack blocked were the quest
 steps' AttentionOff, botw_patch/ap_quest.py, not this): the file is written as
 the game writes it, rather than trusted to a reader. This writer keeps the
 containers apart: the hash keys and the strings in their two sorted tables,

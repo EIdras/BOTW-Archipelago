@@ -1,8 +1,8 @@
 """A shrine's travel point opened as its terminal opens it (map_travel_points:
 a region's map opens the travel point of one shrine of the region).
 
-Activating a terminal sets three flags (measured 29/10, lab shrine travel
-probe): Location_DungeonNNN, the s32 the shrine's map marker reads (its
+Activating a terminal sets three flags (measured):
+Location_DungeonNNN, the s32 the shrine's map marker reads (its
 LocationMarker's SaveFlag: without it, no icon), Open_DungeonNNN and the
 terminal's own flag (MainField_<its actor>_<its HashId>): the icon blue, the
 warp open, the shrine's check (Clear_) untouched. As the horse's

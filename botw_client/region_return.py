@@ -1,7 +1,7 @@
 """Link sent back out of a closed region, with region_lock: the game's own return of the Great
 Plateau, aimed at the last safe ground he stood on outside the closed regions.
 
-The plateau's return (measured, lab/journal/etude_verrou_regions.md): at 0x02d16eb8, with
+The plateau's return (measured): at 0x02d16eb8, with
 IsGet_PlayerStole2 at 0 (no paraglider yet) and Link outside a box of .rodata (PLATEAU_BOX), the
 player copies the box's destination (the clifftop of the start) into his safe ground, player
 +0x1d14, then sends him there: an animation, off the bike, a fade. The safe ground is where Link

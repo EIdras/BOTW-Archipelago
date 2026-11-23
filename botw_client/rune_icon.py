@@ -10,7 +10,7 @@ rune), which returns at once when screen+0x1bd4 already holds that rune; else
 it builds the icon's name (0x0307a924, which reads the "+") and asks for it.
 A "+" never changes the rune, so the icon was never asked again.
 
-The remedy, measured in the game (06/11, Bomb+ written with the bomb in hand):
+The remedy, measured in the game (Bomb+ written with the bomb in hand):
 writing -1 to screen+0x1bd4 makes the game call its setter again by itself,
 about 1.5 s later, and the icon becomes the "+" one. The client writes it only
 when screen+0x1bd4 holds the rune just upgraded: another rune in hand gets its

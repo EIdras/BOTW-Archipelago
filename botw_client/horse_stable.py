@@ -1,7 +1,7 @@
 """A horse registered at the stables, as a stable registers one.
 
 The stables keep their horses in GameData arrays of six slots: 0 to 4 the
-registered horses, 5 the last wild horse Link rode (measured on saves, 07/10).
+registered horses, 5 the last wild horse Link rode (measured on saves).
 Registering Epona wrote her slot's Horse_ActorName, Horse_UserName (her name in
 the game's language, ActorType/Horse.msbt GameRomHorseEpona_Name), Horse_ManeName,
 Horse_SaddleName and Horse_ReinsName, then Horse_Is_Registration, which only an
@@ -15,7 +15,7 @@ v208 executable, called from the cave's per-frame invoker:
   * SET: Manager::setStr64(SafeString value, handle, sub_idx, debug), both copies
     (*(manager + 0x6FC), then *(manager + 0x700) when manager + 0x705 says so);
   * GET: Manager::getStr64(const char** out, handle, sub_idx, debug).
-Measured in the lab (horse register probe, 07/10): a stable then offers Epona,
+Measured in the game: a stable then offers Epona,
 gives her out with her saddle, and still has her after a save and a reload.
 """
 from __future__ import annotations

@@ -76,7 +76,7 @@ class GameFileTests(unittest.TestCase):
             self.assertTrue(all(n >= 1 for n in counts.values()), merchant.actor)
 
     def test_a_stalls_two_jewels_are_apart_with_a_pose_and_a_yaw(self):
-        # Chosen in the game (lab/tools/cemu/stall_marks.py): the rules kept.
+        # Chosen in the game: the rules kept.
         for merchant in MERCHANTS:
             objs = objects(merchant.map_unit)
             places = [(float(objs[h]["Translate"][0]), float(objs[h]["Translate"][2]))

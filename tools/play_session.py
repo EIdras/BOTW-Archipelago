@@ -106,7 +106,7 @@ def find_seed(name: str | None, pack_path: Path | None = None, mods=None) -> tup
         stale = ["(no pack)"]
     if stale:
         # As the player's launcher does: a pack built from older sources would
-        # play without the change being tested (Vilia's price, 04/10).
+        # play without the change being tested (Vilia's price).
         from tools.play_seed import refresh
         print(f"Pack out of date ({', '.join(stale[:3])}{'...' if len(stale) > 3 else ''}): "
               "building it again (about a minute)...", flush=True)

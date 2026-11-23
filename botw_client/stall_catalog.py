@@ -18,7 +18,7 @@ Merchants: the 14 stalls selling consumables through DisplayShop:Multiple in
 their own flow that have an item on sale in several copies (armour stalls,
 mannequins, are another mechanism; stalls whose items are all single are
 left whole). Objects: chosen in the game, stall by stall, where the jewel
-reads best (lab/tools/cemu/stall_marks.py: the article looked at, and where
+reads best (the article looked at, and where
 Link stood), with the jewel's pose there: lying on its back or standing, and
 its yaw, its logo upright for a customer standing where Link stood. Rules
 kept: an item sold in several copies, never its last one (the stall keeps

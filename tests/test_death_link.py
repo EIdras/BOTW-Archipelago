@@ -448,7 +448,7 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_a_request_held_through_a_cutscene_stays_pending(self):
         # Requested as the tower's event began: the game ran it 40 s later, at
-        # its end (measured, 17/11); the flag off till then is no survival.
+        # its end (measured); the flag off till then is no survival.
         self.result = "held"
         with patch.object(runtime_module, "DEATHLINK_ECHO_SECONDS", 0.0):
             await self.kill()
@@ -523,7 +523,7 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_an_entry_held_by_an_event_is_disarmed_then_asked_again(self):
         # A shrine's terminal holds the entry and runs it as it ends, where a
-        # strike would freeze Link (measured 17/11).
+        # strike would freeze Link (measured).
         self.arming()
         self.run = "hold"
         await self.tick()

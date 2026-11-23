@@ -54,7 +54,7 @@ GAME_START_PATIENCE_SECONDS = 300.0
 # sets its flag before the hit and leaves it set on the death it causes
 # (botw_patch/death_link.py): a death while the request is pending and the flag
 # set is never sent back, however late (the game may run a request it took only
-# once an event ends; measured, 17/11: the flag set at every such death). A
+# once an event ends; measured: the flag set at every such death). A
 # death with the flag off is Link's own and is sent, even right after the
 # request: the entry has not run yet. The flag seen set, then off with Link
 # alive: he survived it, the request is spent. A pack without the flag falls

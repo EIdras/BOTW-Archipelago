@@ -104,7 +104,7 @@ class ReconcileTests(unittest.TestCase):
         self.assertTrue(outcome.ok)
 
     def test_the_master_cycle_is_selected_only_when_no_rune_is_in_hand(self):
-        # Owned, nothing selected: no module to use until it is (measured, 07/10).
+        # Owned, nothing selected: no module to use until it is (measured).
         game = FakeGame(equip=-1, current=-1)
         outcome = game.sync().select_if_none(6)
         self.assertEqual((outcome.status, game.requests, outcome.after.current), ("synced", [6], 6))
