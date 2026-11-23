@@ -144,7 +144,7 @@ def play(seed: str, room: str | None = None, password: str | None = None,
 @job("poptracker")
 def poptracker() -> dict:
     from tools import build_poptracker
-    build_poptracker.ensure_pack(confirm=lambda _prompt: True)
+    build_poptracker.ensure_pack()
     return {"folder": str(build_poptracker.PACK_FOLDER)}
 
 

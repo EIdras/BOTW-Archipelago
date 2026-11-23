@@ -16,8 +16,8 @@ The package is in three layers, each knowing only the ones above it in this list
               the project imports it. Inside Archipelago, botw_world/client opens it.
 
 Around them: settings.py (what the player chose), logs.py (the log file and the
-diagnostic archive), versions.py and handoff.py (versions installed side by
-side by an update, and the newest one taking over at start).
+diagnostic archive), versions.py (the releases before 0.4.0, installed side
+by side for the seeds only they play).
 
 To add a long task: write its function in jobs.py with @job. To add a page:
 a Page in tk/pages/, added to tk/app.py MainWindow.

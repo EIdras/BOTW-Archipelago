@@ -19,7 +19,6 @@ NAMES = {"setup_en.md": "Setup", "ingame_en.md": "In the game", "en_Breath of th
          "troubleshooting_en.md": "Troubleshooting", "setup_fr.md": "Installation (français)",
          "names_fr.md": "Noms en français"}
 ORDER = tuple(NAMES)
-IMAGE = re.compile(r"!\[([^\]]*)\]\(([^)\s]+)\)")
 ALERT = re.compile(r"^>[ \t]*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\][ \t]*$", re.MULTILINE)
 NAVIGATION_ITEM = re.compile(r"\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\.md\)")
 WEB = ("http", "https", "mailto")

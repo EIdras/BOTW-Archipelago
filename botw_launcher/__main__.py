@@ -16,10 +16,8 @@ def main(arguments: list[str]) -> int:
     if arguments[:1] == ["--job"]:
         from botw_launcher import jobs
         return jobs.main(arguments[1:])
-    from botw_launcher import handoff
-    notice = handoff.take_over(arguments)
     from botw_launcher.tk.app import run
-    return run(arguments, notice=notice)
+    return run(arguments)
 
 
 if __name__ == "__main__":

@@ -22,7 +22,6 @@ FOCUS = "#8fc3e8"       # the outline of what has the keyboard's focus
 SECONDARY = "#272e3c"
 SECONDARY_HOVER = "#313a4b"
 DANGER = "#a8403f"
-DANGER_HOVER = "#c04d4b"
 DISABLED = "#1e232d"
 DISABLED_TEXT = "#5c6475"
 OK, WARNING, ERROR = "#3fb27a", "#e0a53a", "#e06060"

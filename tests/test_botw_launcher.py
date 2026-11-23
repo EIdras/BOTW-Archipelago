@@ -1,5 +1,5 @@
-"""The launcher without its window (botw_launcher/): settings, versions and the
-handoff, seeds, rooms, storage, updates, and the jobs' protocol."""
+"""The launcher without its window (botw_launcher/): settings, the versions before
+0.4.0, seeds, rooms, storage, updates, and the jobs' protocol."""
 import hashlib
 import io
 import json
@@ -16,7 +16,7 @@ import zipfile
 from botw_client import compatibility, paths
 from botw_client.locations import WORLD_SCHEMA
 from botw_client.version import VERSION, parse
-from botw_launcher import handoff, jobs, logs, settings, versions
+from botw_launcher import jobs, logs, settings, versions
 from botw_launcher.core import output, profile, rooms, seeds, storage, updates, worlds
 from tests.test_play_pack import slot_file
 from tools import cemu_profile, play_seed
@@ -110,114 +110,50 @@ class SettingsTests(unittest.TestCase):
 
 
 class VersionsTests(unittest.TestCase):
+    """The releases before 0.4.0, installed for the seeds only they play."""
+
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         self.folder = Path(temp.name)
 
-    def install(self, version, complete=True, launcher=True, console=False):
+    def install(self, version, complete=True, launcher=True):
         folder = self.folder / version
-        (folder / "botw_launcher").mkdir(parents=True)
-        (folder / "tools").mkdir()
+        (folder / "tools").mkdir(parents=True)
         if launcher:
-            (folder / (versions.CONSOLE_ENTRY if console else versions.ENTRY)).write_text("")
+            (folder / versions.ENTRY).write_text("")
         if complete:
             (folder / versions.COMPLETE).write_text(json.dumps({"version": version}))
         return folder
 
     def test_the_installed_versions_the_newest_first(self):
-        for version in ("0.4.0", "0.10.0", "0.9.1"):
+        for version in ("0.2.4", "0.3.10", "0.3.1"):
             self.install(version)
-        self.assertEqual([one.version for one in versions.installed(self.folder)], ["0.10.0", "0.9.1", "0.4.0"])
+        self.assertEqual([one.version for one in versions.installed(self.folder)], ["0.3.10", "0.3.1", "0.2.4"])
 
     def test_an_unfinished_installation_or_one_without_a_launcher_is_not_a_version(self):
-        self.install("0.4.0")
-        unfinished = self.install("0.5.0", complete=False)
-        self.install("0.6.0", launcher=False)
-        self.assertEqual([one.version for one in versions.installed(self.folder)], ["0.4.0"])
+        self.install("0.3.0")
+        unfinished = self.install("0.3.1", complete=False)
+        self.install("0.3.2", launcher=False)
+        self.assertEqual([one.version for one in versions.installed(self.folder)], ["0.3.0"])
         self.assertEqual(versions.unfinished(self.folder), [unfinished])
 
-    def test_the_newest_is_named_only_above_the_version_asked(self):
-        self.install("0.4.0")
-        self.assertEqual(versions.newest("0.3.9", self.folder).version, "0.4.0")
-        self.assertIsNone(versions.newest("0.4.0", self.folder))
-        self.assertIsNone(versions.newest("0.3.0", self.folder / "nothing"))
-
     def test_a_version_is_removed_but_the_one_running(self):
-        folder = self.install("0.4.0")
-        versions.remove(versions.find("0.4.0", self.folder))
+        folder = self.install("0.3.0")
+        versions.remove(versions.find("0.3.0", self.folder))
         self.assertFalse(folder.exists())
         with self.assertRaisesRegex(ValueError, "the one running"):
             versions.remove(versions.Installed(VERSION, versions.ROOT))
 
-    def test_a_version_is_started_isolated_by_its_own_entry(self):
-        command = versions.command(self.folder / "0.4.0", ["--seed", "1"])
-        self.assertEqual(command[1:], ["-I", "-X", "utf8", str(self.folder / "0.4.0" / versions.ENTRY),
-                                       "--seed", "1"])
-
-    def test_a_version_older_than_this_launcher_opens_its_console_one_never_by_handoff(self):
-        folder = self.install("0.2.6", console=True)
-        found = versions.find("0.2.6", self.folder)
-        self.assertTrue(found.console)
-        self.assertIsNone(versions.newest("0.1.0", self.folder))
+    def test_a_version_opens_its_console_launcher_isolated_on_this_data_folder(self):
+        folder = self.install("0.2.6")
         # It asks which seed to play: only a file to add is passed on.
-        self.assertEqual(versions.command(folder, ["--seed", "1"])[1:], ["-I", str(folder / versions.CONSOLE_ENTRY)])
+        self.assertEqual(versions.command(folder, ["--seed", "1"])[1:], ["-I", str(folder / versions.ENTRY)])
         self.assertEqual(versions.command(folder, ["AP_1.zip"])[-1], "AP_1.zip")
         with mock.patch.object(versions.subprocess, "Popen") as popen:
             versions.start(folder, [], data=self.folder / "data")
         environment = popen.call_args.kwargs["env"]
         self.assertEqual(environment[paths.DATA_VARIABLE], str(self.folder / "data"))
-        self.assertEqual(environment[versions.PINNED_VARIABLE], "1")
-
-
-class HandoffTests(unittest.TestCase):
-    def release(self, is_release=True):
-        temp = tempfile.TemporaryDirectory()
-        self.addCleanup(temp.cleanup)
-        root = Path(temp.name)
-        if is_release:
-            (root / paths.RELEASE_MARKER).write_text("{}")
-        patcher = mock.patch.object(handoff, "ROOT", root)
-        patcher.start()
-        self.addCleanup(patcher.stop)
-
-    def take_over(self, process=None, newest=versions.Installed("9.0.0", Path("nine")), pinned=False):
-        """What the handoff returns, and the mock that stands for starting a version."""
-        with mock.patch.object(versions, "newest", return_value=newest), \
-                mock.patch.object(versions, "start", return_value=process) as self.start, \
-                mock.patch.dict(os.environ):
-            os.environ.pop(versions.PINNED_VARIABLE, None)
-            if pinned:
-                os.environ[versions.PINNED_VARIABLE] = "1"
-            return handoff.take_over(["--seed", "1"]), self.start
-
-    def test_a_newer_version_takes_over_with_the_arguments(self):
-        self.release()
-        # Still running after the grace period: it started.
-        process = mock.Mock(wait=mock.Mock(side_effect=subprocess.TimeoutExpired("launcher", 6)))
-        with self.assertRaises(SystemExit) as stopped:
-            self.take_over(process)
-        self.assertEqual(stopped.exception.code, 0)
-        self.start.assert_called_once_with(Path("nine"), ["--seed", "1"])
-
-    def test_a_version_that_fails_to_start_is_given_up_and_said(self):
-        self.release()
-        notice, _start = self.take_over(mock.Mock(wait=mock.Mock(return_value=1)))
-        self.assertIn("Version 9.0.0 is installed but failed to start", notice)
-
-    def test_nothing_newer_installed_is_this_version_running(self):
-        self.release()
-        self.assertEqual(self.take_over(newest=None)[0], None)
-
-    def test_a_pinned_launcher_and_a_source_checkout_never_hand_over(self):
-        self.release()
-        notice, start = self.take_over(pinned=True)
-        self.assertIsNone(notice)
-        start.assert_not_called()
-        self.release(is_release=False)
-        notice, start = self.take_over()
-        self.assertIsNone(notice)
-        start.assert_not_called()
 
 
 class SeedTests(Data):
@@ -465,10 +401,6 @@ class UpdateTests(unittest.TestCase):
         self.assertEqual(installed, versions.Installed("9.0.0", self.folder / "versions/9.0.0"))
         self.assertEqual([one.version for one in versions.installed(self.folder / "versions")], ["9.0.0"])
         self.assertFalse((self.folder / updates.asset_name("9.0.0")).exists())    # the download is not kept
-
-    def test_a_release_from_before_this_launcher_is_installed_with_its_console_one(self):
-        archive = self.release_zip("0.2.6", launcher=False, extra=["BOTW-Archipelago-0.2.6/tools/launcher.py"])
-        self.assertTrue(updates.install(archive, folder=self.folder / "versions").console)
 
     def test_a_release_without_a_launcher_or_with_unsafe_paths_is_refused_and_leaves_nothing(self):
         for archive, message in ((self.release_zip("0.2.0", launcher=False), "no launcher"),

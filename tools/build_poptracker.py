@@ -1445,17 +1445,6 @@ def stamp(content: Path | None) -> str:
 
 
 STAMP = DATA / "poptracker/stamp.txt"            # what the pack in PACK_FOLDER was built from
-DECLINED = DATA / "poptracker/declined.txt"      # the stamp the player said no to
-
-
-def build_command() -> str:
-    """The command that builds the pack, from the launcher's folder."""
-    python = Path(sys.executable)
-    try:
-        python = python.relative_to(ROOT)
-    except ValueError:
-        pass
-    return f"{python} -I tools\\build_poptracker.py"
 
 
 def fetch_icons_said(say) -> None:
@@ -1481,40 +1470,24 @@ def built_stamp(content: Path | None, game_map: bool) -> str:
     return stamp(content if game_map else None)
 
 
-def ensure_pack(say=print, confirm=lambda prompt: True) -> None:
-    """The launcher's step, one line at each launch whatever happens: the pack
-    in PACK_FOLDER is kept up to date with what it is made of. The first one in
-    the folder is built only if the player wants it (`confirm`), and a no is
-    remembered until the pack would change. Never blocks the game."""
+def ensure_pack(say=print) -> None:
+    """The pack in PACK_FOLDER, kept up to date with what it is made of: built
+    when there is none or it is out of date, else left as it is; one line
+    whatever happens. The launcher builds the first one when the player asks
+    (Settings: not everyone uses PopTracker), then each session keeps it up to
+    date. Never blocks the game."""
     target = PACK_FOLDER / f"{PACK_NAME}.zip"
     try:
         content = base_content()
         outdated = target.is_file()
-        if outdated:
-            fetch_icons_said(say)
+        fetch_icons_said(say)
         current = stamp(content)
         if outdated and STAMP.is_file() and STAMP.read_text(encoding="utf-8") == current:
             say(f"PopTracker pack: up to date, not rebuilt ({target})")
             return
-        if not outdated:
-            if DECLINED.is_file() and DECLINED.read_text(encoding="utf-8") == current:
-                say("PopTracker pack: not built, as you answered (asked again with the next version). "
-                    f"To build it, run in this folder: {build_command()}")
-                return
-            say("PopTracker pack: none in this folder yet. PopTracker is an optional map tracker "
-                "that follows the room (see the PopTracker guide).")
-            if not confirm("Build the PopTracker pack? (a few seconds)"):
-                DECLINED.parent.mkdir(parents=True, exist_ok=True)
-                DECLINED.write_text(current, encoding="utf-8")
-                say("PopTracker pack: not built. You will be asked again with the next version; "
-                    f"to build it before, run in this folder: {build_command()}")
-                return
-            fetch_icons_said(say)
-            current = stamp(content)
         target, game_map = build(content, PACK_FOLDER)
         STAMP.parent.mkdir(parents=True, exist_ok=True)
         STAMP.write_text(built_stamp(content, game_map), encoding="utf-8")
-        DECLINED.unlink(missing_ok=True)
         say(f"PopTracker pack {'rebuilt, it was out of date' if outdated else 'built'}: {target}"
             + ("" if game_map else plain_map_reason(content)))
         say("  To use it, drag this file onto PopTracker's window"

@@ -59,7 +59,6 @@ class ContentTests(unittest.TestCase):
             self.assertIn(name, self.files)
         self.assertFalse([name for name in self.files if name.startswith(("tests/", "lab/", "botw_world/test", ".build"))])
         self.assertFalse(set(build_release.DEVELOPMENT_ONLY) & set(self.files))     # no cheat in a release
-        self.assertFalse([name for name in self.files if name.startswith("botw_launcher/ui/")])  # no Qt
 
     def test_the_pack_sources_are_all_shipped(self):
         # A pack records the hash of each source it is built from: each must be in the release.
@@ -88,7 +87,6 @@ class VersionTests(unittest.TestCase):
         pinned = requirements()
         self.assertEqual({name: entry["version"] for name, entry in PINS.items()},
                          {name: pinned[name] for name in PINS})
-        self.assertFalse({"pyside6-essentials", "shiboken6"} & set(pinned))
         self.assertIn("-r requirements-player.txt",
                       (ROOT / "requirements.txt").read_text(encoding="utf-8").splitlines())
 

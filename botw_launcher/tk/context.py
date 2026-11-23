@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Callable
 import webbrowser
 
-from botw_client.paths import DATA, ROOT
+from botw_client.paths import DATA
 
 from .. import settings as settings_file, versions
 from ..core import updates, worlds
@@ -146,10 +146,9 @@ class Releases:
             self.check(found)
 
     def _open(self, version: versions.Installed, arguments: tuple[str, ...], why: str) -> None:
-        window = ("its launcher opens in a console window: it is older than this one" if version.console
-                  else "its launcher opens")
-        question = (f"Open the seed with version {version.version}?\n\nThis window closes and {window}. "
-                    "Open BOTW Archipelago again to come back to this version.")
+        question = (f"Open the seed with version {version.version}?\n\nThis window closes and the launcher "
+                    "of that version opens, in a console window. Open BOTW Archipelago again to come back "
+                    "to this version.")
         from .dialogs import ask
         if ask(None, f"Open version {version.version}?", f"{why}\n\n{question}" if why
                        else question, yes=f"Open version {version.version}"):
@@ -178,8 +177,8 @@ class Context:
         self.save_settings()
         self._quit()
 
-    def restart(self, folder: Path = ROOT, arguments: tuple[str, ...] = (), data: Path | None = None) -> None:
-        """Close this window and open the launcher of `folder` (another version)."""
+    def restart(self, folder: Path, arguments: tuple[str, ...] = (), data: Path | None = None) -> None:
+        """Close this window and open the launcher of `folder` (an older version)."""
         self.save_settings()
         logger.info("opening %s", folder)
         versions.start(folder, list(arguments), data)

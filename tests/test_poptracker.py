@@ -584,7 +584,7 @@ class TowerAreaTests(unittest.TestCase):
 
 
 class LauncherStepTests(unittest.TestCase):
-    """The pack the launcher keeps in the release's folder, one line a launch."""
+    """The pack each session keeps up to date in the data folder, one line a session."""
 
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
@@ -593,8 +593,7 @@ class LauncherStepTests(unittest.TestCase):
         self.target = self.root / "PopTracker" / f"{poptracker.PACK_NAME}.zip"
         self.version = "v1"
         for name, value in (("PACK_FOLDER", self.root / "PopTracker"),
-                            ("STAMP", self.root / "data/stamp.txt"),
-                            ("DECLINED", self.root / "data/declined.txt")):
+                            ("STAMP", self.root / "data/stamp.txt")):
             patcher = mock.patch.object(poptracker, name, value)
             patcher.start()
             self.addCleanup(patcher.stop)
@@ -614,40 +613,24 @@ class LauncherStepTests(unittest.TestCase):
         self.target.write_bytes(b"pack")
         return self.target
 
-    def launch(self, answer=True):
-        said, asked = [], []
-        poptracker.ensure_pack(said.append, lambda prompt: asked.append(prompt) or answer)
-        return said, asked
+    def launch(self):
+        said = []
+        poptracker.ensure_pack(said.append)
+        return said
 
-    def test_the_first_pack_is_built_when_the_player_wants_it(self):
-        said, asked = self.launch(answer=True)
-        self.assertEqual(len(asked), 1)
+    def test_the_first_pack_is_built_then_kept(self):
+        said = self.launch()
         self.assertTrue(self.target.is_file())
         self.assertIn(f"PopTracker pack built: {self.target}", said)
         self.assertTrue(any("drag this file onto PopTracker's window" in line for line in said))
-        said, asked = self.launch()                         # the next launch: one line, nothing built
-        self.assertEqual((said, asked), ([f"PopTracker pack: up to date, not rebuilt ({self.target})"], []))
+        said = self.launch()                                # the next session: one line, nothing built
+        self.assertEqual(said, [f"PopTracker pack: up to date, not rebuilt ({self.target})"])
         self.assertEqual(self.build.call_count, 1)
 
-    def test_a_no_is_remembered_until_the_pack_would_change(self):
-        said, asked = self.launch(answer=False)
-        self.assertEqual(len(asked), 1)
-        self.assertFalse(self.target.exists())
-        self.assertTrue(said[-1].startswith("PopTracker pack: not built. You will be asked again"))
-        said, asked = self.launch(answer=False)
-        self.assertEqual(asked, [])
-        self.assertEqual(len(said), 1)
-        self.assertTrue(said[0].startswith("PopTracker pack: not built, as you answered (asked again"))
-        self.version = "v2"                                 # a new version asks again
-        said, asked = self.launch(answer=True)
-        self.assertEqual(len(asked), 1)
-        self.assertTrue(self.target.is_file())
-
-    def test_an_out_of_date_pack_is_rebuilt_without_a_question(self):
-        self.launch(answer=True)
+    def test_an_out_of_date_pack_is_rebuilt(self):
+        self.launch()
         self.version = "v2"
-        said, asked = self.launch(answer=False)
-        self.assertEqual(asked, [])
+        said = self.launch()
         self.assertEqual(self.build.call_count, 2)
         self.assertIn(f"PopTracker pack rebuilt, it was out of date: {self.target}", said)
         self.assertTrue(any("again, to replace the one it has" in line for line in said))
@@ -658,17 +641,16 @@ class LauncherStepTests(unittest.TestCase):
         self.base_content.return_value = Path("game")
         self.stamp.side_effect = lambda content: f"{self.version} {content}"
         self.build.side_effect = lambda content, output: (self.build_file(), False)
-        said, _asked = self.launch(answer=True)
+        said = self.launch()
         self.assertTrue(any("the base game could not be read in game" in line for line in said))
         self.build.side_effect = lambda content, output: (self.build_file(), True)   # the game is back
-        said, asked = self.launch()
-        self.assertEqual(asked, [])
+        said = self.launch()
         self.assertEqual(self.build.call_count, 2)
         self.assertIn(f"PopTracker pack rebuilt, it was out of date: {self.target}", said)
 
     def test_a_failure_is_one_line_and_never_stops_the_game(self):
         self.build.side_effect = OSError("disk full")
-        said, _asked = self.launch(answer=True)
+        said = self.launch()
         self.assertEqual(said[-1], "PopTracker pack: not built (disk full)")
 
 

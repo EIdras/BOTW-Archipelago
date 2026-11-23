@@ -272,7 +272,7 @@ def install(archive: Path, progress: Progress = lambda *_: None, folder: Path | 
         release = roots[0]
         version = json.loads((release / RELEASE_MARKER).read_text(encoding="utf-8"))["version"]
         parse(version)
-        if not any((release / entry).is_file() for entry in (versions.ENTRY, versions.CONSOLE_ENTRY)):
+        if not (release / versions.ENTRY).is_file():
             raise ValueError(f"version {version} has no launcher")
         target = folder / version
         if target.resolve() == ROOT.resolve():

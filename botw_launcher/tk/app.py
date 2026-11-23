@@ -219,12 +219,6 @@ class MainWindow:
         options = self.context.options
         if options.file is not None:
             self.play_page.add_file(options.file)
-        current = versions.newest(than=VERSION)
-        # Opened from Archipelago, this is the version: the zips installed are for older seeds only.
-        if current is not None and updates.installed_apworld() is None:
-            self.banner.show_notice(
-                f"This is version {VERSION}, kept for older seeds. Version {current.version} is installed.",
-                [(f"Restart on {current.version}", lambda: self.context.restart(current.folder, ()))])
         background(self._tidy, self._tidied)
         if self.context.settings.check_updates:
             self.context.releases.check(self._announce)
@@ -314,11 +308,10 @@ class MainWindow:
 
 
 def run(arguments: list[str], entry: Callable | None = None,
-        requests: Callable[[], list[list[str]]] | None = None, notice: str | None = None) -> int:
+        requests: Callable[[], list[list[str]]] | None = None) -> int:
     """Open the window and run until it closes. `entry`: the jobs' child
     function (tk/child.py run by default). `requests`: the arguments of later
-    launches, polled (the apworld keeps one window open). `notice`: a sentence
-    shown at the top (an installed version that could not take over)."""
+    launches, polled (the apworld keeps one window open)."""
     if entry is None:
         from .child import run as entry
     records = Records()     # first: the log's opening line is on the Logs page too
@@ -343,8 +336,6 @@ def run(arguments: list[str], entry: Callable | None = None,
     window = MainWindow(root, context)
     if requests is not None:
         root.after(500, window.watch, requests)
-    if notice:
-        window.banner.show_notice(notice, [])
     theme.dark_title_bar(root)
     events.pump(root)
     root.mainloop()

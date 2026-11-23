@@ -104,8 +104,7 @@ class StoragePage(ScrollingPage):
         for version in found:
             line = tk.Frame(self.versions, bg=theme.SURFACE)
             line.pack(fill="x", pady=theme.px(2))
-            label(line, f"Version {version.version}" + ("  (running)" if version.running else "")
-                  + ("  ·  console launcher" if version.console else "")).pack(side="left")
+            label(line, f"Version {version.version}" + ("  (running)" if version.running else "")).pack(side="left")
             remove = Button(line, "Remove", lambda version=version: self.remove_version(version), "danger")
             remove.set(enabled=not version.running)
             remove.pack(side="right")

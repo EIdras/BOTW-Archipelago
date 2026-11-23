@@ -1,5 +1,5 @@
-"""The tk window (botw_launcher/tk): what Archipelago opens never needs Qt,
-the guides read as on GitHub, and the log reaches its page once."""
+"""The tk window (botw_launcher/tk): it loads in a Python of its own, the
+guides read as on GitHub, and the log reaches its page once."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -24,10 +24,9 @@ from botw_launcher.tk.context import Records  # noqa: E402
 from botw_launcher.tk.markdown_view import LINK, MarkdownView  # noqa: E402
 
 
-class WithoutQtTests(unittest.TestCase):
-    def test_the_window_and_its_jobs_load_without_qt(self):
-        code = ("import sys; sys.modules['PySide6'] = None\n"
-                "import botw_launcher.tk.app, botw_launcher.tk.child, botw_launcher.jobs")
+class ImportTests(unittest.TestCase):
+    def test_the_window_and_its_jobs_load_in_a_python_of_their_own(self):
+        code = "import botw_launcher.tk.app, botw_launcher.tk.child, botw_launcher.jobs"
         result = subprocess.run([sys.executable, "-c", code], cwd=ROOT, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
 
