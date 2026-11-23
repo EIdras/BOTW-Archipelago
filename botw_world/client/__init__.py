@@ -3,8 +3,9 @@
 Archipelago runs this in its own Python and installs nothing for a world. The
 project's code travels inside the apworld (payload.zip, added when the release
 is built) and is unpacked once; the libraries Archipelago lacks (oead, numpy,
-evfl, rstb) are downloaded once from PyPI, each wheel checked against the
-sha256 pinned in wheels.json (tools/pin_client_wheels.py). Both go to
+evfl, rstb) are downloaded once from PyPI, the wheels of this system (Windows
+or Linux, x86-64) each checked against the sha256 pinned in wheels.json
+(tools/pin_client_wheels.py). Both go to
 Archipelago's cache folder, apart from the player's data folder, which the
 project finds as a release does (botw_client/paths.py) and the player may move.
 
@@ -23,6 +24,7 @@ from pathlib import Path
 import pkgutil
 import shutil
 import sys
+import sysconfig
 import time
 from typing import Callable
 import urllib.request
@@ -32,6 +34,7 @@ PAYLOAD = "payload.zip"
 PINS = "wheels.json"
 DOWNLOAD_LIMIT = 200 * 1024 * 1024
 RELEASES = "https://github.com/EIdras/BOTW-Archipelago/releases"
+PLATFORMS = {"win-amd64": "win_amd64", "linux-x86_64": "linux_x86_64"}     # wheels.json's, by Python build
 
 Progress = Callable[[str, int, int], None]      # what, done, total (bytes)
 
@@ -113,14 +116,22 @@ class Instance:
 
 # ---- libraries and code -----------------------------------------------------
 
-def _pins(pins: dict) -> list[dict]:
-    """The wheels of this Python, or why there are none."""
-    if sys.platform != "win32":
-        raise SetupError("The BOTW Archipelago client runs on Windows only for now.")
+def platform_key(build: str | None = None) -> str | None:
+    """The wheels in wheels.json this Python runs, or None when there are none:
+    by the build of the Python, not the processor (an x64 Archipelago on an ARM
+    laptop runs the x64 wheels)."""
+    return PLATFORMS.get(build if build is not None else sysconfig.get_platform())
+
+
+def _pins(pins: dict, build: str | None = None) -> list[dict]:
+    """The wheels of this system and Python, or why there are none."""
+    key = platform_key(build)
+    if key is None:
+        raise SetupError("The BOTW Archipelago client runs on Windows and Linux (x86-64) only.")
     tag = python_tag()
     wheels = []
     for name, entry in pins["libraries"].items():
-        wheel = entry["wheels"].get(tag)
+        wheel = entry["wheels"].get(key, {}).get(tag)
         if wheel is None:
             raise SetupError(f"This Archipelago runs Python {sys.version_info.major}.{sys.version_info.minor}, "
                              f"which this version of BOTW Archipelago does not support yet.\n\n"
