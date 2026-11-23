@@ -58,6 +58,9 @@ from tools import cemu_profile as profile  # noqa: E402
 PLAY_SEEDS = DATA / "play-seeds"
 PORT = 38281
 GAME = "Breath of the Wild"
+# The window that runs this session (botw_launcher/jobs.py play), when one does:
+# it is given the room's messages and hints (ArchipelagoClient.observer).
+OBSERVER = None
 
 
 def sha(path: Path) -> str:
@@ -265,6 +268,7 @@ async def play(folder: Path, report: dict, pack: Path, session: Path,
             game_process_alive=lambda: process.poll() is None,
             delivery_catalog_path=pack / "delivery_catalog.json",
             game_language=profile.console_language())
+        runtime.ap.observer = OBSERVER
 
         async def watch_cemu():
             while process.poll() is None:

@@ -7,6 +7,7 @@ import ssl
 import time
 import uuid
 from dataclasses import dataclass
+from typing import Callable
 from urllib.parse import urlparse
 
 from . import GAME_NAME
@@ -133,6 +134,10 @@ class ArchipelagoClient:
         self.slot_info = {}
         self.refused_reason = None
         self.messages: asyncio.Queue[APMessage] = asyncio.Queue()
+        # The window that runs the session (botw_launcher), when one does: it
+        # is given each server message in parts, and this slot's hints as they
+        # change ({"event": "message" | "hints", ...}).
+        self.observer: Callable[[dict], None] | None = None
         self.deathlinks: asyncio.Queue[DeathLinkEvent] = asyncio.Queue()
         self.death_link_enabled = False
         self.last_death_link = 0.0
@@ -306,6 +311,9 @@ class ArchipelagoClient:
                 if self.connected and not self._initial_received_items_seen:
                     self.items_synchronized = True
                 self.data_package_event.set()
+                if self.observer is not None and self.team is not None:
+                    key = self._hints_key()
+                    await self.send({"cmd": "Get", "keys": [key]}, {"cmd": "SetNotify", "keys": [key]})
         elif command == "ReceivedItems":
             self._initial_received_items_seen = True
             start = int(packet.get("index", 0))
@@ -349,12 +357,20 @@ class ArchipelagoClient:
                                     _slot(packet.get("receiving")), sender,
                                     _slot(packet.get("slot")))
                 await self.messages.put(message)
+                self._observe_message(message)
                 self.log(text)
             kind, slot = packet.get("type"), _slot(packet.get("slot"))
             if kind == "Release" and slot is not None:
                 self.bulk_notices.append((time.monotonic(), slot))
             elif kind == "Collect" and slot is not None and slot == self.slot:
                 self.bulk_notices.append((time.monotonic(), None))
+        elif command in ("Retrieved", "SetReply") and self.observer is not None:
+            key = self._hints_key()
+            hints = ((packet.get("keys") or {}).get(key) if command == "Retrieved"
+                     else packet.get("value") if packet.get("key") == key else None)
+            if isinstance(hints, list):
+                self._observe({"event": "hints",
+                               "hints": [self._hint(hint) for hint in hints if isinstance(hint, dict)]})
         elif command == "Bounced" and "DeathLink" in packet.get("tags", []):
             data = packet.get("data") or {}
             timestamp = float(data.get("time", 0.0))
@@ -450,6 +466,49 @@ class ArchipelagoClient:
         game = self.player_game(int(node.get("player", self.slot or 0)))
         maps = self.item_names_by_game if kind == "item_id" else self.location_names_by_game
         return maps.get(game, {}).get(value, text)
+
+    def _hints_key(self) -> str:
+        return f"_read_hints_{self.team}_{self.slot}"     # the server's own (MultiServer.py)
+
+    def _observe(self, event: dict) -> None:
+        try:
+            self.observer(event)
+        except Exception as exc:  # noqa: BLE001 - the window's view never stops the client
+            self.log(f"observer refused an event: {exc!r}")
+
+    def _observe_message(self, message: APMessage) -> None:
+        """The message in parts: (text, what it is, item flags). A player is
+        "me" or "player"; items, locations and entrances keep the server's
+        node type."""
+        if self.observer is None:
+            return
+        parts = []
+        for node in message.nodes:
+            kind, text = str(node.get("type") or "text"), self.render_node(node)
+            if kind in ("player_id", "player_name"):
+                mine = (str(node.get("text")) == str(self.slot) if kind == "player_id"
+                        else text == self.players.get(self.slot, self.slot_name))
+                kind = "me" if mine else "player"
+            elif kind == "item_name":
+                kind = "item_id"
+            elif kind == "location_name":
+                kind = "location_id"
+            parts.append([text, kind, int(node.get("flags") or 0)])
+        self._observe({"event": "message", "kind": message.kind, "parts": parts})
+
+    def _hint(self, hint: dict) -> dict:
+        """A hint of the server's data storage (NetUtils.Hint), with names."""
+        receiving, finding = int(hint.get("receiving_player") or 0), int(hint.get("finding_player") or 0)
+
+        def name(maps: dict, player: int, value) -> str:
+            return maps.get(self.player_game(player), {}).get(int(value or 0), str(value))
+        return {"receiving": self.players.get(receiving, f"slot {receiving}"),
+                "finding": self.players.get(finding, f"slot {finding}"),
+                "item": name(self.item_names_by_game, receiving, hint.get("item")),
+                "location": name(self.location_names_by_game, finding, hint.get("location")),
+                "entrance": str(hint.get("entrance") or ""), "found": bool(hint.get("found")),
+                "flags": int(hint.get("item_flags") or 0), "status": int(hint.get("status") or 0),
+                "mine": receiving == self.slot, "in_my_world": finding == self.slot}
 
     def location_name(self, location_id: int) -> str | None:
         return self.location_name_by_id.get(location_id)

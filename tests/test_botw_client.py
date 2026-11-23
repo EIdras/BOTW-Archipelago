@@ -275,6 +275,62 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
             "data": {"time": 12.5, "source": "Alice", "cause": "fell"}})
         self.assertTrue(client.deathlinks.empty())
 
+    async def test_an_observer_gets_messages_in_parts_and_the_slots_hints(self):
+        client = ArchipelagoClient("localhost:38281", "Player", log=lambda _: None)
+        sent, seen = [], []
+
+        async def fake_send(*commands):
+            sent.extend(commands)
+
+        client.send, client.observer = fake_send, seen.append
+        client.seed_name = "seed"
+        await client._packet({
+            "cmd": "Connected", "team": 0, "slot": 1,
+            "players": [[0, 1, "Player", "Player"], [0, 2, "Alice", "Alice"]],
+            "slot_info": {"1": ["Player", "Breath of the Wild", 0, []], "2": ["Alice", "Other Game", 0, []]},
+            "checked_locations": [], "slot_data": {}})
+        await client._packet({"cmd": "DataPackage", "data": {"games": {
+            "Breath of the Wild": {"item_name_to_id": {"Paraglider": 5}, "location_name_to_id": {"Shrine": 9}},
+            "Other Game": {"item_name_to_id": {"Hookshot": 7}, "location_name_to_id": {"Cave": 3}}}}})
+        key = "_read_hints_0_1"
+        self.assertEqual(sent[-2:], [{"cmd": "Get", "keys": [key]}, {"cmd": "SetNotify", "keys": [key]}])
+        await client._packet({"cmd": "PrintJSON", "type": "ItemSend", "data": [
+            {"text": "1", "type": "player_id"}, {"text": " sent ", "type": "text"},
+            {"text": "7", "type": "item_id", "player": 2, "flags": 3}, {"text": " to ", "type": "text"},
+            {"text": "2", "type": "player_id"}, {"text": " (", "type": "text"},
+            {"text": "9", "type": "location_id", "player": 1}, {"text": ")", "type": "text"}]})
+        self.assertEqual(seen[-1], {"event": "message", "kind": "ItemSend", "parts": [
+            ["Player", "me", 0], [" sent ", "text", 0], ["Hookshot", "item_id", 3], [" to ", "text", 0],
+            ["Alice", "player", 0], [" (", "text", 0], ["Shrine", "location_id", 0], [")", "text", 0]]})
+        self.assertEqual(client.messages.get_nowait().text, "Player sent Hookshot to Alice (Shrine)")
+        hint = {"receiving_player": 1, "finding_player": 2, "location": 3, "item": 5, "found": False,
+                "entrance": "", "item_flags": 1, "status": 30, "class": "Hint"}
+        await client._packet({"cmd": "Retrieved", "keys": {key: [hint]}})
+        self.assertEqual(seen[-1], {"event": "hints", "hints": [{
+            "receiving": "Player", "finding": "Alice", "item": "Paraglider", "location": "Cave",
+            "entrance": "", "found": False, "flags": 1, "status": 30, "mine": True, "in_my_world": False}]})
+        await client._packet({"cmd": "SetReply", "key": key, "value": [{**hint, "found": True}]})
+        self.assertTrue(seen[-1]["hints"][0]["found"])
+        await client._packet({"cmd": "SetReply", "key": "another", "value": []})
+        self.assertEqual(len(seen), 3)
+
+    async def test_without_an_observer_nothing_more_is_asked(self):
+        client = ArchipelagoClient("localhost:38281", "Player", log=lambda _: None)
+        sent = []
+
+        async def fake_send(*commands):
+            sent.extend(commands)
+
+        client.send = fake_send
+        client.seed_name = "seed"
+        await client._packet({"cmd": "Connected", "team": 0, "slot": 1, "players": [[0, 1, "Player", "Player"]],
+                              "slot_info": {"1": ["Player", "Breath of the Wild", 0, []]},
+                              "checked_locations": [], "slot_data": {}})
+        await client._packet({"cmd": "DataPackage", "data": {"games": {
+            "Breath of the Wild": {"item_name_to_id": {}, "location_name_to_id": {}}}}})
+        self.assertEqual([command["cmd"] for command in sent], ["GetDataPackage"])
+        await client._packet({"cmd": "Retrieved", "keys": {"_read_hints_0_1": []}})
+
     async def test_index_zero_replaces_the_full_received_inventory(self):
         client = ArchipelagoClient("localhost:38281", "Player", log=lambda _: None)
         client.received_items = {
