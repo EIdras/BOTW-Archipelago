@@ -1,8 +1,9 @@
 # The release of a version, built on GitHub's Windows machines.
 #
 # Pushing a tag vX.Y.Z (the world_version of botw_world/archipelago.json) tests
-# the project, builds botw.apworld (tools/build_release.py)
-# and makes a draft release with it, to check and publish by hand.
+# the project on Linux and Windows (tests.yml), builds botw.apworld
+# (tools/build_release.py), the one file for both systems, and makes a draft
+# release with it, to check and publish by hand.
 # Run by hand (Actions > Release > Run workflow), it tests and builds only:
 # the apworld is attached to the run, as an artifact.
 name: Release
@@ -16,7 +17,11 @@ permissions:
   contents: write
 
 jobs:
+  tests:
+    uses: ./.github/workflows/tests.yml
+
   release:
+    needs: tests
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,10 +39,6 @@ jobs:
       - name: Check the tag
         if: startsWith(github.ref, 'refs/tags/')
         run: venv\Scripts\python -c "import sys; sys.path.insert(0, '.'); from tools.build_release import check_tag; check_tag('${{ github.ref_name }}')"
-
-      - name: Test
-        # The tests that need the game, Cemu or the Archipelago runtime are skipped here.
-        run: venv\Scripts\python -m unittest discover -s tests
 
       - name: Build
         run: venv\Scripts\python tools\build_release.py
