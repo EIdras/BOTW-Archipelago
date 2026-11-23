@@ -201,13 +201,36 @@ class LinuxIdentityAndLockTest(unittest.TestCase):
         from tools.cemu.owned_presentation import publisher_lock
         folder = tempfile.mkdtemp()
         self.addCleanup(__import__("shutil").rmtree, folder, True)
+        script = ("import sys\nfrom tools.cemu.owned_presentation import publisher_lock\n"
+                  "try:\n    with publisher_lock(4242):\n        pass\nexcept RuntimeError:\n    sys.exit(3)\n")
+
+        def other_thread():
+            outcome = []
+
+            def take():
+                try:
+                    with publisher_lock(4242):
+                        outcome.append("taken")
+                except RuntimeError:
+                    outcome.append("busy")
+            thread = __import__("threading").Thread(target=take)
+            thread.start()
+            thread.join()
+            return outcome
+
         with mock.patch.dict(os.environ, {"XDG_RUNTIME_DIR": folder}):
             with publisher_lock(4242):
-                with self.assertRaises(RuntimeError):
-                    with publisher_lock(4242):
-                        pass
+                # Reentrant for its thread, as a Windows mutex: a turn of the
+                # invoker holds it across the calls that take it again.
+                with publisher_lock(4242):
+                    pass
+                self.assertEqual(other_thread(), ["busy"])
+                other = subprocess.run([sys.executable, "-c", script], cwd=Path(__file__).parents[1],
+                                       env={**os.environ, "XDG_RUNTIME_DIR": folder})
+                self.assertEqual(other.returncode, 3)
                 with publisher_lock(4243):
                     pass
+            self.assertEqual(other_thread(), ["taken"])
             with publisher_lock(4242):
                 pass
 

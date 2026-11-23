@@ -3,6 +3,7 @@ import os
 import struct
 import sys
 import tempfile
+import threading
 import time
 import ctypes
 from ctypes import wintypes
@@ -14,24 +15,50 @@ PHASES = ("idle", "staged", "submitting", "accepted", "bound", "action_complete"
 BUSY = "Another presentation publisher is active or the mutex is unavailable"
 
 
+_HELD: dict[str, list] = {}     # lock file -> [owning thread, depth]
+_HELD_GUARD = threading.Lock()
+
+
 @contextmanager
 def _file_lock(pid):
     """The Linux publisher lock: flock on a file of this user's runtime folder.
 
     The kernel drops the lock with its holder, as Windows abandons a mutex.
+    Reentrant for the thread that holds it, as a Windows mutex is: the client
+    takes it for a turn of the invoker and again for each call in that turn
+    (botw_client/invoker_turn.py). A second flock, on a descriptor of its
+    own, would find the first one and fail.
     """
     import fcntl
     folder = os.environ.get("XDG_RUNTIME_DIR") or tempfile.gettempdir()
-    descriptor = os.open(os.path.join(folder, f"botw-ap-owner-{pid}.lock"),
-                         os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    path = os.path.join(folder, f"botw-ap-owner-{pid}.lock")
+    me = threading.get_ident()
+    with _HELD_GUARD:
+        held = _HELD.get(path)
+        if held is not None:
+            if held[0] != me:
+                raise RuntimeError(BUSY)
+            held[1] += 1
+    if held is not None:
+        try:
+            yield
+        finally:
+            with _HELD_GUARD:
+                held[1] -= 1
+        return
+    descriptor = os.open(path, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
     try:
         try:
             fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             raise RuntimeError(BUSY) from None
+        with _HELD_GUARD:
+            _HELD[path] = [me, 1]
         try:
             yield
         finally:
+            with _HELD_GUARD:
+                del _HELD[path]
             fcntl.flock(descriptor, fcntl.LOCK_UN)
     finally:
         os.close(descriptor)
