@@ -173,7 +173,9 @@ class CemuPresentationBackend:
     def submit(self, request_id, title, description):
         try:
             if not self.ready():
-                raise RuntimeError('Stable readiness not established')
+                # The guards are read again here and can flip since the queue's
+                # own check (a shop's dialog closing): nothing was sent yet.
+                return dict(status='deferred')
             expected = self.generation + 1
             self.samples, self.last_sample = 0, None
             def final_guard():

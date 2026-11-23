@@ -125,6 +125,31 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(result,'uncertain')
         self.assertTrue(self.backend.stopped)
         self.assertEqual(self.native.request.call_count,1)
+
+    def test_readiness_lost_between_the_queue_check_and_submit_is_deferred(self):
+        # Seen in play: the queue's ready() held, then the one in submit() did
+        # not (a shop's dialog closing); nothing was sent, nothing is uncertain.
+        self.make()
+        calls = []
+        def guard():
+            calls.append(1)
+            return len(calls) != 4                  # the 4th read is submit()'s
+        self.guard.side_effect = guard
+        for value in (0., .11, .22):
+            self.now = value
+            result = self.queue.tick(self.backend)
+        self.assertEqual(result, 'queued')
+        entry = self.queue.snapshot()['entries'][0]
+        self.assertEqual((entry['status'], entry['attempts']), ('queued', 0))
+        self.assertFalse(self.backend.stopped)
+        self.native.request.assert_not_called()
+        # The same adapter goes on once three fresh stable samples hold again.
+        for value in (.33, .44, .55):
+            self.now = value
+            result = self.queue.tick(self.backend)
+        self.assertEqual(result, 'accepted')
+        self.assertEqual(self.native.request.call_count, 1)
+
     def make(self):
         self.now = 0.
         self.state = dict(version=2, phase='idle', generation=0, fault=0, busy=0,
