@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import hashlib
 import io
+import itertools
 import json
 import os
 from pathlib import Path
@@ -66,6 +67,10 @@ def _resource(name: str) -> bytes | None:
 
 # ---- one window -------------------------------------------------------------
 
+# Two requests of one process within the clock's tick (Windows' is coarse) keep apart.
+_FORWARDED = itertools.count()
+
+
 class Instance:
     """The lock of the one open window, held until the process ends (a crash
     releases it), and its inbox: what later launches ask it to open."""
@@ -95,7 +100,7 @@ class Instance:
     def forward(self, arguments: list[str]) -> None:
         """Ask the open window to come forward, and to open the file given."""
         self.inbox.mkdir(parents=True, exist_ok=True)
-        request = self.inbox / f"{time.time_ns()}-{os.getpid()}.json"
+        request = self.inbox / f"{time.time_ns()}-{os.getpid()}-{next(_FORWARDED):06d}.json"
         temporary = request.with_suffix(".tmp")
         temporary.write_bytes(json.dumps({"arguments": arguments}).encode("utf-8"))
         temporary.replace(request)
