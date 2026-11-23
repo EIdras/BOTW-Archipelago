@@ -14,41 +14,28 @@ Two trackers follow a Breath of the Wild game: [PopTracker](#poptracker), a map 
 colored by what your items let you reach. It connects to the Archipelago room by itself: the items you receive and
 the locations you check appear as you play, with nothing to click.
 
-There is no pack to download: the launcher builds it from your own copy of the game, in the release's folder, and
-you install it in PopTracker yourself.
+There is no pack to download: the launcher builds it from your own copy of the game, and you install it in
+PopTracker yourself.
 
 ### Setting it up
 
 1. **Install PopTracker**, version 0.26.2 or later, from its
    [releases page](https://github.com/black-sliver/PopTracker/releases) (on Windows, the `win64` zip: unzip it
    anywhere).
-2. **Start a session with `BOTW Archipelago.cmd`**, as the [setup guide](setup_en.md#your-first-session) says. Before Cemu
-   starts, the launcher asks once whether you want the PopTracker pack:
-
-       PopTracker pack: none in this folder yet. PopTracker is an optional map tracker that follows the room (see the PopTracker guide).
-       Build the PopTracker pack? (a few seconds) (Y/n):
-
-   Press Enter. The pack is written to the `PopTracker` folder of the release:
-
-       PopTracker pack built: <release folder>\PopTracker\botw_archipelago.zip
-         To use it, drag this file onto PopTracker's window.
-
+2. **Build the pack**: in the launcher, **Settings** > **PopTracker pack** > **Build the pack** (a few seconds,
+   once the game profile is made). The card then shows where the pack is, `botw_archipelago.zip`, and
+   **Open its folder** opens it.
 3. **Install the pack**: open PopTracker and drag `botw_archipelago.zip` onto its window. (You can also copy it into
    PopTracker's `packs` folder.)
 
-You do this once per version of BOTW Archipelago. Each session then starts with one line on where the pack
-stands:
+You do this once. Each session then checks the pack before Cemu starts, and builds it again when what it is made
+of changed (an update of BOTW Archipelago, your icons, your game); its log says where the pack stands:
 
-| The launcher says | What it means |
+| The session's log says | What it means |
 |---|---|
-| `PopTracker pack: up to date, not rebuilt (...)` | Nothing to do: the pack in the folder is the latest. |
-| `PopTracker pack rebuilt, it was out of date: ...` | Your icons or your game changed: drag the new file onto PopTracker again. |
-| `PopTracker pack: not built, as you answered ...` | You said no; you will be asked again with the next version. |
+| `PopTracker pack: up to date, not rebuilt (...)` | Nothing to do: the pack is the latest. |
+| `PopTracker pack rebuilt, it was out of date: ...` | Drag the new file onto PopTracker again. |
 | `PopTracker pack: not built (...)` | Something went wrong, the reason is in brackets; the game starts all the same. |
-
-If you said no and change your mind, open a command prompt in the release's folder and run
-`python\python.exe -I tools\build_poptracker.py`: it fetches the icons and builds the pack in the same `PopTracker`
-folder.
 
 ### Connecting to the room
 
@@ -125,16 +112,15 @@ Without an internet connection, those items show the game's white stand-ins or a
 just as well.
 
 You can also use your own icons: put PNG files named after the items (`Paraglider.png`, `Zora Armor.png`...;
-subfolders are fine) in `%LOCALAPPDATA%\BOTW Archipelago\poptracker\icons`. The next session rebuilds the pack with
-them.
+subfolders are fine) in `%LOCALAPPDATA%\BOTW Archipelago\poptracker\icons` (the data folder's `poptracker\icons`,
+when you moved it in **Storage**). The next session rebuilds the pack with them.
 
 ### Troubleshooting
 
-- **No `PopTracker` folder in the release.** The pack is only built when you answer yes, at the start of a session.
-  Look at the launcher's PopTracker line: it says why, and how to build the pack.
+- **No pack to drag.** Build it in **Settings** > **PopTracker pack**; when it fails, the launcher says why.
 - **PopTracker still shows the old pack.** Drag the new `botw_archipelago.zip` onto its window again, then load the
   pack.
-- **The map is a plain grid.** The launcher's line says why. Either your game is a `.wud` or `.wua` file, or a folder of `title.tmd` and `.app` files (the map
+- **The map is a plain grid.** The session's log says why. Either your game is a `.wud` or `.wua` file, or a folder of `title.tmd` and `.app` files (the map
   is drawn from a game installed as a folder, with `code`, `content` and `meta`), or the drive holding it was not
   connected while the pack was built: plug it back, and the next session builds the map again. The tracker works
   all the same.

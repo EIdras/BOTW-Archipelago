@@ -29,17 +29,17 @@ presented by the game itself.
 - Windows and [Cemu](https://cemu.info/) 2.x.
 - Breath of the Wild for **Wii U** (European, American or Japanese), with **update v208 and the DLC**, from your own
   console. The Switch version is not supported.
-- To generate a seed: [Archipelago 0.6.7](https://github.com/ArchipelagoMW/Archipelago/releases).
+- [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases) 0.6.7 or newer, to play and to generate.
 
 No game file is part of this project: the game pack of a seed is built from your own copy of the game.
 
 ## Quick start
 
-1. Download `BOTW-Archipelago-<version>-Windows.zip` from the
-   [latest release](https://github.com/EIdras/BOTW-Archipelago/releases), and unzip it.
-2. Get your slot file (`.apbotw`) from the room's page.
-3. Start `BOTW Archipelago.cmd`: it finds your Cemu, builds your seed's game pack, connects to the room and starts
-   the game.
+1. Download `botw.apworld` from the [latest release](https://github.com/EIdras/BOTW-Archipelago/releases), and
+   install it with **Install APWorld** in the Archipelago Launcher.
+2. In the Archipelago Launcher, open **BOTW Archipelago**, and add your seed from the link of its room's page.
+3. Its window finds your Cemu, builds your seed's game pack, connects to the room and starts the game. It installs
+   the updates too, lists the room's hints, and holds these guides (Help).
 
 ## Documentation
 

@@ -9,15 +9,16 @@ with the slot's name, then items received and locations checked appear as they h
 The pack is built on the player's machine, never shipped: its map is the game's own, assembled from the player's base
 game, so that no file of the game is in the repository.
 
-- The pack is written to `PACK_FOLDER`: the release's own `PopTracker` folder (`<data>/poptracker` in a source
-  checkout). The player installs it in PopTracker by hand (dragging the zip onto its window): finding PopTracker's
-  packs folder depends on too much (a portable PopTracker, Documents moved to OneDrive...).
+- The pack is written to `PACK_FOLDER`, `<data>/poptracker`: the data folder, so that every installed version keeps
+  the same pack up to date (the launcher's Settings shows it). The player installs it in PopTracker by hand (dragging
+  the zip onto its window): finding PopTracker's packs folder depends on too much (a portable PopTracker, Documents
+  moved to OneDrive...).
 - Before each session the launcher says in one line where the pack stands (`ensure_pack`): up to date, rebuilt
   because what it is made of changed (the stamp, `<data>/poptracker/stamp.txt`), not built as the player answered,
   or not built and why. When the folder has no pack yet, it asks first (not everyone uses PopTracker); a no is
   remembered in `<data>/poptracker/declined.txt` until the stamp changes. A failure never blocks the game.
 - By hand: `venv\Scripts\python tools\build_poptracker.py` (`--content <base game content>`, `--output <folder>`),
-  `python\python.exe -I tools\build_poptracker.py` in a release.
+  the launcher's **Settings** in a release.
 
 ## What it is made of
 

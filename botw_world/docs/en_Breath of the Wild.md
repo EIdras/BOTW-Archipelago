@@ -15,8 +15,8 @@ game's own resources, and the Archipelago client delivers items while you play: 
 
 ## Where are the options?
 
-In the player's YAML file. The release brings a ready one, `players\BOTW.yaml`, and the Archipelago Launcher writes a
-template with "Generate Template Options". Every option is explained [below](#options).
+In the player's YAML file. The Archipelago Launcher writes a template with "Generate Template Options", and
+[`BOTW.yaml`](https://github.com/EIdras/BOTW-Archipelago/blob/master/players/BOTW.yaml) is a ready one. Every option is explained [below](#options).
 
 ## Locations
 

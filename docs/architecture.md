@@ -173,11 +173,63 @@ counterpart's (USfr takes EUfr's). The killers a DeathLink names go into English
 without English texts, names none. The pack's `rules.txt` names the version's title, and a European pack is byte for
 byte the one it was before.
 
-## The launcher (`tools/launcher.py`, `BOTW Archipelago.cmd`)
+## The launcher (`botw_world/client/`, `botw_launcher/`)
 
-The one command a player runs: the first time, it makes the Cemu profile from `Cemu.exe`; then it picks a prepared
-seed or prepares a new one from a slot file or a seed's zip (`tools/play_seed.py`), asks for the room, and starts the
-play session.
+The one window a player opens, "BOTW Archipelago" in the Archipelago Launcher (`botw_world/__init__.py` registers it
+as a client component, which also opens a `.apbotw` given to "Open Patch"). The first time, it makes the Cemu profile
+from `Cemu.exe`; then it lists the prepared seeds, prepares a new one from a slot file, a seed's zip or the link of
+its room's page, asks for the room, and runs the play session, whose steps and coloured log it shows, with the room's
+hints on a page of their own. It also shows what the data takes on disk, moves it to another folder, keeps the log a
+bug report needs, and installs updates.
+
+**Inside Archipelago** (`botw_world/client/`). Archipelago runs the world from its zip, on its own frozen Python, with
+none of the libraries the tools need. The first start downloads them, pinned with their hashes in
+`client/wheels.json` (oead, numpy, evfl, rstb, for each Python a release of Archipelago may run;
+`tools/pin_client_wheels.py` writes it), and unpacks the project's code the apworld carries (`client/payload.zip`,
+`tools/build_release.py`) into Archipelago's cache, once per version; a small window shows the progress and, offline,
+what to do. One window runs at a time: a second start, from "Open Patch" for instance, hands its file to the open one
+(`window.lock` and an inbox folder) and leaves. From a source checkout, `BOTW Archipelago.cmd` opens the same window on
+the venv (`botw_launcher/__main__.py`).
+
+The window is in three layers, each knowing only the ones before it:
+
+| Layer | What it holds |
+| --- | --- |
+| `core/` | What the launcher does, without any window: seeds, the Cemu profile, rooms and room links, storage, updates. Typed wrappers over the tools (`tools/play_seed.py`, `tools/cemu_profile.py`...); an error is a sentence for the player. |
+| `jobs.py` | The long tasks (a pack build, a play session, a download), each run in a child process (a multiprocessing child, `tk/child.py`, whose streams are queues to the window), arguments as one JSON line on its input, events as marked JSON lines on its output. A task that crashes or is cancelled leaves the window standing. `core/output.py` is the only place that reads the lines the tools print (build steps, session milestones). |
+| `tk/` | The window, in tkinter (Archipelago's Python has it). `context.py` is what the pages share, `job_runner.py` runs a job, `pages/` holds one module a page, `dialogs.py` the questions, `theme.py` the look (dark, scaled to the screen). |
+
+To add a long task, write its function in `jobs.py` with `@job`; to add a page, a `pages.Page` in `tk/pages/`, listed
+in `tk/app.py` (the sidebar's order is also the order of its Ctrl+number shortcuts). Help, at the bottom of the
+sidebar, reads the player's guides (`botw_world/docs`) in the window (`tk/pages/help.py`): links between guides and to
+their headings stay in it.
+
+**The session and the window.** The play job runs `tools/play_session.py` in its child, and gives its client an
+observer (`ArchipelagoClient.observer`, empty in a console session): each server message in parts, with its players,
+items and their flags, and the slot's hints, which the client follows in the server's data storage
+(`_read_hints_<team>_<slot>`). The session's log colours them as Archipelago's text client does; the Hints page lists
+the hints, keeps the last ones in the seed's folder, and asks for one through the session's console (`!hint` in a
+room).
+
+**Room links** (`core/room_link.py`). The room's page lists each player with their game, the room's address and their
+slot file (`/dl_patch/`); opening it also wakes a sleeping room. Archipelago's API (`room_status`) is not used: for a
+game the web host does not know, its download points at `/slot_file/`, which only serves the games it knows.
+
+**Logs.** `logs.py` writes everything to `logs/launcher.log` in the data folder (rotated), whatever level the Logs
+page shows; the page's "Save a diagnostic" zips it with the settings and the last session of the last seed.
+
+**Updates and versions** (`core/updates.py`, `core/worlds.py`, `versions.py`). Since 0.4.0 a release is
+`botw.apworld` alone. Archipelago loads one version of a world, the one in its `custom_worlds` folder: an update
+downloads the new apworld, checks the version its `release.json` states (the first entry of the apworld,
+uncompressed, read from the first bytes of a published one), and puts it in place of the one Archipelago loaded
+(`BOTW_AP_APWORLD`), the previous one kept in the data folder's `downloads`; the player then opens Archipelago again. A seed of a
+newer world is offered that update; a seed of an older apworld that this one cannot play has to be generated again.
+What a version plays is its own statement (`botw_client/compatibility.py`, the world and client schemas
+`tools/play_seed.py` accepts), in its `release.json`. The releases before 0.4.0 were a zip with its own Python, and
+state nothing: a frozen table stands in for them (`core/worlds.py`). For a seed of theirs, that release is installed
+on demand as `versions/<version>/` in the data folder and opened on the same data folder (`BOTW_AP_DATA`), the oldest
+in their console launcher (`tools/launcher.py`); `handoff.py` is what such a release runs at start to hand over to the
+newest one installed. A seed's pack is built again when another version than its builder plays it.
 
 ## The play session (`tools/play_session.py`)
 

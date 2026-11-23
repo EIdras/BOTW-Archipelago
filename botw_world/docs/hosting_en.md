@@ -13,14 +13,15 @@ and join it.
 
 ## 1. Install the world
 
-Put `botw.apworld`, from the [releases](https://github.com/EIdras/BOTW-Archipelago/releases), in Archipelago's
-`custom_worlds` folder. Take it from the same release as the players' launcher.
+Install `botw.apworld`, from the [releases](https://github.com/EIdras/BOTW-Archipelago/releases): **Install
+APWorld** in the Archipelago Launcher, or put it in Archipelago's `custom_worlds` folder. The players install the
+same one: it is also their client.
 
 ## 2. Gather the YAML files
 
 Put every player's YAML file in Archipelago's `Players` folder. For Breath of the Wild, start from
-`players\BOTW.yaml` in the release, or from the template the Archipelago Launcher writes ("Generate Template
-Options"). Each option is explained on the [game page](en_Breath%20of%20the%20Wild.md#options).
+the template the Archipelago Launcher writes ("Generate Template Options"), or from the ready
+[`BOTW.yaml`](https://github.com/EIdras/BOTW-Archipelago/blob/master/players/BOTW.yaml). Each option is explained on the [game page](en_Breath%20of%20the%20Wild.md#options).
 
 ## 3. Generate
 

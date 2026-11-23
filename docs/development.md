@@ -22,8 +22,8 @@ Ignored by git: `.build/` (builds, the Archipelago runtime, the Cemu profile, se
 
 What the tools write for the player goes to the **data folder** (`botw_client/paths.py`): the Cemu profile
 (`cemu-validation/`), the seeds and their sessions (`play-seeds/`), their packs (`packs-from-source/`), the GameData flag
-table and the client's caches. In a source checkout it is `.build/`; in a release (a `release.json` at its root), it
-is `%LOCALAPPDATA%\BOTW Archipelago`, kept across updates; the `BOTW_AP_DATA` variable names another one. The
+table and the client's caches. In a source checkout it is `.build/`; in a release (a `release.json` at its root: the
+project a `botw.apworld` unpacks), it is `%LOCALAPPDATA%\BOTW Archipelago`, kept across updates; the `BOTW_AP_DATA` variable names another one. The
 developer's own builds (the Archipelago runtime, generated seeds, historical candidates) stay in `.build/`.
 
 ## Running from source
@@ -36,11 +36,15 @@ venv\Scripts\pip install -r requirements.txt
 "BOTW Archipelago.cmd"
 ```
 
-The launcher runs on the venv when the folder has no `python\`, and writes to `.build\` (the data folder of a
-checkout). To generate and host seeds here, give it an Archipelago 0.6.7 source checkout:
+`BOTW Archipelago.cmd` opens the launcher's window on the venv, writing to `.build\` (the data folder of a
+checkout). To open it from Archipelago instead, as a player does, build the apworld (`tools\build_release.py
+--allow-dirty`) and install it; a world folder linked into Archipelago's `worlds` runs the checkout itself, with the
+libraries downloaded as for a player. To generate and host seeds here, give it an Archipelago 0.6.7 source checkout:
 `venv\Scripts\python tools\prepare_ap_runtime.py --source <checkout>` copies its core and this world into
 `.build\ap-runtime`; `venv\Scripts\python tools\generate_native.py` then generates from the YAML files of `players\`
-into `.build\native-seeds\`, and the launcher can host a seed's zip on this computer (`local`).
+into `.build\native-seeds\`, and the launcher can host a seed added from its zip on this computer ("Host the seed
+on this computer", in the seed's panel). The arguments the launcher does not know go to the session as they are: the
+test aids below. Its tests drive the window without showing it (`tests/test_botw_launcher_window.py`).
 
 The launcher's steps are tools of their own:
 
@@ -92,7 +96,8 @@ Keep each file's line endings when editing it (some tests and launchers depend o
 
 - **Locations**: `data/locations_master.csv` and `botw_world/data/locations.json` carry the same rows; identifiers are
   append-only. A new batch of locations is a new world schema: `SCHEMA_LOCATION_COUNTS` in `botw_client/locations.py`
-  and `world_schema` in the world's `fill_slot_data`.
+  and `world_schema` in the world's `fill_slot_data`. The schemas a version plays are stated in
+  `botw_client/compatibility.py`, which every release carries in its `release.json` for the launchers of other versions.
 - **Items**: `botw_world/data/items.json` for the pool, `data/item_map.json` for the effect in the game (its delivery
   kinds are listed in `botw_client/items.py`). A delivery is compiled into EventFlow entries by
   `botw_patch/delivery_flow.py`.
@@ -116,17 +121,19 @@ world must carry its license.
 venv\Scripts\python tools\build_release.py
 ```
 
-writes `dist\BOTW-Archipelago-<version>-Windows.zip`, what a player downloads, and `dist\botw.apworld`, what a host
-installs (apart from the "Source code" archive GitHub adds to a release, which has no Python). The zip holds a folder that runs as it is: `BOTW Archipelago.cmd`, the project's files the player's tools read (listed
-in `PROJECT`), and `python\`, the Python 3.12 of this checkout's base installation with only the packages those tools
-import (`PACKAGES`, with their dependencies, copied from the venv). Its `release.json` (version, commit, packages)
-makes the tools write to `%LOCALAPPDATA%\BOTW Archipelago`, so that a new release, unzipped anywhere, finds the
-player's profile and seeds. The version is the world's `world_version`; a release is built from committed files
-(`--allow-dirty` otherwise). `tests/test_release.py` checks that every package the shipped code imports is shipped.
+writes `dist\botw.apworld`, the one file a player and a host install (apart from the "Source code" archive GitHub
+adds to a release). It is the world, and the launcher's window that the Archipelago Launcher opens
+(`botw_world/client`): the project's files the player's tools read (listed in `PROJECT`, never `DEVELOPMENT_ONLY`)
+travel inside it as `client/payload.zip`, with a `release.json` (version, the seeds it plays, commit) that makes the
+tools write to `%LOCALAPPDATA%\BOTW Archipelago`. The apworld's first entry, uncompressed, is that `release.json`
+again, which a launcher reads from the first bytes of a published one. The version is the world's `world_version`; a
+release is built from committed files (`--allow-dirty` otherwise). `tests/test_release.py` checks that every module
+the shipped code imports is in Archipelago or pinned.
 
-The player's packages are pinned in `requirements-player.txt` (which `requirements.txt` includes): the build refuses an
-environment whose versions differ, so that a release is the same wherever it is built. To update one, change its pin,
-`pip install -r requirements.txt`, and run the tests.
+The libraries the tools need beyond Archipelago's are not shipped: the window downloads them once, from PyPI, as
+pinned in `botw_world/client/wheels.json` (file, URL, size and sha256 of each wheel, for each Python a release of
+Archipelago may run). `tools\pin_client_wheels.py name==version` writes it; `requirements-player.txt` (which
+`requirements.txt` includes) pins the same versions for the venv, and a test checks that both agree.
 
 ### Versions and publishing
 
@@ -145,7 +152,7 @@ git push origin v1.0.1
 ```
 
 The GitHub Action `.github/workflows/release.yml` checks that the tag names the version, runs the tests (those needing
-the game are skipped there), builds the release and makes a draft GitHub release with the zip and `botw.apworld`, to
+the game are skipped there), builds the release and makes a draft GitHub release with `botw.apworld`, to
 check and publish. Run by hand (Actions > Release > Run workflow), it only tests and builds, and keeps the files on the
 run.
 
