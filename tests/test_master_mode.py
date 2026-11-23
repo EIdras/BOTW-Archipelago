@@ -10,7 +10,7 @@ from types import SimpleNamespace
 import unittest
 from unittest import mock
 
-from botw_client import master_mode
+from botw_client import gamedata_table, master_mode
 from botw_client.backend import DeliveryResult, DeliveryStatus
 from botw_client.locations import CHEST_NUMBERS, load_targets
 from botw_client.runtime import BotwClientRuntime, FatalClientError
@@ -18,6 +18,7 @@ from botw_patch import chests
 
 ROOT = Path(__file__).resolve().parents[1]
 ROWS = json.loads((ROOT / "botw_world/data/master_chests.json").read_text(encoding="utf-8"))
+NEEDS_TABLE = unittest.skipUnless(gamedata_table.available(), "the GameData flag table is read from the game")
 
 
 class DataTests(unittest.TestCase):
@@ -32,6 +33,7 @@ class DataTests(unittest.TestCase):
         self.assertLess(max(row["number"] for row in others), chests.MASTER_FIRST)
         self.assertFalse({row["name"] for row in others} & {row["name"] for row in ROWS})
 
+    @NEEDS_TABLE
     def test_world_schema_11_tracks_them_10_does_not(self):
         names = {row["name"] for row in ROWS}
         self.assertLessEqual(names, {target.name for target in load_targets(world_schema=11)})

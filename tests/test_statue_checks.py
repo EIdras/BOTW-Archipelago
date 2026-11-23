@@ -9,6 +9,7 @@ import zlib
 
 import oead
 
+from botw_client import gamedata_table
 from botw_client.locations import (OFFERING_FLAG, OFFERING_NAMES, OFFERING_SCHEMA, LocationTarget, LocationTracker,
                                    load_targets)
 from botw_patch import statue_checks
@@ -18,6 +19,7 @@ from tools import play_seed
 
 UPDATE = Path.home() / "AppData/Roaming/Cemu/mlc01/usr/title/0005000e/101c9500/content"
 HAS_UPDATE = (UPDATE / statue_checks.ARCHIVE).is_file()
+NEEDS_TABLE = unittest.skipUnless(gamedata_table.available(), "the GameData flag table is read from the game")
 SCENE_FILES = {statue_checks.BOOTUP, statue_checks.ACTOR_INFO,
                *(f"Actor/Pack/{actor}.sbactorpack" for actor in statue_checks.CONTAINERS)}
 MODEL_FILES = {f"Model/AP_Item_00{part}.sbfres" for part in ("", ".Tex1", ".Tex2")}
@@ -33,6 +35,7 @@ class Memory:
 
 
 class ClientTests(unittest.TestCase):
+    @NEEDS_TABLE
     def test_offering_k_waits_for_the_counter_at_4k(self):
         targets = [t for t in load_targets(world_schema=OFFERING_SCHEMA) if t.flag == OFFERING_FLAG]
         self.assertEqual([(t.name, t.kind, t.minimum) for t in targets],
@@ -40,6 +43,7 @@ class ClientTests(unittest.TestCase):
         self.assertEqual({t.hash_u32 for t in targets}, {zlib.crc32(b"Npc_Goddess_UtuwaSum")})
         self.assertFalse(any(t.flag == OFFERING_FLAG for t in load_targets(world_schema=OFFERING_SCHEMA - 1)))
 
+    @NEEDS_TABLE
     def test_each_trade_makes_one_offering_and_a_later_start_all_those_made(self):
         class Live:
             base = 1000
