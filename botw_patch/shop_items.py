@@ -33,6 +33,15 @@ from botw_patch.events import (add_action_after, branch_with_query, graph_snapsh
                                write_flow)
 from botw_patch.resources import unpack
 
+
+def _parameter(value) -> oead.aamp.Parameter:
+    """An AAMP parameter of the value's own type. A plain int is given as an
+    S32: oead 1.3.0 makes a float of it."""
+    if isinstance(value, int) and not isinstance(value, bool):
+        value = oead.S32(value)
+    return oead.aamp.Parameter(value)
+
+
 MSBT = "ActorType/Item.msbt"
 DESCRIPTION_WIDTH = 44      # vanilla descriptions break lines at about 44-48 characters
 DESCRIPTION_LINES = 4
@@ -178,7 +187,7 @@ def clone_actor_pack(model_pack: bytes, model_actor: str, actor: str,
         item = params.objects["Item"].params
         if type(item["BuyingPrice"].v) is not int:
             raise ValueError("unexpected BuyingPrice")
-        item["BuyingPrice"] = oead.aamp.Parameter(int(price))
+        item["BuyingPrice"] = _parameter(int(price))
         del writer.files[old_params]
         writer.files[f"Actor/GeneralParamList/{actor}.bgparamlist"] = bytes(params.to_binary())
         detail.update(general_params=f"Actor/GeneralParamList/{actor}.bgparamlist",
@@ -556,8 +565,8 @@ def set_stock_entries(raw: bytes, table: str,
         if str(params[key].v) != expected:
             raise ValueError(f"unexpected entry {index}: {params[key].v}")
         params[key] = oead.aamp.Parameter(oead.FixedSafeString64(actor))
-        params[f"ItemNum{index:03d}"] = oead.aamp.Parameter(stock)
-        params[f"ItemAdjustPrice{index:03d}"] = oead.aamp.Parameter(adjust)
+        params[f"ItemNum{index:03d}"] = _parameter(stock)
+        params[f"ItemAdjustPrice{index:03d}"] = _parameter(adjust)
         detail[index] = {"before": expected, "after": actor, "stock": stock, "adjust": adjust}
     out = bytes(pio.to_binary())
     if len(out) > len(raw):
@@ -590,8 +599,7 @@ def arrange_stock(raw: bytes, table: str, expected: tuple[str, ...],
     def copy(field, index):
         # New parameters: the map's own are overwritten while the table is rewritten.
         value = params[f"{field}{index:03d}"].v
-        return oead.aamp.Parameter(oead.FixedSafeString64(str(value))
-                                   if field == "ItemName" else value)
+        return _parameter(oead.FixedSafeString64(str(value)) if field == "ItemName" else value)
 
     vanilla = {name: {field: copy(field, i) for field in STOCK_FIELDS}
                for i, name in enumerate(names, 1)}
@@ -602,11 +610,11 @@ def arrange_stock(raw: bytes, table: str, expected: tuple[str, ...],
         else:
             actor, stock, adjust, *look = entry
             fields = {"ItemName": oead.aamp.Parameter(oead.FixedSafeString64(actor)),
-                      "ItemNum": oead.aamp.Parameter(stock),
-                      "ItemAdjustPrice": oead.aamp.Parameter(adjust),
+                      "ItemNum": _parameter(stock),
+                      "ItemAdjustPrice": _parameter(adjust),
                       "ItemLookGetFlg": oead.aamp.Parameter(bool(look and look[0])),
-                      "ItemAmount": oead.aamp.Parameter(0)}
-        fields["ItemSort"] = oead.aamp.Parameter(index - 1)
+                      "ItemAmount": _parameter(0)}
+        fields["ItemSort"] = _parameter(index - 1)
         rows.append(fields)
     for index, fields in enumerate(rows, 1):
         for field in STOCK_FIELDS:
