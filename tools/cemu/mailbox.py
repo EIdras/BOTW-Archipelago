@@ -14,7 +14,7 @@ import sys
 import time
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from winmem import Process
+from procmem import Process
 from guest import in_guest
 
 MAGIC = b"APMBOX01\x00"
