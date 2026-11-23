@@ -1,6 +1,7 @@
 """The player's Cemu installation (tools/cemu_install.py) and the profile made from it."""
 import hashlib
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -289,6 +290,41 @@ class ProfileTests(unittest.TestCase):
             manifest = json.loads((target / "isolation.json").read_text())
             self.assertEqual(manifest["game"], str(install.base / "code/U-King.rpx"))
             self.assertEqual(list(manifest["source_save_hashes"]), ["user/80000001/game_data.sav"])
+
+    def test_the_profile_runs_the_executable_it_copied(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            found = detect(Install(root, mlc=root / "elsewhere" / "mlc01"))
+            data = root / "data"
+            (root / "bin").mkdir()
+            for platform, source, name in (("win32", "Cemu.exe", "Cemu.exe"),
+                                           ("linux", "Cemu-2.6-x86_64.AppImage", "Cemu.AppImage"),
+                                           ("linux", "Cemu", "Cemu")):
+                exe = root / "bin" / source
+                exe.write_bytes(b"cemu")
+                with mock.patch.object(cemu_profile, "DATA", data), \
+                        mock.patch.object(cemu_profile, "PROFILE", data / source):
+                    target = cemu_profile.create(exe, found, data / source, platform)
+                    self.assertEqual(json.loads((target / "isolation.json").read_text())["executable"], name)
+                    self.assertEqual((target / name).read_bytes(), b"cemu")
+                    self.assertEqual(cemu_profile.cemu_executable(), data / source / name)
+                if platform == "linux" and os.name == "posix":
+                    self.assertTrue(os.access(target / name, os.X_OK), name)
+
+    def test_a_profile_made_before_the_executable_was_recorded_runs_cemu_exe(self):
+        with tempfile.TemporaryDirectory() as temp:
+            (Path(temp) / "isolation.json").write_text(json.dumps({"schema": 1}))
+            with mock.patch.object(cemu_profile, "PROFILE", Path(temp)):
+                self.assertEqual(cemu_profile.cemu_executable(), Path(temp) / "Cemu.exe")
+
+    def test_a_sandboxed_linux_cemu_is_refused(self):
+        for path in ("/var/lib/flatpak/app/info.cemu.Cemu/current/active/files/bin/Cemu",
+                     "/home/player/.local/share/flatpak/app/info.cemu.Cemu/x/files/bin/Cemu",
+                     "/snap/cemu/12/usr/bin/Cemu"):
+            with self.assertRaisesRegex(ValueError, "Flatpak or Snap"):
+                cemu_profile.check_reachable(Path(path), "linux")
+        cemu_profile.check_reachable(Path("/home/player/Apps/Cemu-2.6-x86_64.AppImage"), "linux")
+        cemu_profile.check_reachable(Path("C:/snap/Cemu/Cemu.exe"), "win32")
 
     def test_a_cemu_without_a_controller_for_player_1_is_said(self):
         import contextlib

@@ -44,9 +44,33 @@ PLAY_ACCOUNT = 0x80000003       # the account of play sessions
 ACCOUNTS = PORTABLE / "mlc01/usr/save/system/act"
 PACK_PREFIX = "AP_Ledger_"
 CONTROLLER = "controllerProfiles/controller0.xml"     # player 1's controller, set in Cemu's input settings
+WINDOWS_EXECUTABLE = "Cemu.exe"     # also the one of the profiles made before isolation.json named it
+# Where a Flatpak or a Snap keeps its Cemu: a sandbox whose memory the client cannot read.
+SANDBOXES = ("/var/lib/flatpak/", "/.local/share/flatpak/", "/.var/app/", "/snap/")
 
 
-def create(executable: Path, install: CemuInstall | None = None, target: Path = PROFILE) -> Path:
+def executable_name(source: Path, platform: str = sys.platform) -> str:
+    """The name of Cemu's executable in the profile. Cemu finds its portable
+    folder next to it, or next to the AppImage it runs from."""
+    if platform == "win32":
+        return WINDOWS_EXECUTABLE
+    return "Cemu.AppImage" if source.suffix.lower() == ".appimage" else "Cemu"
+
+
+def check_reachable(executable: Path, platform: str = sys.platform) -> None:
+    """Refuse a sandboxed Linux Cemu: the client must read the memory of a Cemu it starts."""
+    if platform != "win32" and any(part in Path(executable).resolve().as_posix() for part in SANDBOXES):
+        raise ValueError(f"this Cemu runs in a Flatpak or Snap sandbox, which the client cannot reach: "
+                         f"use Cemu's AppImage or its Linux zip instead ({executable})")
+
+
+def cemu_executable() -> Path:
+    """Cemu's executable in the profile."""
+    return PROFILE / _manifest().get("executable", WINDOWS_EXECUTABLE)
+
+
+def create(executable: Path, install: CemuInstall | None = None, target: Path = PROFILE,
+           platform: str = sys.platform) -> Path:
     """Copy what BOTW needs from a Cemu installation into a new profile."""
     target = target.resolve()
     if not target.is_relative_to(DATA.resolve()):
@@ -54,7 +78,9 @@ def create(executable: Path, install: CemuInstall | None = None, target: Path = 
     if target.exists():
         raise FileExistsError(f"the profile already exists; refusing to reset it: {target}")
     if not executable.is_file():
-        raise FileNotFoundError(f"Cemu.exe not found: {executable}")
+        raise FileNotFoundError(f"{'Cemu.exe' if platform == 'win32' else 'Cemu'} not found: {executable}")
+    check_reachable(executable, platform)
+    cemu_name = executable_name(executable, platform)
     install = install or cemu_install.detect(executable)
     mlc, user_data = install.mlc, install.user_data
     # The update and DLC wherever Cemu has them, the game's saves and the
@@ -63,7 +89,9 @@ def create(executable: Path, install: CemuInstall | None = None, target: Path = 
               mlc / "sys": "sys"}
     portable = target / "portable"
     portable.mkdir(parents=True)
-    shutil.copy2(executable, target / "Cemu.exe")
+    shutil.copy2(executable, target / cemu_name)
+    if platform != "win32":     # copy2 keeps the mode: an AppImage downloaded without it still runs
+        (target / cemu_name).chmod((target / cemu_name).stat().st_mode | 0o111)
     for name in ("resources", "gameProfiles"):
         if (executable.parent / name).is_dir():
             shutil.copytree(executable.parent / name, target / name)
@@ -88,7 +116,7 @@ def create(executable: Path, install: CemuInstall | None = None, target: Path = 
     saves = mlc / "usr/save/00050000" / install.region.title
     manifest = {"schema": 1, "source_cemu": str(executable.resolve()),
                 "source_user_data": str(user_data.resolve()), "game": str(install.game),
-                "title": install.region.title,
+                "title": install.region.title, "executable": cemu_name,
                 "source_save_hashes": {
                     path.relative_to(saves).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
                     for path in sorted(saves.rglob("*")) if path.is_file()}}
