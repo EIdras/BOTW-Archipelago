@@ -4,7 +4,6 @@ included: this is the window the Archipelago launcher opens."""
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 import shutil
 import sys
 import tkinter as tk
@@ -33,7 +32,6 @@ from .pages.storage import StoragePage
 from .widgets import Button, human_size, label
 
 logger = logging.getLogger(__name__)
-ICON = Path(__file__).resolve().parents[1] / "assets" / "icon.png"
 APP_ID = "BOTWArchipelago.Launcher"
 SIDEBAR_WIDTH = 210
 MIN_SIZE = (900, 600)
@@ -326,13 +324,7 @@ def run(arguments: list[str], entry: Callable | None = None,
             pass
     root = tk.Tk(className="BOTW Archipelago")
     theme.apply(root)
-    try:
-        icon = tk.PhotoImage(file=str(ICON))
-        root.iconphoto(True, icon)
-        # Its own icon too: -default is lost when the setup window was the process's first.
-        root.iconphoto(False, icon)
-    except tk.TclError:
-        pass
+    theme.window_icon(root)
     root.report_callback_exception = _report_unexpected
     context = Context(Options.parse(arguments), records, entry, root.destroy)
     window = MainWindow(root, context)

@@ -210,6 +210,13 @@ class SetupWindowTests(unittest.TestCase):
         with mock.patch.object(client.sysconfig, "get_platform", return_value="macosx-11.0-arm64"):
             self.assertEqual(window.getting(), "Getting the libraries the game files need, once.")
 
+    def test_the_setup_window_takes_the_main_windows_identity(self):
+        # Windows keeps a process's first identity for its taskbar button and icon.
+        require_tkinter()
+        window = importlib.import_module(f"{client.__name__}.setup_window")
+        from botw_launcher.tk import app
+        self.assertEqual(window.APP_ID, app.APP_ID)
+
 
 if __name__ == "__main__":
     unittest.main()

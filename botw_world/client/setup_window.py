@@ -18,6 +18,7 @@ from typing import Callable
 from . import SetupError, _resource
 
 TITLE = "BOTW Archipelago"
+APP_ID = "BOTWArchipelago.Launcher"     # the main window's (botw_launcher/tk/app.py)
 WINDOW, TEXT, MUTED, ERROR = "#12151c", "#e6e9ef", "#8b94a6", "#e57373"
 ACCENT, ACCENT_HOVER, SECONDARY, SECONDARY_HOVER = "#2f6a91", "#3a7dab", "#272e3c", "#313a4b"
 FAMILY = "Segoe UI" if sys.platform == "win32" else "TkDefaultFont"
@@ -39,6 +40,9 @@ def run_setup(work: Callable) -> object | None:
     result, or None when the player closed the window."""
     if sys.platform == "win32":
         import ctypes
+        # Before any window, or Windows keeps the process's first identity for the
+        # taskbar button and its icon (the main window's too).
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(APP_ID)
         try:
             ctypes.windll.shcore.SetProcessDpiAwareness(1)
         except (AttributeError, OSError):

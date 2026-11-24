@@ -26,6 +26,7 @@ class Dialog(tk.Toplevel):
         super().__init__(owner, bg=theme.WINDOW)
         self.withdraw()
         self.title(title)
+        theme.window_icon(self)
         self.resizable(False, False)
         self.transient(owner)
         self.result, self._cancel = cancel, cancel

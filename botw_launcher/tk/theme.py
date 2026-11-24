@@ -3,10 +3,12 @@ tk's own widgets and on ttk's "clam" theme (the native one ignores colours).
 Every colour and font of the window is here."""
 from __future__ import annotations
 
+from pathlib import Path
 import sys
 import tkinter as tk
 from tkinter import font as tkfont, ttk
 
+ICON = Path(__file__).resolve().parents[1] / "assets" / "icon.png"
 WINDOW = "#12151c"
 SIDEBAR = "#0d1016"
 SURFACE = "#191e28"
@@ -119,3 +121,17 @@ def dark_title_bar(window: tk.Misc) -> None:
                 break
     except (AttributeError, OSError):
         pass
+
+
+def window_icon(window: tk.Misc) -> None:
+    """The project's icon on the window's title bar and taskbar button. Each window
+    sets its own: Tk's default icon (-default) is lost when the apworld's setup
+    window was the process's first, and every window then had Tk's feather."""
+    root = window._root()
+    image = getattr(root, "_project_icon", None)
+    if image is None:
+        try:
+            image = root._project_icon = tk.PhotoImage(master=root, file=str(ICON))
+        except tk.TclError:
+            return
+    window.iconphoto(False, image)
