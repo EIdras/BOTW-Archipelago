@@ -26,6 +26,9 @@ presented by the game itself.
 - **Horses given in turn**, armor and materials among the items, as you choose.
 - **Trackers**: a PopTracker map pack built from your game, with the Koroks, chests and quests, and Universal
   Tracker; both show Link on the map.
+- **A launcher inside Archipelago**: a seed added from its room's link, your Cemu never modified, the room's
+  messages and your hints in its window, the PopTracker pack built for you, updates in one click
+  ([Setup guide](botw_world/docs/setup_en.md)).
 - **Your mods keep working**: FPS++, graphics packs, UKMM mods.
 
 ## What you need
