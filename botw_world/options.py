@@ -1,7 +1,7 @@
 """Player options of the Breath of the Wild world."""
 from dataclasses import dataclass
 
-from Options import (Choice, DeathLink, OptionCounter, OptionGroup, PerGameCommonOptions, Range,
+from Options import (Choice, Visibility, DeathLink, OptionCounter, OptionGroup, PerGameCommonOptions, Range,
                      StartInventoryPool, Toggle)
 
 from .catalog import TRAPS
@@ -196,6 +196,8 @@ class CutsceneSkip(Choice):
     and waits of dialogues, terminals, towers) do not change yet. The logic does not
     change."""
     display_name = "Skip Cutscenes"
+    # Hidden until it is finished: every seed plays with it off (BotwWorld.generate_early).
+    visibility = Visibility.none
     option_off = 0
     option_fast = 1
     option_removed = 2
@@ -482,7 +484,6 @@ OPTION_GROUPS = [
     OptionGroup("Maps", [TowerMaps, EarlyMap, TowersNeedMaps, RegionLock, MapTravelPoints]),
     OptionGroup("Horses", [ProgressiveHorse]),
     OptionGroup("Master Cycle Zero", [BikeAnywhere]),
-    OptionGroup("Cutscenes", [CutsceneSkip]),
     OptionGroup("Spirit Orbs", [SpiritOrbs, StatueOfferings]),
     OptionGroup("Chests", [ChestSanity, ChestProgression, ShrineChestItems, MasterMode]),
     OptionGroup("Koroks", [KorokSanity, KorokCount, KorokLocalFiller, KorokProgression]),

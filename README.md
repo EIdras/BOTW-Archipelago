@@ -23,7 +23,7 @@ presented by the game itself.
 - **Region maps as keys**, and optionally a world that opens region by region from the Great Plateau.
 - **A sealed sanctum**: Ganon waits until the seed's requirements are met.
 - **DeathLink and twelve traps**, from a Blood Moon to a Yiga ambush or a lightning strike.
-- **Cutscenes skipped with + alone**, horses given in turn, armor and materials among the items, as you choose.
+- **Horses given in turn**, armor and materials among the items, as you choose.
 - **Trackers**: a PopTracker map pack built from your game, with the Koroks, chests and quests, and Universal
   Tracker; both show Link on the map.
 - **Your mods keep working**: FPS++, graphics packs, UKMM mods.

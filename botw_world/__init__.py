@@ -167,6 +167,8 @@ class BotwWorld(World):
         return slot_data
 
     def generate_early(self) -> None:
+        # cutscene_skip is hidden until it is finished: a YAML that sets it plays without it.
+        self.options.cutscene_skip.value = 0
         if self.options.region_lock and self.options.tower_maps != TowerMaps.option_region_keys:
             raise OptionError(f"{self.player_name}: region_lock needs tower_maps on region_keys")
         if self.options.towers_need_maps and self.options.tower_maps != TowerMaps.option_region_keys:

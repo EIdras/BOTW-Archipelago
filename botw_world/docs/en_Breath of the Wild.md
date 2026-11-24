@@ -172,7 +172,6 @@ stamina vessels help without being required.
 | | [`map_travel_points`](#map-travel-points) | false | A map received opens a travel point |
 | Horses | [`progressive_horse`](#progressive-horse) | false | Four horses in turn, for Epona and the Master Cycle Zero |
 | Master Cycle Zero | [`bike_anywhere`](#master-cycle-zero-anywhere) | false | The bike in the desert and on Death Mountain |
-| Cutscenes | [`cutscene_skip`](#skip-cutscenes) | `off` | `fast`: + alone skips a cutscene, from a first game on; `removed`: skipped at once |
 | Spirit Orbs | [`spirit_orbs`](#spirit-orbs) | `containers` | Hearts and stamina as items, or from the statues |
 | | [`statue_offerings`](#spirit-orbs) | 5 | With `statue_checks`, the statues' offerings that are locations (1 to 30) |
 | Chests | [`chest_sanity`](#locations) | `off` | Chests as locations: `check_only`, or `ap_items` that the chests hold |
@@ -310,21 +309,6 @@ The game refuses the Master Cycle Zero in the Gerudo Desert and on Death Mountai
 horses stop it too. With `bike_anywhere`, it can be summoned and ridden there and goes through those walls. Indoors
 still refuse it, and flying onto the desert or Death Mountain from a cliff outside still throws Link off just before
 landing. The logic does not change.
-
-### Skip cutscenes
-
-With `cutscene_skip` on `fast`, + alone skips a cutscene, without X first, and from a first game on: an Archipelago game always
-starts as one. The + prompt shows as soon as a cutscene can be skipped, without waiting for X. The black-screen intro
-before Link wakes is gone, and a cutscene can be skipped while it fades in.
-The cutscenes the game never lets be skipped can be too: the Shrine of Resurrection's pedestal and exit, and the first
-view of the Great Plateau. A skip leaves the game as the cutscene does: the Sheikah Slate taken, the doors open. A page of
-text shows at once, without its pauses. The animations and waits the game plays within dialogues, terminals and towers do
-not change yet. The logic does not change.
-
-On `removed` (experimental), every cutscene `fast` skips is skipped at once, without +: what it gives or opens is kept.
-The mode can be changed once the game pack is built: in Cemu, Options > Graphic packs, the Archipelago pack's Cutscenes
-preset ("Skipped with +" or "Removed (experimental)"). Change it before the game starts: Cemu pauses some seconds when it
-is changed in game, and it takes effect when the game restarts. The launcher keeps the choice for the seed.
 
 ### Spirit Orbs
 

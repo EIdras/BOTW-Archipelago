@@ -108,14 +108,6 @@ storm's lightning, the Lightning Strike and the Fire can kill. The twelve traps 
 
 <!-- ![A Cucco Swarm trap](../../docs/images/trap.jpg) -->
 
-## Cutscenes
-
-With `cutscene_skip` on `fast`, the + prompt shows as soon as a cutscene can be skipped, and + alone skips it, from a
-first game on. On `removed`, those cutscenes are skipped at once. The mode can be changed in Cemu before the game
-starts: see [Skip cutscenes](en_Breath%20of%20the%20Wild.md#skip-cutscenes).
-
-<!-- ![The prompt to skip a cutscene](../../docs/images/cutscene-skip.jpg) -->
-
 ---
 
 Next: [the game page and its options](en_Breath%20of%20the%20Wild.md).
