@@ -329,6 +329,8 @@ def run(arguments: list[str], entry: Callable | None = None,
     try:
         icon = tk.PhotoImage(file=str(ICON))
         root.iconphoto(True, icon)
+        # Its own icon too: -default is lost when the setup window was the process's first.
+        root.iconphoto(False, icon)
     except tk.TclError:
         pass
     root.report_callback_exception = _report_unexpected

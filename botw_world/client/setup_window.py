@@ -5,6 +5,7 @@ The project's code is not unpacked yet: this window stands alone, in the
 colours of the main one (botw_launcher/tk/theme.py)."""
 from __future__ import annotations
 
+import base64
 import json
 import queue
 import sys
@@ -14,7 +15,7 @@ from tkinter import ttk
 import traceback
 from typing import Callable
 
-from . import SetupError
+from . import SetupError, _resource
 
 TITLE = "BOTW Archipelago"
 WINDOW, TEXT, MUTED, ERROR = "#12151c", "#e6e9ef", "#8b94a6", "#e57373"
@@ -43,6 +44,14 @@ def run_setup(work: Callable) -> object | None:
         except (AttributeError, OSError):
             pass
     root = tk.Tk(className=TITLE)
+    # Read from the apworld, which Tk cannot open as a folder. This window's own icon: a
+    # default one (-default) would die with this window and leave the main one Tk's feather.
+    icon = _resource("icon.png")
+    if icon:
+        try:
+            root.iconphoto(False, tk.PhotoImage(data=base64.b64encode(icon)))
+        except tk.TclError:
+            pass
     window = SetupWindow(root, work)
     root.mainloop()
     return window.result
