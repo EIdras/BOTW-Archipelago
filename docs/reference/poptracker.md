@@ -112,7 +112,7 @@ game, so that no file of the game is in the repository.
   3. a label drawn by the builder, in the same style.
 
   The game draws no image of most items, and only stand-ins of the others (an armour's effect, an inventory tab,
-  white masks): the icons of every item of the grid (`RELEASE_ICONS`, 53) are published apart from the code: `tracker-icons.zip`, the file attached to the GitHub release
+  white masks): the icons of every item of the grid (`RELEASE_ICONS`, 50) are published apart from the code: `tracker-icons.zip`, the file attached to the GitHub release
   `tracker-icons` (Nintendo's images, never committed). The launcher, when it builds the pack, and the command by
   hand fetch it once into `<data>/poptracker/icons/release` (`fetch_icons`: PNG files only, no paths, 4 MB at most;
   the client's TLS roots, Windows' and certifi's, as a new Windows lacks GitHub's); offline, the game's stand-ins
