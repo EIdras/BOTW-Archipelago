@@ -74,7 +74,10 @@ _QUEST_KINDS = [row["kind"] for row in json.loads((ROOT / "botw_world/data/quest
 _BOSSES = json.loads((ROOT / "botw_world/data/bosses.json").read_text(encoding="utf-8"))
 
 
-def expected_placements(slot_data: dict) -> int:
+def expected_placements(slot_data: dict, slot_file: bool = False) -> int:
+    """The items a seed places in its BOTW world; with `slot_file`, those its slot
+    file lists: the placements the game pack is built from, which leave out the
+    Koroks', the quests', the offerings' and the bosses' (only the seed's zip has them)."""
     from botw_client import shop_catalog, stall_catalog
     # stall_items: a number of stalls' items in all; seeds generated before it
     # had stall_shop_items on each stall.
@@ -87,8 +90,9 @@ def expected_placements(slot_data: dict) -> int:
     # spirit_orbs on statue_checks (2): the statues' offerings.
     offerings = int(slot_data.get("statue_offerings", 0)) if slot_data.get("spirit_orbs") == 2 else 0
     bosses = len(_BOSSES) if slot_data.get("boss_sanity") else 0
+    others = 0 if slot_file else koroks + quests + offerings + bosses
     return (PLACEMENTS + len(shop_catalog.MERCHANTS) * int(slot_data.get("beedle_shop_items", 0)) + stalls
-            + chests + koroks + quests + offerings + bosses)
+            + chests + others)
 
 
 def sha(path: Path) -> str:
@@ -201,7 +205,7 @@ def read_seed(path: Path, slot_name: str | None = None) -> tuple[dict, dict]:
     if not checksum:
         raise ValueError("this slot file comes from an older version of the world: "
                          "prepare the seed from its zip")
-    expected = expected_placements(manifest["slot_data"])
+    expected = expected_placements(manifest["slot_data"], slot_file=not whole)
     if placements != expected:
         raise ValueError(f"this seed places {placements} items in your world where this version expects "
                          f"{expected}: it was generated with another version of the Breath of the Wild world")

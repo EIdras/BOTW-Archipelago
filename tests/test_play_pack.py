@@ -240,6 +240,20 @@ class VersionTests(unittest.TestCase):
         chests = play_seed.expected_placements({"chest_sanity": 2})
         self.assertEqual(play_seed.expected_placements({"chest_sanity": 2, "master_mode": 1}), chests + 118)
 
+    def test_a_slot_file_lists_the_placements_of_its_game_pack(self):
+        # A room's slot file has no Korok, quest, offering or boss placements: it plays all the same.
+        options = {"world_schema": 11, "client_schema": 3, "korok_sanity": 1, "korok_locations": [20001],
+                   "side_quest_sanity": 1, "shrine_quest_sanity": 1, "spirit_orbs": 2, "statue_offerings": 5,
+                   "boss_sanity": 1, "chest_sanity": 2}
+        listed = play_seed.expected_placements({"chest_sanity": 2})
+        self.assertEqual(play_seed.expected_placements(options, slot_file=True), listed)
+        self.assertEqual(play_seed.expected_placements(options), listed + 1 + 115 + 5 + 86)
+        with tempfile.TemporaryDirectory() as temp:
+            path = slot_file(Path(temp), container=True, slot_data=options,
+                             placements=[{"location_id": n} for n in range(listed)])
+            audit, _identity = play_seed.read_seed(path)
+        self.assertEqual(audit["placements"], listed)
+
     def test_a_seed_of_unknown_schemas_names_the_version_it_needs(self):
         with tempfile.TemporaryDirectory() as temp:
             path = slot_file(Path(temp), slot_data={"world_schema": 12, "client_schema": 3,
